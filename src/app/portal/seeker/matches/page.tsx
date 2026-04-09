@@ -5,7 +5,7 @@ import { ShieldCheck, MessageSquare, Briefcase, FileText, Send, MoreVertical } f
 
 export default function SeekerMatchesPage() {
   const { requests } = usePortal();
-  const matchedRequests = requests.filter(r => r.status === 'matched' || r.status === 'assigned' || r.status === 'accepted');
+  const matchedRequests = requests.filter(r => r.status === 'matched' || r.status === 'accepted' || r.status === 'completed');
   
   const [activeMatchId, setActiveMatchId] = useState(matchedRequests[0]?.id || null);
   const [message, setMessage] = useState('');

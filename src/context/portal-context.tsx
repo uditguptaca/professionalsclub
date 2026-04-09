@@ -29,7 +29,31 @@ const MOCK_EMPLOYEES: Employee[] = [
 ];
 
 const MOCK_REQUESTS: ReferralRequest[] = [
-  { id: 'r1', seekerId: 'js1', seekerName: 'John Doe', companyId: 'c1', companyName: 'Google', companyLogo: 'G', jobTitle: 'Frontend Developer', jobUrl: 'careers.google.com/123', jobLocation: 'Toronto', resumeFile: 'resume_v2.pdf', fitSummary: 'I have 5 years of React experience and built scalable systems.', coverNote: 'Would love a referral!', workAuth: 'Citizen', urgency: 'high', portfolioLinks: [], status: 'assigned', submittedAt: new Date(Date.now() - 86400000).toISOString(), priceCharged: 3, paymentStatus: 'paid', matchedEmployeeId: 'emp1', matchedEmployeeName: 'Sarah Jenkins', matchScore: 92, timeline: [{ date: new Date().toISOString(), status: 'assigned', description: 'Matched with Sarah'}] } as any
+  { 
+    id: 'r1', 
+    seekerId: 'js1', 
+    seekerName: 'John Doe', 
+    companyId: 'c1', 
+    companyName: 'Google', 
+    companyLogo: 'G', 
+    jobTitle: 'Frontend Developer', 
+    jobUrl: 'careers.google.com/123', 
+    jobLocation: 'Toronto', 
+    resumeFile: 'resume_v2.pdf', 
+    fitSummary: 'I have 5 years of React experience and built scalable systems.', 
+    coverNote: 'Would love a referral!', 
+    workAuth: 'Citizen', 
+    urgency: 'high', 
+    portfolioLinks: [], 
+    status: 'matched', 
+    submittedAt: new Date(Date.now() - 86400000).toISOString(), 
+    priceCharged: 3, 
+    paymentStatus: 'paid', 
+    matchedEmployeeId: 'emp1', 
+    matchedEmployeeName: 'Sarah Jenkins', 
+    matchScore: 92, 
+    timeline: [{ date: new Date().toISOString(), status: 'matched', description: 'Matched with Sarah Jenkins' }] 
+  }
 ];
 
 const MOCK_PRICING: PricingRule[] = [
