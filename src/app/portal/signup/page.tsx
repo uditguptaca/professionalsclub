@@ -135,7 +135,7 @@ export default function SignupPage() {
       {/* ─── HEADER BAR ─── */}
       <div className="onboarding-header">
         <Link href="/" className="onboarding-logo">
-          <img src="/professionals-club-logo.png" alt="Professionals Club" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+          <img src="/professionals-club-logo.png" alt="Professionals Club" style={{ width: 32, height: 32, objectFit: 'contain', mixBlendMode: 'multiply' }} />
           <span>Professionals <strong>Club</strong></span>
         </Link>
         <Link href="/portal/auth" className="onboarding-login-link">
