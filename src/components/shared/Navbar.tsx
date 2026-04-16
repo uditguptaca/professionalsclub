@@ -7,10 +7,12 @@ export default function Navbar() {
 
   return (
     <nav className="navbar">
-      <div className="navbar-inner">
-        <Link href="/" className="navbar-logo">
-          <img src="/logo.png" alt="Professionals Club Logo" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
-          <span>Professionals <span className="text-gradient">Club</span></span>
+      <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Link href="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <img src="/professionals-club-logo.png" alt="Professionals Club Logo" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
+          <span style={{ fontSize: '1.25rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em', color: '#0f172a' }}>
+            Professionals <span style={{ color: '#059669', fontWeight: 500 }}>Club</span>
+          </span>
         </Link>
 
         <ul className="navbar-links" style={mobileOpen ? { display: 'flex', position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg-secondary)', flexDirection: 'column', padding: 'var(--space-4)', borderBottom: '1px solid var(--border-color)' } : {}}>

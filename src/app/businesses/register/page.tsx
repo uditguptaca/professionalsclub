@@ -204,7 +204,7 @@ export default function BusinessSignupPage() {
       <div style={{ background: 'white', borderBottom: '1px solid var(--border-color)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 20 }}>
         <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'var(--text-primary)' }}>
-            <img src="/logo.png" alt="PC" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+            <img src="/professionals-club-logo.png" alt="PC" style={{ width: 32, height: 32, objectFit: 'contain' }} />
             <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '0.95rem' }}>Professionals Club</span>
           </Link>
           <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>Business Listing Application</span>
