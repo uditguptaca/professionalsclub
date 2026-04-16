@@ -44,7 +44,7 @@ export default function AuthPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
                 <UserCircle size={24} />
-                <span style={{ fontWeight: 700, fontSize: '1.2rem' }}>Login as Member</span>
+                <span style={{ fontWeight: 700, fontSize: '1.2rem' }}>Member Login & Signup</span>
               </div>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: '0.8rem', opacity: 0.85, display: 'flex', alignItems: 'center', gap: 4 }}><HelpCircle size={14} /> Request Help</span>
