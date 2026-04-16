@@ -72,33 +72,17 @@ export default function AboutPage() {
           </h2>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '30px', justifyContent: 'center' }}>
-            <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'center', gap: 30, marginBottom: 40 }}>
-              {team.slice(0, 2).map((member, i) => (
-                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#fff', borderRadius: 20, padding: '36px 24px', boxShadow: '0 8px 30px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', width: 280, position: 'relative' }}>
-                  <div style={{ position: 'absolute', top: 16, right: 16 }}>
-                    <Link href={member.linkedin} target="_blank" style={{ color: '#0077b5' }}><Globe size={20} /></Link>
-                  </div>
-                  <div style={{ width: 130, height: 130, borderRadius: '50%', overflow: 'hidden', marginBottom: 20, border: '4px solid white', boxShadow: '0 8px 16px rgba(99,102,241,0.15)', position: 'relative' }}>
-                    <Image src={member.image} alt={member.name} fill style={{ objectFit: 'cover' }} />
-                  </div>
-                  <h4 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b', marginBottom: 6 }}>{member.name}</h4>
-                  <div style={{ fontSize: '0.9rem', color: '#6366f1', fontWeight: 700, marginBottom: 2 }}>{member.role}</div>
-                  <div style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 500 }}>@ {member.company}</div>
-                </div>
-              ))}
-            </div>
-            
-            {team.slice(2).map((member, i) => (
-              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#fff', borderRadius: 16, padding: '28px 16px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9', transition: 'transform 0.2s ease', position: 'relative' }} className="hover:shadow-lg hover:-translate-y-1">
-                <div style={{ position: 'absolute', top: 12, right: 12 }}>
+            {team.map((member, i) => (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#fff', borderRadius: 16, padding: '32px 20px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9', transition: 'transform 0.2s ease, box-shadow 0.2s ease', position: 'relative' }} className="hover:shadow-xl hover:-translate-y-1">
+                <div style={{ position: 'absolute', top: 16, right: 16 }}>
                   <Link href={member.linkedin} target="_blank" style={{ color: '#94a3b8', transition: 'color 0.2s' }} className="hover:text-blue-600"><Globe size={18} /></Link>
                 </div>
-                <div style={{ width: 100, height: 100, borderRadius: '50%', overflow: 'hidden', marginBottom: 16, border: '2px solid #f8fafc', position: 'relative' }}>
+                <div style={{ width: 120, height: 120, borderRadius: '50%', overflow: 'hidden', marginBottom: 20, border: '3px solid #f8fafc', position: 'relative', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}>
                   <Image src={member.image} alt={member.name} fill style={{ objectFit: 'cover' }} />
                 </div>
-                <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#334155', marginBottom: 4 }}>{member.name}</h4>
-                <div style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 600, marginBottom: 2 }}>{member.role}</div>
-                <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>@ {member.company}</div>
+                <h4 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{member.name}</h4>
+                <div style={{ fontSize: '0.85rem', color: '#6366f1', fontWeight: 700, marginBottom: 2 }}>{member.role}</div>
+                <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 500 }}>@ {member.company}</div>
               </div>
             ))}
           </div>
