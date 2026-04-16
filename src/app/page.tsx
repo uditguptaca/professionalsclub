@@ -66,6 +66,7 @@ export default function Home() {
               { icon: <MapPin size={22} />, title: 'Newcomer Settlement Support', desc: 'Housing, banking, transit, health cards — all guided', color: '#d97706' },
               { icon: <GraduationCap size={22} />, title: 'Career Mentorship', desc: 'Long-term mentors matched by admin to your profession', color: '#dc2626' },
               { icon: <Shield size={22} />, title: 'Tax & Immigration Guidance', desc: 'CPA volunteers and immigration guidance through admin relay', color: '#7c3aed' },
+              { icon: <Calendar size={22} />, title: 'Join Our Next Meetup Event', desc: 'Connect at our monthly in-person community networking meetups', color: '#ea580c' },
             ].map((item, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 22px', borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)', transition: 'all 0.2s', cursor: 'default' }}>
                 <div style={{ width: 44, height: 44, borderRadius: 12, background: `${item.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, flexShrink: 0 }}>
