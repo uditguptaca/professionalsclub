@@ -96,7 +96,7 @@ export default function AboutPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 80, alignItems: 'center' }}>
             <div>
               <h2 style={{ fontSize: '2.2rem', fontWeight: 700, lineHeight: 1.3, marginBottom: 40, fontFamily: 'var(--font-display)', color: '#f8fafc' }}>
-                IndoCanada Professionals is an expansive, inclusive association dedicated to fostering the success of multiple disciplines—ranging from CPAs, medical practitioners, and accomplished engineers to business innovators, educators, and IT authorities.
+                Professionals Club is an expansive, inclusive association dedicated to fostering the success of multiple disciplines—ranging from CPAs, medical practitioners, and accomplished engineers to business innovators, educators, and IT authorities.
               </h2>
               <div style={{ borderLeft: '3px solid #6366f1', paddingLeft: 24 }}>
                 <p style={{ fontSize: '1.05rem', color: '#cbd5e1', lineHeight: 1.8, marginBottom: 32 }}>

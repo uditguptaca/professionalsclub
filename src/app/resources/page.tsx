@@ -7,10 +7,10 @@ import { BookOpen, Video, FileCheck, FileText, Download, ExternalLink, PlayCircl
 
 export default function ResourcesPage() {
   const ebooks = [
-    { title: "CPA's Guide to Canada", author: 'IndoCanada Professionals', type: 'PDF', size: '2.4 MB', color: '#6366f1' },
-    { title: 'IT Careers in Ontario', author: 'IndoCanada Professionals', type: 'PDF', size: '1.8 MB', color: '#059669' },
-    { title: 'Medical Licensing Roadmap', author: 'IndoCanada Health Team', type: 'PDF', size: '3.1 MB', color: '#dc2626' },
-    { title: 'Engineering Success Path', author: 'IndoCanada Engineering', type: 'PDF', size: '2.0 MB', color: '#d97706' },
+    { title: "CPA's Guide to Canada", author: 'Professionals Club', type: 'PDF', size: '2.4 MB', color: '#6366f1' },
+    { title: 'IT Careers in Ontario', author: 'Professionals Club', type: 'PDF', size: '1.8 MB', color: '#059669' },
+    { title: 'Medical Licensing Roadmap', author: 'Professionals Club Health Team', type: 'PDF', size: '3.1 MB', color: '#dc2626' },
+    { title: 'Engineering Success Path', author: 'Professionals Club Engineering', type: 'PDF', size: '2.0 MB', color: '#d97706' },
   ];
 
   const workshops = [

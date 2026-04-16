@@ -4,9 +4,9 @@ import { AppProvider } from "@/context/app-context";
 import { PortalProvider } from "@/context/portal-context";
 
 export const metadata: Metadata = {
-  title: "IndoCanada Club — Professional Referral & Career Community",
-  description: "Canada's trusted professional network and referral marketplace. Request referrals, connect with employees at top companies, join professional communities, attend meetups, and accelerate your Canadian career journey.",
-  keywords: "Canada jobs, referral, professional network, career community, job referral platform, IndoCanada",
+  title: "Professionals Club — Professional Referral & Career Community",
+  description: "The premier portal for Canadian professionals to refer job seekers, share resources, and provide mentorship.",
+  keywords: "Canada jobs, referral, professional network, career community, job referral platform, Professionals Club",
 };
 
 export default function RootLayout({
