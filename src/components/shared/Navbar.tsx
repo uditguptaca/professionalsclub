@@ -26,7 +26,7 @@ export default function Navbar() {
 
         <div className="navbar-actions">
           <Link href="/portal/auth" className="btn btn-ghost">Member Login</Link>
-          <Link href="/portal/auth" className="btn btn-primary">Get Help</Link>
+          <Link href="/portal/auth" className="btn btn-primary">Members Signup</Link>
           <button className="navbar-mobile-toggle" onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? '✕' : '☰'}
           </button>
