@@ -133,17 +133,22 @@ export default function SettlementPage() {
                 <Link href="/resources" className="btn" style={{ padding: '16px 32px', fontSize: '1rem', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}>View All Resources</Link>
               </div>
             </div>
-            <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 24, padding: 40, border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(16px)', transform: 'rotate(2deg)', boxShadow: '0 25px 50px rgba(0,0,0,0.3)' }}>
-              <h4 style={{ fontWeight: 800, fontSize: '1.3rem', marginBottom: 24, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.1)', color: 'white', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <FileText size={24} style={{ color: '#818cf8' }} />
+            <div style={{ background: '#ffffff', borderRadius: 8, padding: 40, border: '1px solid #e2e8f0', transform: 'rotate(2deg)', boxShadow: '0 25px 50px rgba(0,0,0,0.4), 0 0 0 12px rgba(255,255,255,0.05)' }}>
+              <h4 style={{ fontWeight: 800, fontSize: '1.3rem', marginBottom: 24, paddingBottom: 16, borderBottom: '2px dashed #e2e8f0', color: '#1e293b', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <FileText size={24} style={{ color: '#6366f1' }} />
                 First 7 Days Checklist
               </h4>
-              {['Applied for SIN at Service Canada', 'Opened a Canadian Bank Account', 'Obtained a Canadian Phone Number', 'Applied for Provincial Health Card', 'Explored local transit routes', 'Registered with settlement agency'].map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0', borderBottom: i < 5 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                  <div style={{ width: 22, height: 22, borderRadius: 6, border: '2px solid #818cf8', flexShrink: 0, background: 'rgba(129,140,248,0.2)' }} />
-                  <span style={{ fontSize: '0.95rem', color: '#e2e8f0' }}>{item}</span>
-                </div>
-              ))}
+              {['Applied for SIN at Service Canada', 'Opened a Canadian Bank Account', 'Obtained a Canadian Phone Number', 'Applied for Provincial Health Card', 'Explored local transit routes', 'Registered with settlement agency'].map((item, i) => {
+                const isChecked = i === 1 || i === 2;
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0', borderBottom: i < 5 ? '1px solid #f1f5f9' : 'none' }}>
+                    <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${isChecked ? '#6366f1' : '#cbd5e1'}`, flexShrink: 0, background: isChecked ? '#6366f1' : '#f8fafc', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {isChecked && <CheckCircle size={14} style={{ color: 'white' }} />}
+                    </div>
+                    <span style={{ fontSize: '0.95rem', color: isChecked ? '#94a3b8' : '#475569', fontWeight: 500, textDecoration: isChecked ? 'line-through' : 'none' }}>{item}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
