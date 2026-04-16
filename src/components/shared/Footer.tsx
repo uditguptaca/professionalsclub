@@ -8,10 +8,10 @@ export default function Footer() {
         <div className="footer-grid">
           <div className="footer-brand">
             <div className="navbar-logo" style={{ marginBottom: 'var(--space-2)' }}>
-              <div className="logo-icon">IC</div>
-              <span>IndoCanada Club</span>
+              <div className="logo-icon">PC</div>
+              <span>Professionals Club</span>
             </div>
-            <p>Canada&apos;s trusted professional network and referral marketplace. Connecting talented professionals with opportunities at top Canadian companies.</p>
+            <p>A managed community support desk for Indian professionals in Canada. Get help with job referrals, settlement, tax guidance, mentorship, and more — all admin-mediated.</p>
             <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
               <span style={{ fontSize: '1.2rem', cursor: 'pointer' }}>🔗</span>
               <span style={{ fontSize: '1.2rem', cursor: 'pointer' }}>🐦</span>
@@ -22,11 +22,10 @@ export default function Footer() {
           <div className="footer-col">
             <h4>Platform</h4>
             <ul>
-              <li><Link href="/how-it-works">How It Works</Link></li>
-              <li><Link href="/companies">Companies</Link></li>
-              <li><Link href="/pricing">Pricing</Link></li>
-              <li><Link href="/for-employees">For Employees</Link></li>
-              <li><Link href="/success-stories">Success Stories</Link></li>
+              <li><Link href="/portal/auth">Request Help</Link></li>
+              <li><Link href="/portal/auth">Volunteer</Link></li>
+              <li><Link href="/about">How It Works</Link></li>
+              <li><Link href="/portal/auth">Member Login</Link></li>
             </ul>
           </div>
           <div className="footer-col">
@@ -59,7 +58,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="footer-bottom">
-          <p>&copy; {new Date().getFullYear()} IndoCanada Club. All rights reserved. Built in Canada 🇨🇦</p>
+          <p>&copy; {new Date().getFullYear()} Professionals Club. All rights reserved. Built in Canada 🇨🇦</p>
           <p>Made with ❤️ for the Canadian professional community</p>
         </div>
       </div>

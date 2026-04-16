@@ -1,122 +1,156 @@
 'use client';
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { ReferralRequest, UserRole, Employee, Company, PricingRule } from '@/types';
-import { useApp } from './app-context';
+import React, { createContext, useContext, useState } from 'react';
+import type { HelpRequest, VolunteerApplication, CaseAssignment, AdminMessage, AuditLogEntry, Member, HelpDeskStats, RequestStatus, VolunteerStatus } from '@/types';
+import { mockHelpRequests, mockVolunteerApplications, mockAssignments, mockMessages, mockAuditLog, mockMembers, mockStats } from '@/lib/mock-data';
 
-interface PortalContextType {
-  requests: ReferralRequest[];
-  addRequest: (req: Omit<ReferralRequest, 'id' | 'status' | 'submittedAt' | 'timeline' | 'paymentStatus' | 'priceCharged'>) => void;
-  updateRequestStatus: (id: string, status: ReferralRequest['status']) => void;
-  employees: Employee[];
-  approveEmployee: (id: string) => void;
-  companies: Company[];
-  pricingRules: PricingRule[];
-  updateGlobalPrice: (price: number) => void;
+interface HelpDeskContextType {
+  // Data
+  members: Member[];
+  helpRequests: HelpRequest[];
+  volunteerApps: VolunteerApplication[];
+  assignments: CaseAssignment[];
+  messages: AdminMessage[];
+  auditLog: AuditLogEntry[];
+  stats: HelpDeskStats;
+  // Actions - Help Requests
+  addHelpRequest: (req: Omit<HelpRequest, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'timeline' | 'internalNotes'>) => void;
+  updateRequestStatus: (id: string, status: RequestStatus) => void;
+  addInternalNote: (requestId: string, note: { authorId: string; authorName: string; body: string }) => void;
+  // Actions - Volunteer
+  addVolunteerApp: (app: Omit<VolunteerApplication, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => void;
+  updateVolunteerStatus: (id: string, status: VolunteerStatus, notes?: string) => void;
+  // Actions - Assignments
+  createAssignment: (assignment: Omit<CaseAssignment, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => void;
+  // Actions - Messages
+  sendMessage: (msg: Omit<AdminMessage, 'id' | 'createdAt' | 'read'>) => void;
+  markMessageRead: (id: string) => void;
+  // Actions - Audit
+  logAction: (entry: Omit<AuditLogEntry, 'id' | 'timestamp'>) => void;
 }
 
-const PortalContext = createContext<PortalContextType | undefined>(undefined);
-
-// Initial Mock Data
-const MOCK_COMPANIES: Company[] = [
-  { id: 'c1', name: 'Google', logo: 'G', domain: 'google.ca', industry: 'Technology', size: '10000+', location: 'Toronto, ON', description: 'Search and cloud', openRoles: 42, activeReferrers: 15, pricingTier: 'premium', pricePerRequest: 3, active: true, featured: true, color: '#4285F4' },
-  { id: 'c2', name: 'Amazon', logo: 'A', domain: 'amazon.ca', industry: 'E-commerce', size: '10000+', location: 'Vancouver, BC', description: 'Everything store', openRoles: 105, activeReferrers: 32, pricingTier: 'premium', pricePerRequest: 2, active: true, featured: true, color: '#FF9900' },
-  { id: 'c3', name: 'Shopify', logo: 'S', domain: 'shopify.com', industry: 'E-commerce', size: '5000+', location: 'Ottawa, ON', description: 'Commerce platform', openRoles: 18, activeReferrers: 8, pricingTier: 'standard', pricePerRequest: 1, active: true, featured: false, color: '#96BF48' },
-];
-
-const MOCK_EMPLOYEES: Employee[] = [
-  { id: 'emp1', role: 'employee', email: 'sarah@google.ca', name: 'Sarah Jenkins', status: 'active', createdAt: new Date().toISOString(), verified: true, verificationLevel: 3, companyId: 'c1', companyName: 'Google', workEmail: 'sarah@google.ca', workEmailVerified: true, linkedinUrl: 'linkedin.com/in/sarah', linkedinVerified: true, adminApproved: true, title: 'Senior Engineer', department: 'Cloud', yearsAtCompany: 4, location: 'Toronto', referralAvailable: true, maxWeeklyReferrals: 5, currentWeeklyReferrals: 1, totalReferrals: 12, acceptanceRate: 0.8, avgResponseTime: '12h', bio: '', hiringAreas: ['Engineering'], preferredCandidateLevel: ['Senior'], chatAvailable: true, reputationScore: 95, badges: ['Top Referrer'], leaderboardRank: 2 },
-  { id: 'emp2', role: 'employee', email: 'mike@pending.ca', name: 'Mike Ross', status: 'pending', createdAt: new Date().toISOString(), verified: false, verificationLevel: 1, companyId: 'c3', companyName: 'Shopify', workEmail: 'mike@shopify.com', workEmailVerified: true, linkedinUrl: 'linkedin.com/in/mike', linkedinVerified: false, adminApproved: false, title: 'Product Manager', department: 'Core', yearsAtCompany: 1, location: 'Ottawa', referralAvailable: false, maxWeeklyReferrals: 2, currentWeeklyReferrals: 0, totalReferrals: 0, acceptanceRate: 0, avgResponseTime: '-', bio: '', hiringAreas: ['Product'], preferredCandidateLevel: ['Mid-level'], chatAvailable: false, reputationScore: 0, badges: [], leaderboardRank: 0 }
-];
-
-const MOCK_REQUESTS: ReferralRequest[] = [
-  { 
-    id: 'r1', 
-    seekerId: 'js1', 
-    seekerName: 'John Doe', 
-    companyId: 'c1', 
-    companyName: 'Google', 
-    companyLogo: 'G', 
-    jobTitle: 'Frontend Developer', 
-    jobUrl: 'careers.google.com/123', 
-    jobLocation: 'Toronto', 
-    resumeFile: 'resume_v2.pdf', 
-    fitSummary: 'I have 5 years of React experience and built scalable systems.', 
-    coverNote: 'Would love a referral!', 
-    workAuth: 'Citizen', 
-    urgency: 'high', 
-    portfolioLinks: [], 
-    status: 'matched', 
-    submittedAt: new Date(Date.now() - 86400000).toISOString(), 
-    priceCharged: 3, 
-    paymentStatus: 'paid', 
-    matchedEmployeeId: 'emp1', 
-    matchedEmployeeName: 'Sarah Jenkins', 
-    matchScore: 92, 
-    timeline: [{ date: new Date().toISOString(), status: 'matched', description: 'Matched with Sarah Jenkins' }] 
-  }
-];
-
-const MOCK_PRICING: PricingRule[] = [
-  { id: 'p1', scopeType: 'global', price: 1, currency: 'CAD', chargeEvent: 'on_submit', freeRequests: 2, active: true },
-  { id: 'p2', scopeType: 'company', scopeId: 'c1', scopeName: 'Google', price: 3, currency: 'CAD', chargeEvent: 'on_submit', freeRequests: 0, active: true },
-  { id: 'p3', scopeType: 'company', scopeId: 'c2', scopeName: 'Amazon', price: 2, currency: 'CAD', chargeEvent: 'on_submit', freeRequests: 0, active: true }
-];
+const HelpDeskContext = createContext<HelpDeskContextType | undefined>(undefined);
 
 export function PortalProvider({ children }: { children: React.ReactNode }) {
-  const [requests, setRequests] = useState<ReferralRequest[]>(MOCK_REQUESTS);
-  const [employees, setEmployees] = useState<Employee[]>(MOCK_EMPLOYEES);
-  const [companies, setCompanies] = useState<Company[]>(MOCK_COMPANIES);
-  const [pricingRules, setPricingRules] = useState<PricingRule[]>(MOCK_PRICING);
+  const [members] = useState<Member[]>(mockMembers);
+  const [helpRequests, setHelpRequests] = useState<HelpRequest[]>(mockHelpRequests);
+  const [volunteerApps, setVolunteerApps] = useState<VolunteerApplication[]>(mockVolunteerApplications);
+  const [assignments, setAssignments] = useState<CaseAssignment[]>(mockAssignments);
+  const [messages, setMessages] = useState<AdminMessage[]>(mockMessages);
+  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>(mockAuditLog);
+  const [stats] = useState<HelpDeskStats>(mockStats);
 
-  const addRequest = (req: Omit<ReferralRequest, 'id' | 'status' | 'submittedAt' | 'timeline' | 'paymentStatus' | 'priceCharged'>) => {
-    const newReq: ReferralRequest = {
+  const addHelpRequest = (req: Omit<HelpRequest, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'timeline' | 'internalNotes'>) => {
+    const now = new Date().toISOString();
+    const newReq: HelpRequest = {
       ...req,
-      id: `r${Date.now()}`,
-      status: 'queued',
-      submittedAt: new Date().toISOString(),
-      timeline: [{ date: new Date().toISOString(), status: 'queued', description: 'Request submitted to matching engine' }],
-      paymentStatus: 'pending',
-      priceCharged: 1 // default
+      id: `HR-${Date.now()}`,
+      status: 'submitted',
+      internalNotes: [],
+      timeline: [{ date: now, status: 'submitted', description: `Help request submitted by ${req.memberName}` }],
+      createdAt: now,
+      updatedAt: now,
     };
-    setRequests(prev => [newReq, ...prev]);
+    setHelpRequests(prev => [newReq, ...prev]);
   };
 
-  const updateRequestStatus = (id: string, status: ReferralRequest['status']) => {
-    setRequests(prev => prev.map(r => {
+  const updateRequestStatus = (id: string, status: RequestStatus) => {
+    setHelpRequests(prev => prev.map(r => {
       if (r.id === id) {
+        const now = new Date().toISOString();
         return {
           ...r,
           status,
-          timeline: [...r.timeline, { date: new Date().toISOString(), status, description: `Status updated to ${status}` }]
+          updatedAt: now,
+          timeline: [...r.timeline, { date: now, status, description: `Status updated to ${status.replace(/_/g, ' ')}` }],
         };
       }
       return r;
     }));
   };
 
-  const approveEmployee = (id: string) => {
-    setEmployees(prev => prev.map(e => {
-      if (e.id === id) return { ...e, status: 'active', adminApproved: true, verified: true, verificationLevel: 3 };
-      return e;
+  const addInternalNote = (requestId: string, note: { authorId: string; authorName: string; body: string }) => {
+    setHelpRequests(prev => prev.map(r => {
+      if (r.id === requestId) {
+        return {
+          ...r,
+          internalNotes: [...r.internalNotes, { ...note, id: `note-${Date.now()}`, createdAt: new Date().toISOString() }],
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return r;
     }));
   };
 
-  const updateGlobalPrice = (price: number) => {
-    setPricingRules(prev => prev.map(p => {
-      if (p.scopeType === 'global') return { ...p, price };
-      return p;
+  const addVolunteerApp = (app: Omit<VolunteerApplication, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => {
+    const now = new Date().toISOString();
+    const newApp: VolunteerApplication = {
+      ...app,
+      id: `VA-${Date.now()}`,
+      status: 'new_application',
+      createdAt: now,
+      updatedAt: now,
+    };
+    setVolunteerApps(prev => [newApp, ...prev]);
+  };
+
+  const updateVolunteerStatus = (id: string, status: VolunteerStatus, notes?: string) => {
+    setVolunteerApps(prev => prev.map(a => {
+      if (a.id === id) {
+        return { ...a, status, adminNotes: notes || a.adminNotes, updatedAt: new Date().toISOString() };
+      }
+      return a;
     }));
+  };
+
+  const createAssignment = (assignment: Omit<CaseAssignment, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => {
+    const now = new Date().toISOString();
+    const newAsg: CaseAssignment = {
+      ...assignment,
+      id: `ASG-${Date.now()}`,
+      status: 'pending',
+      createdAt: now,
+      updatedAt: now,
+    };
+    setAssignments(prev => [newAsg, ...prev]);
+  };
+
+  const sendMessage = (msg: Omit<AdminMessage, 'id' | 'createdAt' | 'read'>) => {
+    const newMsg: AdminMessage = {
+      ...msg,
+      id: `msg-${Date.now()}`,
+      read: false,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages(prev => [newMsg, ...prev]);
+  };
+
+  const markMessageRead = (id: string) => {
+    setMessages(prev => prev.map(m => m.id === id ? { ...m, read: true } : m));
+  };
+
+  const logAction = (entry: Omit<AuditLogEntry, 'id' | 'timestamp'>) => {
+    const newEntry: AuditLogEntry = {
+      ...entry,
+      id: `log-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+    };
+    setAuditLog(prev => [newEntry, ...prev]);
   };
 
   return (
-    <PortalContext.Provider value={{ requests, addRequest, updateRequestStatus, employees, approveEmployee, companies, pricingRules, updateGlobalPrice }}>
+    <HelpDeskContext.Provider value={{
+      members, helpRequests, volunteerApps, assignments, messages, auditLog, stats,
+      addHelpRequest, updateRequestStatus, addInternalNote,
+      addVolunteerApp, updateVolunteerStatus,
+      createAssignment, sendMessage, markMessageRead, logAction,
+    }}>
       {children}
-    </PortalContext.Provider>
+    </HelpDeskContext.Provider>
   );
 }
 
 export function usePortal() {
-  const ctx = useContext(PortalContext);
+  const ctx = useContext(HelpDeskContext);
   if (!ctx) throw new Error('usePortal must be used within PortalProvider');
   return ctx;
 }

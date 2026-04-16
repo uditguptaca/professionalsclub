@@ -1,109 +1,111 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
-import { Video, PlayCircle, BookOpen, MessageSquare, TrendingUp, HandHeart } from 'lucide-react';
+import { Video, PlayCircle, BookOpen, MessageSquare, TrendingUp, HandHeart, ArrowRight, ExternalLink, Users } from 'lucide-react';
 
 export default function CommunityPage() {
   return (
     <>
       <Navbar />
-      
-      <div className="pt-32 pb-16 bg-gray-50 border-b border-gray-200">
-        <div className="container">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-5xl font-display font-black mb-6">Community & Media</h1>
-            <p className="text-xl text-gray-600 leading-relaxed">
-              Dive into our rich collection of guidance sessions, YouTube tutorials, and community-driven content designed to help you settle smoothly into Canadian life.
-            </p>
-          </div>
+
+      {/* Hero */}
+      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: '#0f172a', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0 }}>
+          <Image src="/volunteer-help.png" alt="Community support" fill style={{ objectFit: 'cover', opacity: 0.25 }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.95), rgba(220,38,38,0.25))' }} />
         </div>
-      </div>
-
-      <section className="section bg-white">
-        <div className="container">
-          
-          <div className="flex flex-col md:flex-row gap-12 max-w-6xl mx-auto items-center mb-16">
-            <div className="flex-1">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-error-50 text-error-600 rounded-full text-sm font-bold mb-4 border border-error-100">
-                <Video size={16} /> Official Channel
-              </div>
-              <h2 className="text-4xl font-display font-bold mb-6">IndoCanada on YouTube</h2>
-              <p className="text-lg text-gray-600 mb-6">
-                We regularly post comprehensive video guides on everything from financial literacy to cultural adaptation. Watch our past workshops, tutorials, and settlement guidance sessions directly on our official YouTube channel.
-              </p>
-              <div className="flex gap-4">
-                 <button className="btn btn-danger shadow-sm border border-error-600">Subscribe on YouTube</button>
-                 <button className="btn btn-outline border-gray-300">Browse Latest Videos</button>
-              </div>
-            </div>
-            
-            <div className="flex-1">
-               {/* Mock Video Player Embed */}
-               <div className="bg-gray-900 rounded-2xl shadow-xl overflow-hidden aspect-video relative flex items-center justify-center group cursor-pointer border border-gray-800">
-                 <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=1000&auto=format&fit=crop')] bg-cover bg-center opacity-40 group-hover:scale-105 transition duration-500"></div>
-                 <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-80"></div>
-                 <div className="w-20 h-20 bg-error-600 rounded-full flex items-center justify-center z-10 shadow-lg shadow-error-600/50 group-hover:scale-110 transition duration-300">
-                   <PlayCircle size={40} className="text-white ml-2" />
-                 </div>
-                 <div className="absolute bottom-6 left-6 right-6 z-10">
-                   <div className="text-white font-bold text-xl drop-shadow-md">Financial Literacy for Newcomers: Taxes 101</div>
-                   <div className="text-gray-300 text-sm flex gap-4 mt-2 font-medium">
-                     <span>Educational Workshop</span>
-                     <span>•</span>
-                     <span>45 Mins</span>
-                   </div>
-                 </div>
-               </div>
-            </div>
+        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.15)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(239,68,68,0.3)' }}>
+            <Video size={14} style={{ color: '#fca5a5' }} />
+            <span style={{ color: '#fca5a5', fontWeight: 700, fontSize: '0.82rem' }}>Community & Media Hub</span>
           </div>
-
-          {/* Additional Guidance Resources */}
-          <div className="max-w-6xl mx-auto border-t border-gray-200 pt-16">
-            <h3 className="text-2xl font-bold font-display mb-8 text-center">More Settlement Guidance Resources</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-               <div className="card-glass bg-gray-50 border border-gray-200 p-8 shadow-sm hover:border-primary-300 transition-colors">
-                 <div className="w-12 h-12 bg-white rounded-lg border border-gray-300 text-primary-600 flex items-center justify-center mb-6 shadow-sm">
-                   <TrendingUp size={24} />
-                 </div>
-                 <h4 className="font-bold text-xl mb-3">Finance & Tax Guides</h4>
-                 <p className="text-gray-600 text-sm leading-relaxed mb-6">Written tutorials on building Canadian credit, filing your first tax return, and managing employment income securely.</p>
-                 <a href="#" className="font-bold text-primary-600 text-sm hover:underline">Read FinTech Guides →</a>
-               </div>
-
-               <div className="card-glass bg-gray-50 border border-gray-200 p-8 shadow-sm hover:border-success-300 transition-colors">
-                 <div className="w-12 h-12 bg-white rounded-lg border border-gray-300 text-success-600 flex items-center justify-center mb-6 shadow-sm">
-                   <HandHeart size={24} />
-                 </div>
-                 <h4 className="font-bold text-xl mb-3">Cultural Adaptation Forums</h4>
-                 <p className="text-gray-600 text-sm leading-relaxed mb-6">Engage with fellow newcomers. Ask questions about local customs, public transit, securing a lease, and daily Canadian life.</p>
-                 <a href="#" className="font-bold text-success-600 text-sm hover:underline">Join Discussions →</a>
-               </div>
-
-               <div className="card-glass bg-gray-50 border border-gray-200 p-8 shadow-sm hover:border-accent-400 transition-colors">
-                 <div className="w-12 h-12 bg-white rounded-lg border border-gray-300 text-accent-600 flex items-center justify-center mb-6 shadow-sm">
-                   <BookOpen size={24} />
-                 </div>
-                 <h4 className="font-bold text-xl mb-3">Professional E-Books</h4>
-                 <p className="text-gray-600 text-sm leading-relaxed mb-6">Download our comprehensive settlement checklists and e-books authored by industry leaders and community mentors.</p>
-                 <Link href="/resources" className="font-bold text-accent-700 text-sm hover:underline">Browse Library →</Link>
-               </div>
-            </div>
-          </div>
-
+          <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
+            Community & <span style={{ background: 'linear-gradient(135deg, #f87171, #fb923c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Media</span>
+          </h1>
+          <p style={{ fontSize: '1.15rem', color: '#94a3b8', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
+            YouTube tutorials, guidance sessions, and community-driven content designed to help you settle smoothly into Canadian life.
+          </p>
         </div>
       </section>
 
-      {/* CTA Box */}
-      <section className="bg-primary-900 text-white border-primary-800 py-16 text-center shadow-[inset_0_4px_24px_rgba(0,0,0,0.5)]">
-         <div className="container">
-           <MessageSquare size={48} className="mx-auto mb-6 text-primary-400" />
-           <h2 className="text-3xl font-display font-bold mb-4">Have Questions About Settling In?</h2>
-           <p className="text-primary-100 mb-8 max-w-xl mx-auto text-lg hover:text-white transition-colors">
-             Reach out on our dedicated portal or talk to a mentor to get personalized advice tailored to your professional background.
-           </p>
-           <Link href="/portal/auth" className="btn btn-accent btn-lg text-gray-900 shadow-glow-accent">Request Career Guidance</Link>
-         </div>
+      {/* YouTube Section — Side-by-Side */}
+      <section style={{ padding: '100px 0', background: 'white' }}>
+        <div className="container" style={{ maxWidth: 1200 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
+            <div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fef2f2', padding: '6px 14px', borderRadius: 99, marginBottom: 20, border: '1px solid #fecaca' }}>
+                <Video size={14} style={{ color: '#dc2626' }} />
+                <span style={{ color: '#dc2626', fontWeight: 700, fontSize: '0.78rem' }}>Official Channel</span>
+              </div>
+              <h2 style={{ fontSize: '2.4rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>Professionals Club on YouTube</h2>
+              <p style={{ fontSize: '1rem', color: '#64748b', lineHeight: 1.8, marginBottom: 28 }}>
+                We regularly post comprehensive video guides on everything from financial literacy to cultural adaptation. Watch our past workshops, tutorials, and settlement guidance sessions directly on our official YouTube channel.
+              </p>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button className="btn" style={{ background: '#dc2626', color: 'white', border: 'none', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <PlayCircle size={18} /> Subscribe on YouTube
+                </button>
+                <button className="btn btn-outline" style={{ background: 'white', padding: '14px 24px' }}>Browse Videos</button>
+              </div>
+            </div>
+
+            {/* Featured Video Embed */}
+            <div style={{ borderRadius: 20, overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.15)', position: 'relative', aspectRatio: '16/9', background: '#0f172a', cursor: 'pointer' }}>
+              <Image src="/events-meetup.png" alt="Video thumbnail" fill style={{ objectFit: 'cover', opacity: 0.5 }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)' }} />
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 72, height: 72, borderRadius: '50%', background: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(220,38,38,0.4)' }}>
+                <PlayCircle size={36} style={{ color: 'white', marginLeft: 3 }} />
+              </div>
+              <div style={{ position: 'absolute', bottom: 20, left: 24, right: 24, zIndex: 2 }}>
+                <div style={{ color: 'white', fontWeight: 800, fontSize: '1.1rem' }}>Financial Literacy for Newcomers: Taxes 101</div>
+                <div style={{ color: '#94a3b8', fontSize: '0.82rem', marginTop: 4 }}>Educational Workshop &#8226; 45 Mins</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Additional Resources */}
+      <section style={{ padding: '80px 0', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+        <div className="container" style={{ maxWidth: 1200 }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <h2 style={{ fontSize: '2.2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 12 }}>More Community Resources</h2>
+            <p style={{ fontSize: '1rem', color: '#64748b' }}>Explore guides, forums, and professional content created by our community.</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+            {[
+              { icon: <TrendingUp size={28} />, title: 'Finance & Tax Guides', desc: 'Written tutorials on building Canadian credit, filing your first tax return, and managing employment income.', color: '#6366f1', link: '/resources' },
+              { icon: <HandHeart size={28} />, title: 'Cultural Adaptation Forums', desc: 'Engage with fellow newcomers. Ask questions about local customs, public transit, securing a lease, and daily life.', color: '#059669', link: '/portal/auth' },
+              { icon: <BookOpen size={28} />, title: 'Professional E-Books', desc: 'Download comprehensive settlement checklists and e-books authored by industry leaders and community mentors.', color: '#d97706', link: '/resources' },
+            ].map((item, i) => (
+              <div key={i} style={{ borderRadius: 20, padding: '36px 28px', background: 'white', border: '1px solid #e2e8f0', transition: 'box-shadow 0.2s' }}>
+                <div style={{ width: 52, height: 52, borderRadius: 14, background: `${item.color}10`, border: `1px solid ${item.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, marginBottom: 20 }}>
+                  {item.icon}
+                </div>
+                <h3 style={{ fontWeight: 800, fontSize: '1.15rem', marginBottom: 10, fontFamily: 'var(--font-display)' }}>{item.title}</h3>
+                <p style={{ fontSize: '0.88rem', color: '#64748b', lineHeight: 1.6, marginBottom: 20 }}>{item.desc}</p>
+                <Link href={item.link} style={{ fontWeight: 700, color: item.color, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
+                  Explore <ArrowRight size={14} />
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section style={{ padding: '100px 0', background: 'linear-gradient(135deg, #0f172a, #1e293b)', textAlign: 'center' }}>
+        <div className="container" style={{ maxWidth: 700 }}>
+          <MessageSquare size={40} style={{ color: '#818cf8', margin: '0 auto 20px' }} />
+          <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Have Questions About Settling In?</h2>
+          <p style={{ fontSize: '1.1rem', color: '#94a3b8', marginBottom: 36, lineHeight: 1.7 }}>
+            Submit a help request on our portal and a trained volunteer will provide personalized guidance tailored to your professional background.
+          </p>
+          <Link href="/portal/auth" className="btn btn-primary btn-lg" style={{ padding: '16px 36px', boxShadow: '0 8px 24px rgba(99,102,241,0.4)' }}>
+            Request Guidance <ArrowRight size={18} />
+          </Link>
+        </div>
       </section>
 
       <Footer />

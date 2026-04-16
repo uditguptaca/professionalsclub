@@ -1,104 +1,141 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
-import { Calendar, MapPin, Clock, Users, Video } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, Video, ArrowRight, ExternalLink } from 'lucide-react';
 
 export default function EventsPage() {
   return (
     <>
       <Navbar />
-      
-      <div className="pt-32 pb-16 bg-gray-50 border-b border-gray-200">
-        <div className="container">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-5xl font-display font-black mb-6">Events & Meetups</h1>
-            <p className="text-xl text-gray-600 leading-relaxed">
-              Step into your Canadian life; a world of opportunities and friendships awaits. Participate in our informal monthly gatherings to network and connect with peers.
-            </p>
+
+      {/* Hero */}
+      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: '#0f172a', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0 }}>
+          <Image src="/events-meetup.png" alt="Community meetup event" fill style={{ objectFit: 'cover', opacity: 0.3 }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.95), rgba(217,119,6,0.3))' }} />
+        </div>
+        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(245,158,11,0.15)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(245,158,11,0.3)' }}>
+            <Calendar size={14} style={{ color: '#fbbf24' }} />
+            <span style={{ color: '#fbbf24', fontWeight: 700, fontSize: '0.82rem' }}>Events & Meetups</span>
+          </div>
+          <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
+            Connect, Learn & <span style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Grow Together</span>
+          </h1>
+          <p style={{ fontSize: '1.15rem', color: '#94a3b8', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
+            Monthly in-person meetups, weekly virtual workshops, and YouTube livestreams — all designed to help you network, learn, and thrive in Canada.
+          </p>
+        </div>
+      </section>
+
+      {/* Featured Event + Sidebar */}
+      <section style={{ padding: '100px 0', background: 'white' }}>
+        <div className="container" style={{ maxWidth: 1200 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 32 }}>
+
+            {/* Featured Event */}
+            <div style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 8px 24px rgba(0,0,0,0.06)' }}>
+              <div style={{ position: 'relative', padding: '48px 40px', minHeight: 280, color: 'white', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                <Image src="/meetup_bg.png" alt="Toronto Meetup" fill style={{ objectFit: 'cover' }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.9), rgba(15,23,42,0.3))' }} />
+                <div style={{ position: 'relative', zIndex: 10 }}>
+                  <span style={{ display: 'inline-block', background: '#b45309', color: 'white', padding: '4px 14px', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700, marginBottom: 16 }}>Featured Event</span>
+                  <h2 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 8, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}>Toronto Monthly Community Meetup</h2>
+                  <p style={{ color: '#f1f5f9', fontSize: '1rem', textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>An informal gathering to welcome newcomers, share settlement guidance, and expand professional networks.</p>
+                </div>
+              </div>
+              <div style={{ padding: '36px 40px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 32 }}>
+                  {[
+                    { icon: <Calendar size={20} style={{ color: '#6366f1' }} />, label: 'Last Friday of the Month', sub: 'Recurring monthly' },
+                    { icon: <Clock size={20} style={{ color: '#6366f1' }} />, label: '6:00 PM - 9:00 PM EST', sub: 'Eastern Time' },
+                    { icon: <MapPin size={20} style={{ color: '#6366f1' }} />, label: 'Downtown Toronto', sub: 'Venue sent on RSVP' },
+                    { icon: <Users size={20} style={{ color: '#6366f1' }} />, label: 'Limited Capacity', sub: 'Pre-registration required' },
+                  ].map((item, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 10, background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        {item.icon}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#1e293b' }}>{item.label}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{item.sub}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button className="btn btn-primary" style={{ padding: '14px 32px' }}>RSVP for Next Meetup <ArrowRight size={16} /></button>
+              </div>
+            </div>
+
+            {/* Sidebar */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* Virtual Workshops */}
+              <div style={{ borderRadius: 16, padding: 28, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                  <Video size={20} style={{ color: '#dc2626' }} />
+                  <h3 style={{ fontWeight: 800, fontSize: '1.05rem', fontFamily: 'var(--font-display)' }}>Virtual Workshops</h3>
+                </div>
+                <p style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: 16, lineHeight: 1.6 }}>Weekly financial literacy and cultural adaptation guidance sessions online.</p>
+                {[
+                  { title: 'Taxes for Newcomers', platform: 'YouTube Live', time: 'Every Tuesday @ 7 PM' },
+                  { title: 'Resume Polish Workshop', platform: 'Zoom Meeting', time: 'Every Thursday @ 6 PM' },
+                  { title: 'Canadian Workplace Culture', platform: 'YouTube Live', time: 'Every Saturday @ 11 AM' },
+                ].map((w, i) => (
+                  <div key={i} style={{ padding: '12px 14px', borderRadius: 10, background: 'white', border: '1px solid #e2e8f0', marginBottom: 8 }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1e293b', marginBottom: 4 }}>{w.title}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem' }}>
+                      <span style={{ color: '#dc2626', fontWeight: 600 }}>{w.platform}</span>
+                      <span style={{ color: '#94a3b8' }}>{w.time}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Host CTA */}
+              <div style={{ borderRadius: 16, padding: 28, background: 'linear-gradient(135deg, #eef2ff, #f5f3ff)', border: '1px solid #e0e7ff', textAlign: 'center' }}>
+                <h3 style={{ fontWeight: 800, fontSize: '1.05rem', fontFamily: 'var(--font-display)', marginBottom: 8, color: '#1e293b' }}>Want to Host an Event?</h3>
+                <p style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: 16, lineHeight: 1.5 }}>If you are a mentor or community leader, we welcome you to lead sessions or local meetups in your city.</p>
+                <button className="btn btn-primary" style={{ width: '100%', fontSize: '0.85rem' }}>Contact Organizers</button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <section className="section bg-white">
-        <div className="container">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 max-w-6xl mx-auto">
-            
-            {/* Main Featured Event */}
-            <div className="lg:col-span-2">
-              <div className="card-glass bg-white p-0 overflow-hidden shadow-lg border border-gray-200">
-                 <div className="bg-primary-900 p-8 text-white relative">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-primary-600/30 rounded-full blur-[50px] -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
-                    <div className="badge bg-primary-600 border-none text-white mb-4">Featured Event</div>
-                    <h2 className="text-3xl font-display font-bold mb-2 relative z-10">Toronto Monthly Community Meetup</h2>
-                    <p className="text-primary-100 relative z-10">An informal gathering to welcome newcomers, share settlement guidance, and expand professional networks.</p>
-                 </div>
-                 <div className="p-8">
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                     <div className="flex items-center gap-3 text-gray-700">
-                       <Calendar className="text-primary-600" />
-                       <div>
-                         <div className="font-bold">Last Friday of the Month</div>
-                         <div className="text-sm text-gray-500">Recurring automatically</div>
-                       </div>
-                     </div>
-                     <div className="flex items-center gap-3 text-gray-700">
-                       <Clock className="text-primary-600" />
-                       <div>
-                         <div className="font-bold">6:00 PM - 9:00 PM</div>
-                         <div className="text-sm text-gray-500">EST Timezone</div>
-                       </div>
-                     </div>
-                     <div className="flex items-center gap-3 text-gray-700">
-                       <MapPin className="text-primary-600" />
-                       <div>
-                         <div className="font-bold">Downtown Toronto</div>
-                         <div className="text-sm text-gray-500">Exact venue sent upon RSVP</div>
-                       </div>
-                     </div>
-                     <div className="flex items-center gap-3 text-gray-700">
-                       <Users className="text-primary-600" />
-                       <div>
-                         <div className="font-bold">Limited Capacity</div>
-                         <div className="text-sm text-gray-500">Pre-registration required</div>
-                       </div>
-                     </div>
-                   </div>
-                   
-                   <button className="btn btn-primary w-full md:w-auto">RSVP for Next Meetup</button>
-                 </div>
-              </div>
-            </div>
-
-            {/* Sidebar Content */}
-            <div className="flex flex-col gap-6">
-              <div className="card-glass bg-gray-50 border border-gray-200 p-6 shadow-sm">
-                <div className="flex items-center gap-3 mb-4">
-                  <Video className="text-error-600" size={24} />
-                  <h3 className="font-bold text-lg font-display">Virtual Workshops</h3>
-                </div>
-                <p className="text-sm text-gray-600 mb-4">Can't make it in person? We host weekly financial literacy and cultural adaptation guidance sessions online.</p>
-                <div className="space-y-3">
-                  <div className="p-3 bg-white rounded-lg border border-gray-100 text-sm">
-                    <div className="font-bold text-gray-900 mb-1">Taxes for Newcomers</div>
-                    <div className="text-error-600 font-semibold text-xs mb-1">YouTube Livestream</div>
-                    <div className="text-gray-500 text-xs">Every Tuesday @ 7 PM</div>
-                  </div>
-                  <div className="p-3 bg-white rounded-lg border border-gray-100 text-sm">
-                    <div className="font-bold text-gray-900 mb-1">Resume Polish Workshop</div>
-                    <div className="text-error-600 font-semibold text-xs mb-1">Zoom Meeting</div>
-                    <div className="text-gray-500 text-xs">Every Thursday @ 6 PM</div>
+      {/* Past Events Gallery */}
+      <section style={{ padding: '80px 0', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+        <div className="container" style={{ maxWidth: 1200 }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <h2 style={{ fontSize: '2.2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 12 }}>Past Events</h2>
+            <p style={{ fontSize: '1rem', color: '#64748b' }}>Highlights from our recent community gatherings.</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+            {[
+              { title: 'March 2026 — Toronto Meetup', attendees: 45, type: 'In-Person', img: '/event_bg.png' },
+              { title: 'February 2026 — Tax Season Prep', attendees: 120, type: 'YouTube Live', img: '/events-meetup.png' },
+              { title: 'January 2026 — New Year Networking', attendees: 38, type: 'In-Person', img: '/event_bg.png' },
+              { title: 'December 2025 — Holiday Social', attendees: 62, type: 'In-Person', img: '/events-meetup.png' },
+              { title: 'November 2025 — Resume Workshop', attendees: 95, type: 'Zoom', img: '/event_bg.png' },
+              { title: 'October 2025 — Immigration Q&A', attendees: 210, type: 'YouTube Live', img: '/events-meetup.png' },
+            ].map((evt, i) => (
+              <div key={i} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid #e2e8f0', background: 'white', transition: 'transform 0.2s ease', cursor: 'pointer' }} className="hover:-translate-y-1 hover:shadow-lg">
+                <div style={{ position: 'relative', height: 150, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Image src={evt.img} alt={evt.title} fill style={{ objectFit: 'cover' }} />
+                  <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, rgba(${20 + i * 15}, ${40 + i * 10}, ${70 + i * 20}, 0.85), rgba(15,23,42,0.7))` }} />
+                  <div style={{ position: 'relative', zIndex: 10, padding: '16px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                    <Calendar size={28} style={{ color: 'white' }} />
                   </div>
                 </div>
-                <button className="btn btn-outline w-full mt-4 text-sm bg-white border-gray-300">View Online Schedule</button>
+                <div style={{ padding: '20px 22px' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 8, color: '#1e293b' }}>{evt.title}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.78rem', color: '#64748b' }}>{evt.attendees} attendees</span>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '3px 10px', borderRadius: 6, background: evt.type === 'In-Person' ? '#d1fae5' : '#dbeafe', color: evt.type === 'In-Person' ? '#065f46' : '#1e40af' }}>{evt.type}</span>
+                  </div>
+                </div>
               </div>
-
-              <div className="card-glass bg-primary-50 border border-primary-100 p-6 shadow-sm text-center">
-                 <h3 className="font-bold text-lg font-display mb-2 text-primary-900">Want to Host an Event?</h3>
-                 <p className="text-sm text-primary-700 mb-4">If you're a mentor or community leader, we welcome you to lead sessions or local meetups in your city.</p>
-                 <button className="btn btn-primary w-full text-sm">Contact Organizers</button>
-              </div>
-            </div>
-
+            ))}
           </div>
         </div>
       </section>

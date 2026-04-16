@@ -1,116 +1,162 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
-import { Target, Users, Briefcase, GraduationCap, Globe, Banknote } from 'lucide-react';
+import { Globe } from 'lucide-react';
 
 export default function AboutPage() {
   const pillars = [
-    {
-      id: "01",
-      title: "Social Integration",
-      description: "Connecting newcomers through community networking events. Step into your Canadian life; a world of opportunities and friendships awaits.",
-      icon: <Users className="text-primary-600" size={24} />
-    },
-    {
-      id: "02",
-      title: "Career Development",
-      description: "Providing specialized mentoring for career advancement. Benefit from career referrals and guidance to enhance your professional journey.",
-      icon: <Briefcase className="text-primary-600" size={24} />
-    },
-    {
-      id: "03",
-      title: "Financial Literacy",
-      description: "Offering educational workshops on employment and taxes. Receive advice on housing, taxes, and other essentials for settling smoothly.",
-      icon: <Banknote className="text-primary-600" size={24} />
-    },
-    {
-      id: "04",
-      title: "Professional Networking",
-      description: "Expanding professional networks for Internationally Educated Professionals. Building bridges, fostering success.",
-      icon: <Target className="text-primary-600" size={24} />
-    },
-    {
-      id: "05",
-      title: "Cultural Adaptation",
-      description: "Facilitating sessions on adapting to everyday life in Canada. Connecting communities, creating opportunities.",
-      icon: <Globe className="text-primary-600" size={24} />
-    }
+    { num: '01', title: 'COMMUNITY BONDING', desc: 'Fostering deep connections among newcomers through engaging networking environments.' },
+    { num: '02', title: 'CAREER ADVANCEMENT', desc: 'Delivering targeted mentorship, strategic job referrals, and specialized career development.' },
+    { num: '03', title: 'FINANCIAL ACUMEN', desc: 'Comprehensive financial literacy workshops to navigate banking, credit, and investments securely.' },
+    { num: '04', title: 'INDUSTRY NETWORKING', desc: 'Cultivating robust professional ties for internationally educated experts across all sectors.' },
+    { num: '05', title: 'CULTURAL IMMERSION', desc: 'Guiding seamless adaptation to Canadian workplace norms, social customs, and everyday life.' },
+  ];
+
+  const team = [
+    { name: 'Udit Gupta', role: 'Software Engineer', company: 'Shopify', linkedin: '#', image: '/founder.png' },
+    { name: 'Chintan Trivedi', role: 'Product Manager', company: 'Amazon', linkedin: '#', image: '/founder.png' },
+    { name: 'Medha Bhasin', role: 'Data Scientist', company: 'TD Bank', linkedin: '#', image: '/female_placeholder.png' },
+    { name: 'Jay Chande', role: 'Marketing Manager', company: 'Google', linkedin: '#', image: '/founder.png' },
+    { name: 'Bhavesh Gwalani', role: 'Business Analyst', company: 'RBC', linkedin: '#', image: '/founder.png' },
+    { name: 'Meghna Trivedi', role: 'HR Manager', company: 'Scotiabank', linkedin: '#', image: '/female_placeholder.png' },
+    { name: 'Jaimin Shah', role: 'Cloud Architect', company: 'AWS', linkedin: '#', image: '/founder.png' },
+    { name: 'Chakri Bhamidipati', role: 'Technical Lead', company: 'Microsoft', linkedin: '#', image: '/founder.png' },
+    { name: 'Bhupen Garg', role: 'Senior Developer', company: 'IBM', linkedin: '#', image: '/founder.png' },
+    { name: 'Kamakshi Khandelwal', role: 'UX Designer', company: 'Canva', linkedin: '#', image: '/female_placeholder.png' },
+    { name: 'Piyush Rana', role: 'Sales Director', company: 'Salesforce', linkedin: '#', image: '/founder.png' },
+    { name: 'Sagar Gandhi', role: 'Financial Analyst', company: 'KPMG', linkedin: '#', image: '/founder.png' },
+    { name: 'Heena Nagrani', role: 'Talent Acquisition', company: 'Deloitte', linkedin: '#', image: '/female_placeholder.png' },
+    { name: 'Sharad Gondaliya', role: 'DevOps Engineer', company: 'Cisco', linkedin: '#', image: '/founder.png' },
+    { name: 'Pawan Singh', role: 'Network Specialist', company: 'Bell', linkedin: '#', image: '/founder.png' },
+    { name: 'Paramdeep', role: 'Scrum Master', company: 'CGI', linkedin: '#', image: '/founder.png' },
+    { name: 'Kshamta', role: 'QA Engineer', company: 'OpenText', linkedin: '#', image: '/female_placeholder.png' },
+    { name: 'Swati', role: 'Copywriter', company: 'HubSpot', linkedin: '#', image: '/female_placeholder.png' },
+    { name: 'Supriya', role: 'Operations', company: 'Telus', linkedin: '#', image: '/female_placeholder.png' },
   ];
 
   return (
     <>
       <Navbar />
-      
-      <div className="pt-32 pb-16 bg-gray-50 border-b border-gray-200">
-        <div className="container">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-5xl font-display font-black mb-6">Who We Are</h1>
-            <p className="text-xl text-gray-600 leading-relaxed">
-              We are a premier association of Indian professionals in Canada, committed to mutual growth and support.
-            </p>
+
+      {/* Hero Section */}
+      <section style={{ position: 'relative', minHeight: '90vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', backgroundColor: '#111827', color: 'white', paddingBottom: 60, overflow: 'hidden', zIndex: 1 }}>
+        <Image src="/hero-community.png" alt="Community networking" fill style={{ objectFit: 'cover', opacity: 0.3 }} priority />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(17,24,39,1) 0%, rgba(17,24,39,0.5) 40%, rgba(17,24,39,0.1) 100%)', zIndex: -1 }} />
+        
+        <div className="container" style={{ position: 'relative', zIndex: 10 }}>
+          <div style={{ maxWidth: 900, marginBottom: 80 }}>
+            <div style={{ fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#a5b4fc', marginBottom: 20 }}>WHO WE ARE & WHAT WE DO</div>
+            <h1 style={{ fontSize: '3.6rem', fontWeight: 800, lineHeight: 1.15, fontFamily: 'var(--font-display)', marginBottom: 24 }}>
+              Empowering newcomers through mentorship, dynamic networking, and transformative skills development.
+            </h1>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 32, borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: 40 }}>
+            {pillars.map((p) => (
+              <div key={p.num} style={{ position: 'relative' }}>
+                <div style={{ fontSize: '3.5rem', fontWeight: 300, color: '#e0e7ff', marginBottom: 16, opacity: 0.8, lineHeight: 1 }}>{p.num}</div>
+                <h3 style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12, color: 'white' }}>{p.title}</h3>
+                <p style={{ fontSize: '0.85rem', color: '#a5b4fc', lineHeight: 1.6 }}>{p.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      <section className="section bg-white">
-        <div className="container">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
-            <div>
-              <div className="w-16 h-16 rounded-2xl bg-accent-50 text-accent-600 flex items-center justify-center mb-6 shadow-sm border border-accent-100">
-                <Target size={32} />
-              </div>
-              <h2 className="text-3xl font-display font-bold mb-6">What We Do</h2>
-              <p className="text-gray-600 mb-6 text-lg">
-                Networking, mentoring, and workshops for newcomers to enhance careers and skills. 
-              </p>
-              <p className="text-gray-600 mb-8">
-                IndoCanada Professionals is a broad-based association supporting a variety of professions in Canada, including CPAs, doctors, engineers, MBAs, marketers, educators, IT professionals, and tradespeople. Our organization aids individuals from diverse fields in navigating their careers and thriving in the Canadian workplace.
-              </p>
-              <Link href="/portal/auth" className="btn btn-primary">Join the Community Network</Link>
+      {/* Team Section */}
+      <section style={{ padding: '120px 0', background: '#f8fafc' }}>
+        <div className="container" style={{ maxWidth: 1200, textAlign: 'center' }}>
+          <h2 style={{ fontSize: '2.5rem', fontWeight: 800, fontFamily: 'var(--font-display)', marginBottom: 64, color: '#1e293b' }}>
+            Meet our leaders and <span style={{ color: '#94a3b8' }}>talented team</span>
+          </h2>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '30px', justifyContent: 'center' }}>
+            <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'center', gap: 30, marginBottom: 40 }}>
+              {team.slice(0, 2).map((member, i) => (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#fff', borderRadius: 20, padding: '36px 24px', boxShadow: '0 8px 30px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', width: 280, position: 'relative' }}>
+                  <div style={{ position: 'absolute', top: 16, right: 16 }}>
+                    <Link href={member.linkedin} target="_blank" style={{ color: '#0077b5' }}><Globe size={20} /></Link>
+                  </div>
+                  <div style={{ width: 130, height: 130, borderRadius: '50%', overflow: 'hidden', marginBottom: 20, border: '4px solid white', boxShadow: '0 8px 16px rgba(99,102,241,0.15)', position: 'relative' }}>
+                    <Image src={member.image} alt={member.name} fill style={{ objectFit: 'cover' }} />
+                  </div>
+                  <h4 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b', marginBottom: 6 }}>{member.name}</h4>
+                  <div style={{ fontSize: '0.9rem', color: '#6366f1', fontWeight: 700, marginBottom: 2 }}>{member.role}</div>
+                  <div style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 500 }}>@ {member.company}</div>
+                </div>
+              ))}
             </div>
             
-            <div className="bg-gray-50 rounded-3xl p-8 border border-gray-200 shadow-sm relative">
-               {/* Decorative Element */}
-               <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/10 rounded-bl-3xl blur-2xl"></div>
-               <h3 className="text-xl font-bold font-display border-b border-gray-200 pb-4 mb-6">Our Core Pillars</h3>
-               
-               <div className="flex flex-col gap-6">
-                 {pillars.map((pillar) => (
-                   <div key={pillar.id} className="flex gap-4">
-                     <div className="mt-1 flex-shrink-0">
-                       <div className="w-10 h-10 rounded-full bg-white shadow-sm border border-gray-200 flex items-center justify-center font-mono font-bold text-sm text-gray-400">
-                         {pillar.id}
-                       </div>
-                     </div>
-                     <div>
-                       <h4 className="font-bold text-gray-900 mb-1 flex items-center gap-2">
-                         {pillar.title}
-                       </h4>
-                       <p className="text-sm text-gray-600 leading-relaxed">{pillar.description}</p>
-                     </div>
-                   </div>
-                 ))}
-               </div>
+            {team.slice(2).map((member, i) => (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#fff', borderRadius: 16, padding: '28px 16px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9', transition: 'transform 0.2s ease', position: 'relative' }} className="hover:shadow-lg hover:-translate-y-1">
+                <div style={{ position: 'absolute', top: 12, right: 12 }}>
+                  <Link href={member.linkedin} target="_blank" style={{ color: '#94a3b8', transition: 'color 0.2s' }} className="hover:text-blue-600"><Globe size={18} /></Link>
+                </div>
+                <div style={{ width: 100, height: 100, borderRadius: '50%', overflow: 'hidden', marginBottom: 16, border: '2px solid #f8fafc', position: 'relative' }}>
+                  <Image src={member.image} alt={member.name} fill style={{ objectFit: 'cover' }} />
+                </div>
+                <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#334155', marginBottom: 4 }}>{member.name}</h4>
+                <div style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 600, marginBottom: 2 }}>{member.role}</div>
+                <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>@ {member.company}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* About Description + Stats Section */}
+      <section style={{ position: 'relative', padding: '140px 0', backgroundColor: '#0f172a', color: 'white', overflow: 'hidden' }}>
+        <Image src="/toronto-skyline.png" alt="Toronto skyline" fill style={{ objectFit: 'cover', opacity: 0.15 }} />
+        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 1200 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 80, alignItems: 'center' }}>
+            <div>
+              <h2 style={{ fontSize: '2.2rem', fontWeight: 700, lineHeight: 1.3, marginBottom: 40, fontFamily: 'var(--font-display)', color: '#f8fafc' }}>
+                IndoCanada Professionals is an expansive, inclusive association dedicated to fostering the success of multiple disciplines—ranging from CPAs, medical practitioners, and accomplished engineers to business innovators, educators, and IT authorities.
+              </h2>
+              <div style={{ borderLeft: '3px solid #6366f1', paddingLeft: 24 }}>
+                <p style={{ fontSize: '1.05rem', color: '#cbd5e1', lineHeight: 1.8, marginBottom: 32 }}>
+                  We are deeply committed to empowering diverse groups of newcomers and established professionals alike. By offering strategic guidance through the intricacies of the Canadian job market, we unlock unparalleled potential for every member of our community. Let us help you navigate your career and thrive.
+                </p>
+                <Link href="/portal/auth" className="btn btn-primary" style={{ padding: '14px 28px', fontSize: '0.9rem', borderRadius: 8, background: '#4f46e5', color: 'white', fontWeight: 600, display: 'inline-block' }}>
+                  READ MORE
+                </Link>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 40, justifyContent: 'flex-end' }}>
+              <div>
+                <div style={{ fontSize: '4rem', fontWeight: 800, fontFamily: 'var(--font-display)', marginBottom: 8, color: 'white', lineHeight: 1 }}>2,000+</div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8' }}>Members</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '4rem', fontWeight: 800, fontFamily: 'var(--font-display)', marginBottom: 8, color: 'white', lineHeight: 1 }}>100+</div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8' }}>Volunteers</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '4rem', fontWeight: 800, fontFamily: 'var(--font-display)', marginBottom: 8, color: 'white', lineHeight: 1 }}>40+</div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8' }}>Yearly Community Events</div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="section bg-gray-50 border-t border-gray-200">
-        <div className="container text-center max-w-3xl mx-auto">
-           <h2 className="text-3xl font-display font-bold mb-6">Our Leadership</h2>
-           <div className="card-glass bg-white p-8 inline-block mt-4 text-left shadow-md">
-             <div className="flex items-center gap-6">
-               <div className="w-24 h-24 rounded-full bg-primary-100 border-4 border-primary-50 flex items-center justify-center text-primary-600 shrink-0 shadow-inner">
-                 <Users size={32} />
-               </div>
-               <div>
-                 <h3 className="text-2xl font-bold text-gray-900 font-display">Udit Gupta</h3>
-                 <p className="text-primary-600 font-semibold mb-2">Founder, CEO & Director</p>
-                 <p className="text-gray-600 text-sm">Building bridges, enriching lives. Empowering Indian professionals in Canada through networking, mentoring, and educational workshops.</p>
-               </div>
-             </div>
-           </div>
+      {/* Sponsors Section */}
+      <section style={{ padding: '80px 0', background: 'white' }}>
+        <div className="container" style={{ maxWidth: 1000 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 40 }}>
+            <div style={{ maxWidth: 180 }}>
+              <p style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: 500, lineHeight: 1.5 }}>
+                We are grateful to our awesome sponsors. <br /><span style={{ color: '#334155' }}>Thank you!</span>
+              </p>
+            </div>
+            {/* Sponsor placeholders */}
+            <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#334155', fontFamily: 'var(--font-display)' }}>TAXACCOUNT</div>
+            <div style={{ width: 40, height: 40, border: '2px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ width: 14, height: 14, background: '#334155' }}></div></div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#334155', fontFamily: 'var(--font-display)' }}>UDIT<span style={{ fontWeight: 400 }}>REALESTATE</span></div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#334155', fontFamily: 'var(--font-display)' }}>HR</div>
+          </div>
         </div>
       </section>
 

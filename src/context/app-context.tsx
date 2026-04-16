@@ -1,5 +1,5 @@
 'use client';
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { UserRole } from '@/types';
 
 interface AppContextType {
@@ -16,12 +16,28 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [currentRole, setCurrentRole] = useState<UserRole>('seeker');
+  const [currentRole, setCurrentRole] = useState<UserRole>('member');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [hydrated, setHydrated] = useState(false);
 
-  const currentUserId = currentRole === 'seeker' ? 'js1' : currentRole === 'employee' ? 'emp1' : 'admin1';
+  // Hydrate from localStorage
+  useEffect(() => {
+    const savedRole = localStorage.getItem('pc_role') as UserRole;
+    const savedAuth = localStorage.getItem('pc_auth') === 'true';
+    if (savedRole && (savedRole === 'member' || savedRole === 'admin')) setCurrentRole(savedRole);
+    if (savedAuth) setIsAuthenticated(true);
+    setHydrated(true);
+  }, []);
 
+  // Persist to localStorage
+  useEffect(() => {
+    if (!hydrated) return;
+    localStorage.setItem('pc_role', currentRole);
+    localStorage.setItem('pc_auth', isAuthenticated.toString());
+  }, [currentRole, isAuthenticated, hydrated]);
+
+  const currentUserId = currentRole === 'member' ? 'm1' : 'admin1';
   const toggleSidebar = useCallback(() => setSidebarOpen(p => !p), []);
 
   return (

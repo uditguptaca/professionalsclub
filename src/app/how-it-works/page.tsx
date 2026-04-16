@@ -1,80 +1,107 @@
-'use client';
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
+import { HelpCircle, Shield, HandHeart, CheckCircle, ArrowRight, Users, MessageSquare, ClipboardList } from 'lucide-react';
 
 export default function HowItWorksPage() {
   return (
     <>
       <Navbar />
-      <div style={{ paddingTop: 100 }}>
-        <section className="section">
-          <div className="container">
-            <div className="section-header">
-              <div className="overline">How It Works</div>
-              <h2>Your Path to a <span className="text-gradient">Trusted Referral</span></h2>
-              <p>Our platform connects job seekers with verified employees through an intelligent matching engine.</p>
-            </div>
 
-            {/* JOB SEEKER FLOW */}
-            <div style={{ marginBottom: 'var(--space-16)' }}>
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 800, textAlign: 'center', marginBottom: 'var(--space-10)' }}>
-                🎯 For Job Seekers
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
-                {[
-                  { step: 1, icon: '📝', title: 'Create Your Profile', desc: 'Sign up, complete your professional profile, verify your identity and LinkedIn. Upload your resume and tell us about your career goals.', details: ['Full professional profile', 'LinkedIn verification', 'ID verification', 'Resume upload with version history', 'Skills & experience mapping'] },
-                  { step: 2, icon: '🏢', title: 'Choose a Company & Job', desc: 'Browse 500+ Canadian companies, find open roles, and select the position you want a referral for.', details: ['Search by company, industry, or role', 'View active referrers at each company', 'See pricing per company', 'Paste any job URL for auto-parsing'] },
-                  { step: 3, icon: '✍️', title: 'Submit Your Referral Request', desc: 'Write why you\'re a great fit, attach your resume, and submit. The platform charges based on your plan and company tier.', details: ['Fit summary & cover note', 'Resume selection', 'Work authorization details', 'Portfolio links', 'Urgency level'] },
-                  { step: 4, icon: '🤖', title: 'AI Matching Engine', desc: 'Our intelligent matching system scores and ranks available employees based on company, department, role, location, and your profile fit.', details: ['Company & department match', 'Role & seniority match', 'Employee availability check', 'Historical acceptance rates', 'Language & location preferences'] },
-                  { step: 5, icon: '💬', title: 'Connect via Chat', desc: 'Once matched and accepted, a secure in-app chat opens. Discuss the role, share insider tips, and prepare for the referral.', details: ['One-to-one secure chat', 'Request context visible', 'File sharing', 'Canned response templates', 'Report & moderation'] },
-                  { step: 6, icon: '🚀', title: 'Get Referred & Land the Job', desc: 'The employee submits your referral through their company\'s internal system. Track your status on your dashboard.', details: ['Real-time status tracking', 'Completion confirmation', 'Rating & feedback', 'Success story sharing'] },
-                ].map(item => (
-                  <div key={item.step} style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 'var(--space-6)', alignItems: 'start' }}>
-                    <div style={{ width: 80, height: 80, borderRadius: 'var(--radius-xl)', background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(251,191,36,0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', position: 'relative' }}>
-                      {item.icon}
-                      <span style={{ position: 'absolute', top: -8, right: -8, width: 28, height: 28, borderRadius: '50%', background: 'var(--primary-600)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-xs)', fontWeight: 800 }}>{item.step}</span>
-                    </div>
-                    <div className="card" style={{ flex: 1 }}>
-                      <h4 style={{ fontWeight: 700, fontSize: 'var(--text-lg)', marginBottom: 'var(--space-2)' }}>{item.title}</h4>
-                      <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-4)' }}>{item.desc}</p>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-                        {item.details.map(d => <span key={d} className="badge badge-primary">{d}</span>)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+      {/* Hero */}
+      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: '#0f172a', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0 }}>
+          <Image src="/volunteer-help.png" alt="How it works" fill style={{ objectFit: 'cover', opacity: 0.2 }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.95), rgba(99,102,241,0.3))' }} />
+        </div>
+        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
+          <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
+            How the Help Desk <span style={{ background: 'linear-gradient(135deg, #818cf8, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Works</span>
+          </h1>
+          <p style={{ fontSize: '1.15rem', color: '#94a3b8', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
+            A simple, safe, admin-mediated process. No direct member-to-member contact. Every interaction is controlled for your privacy and safety.
+          </p>
+        </div>
+      </section>
 
-            {/* EMPLOYEE FLOW */}
-            <div style={{ marginBottom: 'var(--space-12)' }}>
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 800, textAlign: 'center', marginBottom: 'var(--space-10)' }}>
-                🏢 For Employees & Referrers
-              </h3>
-              <div className="grid grid-3 gap-6">
-                {[
-                  { step: 1, icon: '📋', title: 'Apply & Get Verified', desc: 'Submit your employee details once. Verify work email and LinkedIn. Admin approves your application.' },
-                  { step: 2, icon: '📬', title: 'Receive Matched Requests', desc: 'Get notified when a quality candidate is matched to you. Review their profile, resume, and fit summary.' },
-                  { step: 3, icon: '✅', title: 'Accept & Refer', desc: 'Accept the request, chat with the candidate, share tips, and submit the referral through your company.' },
-                ].map(item => (
-                  <div key={item.step} className="feature-card" style={{ textAlign: 'left' }}>
-                    <div style={{ fontSize: '2rem', marginBottom: 'var(--space-4)' }}>{item.icon}</div>
-                    <span className="badge badge-accent" style={{ marginBottom: 'var(--space-3)' }}>Step {item.step}</span>
-                    <h4 style={{ fontWeight: 700, marginBottom: 'var(--space-2)' }}>{item.title}</h4>
-                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>{item.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="text-center">
-              <Link href="/signup" className="btn btn-primary btn-lg">Get Started Now →</Link>
-            </div>
+      {/* For Members — Step-by-Step */}
+      <section style={{ padding: '100px 0', background: 'white' }}>
+        <div className="container" style={{ maxWidth: 1000 }}>
+          <div style={{ textAlign: 'center', marginBottom: 64 }}>
+            <span style={{ fontSize: '2rem' }}>🎯</span>
+            <h2 style={{ fontSize: '2.2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 8, marginTop: 12 }}>For Members Seeking Help</h2>
+            <p style={{ color: '#64748b', fontSize: '1rem' }}>Submit a request and let our admin team handle the rest.</p>
           </div>
-        </section>
-      </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+            {[
+              { step: 1, icon: <HelpCircle size={28} />, title: 'Submit a Help Request', desc: 'Describe your need — job referrals, tax help, resume review, settlement support, mentorship. Select from 10 support categories.', details: ['Full request form with category selection', 'Priority level (low, medium, high)', 'Consent to admin-mediated process', 'Anonymous to volunteers until admin assigns'], color: '#6366f1' },
+              { step: 2, icon: <Shield size={28} />, title: 'Admin Reviews Your Request', desc: 'Our trained admin team reviews your request, verifies the details, and searches for the best matching approved volunteer.', details: ['Request validated for completeness', 'Matched against volunteer expertise areas', 'Admin may ask clarifying questions', 'No direct contact — all via admin relay'], color: '#d97706' },
+              { step: 3, icon: <HandHeart size={28} />, title: 'Volunteer Assigned', desc: 'An approved volunteer is assigned to your case. They receive anonymized details through admin. All communication goes through admin relay messaging.', details: ['Volunteer sees only relevant case details', 'Volunteer responds through admin portal', 'Admin relays volunteer response to you', 'Your contact info is never shared'], color: '#059669' },
+              { step: 4, icon: <CheckCircle size={28} />, title: 'Resolution & Follow-Up', desc: 'The volunteer provides guidance through admin relay. Your case is tracked from submission to resolution. You can request follow-up at any time.', details: ['Full case lifecycle tracking', 'Status updates at every stage', 'Satisfaction feedback after resolution', 'Case archived in audit log'], color: '#dc2626' },
+            ].map(item => (
+              <div key={item.step} style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 24, alignItems: 'start' }}>
+                <div style={{ width: 72, height: 72, borderRadius: '50%', background: `${item.color}12`, border: `2px solid ${item.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, position: 'relative' }}>
+                  {item.icon}
+                  <span style={{ position: 'absolute', top: -6, right: -6, width: 26, height: 26, borderRadius: '50%', background: item.color, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800 }}>{item.step}</span>
+                </div>
+                <div style={{ padding: '24px 28px', borderRadius: 16, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                  <h3 style={{ fontWeight: 800, fontSize: '1.2rem', marginBottom: 8, fontFamily: 'var(--font-display)' }}>{item.title}</h3>
+                  <p style={{ color: '#64748b', marginBottom: 16, lineHeight: 1.6 }}>{item.desc}</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {item.details.map(d => (
+                      <span key={d} style={{ fontSize: '0.75rem', fontWeight: 600, padding: '4px 12px', borderRadius: 8, background: `${item.color}08`, color: item.color, border: `1px solid ${item.color}20` }}>{d}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* For Volunteers */}
+      <section style={{ padding: '100px 0', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+        <div className="container" style={{ maxWidth: 1200 }}>
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <span style={{ fontSize: '2rem' }}>🤝</span>
+            <h2 style={{ fontSize: '2.2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 8, marginTop: 12 }}>For Volunteers & Mentors</h2>
+            <p style={{ color: '#64748b', fontSize: '1rem' }}>Share your expertise. Help fellow community members. All admin-mediated.</p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+            {[
+              { step: 1, icon: <ClipboardList size={32} />, title: 'Apply & Get Verified', desc: 'Submit your professional background, expertise areas, and compliance agreements. Admin reviews and approves your application.', color: '#6366f1' },
+              { step: 2, icon: <MessageSquare size={32} />, title: 'Receive Case Assignments', desc: 'Admin matches relevant help requests to your expertise. You receive anonymized case details through the portal.', color: '#d97706' },
+              { step: 3, icon: <CheckCircle size={32} />, title: 'Provide Guidance', desc: 'Respond through admin relay messaging. Your contact info is never shared. Cases are tracked until resolution.', color: '#059669' },
+            ].map(item => (
+              <div key={item.step} style={{ textAlign: 'center', padding: '40px 28px', borderRadius: 20, background: 'white', border: '1px solid #e2e8f0' }}>
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: `${item.color}12`, border: `2px solid ${item.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, margin: '0 auto 20px' }}>
+                  {item.icon}
+                </div>
+                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: item.color, letterSpacing: '0.08em' }}>STEP {item.step}</span>
+                <h3 style={{ fontWeight: 800, fontSize: '1.15rem', margin: '8px 0 12px', fontFamily: 'var(--font-display)' }}>{item.title}</h3>
+                <p style={{ fontSize: '0.88rem', color: '#64748b', lineHeight: 1.6 }}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section style={{ padding: '100px 0', background: 'linear-gradient(135deg, #0f172a, #1e1b4b)', textAlign: 'center' }}>
+        <div className="container" style={{ maxWidth: 600 }}>
+          <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Ready to Get Started?</h2>
+          <p style={{ fontSize: '1.1rem', color: '#94a3b8', marginBottom: 36 }}>It is completely free. Request help or apply to volunteer — our admin team is here to support you.</p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
+            <Link href="/portal/auth" className="btn btn-primary btn-lg" style={{ padding: '16px 32px', boxShadow: '0 8px 24px rgba(99,102,241,0.4)' }}>Request Help <ArrowRight size={18} /></Link>
+            <Link href="/portal/auth" className="btn btn-lg" style={{ background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.15)', padding: '16px 32px' }}>Volunteer</Link>
+          </div>
+        </div>
+      </section>
+
       <Footer />
     </>
   );

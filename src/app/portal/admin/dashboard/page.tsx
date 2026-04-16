@@ -1,97 +1,132 @@
 'use client';
 import React from 'react';
-import { BarChart3, Users, Briefcase, TrendingUp } from 'lucide-react';
 import { usePortal } from '@/context/portal-context';
+import { BarChart3, Users, FileText, HandHeart, FolderKanban, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
+import Link from 'next/link';
 
 export default function AdminDashboard() {
-  const { requests, employees } = usePortal();
+  const { helpRequests, volunteerApps, assignments, stats } = usePortal();
 
-  // Mock revenue calculation
-  const totalRevenue = requests.filter(r => r.paymentStatus === 'paid').reduce((sum, r) => sum + r.priceCharged, 0);
+  const newRequests = helpRequests.filter(r => r.status === 'submitted');
+  const underReview = helpRequests.filter(r => r.status === 'under_review');
+  const pendingApps = volunteerApps.filter(a => ['new_application', 'pending_verification'].includes(a.status));
+  const activeAssignments = assignments.filter(a => ['pending', 'in_progress'].includes(a.status));
 
   return (
     <div className="animate-fade-in flex flex-col gap-8">
       <div>
-        <h1 className="text-3xl font-display font-bold mb-2">Platform Overview</h1>
-        <p className="text-secondary">High-level metrics for the IndoCanada Club referral engine.</p>
+        <h1 className="text-3xl font-display font-bold mb-2">Admin Overview</h1>
+        <p className="text-secondary">Manage all help requests, volunteer applications, and assignments from this dashboard.</p>
       </div>
 
-      <div className="grid grid-4 gap-6">
-        <div className="card-stat card-glow border-primary-500/30">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-2 bg-primary-500/20 text-primary-400 rounded-lg"><BarChart3 /></div>
-            <div className="text-sm font-bold text-muted uppercase tracking-wider">Gross Revenue</div>
-          </div>
-          <div className="text-4xl font-black font-display mb-1 flex items-baseline gap-1">
-            <span className="text-sm text-secondary font-medium">$</span>
-            {totalRevenue + 850}
-          </div>
-          <div className="text-xs text-success-400 font-medium">+15% this week</div>
-        </div>
-
-        <div className="card-stat">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-2 bg-gray-100 text-gray-600 rounded-lg"><Users /></div>
-            <div className="text-sm font-bold text-muted uppercase tracking-wider">Total Seekers</div>
-          </div>
-          <div className="text-4xl font-black font-display mb-1">1,420</div>
-          <div className="text-xs text-secondary font-medium">85 verified profiles</div>
-        </div>
-
-        <div className="card-stat">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-2 bg-accent-500/20 text-accent-400 rounded-lg"><Briefcase /></div>
-            <div className="text-sm font-bold text-muted uppercase tracking-wider">Referrers</div>
-          </div>
-          <div className="text-4xl font-black font-display mb-1">{employees.filter(e => e.status === 'active').length + 42}</div>
-          <div className="text-xs text-warning-400 font-medium">{employees.filter(e => e.status === 'pending').length} pending approval</div>
-        </div>
-
-        <div className="card-stat">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-2 bg-success-500/20 text-success-400 rounded-lg"><TrendingUp /></div>
-            <div className="text-sm font-bold text-muted uppercase tracking-wider">Match Rate</div>
-          </div>
-          <div className="text-4xl font-black font-display mb-1">68%</div>
-          <div className="text-xs text-success-400 font-medium">Excellent health</div>
-        </div>
-      </div>
-
-      <div className="grid grid-2 gap-8">
-        <div className="card">
-          <h3 className="font-bold mb-4 font-display text-lg">System Health</h3>
-          <div className="flex flex-col gap-4">
-            <div className="flex justify-between items-center bg-bg-elevated p-3 rounded-lg border border-border-color">
-              <span className="text-sm font-medium">Average Match Time</span>
-              <span className="font-mono text-primary-400">4.2 hours</span>
-            </div>
-            <div className="flex justify-between items-center bg-bg-elevated p-3 rounded-lg border border-border-color">
-              <span className="text-sm font-medium">Unanswered Requests</span>
-              <span className="font-mono text-warning-600 hover:underline cursor-pointer">{requests.filter(r => r.status === 'queued').length} active</span>
-            </div>
-            <div className="flex justify-between items-center bg-bg-elevated p-3 rounded-lg border border-border-color">
-              <span className="text-sm font-medium">Refund Rate</span>
-              <span className="font-mono text-success-400">1.2%</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <h3 className="font-bold mb-4 font-display text-lg">Recent Transactions</h3>
-          <div className="flex flex-col gap-3">
-            {requests.filter(r => r.priceCharged > 0).slice(0,4).map((r, i) => (
-              <div key={i} className="flex justify-between items-center py-2 border-b border-border-color last:border-0">
+      {/* Summary Counters */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+        {[
+          { label: 'Open Requests', value: stats.openRequests, icon: <FileText size={22} />, color: '#6366f1', bg: 'rgba(99,102,241,0.1)', href: '/portal/admin/requests' },
+          { label: 'Pending Volunteers', value: pendingApps.length, icon: <HandHeart size={22} />, color: '#059669', bg: 'rgba(5,150,105,0.1)', href: '/portal/admin/volunteers' },
+          { label: 'Active Assignments', value: activeAssignments.length, icon: <FolderKanban size={22} />, color: '#d97706', bg: 'rgba(245,158,11,0.1)', href: '/portal/admin/assignments' },
+          { label: 'Total Members', value: stats.totalMembers, icon: <Users size={22} />, color: '#374151', bg: '#f3f4f6', href: '/portal/admin/members' },
+        ].map((item, i) => (
+          <Link key={i} href={item.href} style={{ textDecoration: 'none' }}>
+            <div className="card-stat" style={{ cursor: 'pointer' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ padding: 10, background: item.bg, borderRadius: 10, color: item.color }}>{item.icon}</div>
                 <div>
-                  <div className="text-sm font-bold">{r.seekerName}</div>
-                  <div className="text-xs text-secondary mt-0.5">Request at {r.companyName}</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-success-400">+${r.priceCharged}.00</div>
-                  <div className="text-xs text-muted">Paid via Stripe</div>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 800, lineHeight: 1 }}>{item.value}</div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 4 }}>{item.label}</div>
                 </div>
               </div>
-            ))}
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Queue Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        {/* New Requests */}
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 className="font-bold font-display" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <AlertTriangle size={16} style={{ color: '#d97706' }} /> New Requests
+            </h3>
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, background: newRequests.length > 0 ? '#fef3c7' : '#f3f4f6', color: newRequests.length > 0 ? '#92400e' : '#9ca3af', padding: '2px 10px', borderRadius: 99 }}>
+              {newRequests.length}
+            </span>
           </div>
+          {newRequests.length === 0 ? (
+            <p className="text-secondary text-sm">All caught up! No new requests.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {newRequests.slice(0, 3).map(req => (
+                <Link key={req.id} href={`/portal/admin/requests/${req.id}`} style={{ textDecoration: 'none' }}>
+                  <div style={{ padding: '10px 14px', borderRadius: 8, background: '#fefce8', border: '1px solid #fde68a', cursor: 'pointer', fontSize: '0.85rem' }}>
+                    <div style={{ fontWeight: 600 }}>{req.title}</div>
+                    <div style={{ fontSize: '0.72rem', color: '#92400e', marginTop: 2 }}>{req.memberName} • {req.category}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Pending Volunteer Apps */}
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 className="font-bold font-display" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <HandHeart size={16} style={{ color: '#059669' }} /> Pending Volunteer Apps
+            </h3>
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, background: pendingApps.length > 0 ? '#d1fae5' : '#f3f4f6', color: pendingApps.length > 0 ? '#065f46' : '#9ca3af', padding: '2px 10px', borderRadius: 99 }}>
+              {pendingApps.length}
+            </span>
+          </div>
+          {pendingApps.length === 0 ? (
+            <p className="text-secondary text-sm">No pending applications.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {pendingApps.slice(0, 3).map(app => (
+                <Link key={app.id} href="/portal/admin/volunteers" style={{ textDecoration: 'none' }}>
+                  <div style={{ padding: '10px 14px', borderRadius: 8, background: '#f0fdf4', border: '1px solid #bbf7d0', cursor: 'pointer', fontSize: '0.85rem' }}>
+                    <div style={{ fontWeight: 600 }}>{app.memberName}</div>
+                    <div style={{ fontSize: '0.72rem', color: '#065f46', marginTop: 2 }}>{app.currentProfession} at {app.organization}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Metrics */}
+      <div className="card">
+        <h3 className="font-bold font-display mb-4">Platform Metrics</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+          {[
+            { label: 'Total Requests', value: stats.totalRequests },
+            { label: 'Closed Cases', value: stats.closedRequests },
+            { label: 'Avg Resolution', value: `${stats.avgResolutionDays} days` },
+            { label: 'Approved Volunteers', value: stats.approvedVolunteers },
+          ].map((m, i) => (
+            <div key={i} style={{ padding: 16, borderRadius: 10, background: '#f9fafb', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800 }}>{m.value}</div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 4 }}>{m.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Category Distribution */}
+      <div className="card">
+        <h3 className="font-bold font-display mb-4">Requests by Category</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {Object.entries(stats.categoryCounts).sort((a, b) => b[1] - a[1]).map(([cat, count]) => (
+            <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ flex: 1, fontSize: '0.85rem', fontWeight: 500 }}>{cat}</div>
+              <div style={{ width: 200, height: 8, borderRadius: 4, background: '#f3f4f6', overflow: 'hidden' }}>
+                <div style={{ height: '100%', borderRadius: 4, background: 'linear-gradient(90deg, var(--primary-500), var(--primary-400))', width: `${(count / 28) * 100}%` }} />
+              </div>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, minWidth: 28, textAlign: 'right' }}>{count}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
