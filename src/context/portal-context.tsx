@@ -1,7 +1,7 @@
 'use client';
 import React, { createContext, useContext, useState } from 'react';
-import type { HelpRequest, VolunteerApplication, CaseAssignment, AdminMessage, AuditLogEntry, Member, HelpDeskStats, RequestStatus, VolunteerStatus } from '@/types';
-import { mockHelpRequests, mockVolunteerApplications, mockAssignments, mockMessages, mockAuditLog, mockMembers, mockStats } from '@/lib/mock-data';
+import type { HelpRequest, VolunteerApplication, CaseAssignment, AdminMessage, AuditLogEntry, Member, HelpDeskStats, RequestStatus, VolunteerStatus, Business, BusinessContactRequest, BusinessStatus, BusinessContactHelpType } from '@/types';
+import { mockHelpRequests, mockVolunteerApplications, mockAssignments, mockMessages, mockAuditLog, mockMembers, mockStats, mockBusinesses, mockBusinessContactRequests } from '@/lib/mock-data';
 
 interface HelpDeskContextType {
   // Data
@@ -12,6 +12,12 @@ interface HelpDeskContextType {
   messages: AdminMessage[];
   auditLog: AuditLogEntry[];
   stats: HelpDeskStats;
+  // Business Directory
+  businesses: Business[];
+  businessContactRequests: BusinessContactRequest[];
+  addBusinessContactRequest: (req: Omit<BusinessContactRequest, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => void;
+  updateBusinessStatus: (id: string, status: BusinessStatus) => void;
+  toggleBusinessFeatured: (id: string) => void;
   // Actions - Help Requests
   addHelpRequest: (req: Omit<HelpRequest, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'timeline' | 'internalNotes'>) => void;
   updateRequestStatus: (id: string, status: RequestStatus) => void;
@@ -38,6 +44,8 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<AdminMessage[]>(mockMessages);
   const [auditLog, setAuditLog] = useState<AuditLogEntry[]>(mockAuditLog);
   const [stats] = useState<HelpDeskStats>(mockStats);
+  const [businesses, setBusinesses] = useState<Business[]>(mockBusinesses);
+  const [businessContactRequests, setBusinessContactRequests] = useState<BusinessContactRequest[]>(mockBusinessContactRequests);
 
   const addHelpRequest = (req: Omit<HelpRequest, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'timeline' | 'internalNotes'>) => {
     const now = new Date().toISOString();
@@ -137,12 +145,34 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
     setAuditLog(prev => [newEntry, ...prev]);
   };
 
+  const addBusinessContactRequest = (req: Omit<BusinessContactRequest, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => {
+    const now = new Date().toISOString();
+    const newReq: BusinessContactRequest = {
+      ...req,
+      id: `bcr-${Date.now()}`,
+      status: 'pending',
+      createdAt: now,
+      updatedAt: now,
+    };
+    setBusinessContactRequests(prev => [newReq, ...prev]);
+  };
+
+  const updateBusinessStatus = (id: string, status: BusinessStatus) => {
+    setBusinesses(prev => prev.map(b => b.id === id ? { ...b, verificationStatus: status, updatedAt: new Date().toISOString() } : b));
+  };
+
+  const toggleBusinessFeatured = (id: string) => {
+    setBusinesses(prev => prev.map(b => b.id === id ? { ...b, isFeatured: !b.isFeatured, updatedAt: new Date().toISOString() } : b));
+  };
+
   return (
     <HelpDeskContext.Provider value={{
       members, helpRequests, volunteerApps, assignments, messages, auditLog, stats,
+      businesses, businessContactRequests,
       addHelpRequest, updateRequestStatus, addInternalNote,
       addVolunteerApp, updateVolunteerStatus,
       createAssignment, sendMessage, markMessageRead, logAction,
+      addBusinessContactRequest, updateBusinessStatus, toggleBusinessFeatured,
     }}>
       {children}
     </HelpDeskContext.Provider>

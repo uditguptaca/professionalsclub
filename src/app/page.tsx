@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Users, Briefcase, Calendar, Shield, HandHeart, MapPin, FileText, BookOpen, GraduationCap, CheckCircle, Phone, ChevronRight, Star, HelpCircle } from 'lucide-react';
+import { ArrowRight, Users, Briefcase, Calendar, Shield, HandHeart, MapPin, FileText, BookOpen, GraduationCap, CheckCircle, Phone, ChevronRight, Star, HelpCircle, ShieldCheck, Tag, Building2 } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 
@@ -62,11 +62,11 @@ export default function Home() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {[
               { icon: <Briefcase size={22} />, title: 'Job Referrals & Placement', desc: 'Get matched with volunteers at top Canadian companies for referrals', color: '#6366f1' },
-              { icon: <FileText size={22} />, title: 'Resume & Cover Letter Review', desc: 'Expert volunteers review and polish your documents', color: '#059669' },
+              { icon: <GraduationCap size={22} />, title: 'Career Mentorship & Resume Review', desc: 'Long-term mentors review documents and guide your career', color: '#dc2626' },
               { icon: <MapPin size={22} />, title: 'Newcomer Settlement Support', desc: 'Housing, banking, transit, health cards — all guided', color: '#d97706' },
-              { icon: <GraduationCap size={22} />, title: 'Career Mentorship', desc: 'Long-term mentors matched by admin to your profession', color: '#dc2626' },
               { icon: <Shield size={22} />, title: 'Tax & Immigration Guidance', desc: 'CPA volunteers and immigration guidance through admin relay', color: '#7c3aed' },
               { icon: <Calendar size={22} />, title: 'Join Our Next Meetup Event', desc: 'Connect at our monthly in-person community networking meetups', color: '#ea580c' },
+              { icon: <Building2 size={22} />, title: 'Trusted Local Businesses', desc: 'Verified businesses — discover, connect, and grow in your community.', color: '#059669' },
             ].map((item, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 22px', borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)', transition: 'all 0.2s', cursor: 'default' }}>
                 <div style={{ width: 44, height: 44, borderRadius: 12, background: `${item.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, flexShrink: 0 }}>
@@ -243,7 +243,7 @@ export default function Home() {
                   { date: 'Every Tue', title: 'Taxes for Newcomers Livestream', loc: 'YouTube Live', type: 'Online' },
                   { date: 'Every Thu', title: 'Resume Polish Workshop', loc: 'Zoom', type: 'Online' },
                 ].map((evt, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 18px', borderRadius: 12, background: '#fffbeb', border: '1px solid #fde68a' }}>
+                  <Link href="/events" key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 18px', borderRadius: 12, background: '#fffbeb', border: '1px solid #fde68a', textDecoration: 'none', transition: 'all 0.2s', cursor: 'pointer' }} className="hover:-translate-y-1 hover:shadow-md">
                     <div style={{ width: 56, textAlign: 'center', flexShrink: 0 }}>
                       <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#92400e', textTransform: 'uppercase' }}>{evt.date.split(' ')[0]}</div>
                       <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#78350f' }}>{evt.date.split(' ')[1] || ''}</div>
@@ -253,7 +253,7 @@ export default function Home() {
                       <div style={{ fontSize: '0.75rem', color: '#92400e' }}>{evt.loc}</div>
                     </div>
                     <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '3px 10px', borderRadius: 6, background: evt.type === 'Online' ? '#dbeafe' : '#d1fae5', color: evt.type === 'Online' ? '#1e40af' : '#065f46' }}>{evt.type}</span>
-                  </div>
+                  </Link>
                 ))}
               </div>
 
@@ -332,6 +332,59 @@ export default function Home() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── FEATURED BUSINESSES ─── */}
+      <section style={{ padding: '100px 0', background: '#f8fafc' }}>
+        <div className="container" style={{ maxWidth: 1200 }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(99,102,241,0.08)', padding: '6px 16px', borderRadius: 99, marginBottom: 16, border: '1px solid rgba(99,102,241,0.15)' }}>
+              <Star size={14} style={{ color: '#6366f1' }} />
+              <span style={{ color: '#4338ca', fontWeight: 700, fontSize: '0.82rem' }}>Verified Business Network</span>
+            </div>
+            <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 12 }}>Featured Businesses</h2>
+            <p style={{ fontSize: '1.05rem', color: 'var(--text-muted)', maxWidth: 600, margin: '0 auto' }}>
+              Trusted local businesses from the Professionals Club community — verified, with exclusive member benefits.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+            {[
+              { name: 'Sharma & Associates CPA', cat: 'Tax & Accounting', desc: 'Trusted tax filing and accounting for newcomers and professionals.', badge: '15% Off', city: 'Toronto', years: 15, slug: 'sharma-associates-cpa', img: '/finance_bg.png' },
+              { name: 'HomeTrust Realty', cat: 'Real Estate', desc: 'Helping newcomers find their first Canadian home with confidence.', badge: 'Cashback', city: 'Toronto', years: 12, slug: 'hometrust-realty', img: '/housing_bg.png' },
+              { name: 'Elevate Financial', cat: 'Financial Planning', desc: 'Wealth management for professionals building their Canadian future.', badge: 'Free Plan', city: 'Toronto', years: 9, slug: 'elevate-financial-planning', img: '/finance_bg.png' },
+            ].map((biz, i) => (
+              <Link key={i} href={`/businesses/${biz.slug}`} style={{ textDecoration: 'none' }}>
+                <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', border: '1px solid #e5e7eb', transition: 'all 0.3s', cursor: 'pointer' }} className="biz-card">
+                  <div style={{ height: 140, position: 'relative', overflow: 'hidden' }}>
+                    <Image src={biz.img} alt={biz.name} fill style={{ objectFit: 'cover' }} />
+                    <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 6 }}>
+                      <span className="biz-badge biz-badge-verified"><ShieldCheck size={10} /> Verified</span>
+                      <span className="biz-badge biz-badge-featured"><Star size={10} /> Featured</span>
+                      <span className="biz-badge biz-badge-deal"><Tag size={10} /> {biz.badge}</span>
+                    </div>
+                  </div>
+                  <div style={{ padding: '18px 20px' }}>
+                    <div style={{ fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--primary-600)', marginBottom: 4 }}>{biz.cat}</div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, marginBottom: 6 }}>{biz.name}</div>
+                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 12 }}>{biz.desc}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.75rem', color: 'var(--text-muted)', paddingTop: 10, borderTop: '1px solid #f3f4f6' }}>
+                      <span><MapPin size={12} style={{ display: 'inline', verticalAlign: '-2px' }} /> {biz.city}</span>
+                      <span>•</span>
+                      <span>{biz.years} yrs</span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          <div style={{ textAlign: 'center', marginTop: 36 }}>
+            <Link href="/businesses" className="btn btn-primary btn-lg" style={{ padding: '14px 32px', fontSize: '0.95rem' }}>
+              Explore All Businesses <ArrowRight size={18} />
+            </Link>
           </div>
         </div>
       </section>

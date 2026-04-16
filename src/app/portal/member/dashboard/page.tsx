@@ -3,7 +3,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
-import { HelpCircle, HandHeart, FileText, ClipboardList, MessageSquare, ArrowRight, Bell, CheckCircle } from 'lucide-react';
+import { HelpCircle, HandHeart, FileText, ClipboardList, MessageSquare, ArrowRight, Bell, CheckCircle, Building2, Tag, Star } from 'lucide-react';
 
 export default function MemberDashboard() {
   const { helpRequests, volunteerApps, messages } = usePortal();
@@ -150,6 +150,23 @@ export default function MemberDashboard() {
           </div>
         </div>
       )}
+
+      {/* Business Directory CTA */}
+      <Link href="/portal/member/businesses" style={{ textDecoration: 'none' }}>
+        <div className="card card-clickable" style={{ background: 'linear-gradient(135deg, #0067a5, #0ea5e9)', color: 'white', border: 'none', padding: '24px 28px', boxShadow: '0 8px 24px rgba(0,103,165,0.25)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 20 }}>
+          <div style={{ padding: 12, background: 'rgba(255,255,255,0.15)', borderRadius: 12 }}>
+            <Building2 size={28} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: 4 }}>Discover Verified Businesses</h3>
+            <p style={{ fontSize: '0.82rem', opacity: 0.85, lineHeight: 1.5 }}>Find trusted local services with exclusive member rates — tax, legal, real estate, financial planning & more.</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ display: 'inline-flex', padding: '4px 10px', borderRadius: 99, background: 'rgba(255,255,255,0.2)', fontSize: '0.7rem', fontWeight: 700 }}><Tag size={11} style={{ marginRight: 4 }} /> Member Deals</span>
+            <ArrowRight size={20} />
+          </div>
+        </div>
+      </Link>
 
       {/* Safety Notice */}
       <div style={{ padding: '16px 20px', borderRadius: 12, background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.1)' }}>

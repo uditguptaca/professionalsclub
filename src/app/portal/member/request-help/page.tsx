@@ -110,25 +110,22 @@ export default function RequestHelpPage() {
         {step === 2 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <h2 className="text-xl font-bold">What do you need help with?</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              {SUPPORT_CATEGORIES.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setCategory(cat)}
-                  style={{
-                    padding: '14px 16px', borderRadius: 10, border: '2px solid',
-                    borderColor: category === cat ? 'var(--primary-500)' : '#e5e7eb',
-                    background: category === cat ? 'rgba(99,102,241,0.06)' : 'white',
-                    cursor: 'pointer', textAlign: 'left', fontSize: '0.85rem', fontWeight: category === cat ? 700 : 500,
-                    color: category === cat ? 'var(--primary-700)' : '#374151',
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {cat}
-                </button>
-              ))}
+            
+            <div className="input-group">
+              <select 
+                className="input" 
+                value={category} 
+                onChange={e => setCategory(e.target.value)}
+                style={{ padding: '14px', fontSize: '0.95rem' }}
+              >
+                <option value="" disabled>Select a category...</option>
+                {SUPPORT_CATEGORIES.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12 }}>
               <button className="btn btn-outline" onClick={() => setStep(1)}><ArrowLeft size={16} /> Back</button>
               <button className="btn btn-primary" onClick={() => setStep(3)} disabled={!category}>Continue <ArrowRight size={16} /></button>
             </div>

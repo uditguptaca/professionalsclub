@@ -227,3 +227,87 @@ export interface HelpDeskStats {
   escalations: number;
   categoryCounts: Record<string, number>;
 }
+
+// ========== BUSINESS DIRECTORY ==========
+export const BUSINESS_CATEGORIES = [
+  'Tax & Accounting',
+  'Legal Services',
+  'Immigration Services',
+  'Real Estate',
+  'Mortgage',
+  'Insurance',
+  'IT Services',
+  'Marketing',
+  'HR & Recruitment',
+  'Education / Coaching',
+  'Health & Wellness',
+  'Home Services',
+  'Financial Planning',
+  'Notary / Documentation',
+  'Business Consulting',
+  'Other',
+] as const;
+
+export type BusinessCategory = typeof BUSINESS_CATEGORIES[number];
+
+export type BusinessStatus = 'draft' | 'pending_review' | 'verified' | 'rejected' | 'inactive';
+
+export interface Business {
+  id: string;
+  name: string;
+  slug: string;
+  logo: string;
+  coverImage: string;
+  category: BusinessCategory;
+  subcategory?: string;
+  descriptionShort: string;
+  descriptionFull: string;
+  services: string[];
+  // Contact
+  contactPerson: string;
+  phone: string;
+  email: string;
+  website: string;
+  socialLinks: { platform: string; url: string }[];
+  // Location
+  address: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  serviceArea: string;
+  // Details
+  yearsInBusiness: number;
+  businessHours?: string;
+  pricingSummary?: string;
+  // Member benefits
+  memberRateText?: string;
+  offerBadge?: string;
+  memberBenefits?: string[];
+  // Status
+  verificationStatus: BusinessStatus;
+  isFeatured: boolean;
+  hasMemberRate: boolean;
+  // Admin
+  createdBy: string;
+  approvedByAdmin?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type BusinessContactRequestStatus = 'pending' | 'in_progress' | 'completed' | 'closed';
+export type BusinessContactHelpType = 'introduction' | 'quote_support' | 'booking_help' | 'clarification' | 'other';
+
+export interface BusinessContactRequest {
+  id: string;
+  businessId: string;
+  businessName: string;
+  memberId: string;
+  memberName: string;
+  helpType: BusinessContactHelpType;
+  preferredContact: 'email' | 'phone' | 'portal';
+  notes: string;
+  status: BusinessContactRequestStatus;
+  adminNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+}

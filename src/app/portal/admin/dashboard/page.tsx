@@ -1,11 +1,11 @@
 'use client';
 import React from 'react';
 import { usePortal } from '@/context/portal-context';
-import { BarChart3, Users, FileText, HandHeart, FolderKanban, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
+import { BarChart3, Users, FileText, HandHeart, FolderKanban, AlertTriangle, Clock, CheckCircle, Building2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminDashboard() {
-  const { helpRequests, volunteerApps, assignments, stats } = usePortal();
+  const { helpRequests, volunteerApps, assignments, stats, businesses } = usePortal();
 
   const newRequests = helpRequests.filter(r => r.status === 'submitted');
   const underReview = helpRequests.filter(r => r.status === 'under_review');
@@ -20,12 +20,13 @@ export default function AdminDashboard() {
       </div>
 
       {/* Summary Counters */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16 }}>
         {[
           { label: 'Open Requests', value: stats.openRequests, icon: <FileText size={22} />, color: '#6366f1', bg: 'rgba(99,102,241,0.1)', href: '/portal/admin/requests' },
           { label: 'Pending Volunteers', value: pendingApps.length, icon: <HandHeart size={22} />, color: '#059669', bg: 'rgba(5,150,105,0.1)', href: '/portal/admin/volunteers' },
           { label: 'Active Assignments', value: activeAssignments.length, icon: <FolderKanban size={22} />, color: '#d97706', bg: 'rgba(245,158,11,0.1)', href: '/portal/admin/assignments' },
           { label: 'Total Members', value: stats.totalMembers, icon: <Users size={22} />, color: '#374151', bg: '#f3f4f6', href: '/portal/admin/members' },
+          { label: 'Businesses', value: businesses.filter(b => b.verificationStatus === 'verified').length, icon: <Building2 size={22} />, color: '#0067a5', bg: 'rgba(0,103,165,0.1)', href: '/portal/admin/businesses' },
         ].map((item, i) => (
           <Link key={i} href={item.href} style={{ textDecoration: 'none' }}>
             <div className="card-stat" style={{ cursor: 'pointer' }}>

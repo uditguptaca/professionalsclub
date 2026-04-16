@@ -6,7 +6,7 @@ import { useApp } from '@/context/app-context';
 import {
   Home, HelpCircle, HandHeart, FileText, ClipboardList, MessageSquare,
   LogOut, BarChart3, Users, ListChecks, FolderKanban, Shield, ScrollText,
-  Settings, UserCircle,
+  Settings, UserCircle, Building2, Inbox,
 } from 'lucide-react';
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
@@ -16,7 +16,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
 
   // Redirect logic
   React.useEffect(() => {
-    if (pathname.includes('/portal/auth')) {
+    if (pathname.includes('/portal/auth') || pathname.includes('/portal/signup')) {
       if (isAuthenticated) {
         const path = currentRole === 'admin' ? '/portal/admin/dashboard' : '/portal/member/dashboard';
         router.replace(path);
@@ -28,7 +28,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     }
   }, [isAuthenticated, currentRole, pathname, router]);
 
-  if (pathname.includes('/portal/auth')) {
+  if (pathname.includes('/portal/auth') || pathname.includes('/portal/signup')) {
     return <>{children}</>;
   }
 
@@ -41,11 +41,13 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
 
   const memberLinks = [
     { label: 'Dashboard', href: '/portal/member/dashboard', icon: Home },
+    { label: 'My Profile', href: '/portal/member/profile', icon: UserCircle },
     { label: 'Request Help', href: '/portal/member/request-help', icon: HelpCircle },
     { label: 'Become a Volunteer', href: '/portal/member/volunteer', icon: HandHeart },
     { label: 'My Requests', href: '/portal/member/my-requests', icon: FileText },
     { label: 'My Volunteer Status', href: '/portal/member/my-volunteer', icon: ClipboardList },
     { label: 'Admin Messages', href: '/portal/member/messages', icon: MessageSquare },
+    { label: 'Business Directory', href: '/portal/member/businesses', icon: Building2 },
   ];
 
   const adminLinks = [
@@ -56,6 +58,8 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     { label: 'Members', href: '/portal/admin/members', icon: Users },
     { label: 'Message Center', href: '/portal/admin/messages', icon: MessageSquare },
     { label: 'Audit Logs', href: '/portal/admin/audit', icon: ScrollText },
+    { label: 'Businesses', href: '/portal/admin/businesses', icon: Building2 },
+    { label: 'Biz Requests', href: '/portal/admin/business-requests', icon: Inbox },
   ];
 
   const navLinks = currentRole === 'admin' ? adminLinks : memberLinks;
