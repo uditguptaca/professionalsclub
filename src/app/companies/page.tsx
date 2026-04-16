@@ -112,11 +112,15 @@ export default function CompaniesPage() {
       </section>
 
       {/* CTA */}
-      <section style={{ padding: '80px 0', background: '#f8fafc', borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
-        <div className="container" style={{ maxWidth: 600 }}>
-          <h2 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 12 }}>Want a Referral?</h2>
-          <p style={{ fontSize: '1rem', color: '#64748b', marginBottom: 28 }}>Submit a help request on our portal specifying the company and role. Our admin team will match you with a volunteer who works there.</p>
-          <Link href="/portal/auth" className="btn btn-primary btn-lg" style={{ padding: '16px 36px' }}>
+      <section style={{ position: 'relative', padding: '100px 0', textAlign: 'center', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0 }}>
+          <Image src="/event_bg.png" alt="Company Referrals" fill style={{ objectFit: 'cover' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.92), rgba(30,27,75,0.85))' }} />
+        </div>
+        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 600 }}>
+          <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Want a Referral?</h2>
+          <p style={{ fontSize: '1.1rem', color: '#cbd5e1', marginBottom: 32 }}>Submit a help request on our portal specifying the company and role. Our admin team will match you with a volunteer who works there.</p>
+          <Link href="/portal/auth" className="btn btn-primary btn-lg" style={{ padding: '16px 36px', boxShadow: '0 8px 24px rgba(99,102,241,0.4)', background: '#4f46e5', color: 'white', border: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             Request a Referral <ArrowRight size={18} />
           </Link>
         </div>

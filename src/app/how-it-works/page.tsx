@@ -63,31 +63,27 @@ export default function HowItWorksPage() {
       </section>
 
       {/* For Volunteers */}
-      <section style={{ position: 'relative', padding: '100px 0', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/career-mentorship.png" alt="Volunteer Mentorship" fill style={{ objectFit: 'cover' }} />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.92), rgba(15,23,42,0.8))' }} />
-        </div>
-        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 1200 }}>
+      <section style={{ padding: '100px 0', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+        <div className="container" style={{ maxWidth: 1200 }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <span style={{ fontSize: '2.4rem', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}>🤝</span>
-            <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 8, marginTop: 12, color: 'white' }}>For Volunteers & Mentors</h2>
-            <p style={{ color: '#94a3b8', fontSize: '1.05rem' }}>Share your expertise. Help fellow community members. All admin-mediated.</p>
+            <span style={{ fontSize: '2rem' }}>🤝</span>
+            <h2 style={{ fontSize: '2.2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 8, marginTop: 12 }}>For Volunteers & Mentors</h2>
+            <p style={{ color: '#64748b', fontSize: '1rem' }}>Share your expertise. Help fellow community members. All admin-mediated.</p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {[
-              { step: 1, icon: <ClipboardList size={32} />, title: 'Apply & Get Verified', desc: 'Submit your professional background, expertise areas, and compliance agreements. Admin reviews and approves your application.', color: '#818cf8', bg: 'rgba(99,102,241,0.1)' },
-              { step: 2, icon: <MessageSquare size={32} />, title: 'Receive Case Assignments', desc: 'Admin matches relevant help requests to your expertise. You receive anonymized case details through the portal.', color: '#fbbf24', bg: 'rgba(245,158,11,0.1)' },
-              { step: 3, icon: <CheckCircle size={32} />, title: 'Provide Guidance', desc: 'Respond through admin relay messaging. Your contact info is never shared. Cases are tracked until resolution.', color: '#34d399', bg: 'rgba(16,185,129,0.1)' },
+              { step: 1, icon: <ClipboardList size={32} />, title: 'Apply & Get Verified', desc: 'Submit your professional background, expertise areas, and compliance agreements. Admin reviews and approves your application.', color: '#6366f1' },
+              { step: 2, icon: <MessageSquare size={32} />, title: 'Receive Case Assignments', desc: 'Admin matches relevant help requests to your expertise. You receive anonymized case details through the portal.', color: '#d97706' },
+              { step: 3, icon: <CheckCircle size={32} />, title: 'Provide Guidance', desc: 'Respond through admin relay messaging. Your contact info is never shared. Cases are tracked until resolution.', color: '#059669' },
             ].map(item => (
-              <div key={item.step} style={{ textAlign: 'center', padding: '40px 28px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(12px)', transition: 'transform 0.2s', cursor: 'pointer' }} className="hover:-translate-y-1 hover:shadow-lg">
-                <div style={{ width: 64, height: 64, borderRadius: '50%', background: item.bg, border: `2px solid ${item.color}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, margin: '0 auto 20px', boxShadow: `0 0 20px ${item.bg}` }}>
+              <div key={item.step} style={{ textAlign: 'center', padding: '40px 28px', borderRadius: 20, background: 'white', border: '1px solid #e2e8f0' }}>
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: `${item.color}12`, border: `2px solid ${item.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, margin: '0 auto 20px' }}>
                   {item.icon}
                 </div>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: item.color, letterSpacing: '0.08em' }}>STEP {item.step}</span>
-                <h3 style={{ fontWeight: 800, fontSize: '1.15rem', margin: '8px 0 12px', fontFamily: 'var(--font-display)', color: 'white' }}>{item.title}</h3>
-                <p style={{ fontSize: '0.88rem', color: '#cbd5e1', lineHeight: 1.6 }}>{item.desc}</p>
+                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: item.color, letterSpacing: '0.08em' }}>STEP {item.step}</span>
+                <h3 style={{ fontWeight: 800, fontSize: '1.15rem', margin: '8px 0 12px', fontFamily: 'var(--font-display)' }}>{item.title}</h3>
+                <p style={{ fontSize: '0.88rem', color: '#64748b', lineHeight: 1.6 }}>{item.desc}</p>
               </div>
             ))}
           </div>
