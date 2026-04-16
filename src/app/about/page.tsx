@@ -90,38 +90,35 @@ export default function AboutPage() {
       </section>
 
       {/* About Description + Stats Section */}
-      <section style={{ position: 'relative', padding: '140px 0', backgroundColor: '#0f172a', color: 'white', overflow: 'hidden' }}>
-        <Image src="/toronto-skyline.png" alt="Toronto skyline" fill style={{ objectFit: 'cover', opacity: 0.15 }} />
+      <section style={{ position: 'relative', padding: '140px 0', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0 }}>
+          <Image src="/hero-community.png" alt="Networking skyline" fill style={{ objectFit: 'cover' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.92), rgba(30,27,75,0.85))' }} />
+        </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 1200 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 80, alignItems: 'center' }}>
-            <div>
-              <h2 style={{ fontSize: '2.2rem', fontWeight: 700, lineHeight: 1.3, marginBottom: 40, fontFamily: 'var(--font-display)', color: '#f8fafc' }}>
-                Professionals Club is an expansive, inclusive association dedicated to fostering the success of multiple disciplines—ranging from CPAs, medical practitioners, and accomplished engineers to business innovators, educators, and IT authorities.
-              </h2>
-              <div style={{ borderLeft: '3px solid #6366f1', paddingLeft: 24 }}>
-                <p style={{ fontSize: '1.05rem', color: '#cbd5e1', lineHeight: 1.8, marginBottom: 32 }}>
-                  We are deeply committed to empowering diverse groups of newcomers and established professionals alike. By offering strategic guidance through the intricacies of the Canadian job market, we unlock unparalleled potential for every member of our community. Let us help you navigate your career and thrive.
-                </p>
-                <Link href="/portal/auth" className="btn btn-primary" style={{ padding: '14px 28px', fontSize: '0.9rem', borderRadius: 8, background: '#4f46e5', color: 'white', fontWeight: 600, display: 'inline-block' }}>
-                  READ MORE
-                </Link>
-              </div>
-            </div>
+          <div style={{ textAlign: 'center', maxWidth: 850, margin: '0 auto 64px' }}>
+            <h2 style={{ fontSize: '2.5rem', fontWeight: 800, lineHeight: 1.3, marginBottom: 32, fontFamily: 'var(--font-display)', color: 'white' }}>
+              We are an expansive, inclusive association dedicated to fostering the success of multiple disciplines.
+            </h2>
+            <p style={{ fontSize: '1.1rem', color: '#cbd5e1', lineHeight: 1.8, marginBottom: 40 }}>
+              From CPAs and medical practitioners to engineers, business innovators, and IT authorities, we are deeply committed to empowering diverse groups of newcomers and established professionals alike. By offering strategic guidance through the intricacies of the Canadian job market, we unlock unparalleled potential for every member of our community.
+            </p>
+            <Link href="/portal/auth" className="btn btn-primary" style={{ padding: '16px 36px', fontSize: '1rem', borderRadius: 12, background: '#4f46e5', color: 'white', fontWeight: 700, display: 'inline-block', boxShadow: '0 8px 24px rgba(99,102,241,0.4)' }}>
+              Join the Community
+            </Link>
+          </div>
 
-            <div style={{ display: 'flex', gap: 40, justifyContent: 'flex-end' }}>
-              <div>
-                <div style={{ fontSize: '4rem', fontWeight: 800, fontFamily: 'var(--font-display)', marginBottom: 8, color: 'white', lineHeight: 1 }}>2,000+</div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8' }}>Members</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
+            {[
+              { val: '2,000+', label: 'Members' },
+              { val: '100+', label: 'Active Volunteers' },
+              { val: '40+', label: 'Yearly Events' },
+            ].map((stat, i) => (
+              <div key={i} style={{ padding: '40px 24px', textAlign: 'center', background: 'rgba(255,255,255,0.05)', borderRadius: 24, border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(12px)' }}>
+                <div style={{ fontSize: '4rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 8, color: 'white', lineHeight: 1 }}>{stat.val}</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#818cf8' }}>{stat.label}</div>
               </div>
-              <div>
-                <div style={{ fontSize: '4rem', fontWeight: 800, fontFamily: 'var(--font-display)', marginBottom: 8, color: 'white', lineHeight: 1 }}>100+</div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8' }}>Volunteers</div>
-              </div>
-              <div>
-                <div style={{ fontSize: '4rem', fontWeight: 800, fontFamily: 'var(--font-display)', marginBottom: 8, color: 'white', lineHeight: 1 }}>40+</div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8' }}>Yearly Community Events</div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>

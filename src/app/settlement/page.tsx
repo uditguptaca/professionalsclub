@@ -113,31 +113,35 @@ export default function SettlementPage() {
       </section>
 
       {/* Newcomer Checklist — Side-by-Side */}
-      <section style={{ padding: '100px 0', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
-        <div className="container" style={{ maxWidth: 1100 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
+      <section style={{ position: 'relative', padding: '120px 0', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0 }}>
+          <Image src="/study-bg.png" alt="Newcomer Studying Checklist" fill style={{ objectFit: 'cover' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,27,75,0.85))' }} />
+        </div>
+        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 1100 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 64, alignItems: 'center' }}>
             <div>
-              <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6366f1', marginBottom: 12 }}>Free Download</div>
-              <h2 style={{ fontSize: '2.4rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>The Ultimate Newcomer Checklist</h2>
-              <p style={{ fontSize: '1rem', color: '#64748b', lineHeight: 1.8, marginBottom: 32 }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#a5b4fc', marginBottom: 16 }}>Free Download</div>
+              <h2 style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 24, lineHeight: 1.15, color: 'white' }}>The Ultimate Newcomer Checklist</h2>
+              <p style={{ fontSize: '1.1rem', color: '#cbd5e1', lineHeight: 1.8, marginBottom: 40 }}>
                 Do not miss a single step. Download our comprehensive PDF checklist covering everything you need to do before landing and during your first 30 days in Canada.
               </p>
-              <div style={{ display: 'flex', gap: 12 }}>
-                <button className="btn btn-primary btn-lg" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Download size={18} /> Download PDF Guide
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 32px', fontSize: '1rem', boxShadow: '0 8px 24px rgba(99,102,241,0.4)' }}>
+                  <Download size={20} /> Download PDF Guide
                 </button>
-                <Link href="/resources" className="btn btn-outline btn-lg" style={{ background: 'white' }}>View All Resources</Link>
+                <Link href="/resources" className="btn" style={{ padding: '16px 32px', fontSize: '1rem', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}>View All Resources</Link>
               </div>
             </div>
-            <div style={{ background: 'white', borderRadius: 20, padding: 36, boxShadow: '0 20px 40px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0', transform: 'rotate(1deg)' }}>
-              <h4 style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid #e2e8f0' }}>
-                <FileText size={18} style={{ display: 'inline', verticalAlign: '-3px', marginRight: 8, color: '#6366f1' }} />
+            <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 24, padding: 40, border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(16px)', transform: 'rotate(2deg)', boxShadow: '0 25px 50px rgba(0,0,0,0.3)' }}>
+              <h4 style={{ fontWeight: 800, fontSize: '1.3rem', marginBottom: 24, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.1)', color: 'white', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <FileText size={24} style={{ color: '#818cf8' }} />
                 First 7 Days Checklist
               </h4>
               {['Applied for SIN at Service Canada', 'Opened a Canadian Bank Account', 'Obtained a Canadian Phone Number', 'Applied for Provincial Health Card', 'Explored local transit routes', 'Registered with settlement agency'].map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: i < 5 ? '1px solid #f1f5f9' : 'none' }}>
-                  <div style={{ width: 22, height: 22, borderRadius: 6, border: '2px solid #d1d5db', flexShrink: 0 }} />
-                  <span style={{ fontSize: '0.9rem', color: '#374151' }}>{item}</span>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0', borderBottom: i < 5 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                  <div style={{ width: 22, height: 22, borderRadius: 6, border: '2px solid #818cf8', flexShrink: 0, background: 'rgba(129,140,248,0.2)' }} />
+                  <span style={{ fontSize: '0.95rem', color: '#e2e8f0' }}>{item}</span>
                 </div>
               ))}
             </div>
