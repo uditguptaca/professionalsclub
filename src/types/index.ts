@@ -311,3 +311,139 @@ export interface BusinessContactRequest {
   createdAt: string;
   updatedAt: string;
 }
+
+// ========== DYNAMIC CONTENT TYPES ==========
+
+export interface EBook {
+  id: string;
+  title: string;
+  author: string;
+  type: string; // PDF, DOCX, etc.
+  size: string;
+  color: string;
+  image: string;
+  downloadUrl: string;
+  createdAt: string;
+}
+
+export interface VideoWorkshop {
+  id: string;
+  title: string;
+  duration: string;
+  recordedDate: string;
+  platform: string; // YouTube, Zoom Recording, etc.
+  thumbnailImage: string;
+  videoUrl: string;
+  createdAt: string;
+}
+
+export interface ContentTemplate {
+  id: string;
+  title: string;
+  fileType: string; // Word Doc, PDF, ZIP
+  category: string; // Career, Communication, Settlement
+  image: string;
+  accessUrl: string;
+  createdAt: string;
+}
+
+export type EventStatus = 'upcoming' | 'past';
+export type EventType = 'in_person' | 'virtual' | 'hybrid';
+
+export interface CommunityEvent {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  location: string;
+  eventType: EventType;
+  capacity: number;
+  attendees: number;
+  image: string;
+  isFeatured: boolean;
+  platform?: string; // YouTube Live, Zoom, etc.
+  rsvpUrl?: string;
+  status: EventStatus;
+  createdAt: string;
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  bio: string;
+  image: string;
+  linkedinUrl?: string;
+  order: number;
+  createdAt: string;
+}
+
+export interface NewsArticle {
+  id: string;
+  title: string;
+  summary: string;
+  content: string;
+  image: string;
+  author: string;
+  category: string;
+  publishedAt: string;
+  createdAt: string;
+}
+
+export interface DonationCampaign {
+  id: string;
+  title: string;
+  description: string;
+  goalAmount: number;
+  raisedAmount: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+// ========== JOB PORTAL ==========
+export type JobType = 'full_time' | 'part_time' | 'contract' | 'freelance' | 'internship';
+
+export const JOB_CATEGORIES = [
+  'Developer',
+  'Accounting',
+  'Technology',
+  'Medical',
+  'Government',
+  'Media & News',
+  'Restaurants',
+  'Education',
+  'Marketing',
+  'Finance',
+  'Legal',
+  'HR & Recruitment',
+  'Design',
+  'Other',
+] as const;
+
+export type JobCategory = typeof JOB_CATEGORIES[number];
+
+export interface JobPosting {
+  id: string;
+  title: string;
+  company: string;
+  companyLogo: string;
+  location: string;
+  province: string;
+  salaryMin: number;
+  salaryMax: number;
+  salaryPeriod: 'yearly' | 'monthly' | 'hourly';
+  jobType: JobType;
+  category: JobCategory;
+  description: string;
+  requirements: string;
+  responsibilities: string;
+  contactEmail: string;
+  applyUrl: string;
+  tags: string[];
+  isFeatured: boolean;
+  isActive: boolean;
+  postedAt: string;
+  expiresAt: string;
+  createdAt: string;
+}

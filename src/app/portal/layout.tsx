@@ -6,7 +6,8 @@ import { useApp } from '@/context/app-context';
 import {
   Home, HelpCircle, HandHeart, FileText, ClipboardList, MessageSquare,
   LogOut, BarChart3, Users, ListChecks, FolderKanban, Shield, ScrollText,
-  Settings, UserCircle, Building2, Inbox,
+  Settings, UserCircle, Building2, Inbox, Layers, BookOpen, Calendar,
+  UsersRound, Newspaper, Heart, Briefcase,
 } from 'lucide-react';
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
@@ -62,6 +63,15 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     { label: 'Biz Requests', href: '/portal/admin/business-requests', icon: Inbox },
   ];
 
+  const adminContentLinks = [
+    { label: 'Resources', href: '/portal/admin/content/resources', icon: BookOpen },
+    { label: 'Events', href: '/portal/admin/content/events', icon: Calendar },
+    { label: 'Jobs', href: '/portal/admin/content/jobs', icon: Briefcase },
+    { label: 'Team', href: '/portal/admin/content/team', icon: UsersRound },
+    { label: 'News', href: '/portal/admin/content/news', icon: Newspaper },
+    { label: 'Donations', href: '/portal/admin/content/donations', icon: Heart },
+  ];
+
   const navLinks = currentRole === 'admin' ? adminLinks : memberLinks;
 
   const roleName = currentRole === 'admin' ? 'Admin Portal' : 'Help Desk';
@@ -96,6 +106,26 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
               </Link>
             );
           })}
+
+          {currentRole === 'admin' && (
+            <>
+              <div className="sidebar-section-title" style={{ marginTop: 16 }}>Content Manager</div>
+              {adminContentLinks.map((link) => {
+                const Icon = link.icon;
+                const isActive = pathname === link.href || pathname.startsWith(link.href + '/');
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`sidebar-link ${isActive ? 'active' : ''}`}
+                  >
+                    <Icon className="icon" size={18} />
+                    <span>{link.label}</span>
+                  </Link>
+                );
+              })}
+            </>
+          )}
         </nav>
 
         <div className="sidebar-nav" style={{ flex: 'none', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>

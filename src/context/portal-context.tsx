@@ -1,7 +1,7 @@
 'use client';
 import React, { createContext, useContext, useState } from 'react';
-import type { HelpRequest, VolunteerApplication, CaseAssignment, AdminMessage, AuditLogEntry, Member, HelpDeskStats, RequestStatus, VolunteerStatus, Business, BusinessContactRequest, BusinessStatus, BusinessContactHelpType } from '@/types';
-import { mockHelpRequests, mockVolunteerApplications, mockAssignments, mockMessages, mockAuditLog, mockMembers, mockStats, mockBusinesses, mockBusinessContactRequests } from '@/lib/mock-data';
+import type { HelpRequest, VolunteerApplication, CaseAssignment, AdminMessage, AuditLogEntry, Member, HelpDeskStats, RequestStatus, VolunteerStatus, Business, BusinessContactRequest, BusinessStatus, EBook, VideoWorkshop, ContentTemplate, CommunityEvent, TeamMember, NewsArticle, DonationCampaign, JobPosting } from '@/types';
+import { mockHelpRequests, mockVolunteerApplications, mockAssignments, mockMessages, mockAuditLog, mockMembers, mockStats, mockBusinesses, mockBusinessContactRequests, mockEBooks, mockWorkshops, mockTemplates, mockEvents, mockTeamMembers, mockNewsArticles, mockDonationCampaigns, mockJobPostings } from '@/lib/mock-data';
 
 interface HelpDeskContextType {
   // Data
@@ -32,6 +32,46 @@ interface HelpDeskContextType {
   markMessageRead: (id: string) => void;
   // Actions - Audit
   logAction: (entry: Omit<AuditLogEntry, 'id' | 'timestamp'>) => void;
+
+  // ========== DYNAMIC CONTENT ==========
+  // E-Books
+  ebooks: EBook[];
+  addEBook: (item: Omit<EBook, 'id' | 'createdAt'>) => void;
+  updateEBook: (id: string, item: Partial<EBook>) => void;
+  deleteEBook: (id: string) => void;
+  // Workshops
+  workshops: VideoWorkshop[];
+  addWorkshop: (item: Omit<VideoWorkshop, 'id' | 'createdAt'>) => void;
+  updateWorkshop: (id: string, item: Partial<VideoWorkshop>) => void;
+  deleteWorkshop: (id: string) => void;
+  // Templates
+  templates: ContentTemplate[];
+  addTemplate: (item: Omit<ContentTemplate, 'id' | 'createdAt'>) => void;
+  updateTemplate: (id: string, item: Partial<ContentTemplate>) => void;
+  deleteTemplate: (id: string) => void;
+  // Events
+  events: CommunityEvent[];
+  addEvent: (item: Omit<CommunityEvent, 'id' | 'createdAt'>) => void;
+  updateEvent: (id: string, item: Partial<CommunityEvent>) => void;
+  deleteEvent: (id: string) => void;
+  // Team Members
+  teamMembers: TeamMember[];
+  addTeamMember: (item: Omit<TeamMember, 'id' | 'createdAt'>) => void;
+  updateTeamMember: (id: string, item: Partial<TeamMember>) => void;
+  deleteTeamMember: (id: string) => void;
+  // News
+  newsArticles: NewsArticle[];
+  addNewsArticle: (item: Omit<NewsArticle, 'id' | 'createdAt'>) => void;
+  updateNewsArticle: (id: string, item: Partial<NewsArticle>) => void;
+  deleteNewsArticle: (id: string) => void;
+  // Donations
+  donationCampaigns: DonationCampaign[];
+  updateDonationCampaign: (id: string, item: Partial<DonationCampaign>) => void;
+  // Job Postings
+  jobPostings: JobPosting[];
+  addJobPosting: (item: Omit<JobPosting, 'id' | 'createdAt'>) => void;
+  updateJobPosting: (id: string, item: Partial<JobPosting>) => void;
+  deleteJobPosting: (id: string) => void;
 }
 
 const HelpDeskContext = createContext<HelpDeskContextType | undefined>(undefined);
@@ -47,6 +87,17 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
   const [businesses, setBusinesses] = useState<Business[]>(mockBusinesses);
   const [businessContactRequests, setBusinessContactRequests] = useState<BusinessContactRequest[]>(mockBusinessContactRequests);
 
+  // Dynamic Content State
+  const [ebooks, setEbooks] = useState<EBook[]>(mockEBooks);
+  const [workshops, setWorkshops] = useState<VideoWorkshop[]>(mockWorkshops);
+  const [templates, setTemplates] = useState<ContentTemplate[]>(mockTemplates);
+  const [events, setEvents] = useState<CommunityEvent[]>(mockEvents);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(mockTeamMembers);
+  const [newsArticles, setNewsArticles] = useState<NewsArticle[]>(mockNewsArticles);
+  const [donationCampaigns, setDonationCampaigns] = useState<DonationCampaign[]>(mockDonationCampaigns);
+  const [jobPostings, setJobPostings] = useState<JobPosting[]>(mockJobPostings);
+
+  // ========== EXISTING ACTIONS ==========
   const addHelpRequest = (req: Omit<HelpRequest, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'timeline' | 'internalNotes'>) => {
     const now = new Date().toISOString();
     const newReq: HelpRequest = {
@@ -165,6 +216,90 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
     setBusinesses(prev => prev.map(b => b.id === id ? { ...b, isFeatured: !b.isFeatured, updatedAt: new Date().toISOString() } : b));
   };
 
+  // ========== DYNAMIC CONTENT ACTIONS ==========
+
+  // E-Books
+  const addEBook = (item: Omit<EBook, 'id' | 'createdAt'>) => {
+    setEbooks(prev => [{ ...item, id: `eb-${Date.now()}`, createdAt: new Date().toISOString() }, ...prev]);
+  };
+  const updateEBook = (id: string, item: Partial<EBook>) => {
+    setEbooks(prev => prev.map(e => e.id === id ? { ...e, ...item } : e));
+  };
+  const deleteEBook = (id: string) => {
+    setEbooks(prev => prev.filter(e => e.id !== id));
+  };
+
+  // Workshops
+  const addWorkshop = (item: Omit<VideoWorkshop, 'id' | 'createdAt'>) => {
+    setWorkshops(prev => [{ ...item, id: `ws-${Date.now()}`, createdAt: new Date().toISOString() }, ...prev]);
+  };
+  const updateWorkshop = (id: string, item: Partial<VideoWorkshop>) => {
+    setWorkshops(prev => prev.map(e => e.id === id ? { ...e, ...item } : e));
+  };
+  const deleteWorkshop = (id: string) => {
+    setWorkshops(prev => prev.filter(e => e.id !== id));
+  };
+
+  // Templates
+  const addTemplate = (item: Omit<ContentTemplate, 'id' | 'createdAt'>) => {
+    setTemplates(prev => [{ ...item, id: `tp-${Date.now()}`, createdAt: new Date().toISOString() }, ...prev]);
+  };
+  const updateTemplate = (id: string, item: Partial<ContentTemplate>) => {
+    setTemplates(prev => prev.map(e => e.id === id ? { ...e, ...item } : e));
+  };
+  const deleteTemplate = (id: string) => {
+    setTemplates(prev => prev.filter(e => e.id !== id));
+  };
+
+  // Events
+  const addEvent = (item: Omit<CommunityEvent, 'id' | 'createdAt'>) => {
+    setEvents(prev => [{ ...item, id: `evt-${Date.now()}`, createdAt: new Date().toISOString() }, ...prev]);
+  };
+  const updateEvent = (id: string, item: Partial<CommunityEvent>) => {
+    setEvents(prev => prev.map(e => e.id === id ? { ...e, ...item } : e));
+  };
+  const deleteEvent = (id: string) => {
+    setEvents(prev => prev.filter(e => e.id !== id));
+  };
+
+  // Team Members
+  const addTeamMember = (item: Omit<TeamMember, 'id' | 'createdAt'>) => {
+    setTeamMembers(prev => [{ ...item, id: `tm-${Date.now()}`, createdAt: new Date().toISOString() }, ...prev]);
+  };
+  const updateTeamMember = (id: string, item: Partial<TeamMember>) => {
+    setTeamMembers(prev => prev.map(e => e.id === id ? { ...e, ...item } : e));
+  };
+  const deleteTeamMember = (id: string) => {
+    setTeamMembers(prev => prev.filter(e => e.id !== id));
+  };
+
+  // News
+  const addNewsArticle = (item: Omit<NewsArticle, 'id' | 'createdAt'>) => {
+    setNewsArticles(prev => [{ ...item, id: `news-${Date.now()}`, createdAt: new Date().toISOString() }, ...prev]);
+  };
+  const updateNewsArticle = (id: string, item: Partial<NewsArticle>) => {
+    setNewsArticles(prev => prev.map(e => e.id === id ? { ...e, ...item } : e));
+  };
+  const deleteNewsArticle = (id: string) => {
+    setNewsArticles(prev => prev.filter(e => e.id !== id));
+  };
+
+  // Donations
+  const updateDonationCampaign = (id: string, item: Partial<DonationCampaign>) => {
+    setDonationCampaigns(prev => prev.map(e => e.id === id ? { ...e, ...item } : e));
+  };
+
+  // Job Postings
+  const addJobPosting = (item: Omit<JobPosting, 'id' | 'createdAt'>) => {
+    setJobPostings(prev => [{ ...item, id: `job-${Date.now()}`, createdAt: new Date().toISOString() }, ...prev]);
+  };
+  const updateJobPosting = (id: string, item: Partial<JobPosting>) => {
+    setJobPostings(prev => prev.map(e => e.id === id ? { ...e, ...item } : e));
+  };
+  const deleteJobPosting = (id: string) => {
+    setJobPostings(prev => prev.filter(e => e.id !== id));
+  };
+
   return (
     <HelpDeskContext.Provider value={{
       members, helpRequests, volunteerApps, assignments, messages, auditLog, stats,
@@ -173,6 +308,15 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
       addVolunteerApp, updateVolunteerStatus,
       createAssignment, sendMessage, markMessageRead, logAction,
       addBusinessContactRequest, updateBusinessStatus, toggleBusinessFeatured,
+      // Dynamic Content
+      ebooks, addEBook, updateEBook, deleteEBook,
+      workshops, addWorkshop, updateWorkshop, deleteWorkshop,
+      templates, addTemplate, updateTemplate, deleteTemplate,
+      events, addEvent, updateEvent, deleteEvent,
+      teamMembers, addTeamMember, updateTeamMember, deleteTeamMember,
+      newsArticles, addNewsArticle, updateNewsArticle, deleteNewsArticle,
+      donationCampaigns, updateDonationCampaign,
+      jobPostings, addJobPosting, updateJobPosting, deleteJobPosting,
     }}>
       {children}
     </HelpDeskContext.Provider>

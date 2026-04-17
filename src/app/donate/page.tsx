@@ -1,9 +1,14 @@
+'use client';
 import React from 'react';
 import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
+import { usePortal } from '@/context/portal-context';
 
 export default function DonatePage() {
+  const { donationCampaigns } = usePortal();
+  const activeCampaign = donationCampaigns.find(c => c.isActive) || donationCampaigns[0];
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'white' }}>
       <Navbar />
@@ -53,28 +58,32 @@ export default function DonatePage() {
             <div style={{ background: 'white', padding: 48, borderRadius: 24, boxShadow: '0 20px 40px rgba(0,0,0,0.06)' }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#94a3b8', marginBottom: 16 }}>Matter of issues of sustainability</div>
               <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: '#1e293b', marginBottom: 24, lineHeight: 1.1 }}>
-                You're in the right place to make things right!
+                You&apos;re in the right place to make things right!
               </h2>
 
-              <div style={{ marginBottom: 40 }}>
-                <div style={{ fontSize: '1.4rem', fontWeight: 400, color: '#334155', marginBottom: 12, display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                  <span style={{ fontSize: '2rem', fontWeight: 600, color: '#0f172a' }}>$0</span> 
-                  <span style={{ fontSize: '0.9rem', color: '#64748b' }}>of $10,000 raised</span>
+              {activeCampaign && (
+                <div style={{ marginBottom: 40 }}>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 400, color: '#334155', marginBottom: 12, display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                    <span style={{ fontSize: '2rem', fontWeight: 600, color: '#0f172a' }}>${activeCampaign.raisedAmount.toLocaleString()}</span> 
+                    <span style={{ fontSize: '0.9rem', color: '#64748b' }}>of ${activeCampaign.goalAmount.toLocaleString()} raised</span>
+                  </div>
+                  <div style={{ width: '100%', height: 10, background: '#e2e8f0', borderRadius: 5, overflow: 'hidden' }}>
+                    <div style={{ width: `${Math.min(100, (activeCampaign.raisedAmount / activeCampaign.goalAmount) * 100)}%`, height: '100%', background: 'linear-gradient(90deg, #059669, #34d399)', borderRadius: 5, transition: 'width 0.5s ease' }} />
+                  </div>
                 </div>
-                <div style={{ width: '100%', height: 10, background: '#e2e8f0', borderRadius: 5, overflow: 'hidden' }}></div>
-              </div>
+              )}
 
               <div style={{ marginBottom: 32 }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b', marginBottom: 12 }}>Support Our Community Engagement Efforts</h3>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b', marginBottom: 12 }}>{activeCampaign?.title || 'Support Our Community'}</h3>
                 <p style={{ fontSize: '0.95rem', color: '#64748b', lineHeight: 1.6 }}>
-                  As a non-profit dedicated to strengthening community ties, we invite you to contribute to our events that connect newcomers with local communities. Your donation helps us create more inclusive and vibrant community gatherings.
+                  {activeCampaign?.description || 'Your donation helps us create more inclusive and vibrant community gatherings.'}
                 </p>
               </div>
 
               <div style={{ marginBottom: 24 }}>
                 <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '12px 16px', marginBottom: 16 }}>
                   <span style={{ color: '#64748b', fontWeight: 600, marginRight: 16 }}>$</span>
-                  <input type="text" value="100.00" readOnly style={{ border: 'none', background: 'transparent', fontSize: '1.2rem', fontWeight: 700, color: '#0f172a', width: '100%', outline: 'none' }} />
+                  <input type="text" defaultValue="100.00" style={{ border: 'none', background: 'transparent', fontSize: '1.2rem', fontWeight: 700, color: '#0f172a', width: '100%', outline: 'none' }} />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
                   <button style={{ padding: '12px', border: '1px solid #e2e8f0', borderRadius: 8, background: 'white', color: '#64748b', fontWeight: 600 }}>$10.00</button>
@@ -125,7 +134,7 @@ export default function DonatePage() {
                 <span style={{ color: '#94a3b8' }}>Facilitating smoother transitions for immigrants.</span> Connecting communities, creating opportunities.
               </h2>
               <p style={{ fontSize: '1rem', color: '#64748b', lineHeight: 1.8, marginBottom: 64 }}>
-                Udit moved to Canada in 2019 and quickly recognized the challenges faced by immigrants. Inspired to streamline the transition for those arriving from various countries, he founded the Professionals Club initiative in August 2022. His vision is to simplify the integration process for newcomers, making their transition smoother and more efficient. With a mission to give back to society, Udit's initiative has since grown, attracting many members and significantly aiding new immigrants from India in establishing their lives in Canada.
+                Udit moved to Canada in 2019 and quickly recognized the challenges faced by immigrants. Inspired to streamline the transition for those arriving from various countries, he founded the Professionals Club initiative in August 2022. His vision is to simplify the integration process for newcomers, making their transition smoother and more efficient. With a mission to give back to society, Udit&apos;s initiative has since grown, attracting many members and significantly aiding new immigrants from India in establishing their lives in Canada.
               </p>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>

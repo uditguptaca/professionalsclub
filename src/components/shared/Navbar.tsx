@@ -18,6 +18,18 @@ export default function Navbar() {
         <ul className="navbar-links" style={mobileOpen ? { display: 'flex', position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg-secondary)', flexDirection: 'column', padding: 'var(--space-4)', borderBottom: '1px solid var(--border-color)' } : {}}>
           <li><Link href="/">Home</Link></li>
           <li className="nav-dropdown-container">
+            <Link href="/jobs" style={{ color: '#06b6d4', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              Jobs
+              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </Link>
+            <ul className="nav-dropdown-menu">
+              <li><Link href="/companies">Referrals</Link></li>
+            </ul>
+          </li>
+          <li><Link href="/groups" style={{ color: '#25D366', fontWeight: 700 }}>Community</Link></li>
+          <li className="nav-dropdown-container">
             <Link href="/about" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               About Us
               <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -31,17 +43,26 @@ export default function Navbar() {
               <li><Link href="/donate">Donate Now</Link></li>
             </ul>
           </li>
-          <li><Link href="/resources">Resources</Link></li>
+          <li className="nav-dropdown-container">
+            <Link href="/resources" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              Resources
+              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </Link>
+            <ul className="nav-dropdown-menu">
+              <li><Link href="/news">News</Link></li>
+            </ul>
+          </li>
           <li><Link href="/settlement">Newcomer</Link></li>
-          <li><Link href="/companies">Referrals</Link></li>
+
           <li><Link href="/events">Events</Link></li>
           <li><Link href="/businesses">Businesses</Link></li>
-          <li><Link href="/news">News</Link></li>
+
         </ul>
 
         <div className="navbar-actions">
-          <Link href="/portal/auth" className="btn btn-ghost">Member Login</Link>
-          <Link href="/portal/signup" className="btn btn-primary">Members Signup</Link>
+          <Link href="/portal/auth" className="btn btn-primary">Member Login / Signup</Link>
           <button className="navbar-mobile-toggle" onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? '✕' : '☰'}
           </button>

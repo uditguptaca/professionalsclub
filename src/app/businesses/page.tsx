@@ -44,7 +44,7 @@ export default function BusinessDirectoryPage() {
       <Navbar />
 
       {/* Hero */}
-      <section className="biz-hero" style={{ padding: '64px 24px 40px' }}>
+      <section className="biz-hero" style={{ padding: '120px 24px 60px' }}>
         <div className="biz-hero-content" style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 40, textAlign: 'left' }}>
           {/* Left Side */}
           <div style={{ flex: 1 }}>
@@ -55,7 +55,7 @@ export default function BusinessDirectoryPage() {
             <p style={{ marginBottom: 20, maxWidth: 480, fontSize: '0.95rem' }}>{publicBusinesses.length}+ verified businesses — discover, connect, and grow in your community.</p>
 
             {/* Search */}
-            <div className="biz-hero-search" style={{ maxWidth: 480 }}>
+            <div className="biz-hero-search" style={{ maxWidth: 480, margin: 0 }}>
               <input
                 type="text"
                 placeholder="Search businesses by name, category, or keyword..."
@@ -80,7 +80,7 @@ export default function BusinessDirectoryPage() {
         </div>
 
         {/* Trust Labels */}
-        <div className="biz-trust-labels" style={{ maxWidth: 1100, margin: '28px auto 0' }}>
+        <div className="biz-trust-labels" style={{ maxWidth: 1100, margin: '28px auto 0', justifyContent: 'flex-start' }}>
           <div className="biz-trust-label"><ShieldCheck size={14} /> All businesses verified</div>
           <div className="biz-trust-label"><MapPin size={14} /> Local businesses only</div>
           <div className="biz-trust-label"><Clock size={14} /> Updated weekly</div>

@@ -2,13 +2,30 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/app-context';
 import type { UserRole } from '@/types';
-import { LogIn, UserCircle, Shield, HelpCircle, HandHeart } from 'lucide-react';
+import { Shield, UserCircle, LogIn } from 'lucide-react';
+import Link from 'next/link';
 
 export default function AuthPage() {
   const { setCurrentRole, setIsAuthenticated } = useApp();
   const [loading, setLoading] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
-  const handleLogin = (role: UserRole) => {
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (username === 'admin' && password === 'password123') {
+      executeLogin('admin');
+    } else if (username === 'member' && password === 'password123') {
+      executeLogin('member');
+    } else {
+      setError('Invalid username or password');
+    }
+  };
+
+  const executeLogin = (role: UserRole) => {
     if (loading) return;
     setLoading(true);
     setCurrentRole(role);
@@ -24,53 +41,107 @@ export default function AuthPage() {
 
       <div className="container" style={{ maxWidth: '560px', position: 'relative', zIndex: 10 }}>
 
-        <div className="text-center mb-8" style={{ marginBottom: 'var(--space-8)' }}>
-          <div style={{ width: 64, height: 64, borderRadius: 16, background: 'linear-gradient(135deg, var(--primary-600), var(--primary-400))', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, boxShadow: '0 10px 30px rgba(99,102,241,0.3)' }}>
+        <div className="text-center mb-6" style={{ marginBottom: 'var(--space-6)' }}>
+          <div style={{ width: 64, height: 64, borderRadius: 16, background: 'linear-gradient(135deg, var(--primary-600), var(--primary-400))', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, boxShadow: '0 10px 30px rgba(99,102,241,0.3)' }}>
             <span style={{ fontSize: 28, fontWeight: 900, color: 'white' }}>PC</span>
           </div>
-          <h1 className="text-3xl font-bold font-display mb-2">Professionals Club Help Desk</h1>
-          <p className="text-secondary" style={{ maxWidth: 420, margin: '0 auto' }}>A managed community support platform. Request help or volunteer to help others — all coordinated through admin.</p>
+          <h1 className="text-3xl font-bold font-display">Professionals Club Help Desk</h1>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="card animate-fade-in" style={{ padding: '24px 32px', background: 'var(--bg-card)', boxShadow: 'var(--shadow-lg)' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-primary)' }}>
+              <LogIn size={24} className="text-primary-600" />
+              Sign In
+            </h2>
+            
+            <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div className="input-group">
+                <label>Username</label>
+                <input 
+                  type="text" 
+                  className="input" 
+                  value={username} 
+                  onChange={e => setUsername(e.target.value)} 
+                  placeholder="Enter your username" 
+                  required 
+                />
+              </div>
+              <div className="input-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ marginBottom: 0 }}>Password</label>
+                  <a href="#" style={{ fontSize: '0.8rem', color: 'var(--primary-600)', fontWeight: 600 }}>Forgot password?</a>
+                </div>
+                <input 
+                  type="password" 
+                  className="input" 
+                  value={password} 
+                  onChange={e => setPassword(e.target.value)} 
+                  placeholder="••••••••" 
+                  required 
+                />
+              </div>
+              {error && <div style={{ color: 'var(--error-500)', fontSize: '0.85rem', fontWeight: 500, padding: '8px 12px', background: 'rgba(240, 73, 35, 0.1)', borderRadius: 8 }}>{error}</div>}
+              <button 
+                type="submit" 
+                className="btn btn-primary" 
+                style={{ marginTop: 8, width: '100%' }} 
+                disabled={loading}
+              >
+                {loading ? 'Signing in...' : 'Sign In'}
+              </button>
+              
+              <div style={{ marginTop: 12, textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                Don't have an account? <Link href="/portal/signup" style={{ color: 'var(--primary-600)', fontWeight: 600 }}>Sign up as Member</Link>
+              </div>
+            </form>
 
-          {/* Member Login */}
-          <button
-            className="card card-clickable text-left flex items-center justify-between transition-transform"
-            style={{ background: 'linear-gradient(135deg, var(--primary-600), var(--primary-400))', color: 'white', border: 'none', boxShadow: '0 10px 25px rgba(99, 102, 241, 0.3)', padding: '24px 28px' }}
-            onClick={() => handleLogin('member')}
-            disabled={loading}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                <UserCircle size={24} />
-                <span style={{ fontWeight: 700, fontSize: '1.2rem' }}>Member Login & Signup</span>
+            {/* Demo Accounts */}
+            <div style={{ marginTop: 32, padding: 20, border: '1px dashed var(--border-color)', borderRadius: 12 }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+                Demo Accounts
               </div>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '0.8rem', opacity: 0.85, display: 'flex', alignItems: 'center', gap: 4 }}><HelpCircle size={14} /> Request Help</span>
-                <span style={{ fontSize: '0.8rem', opacity: 0.85, display: 'flex', alignItems: 'center', gap: 4 }}><HandHeart size={14} /> Volunteer</span>
-              </div>
-              <span style={{ fontSize: '0.78rem', opacity: 0.7, marginTop: 4 }}>Submit help requests, apply to volunteer, track your cases, and receive admin updates.</span>
-            </div>
-            <LogIn style={{ opacity: 0.9 }} size={24} />
-          </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                
+                {/* Admin Demo Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUsername('admin');
+                    setPassword('password123');
+                  }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 8, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}
+                  onMouseOver={e => e.currentTarget.style.borderColor = '#d946ef'}
+                  onMouseOut={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Shield size={16} color="#d946ef" />
+                    <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>Super Admin</span>
+                  </div>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>admin</span>
+                </button>
 
-          {/* Admin Login */}
-          <button
-            className="card card-clickable text-left flex items-center justify-between transition-transform"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #d946ef)', color: 'white', border: 'none', boxShadow: '0 10px 25px rgba(217, 70, 239, 0.3)', padding: '24px 28px' }}
-            onClick={() => handleLogin('admin')}
-            disabled={loading}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                <Shield size={24} />
-                <span style={{ fontWeight: 700, fontSize: '1.2rem' }}>Login as Admin</span>
+                {/* Member Demo Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUsername('member');
+                    setPassword('password123');
+                  }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 8, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}
+                  onMouseOver={e => e.currentTarget.style.borderColor = 'var(--primary-400)'}
+                  onMouseOut={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <UserCircle size={16} color="var(--primary-600)" />
+                    <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>Demo Member</span>
+                  </div>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>member</span>
+                </button>
+
               </div>
-              <span style={{ fontSize: '0.78rem', opacity: 0.7 }}>Manage all requests, volunteer applications, assignments, messaging, and audit logs.</span>
             </div>
-            <LogIn style={{ opacity: 0.9 }} size={24} />
-          </button>
+          </div>
         </div>
 
         {/* Info */}

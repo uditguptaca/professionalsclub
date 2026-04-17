@@ -8,6 +8,14 @@ import type {
   HelpDeskStats,
   Business,
   BusinessContactRequest,
+  EBook,
+  VideoWorkshop,
+  ContentTemplate,
+  CommunityEvent,
+  TeamMember,
+  NewsArticle,
+  DonationCampaign,
+  JobPosting,
 } from '@/types';
 
 // ========== MEMBERS ==========
@@ -428,5 +436,187 @@ export const mockBusinessContactRequests: BusinessContactRequest[] = [
     memberId: 'm3', memberName: 'Neha Gupta', helpType: 'introduction',
     preferredContact: 'phone', notes: 'I am looking for a 1-bedroom condo rental in downtown Toronto. Would appreciate an introduction to the agent who handles newcomer rentals.',
     status: 'in_progress', adminNotes: 'Connected with Deepak. Follow up on Friday.', createdAt: '2026-04-12T10:00:00Z', updatedAt: '2026-04-13T10:00:00Z',
+  },
+];
+
+// ========== E-BOOKS ==========
+export const mockEBooks: EBook[] = [
+  { id: 'eb-001', title: "CPA's Guide to Canada", author: 'Professionals Club', type: 'PDF', size: '2.4 MB', color: '#6366f1', image: '/finance_bg.png', downloadUrl: '#', createdAt: '2026-01-15T10:00:00Z' },
+  { id: 'eb-002', title: 'IT Careers in Ontario', author: 'Professionals Club', type: 'PDF', size: '1.8 MB', color: '#059669', image: '/career-mentorship.png', downloadUrl: '#', createdAt: '2026-02-01T10:00:00Z' },
+  { id: 'eb-003', title: 'Medical Licensing Roadmap', author: 'Professionals Club Health Team', type: 'PDF', size: '3.1 MB', color: '#dc2626', image: '/healthcare_bg.png', downloadUrl: '#', createdAt: '2026-02-15T10:00:00Z' },
+  { id: 'eb-004', title: 'Engineering Success Path', author: 'Professionals Club Engineering', type: 'PDF', size: '2.0 MB', color: '#d97706', image: '/housing_bg.png', downloadUrl: '#', createdAt: '2026-03-01T10:00:00Z' },
+];
+
+// ========== VIDEO WORKSHOPS ==========
+export const mockWorkshops: VideoWorkshop[] = [
+  { id: 'ws-001', title: 'Taxes for Newcomers 2026', duration: '45 mins', recordedDate: 'Jan 12, 2026', platform: 'YouTube', thumbnailImage: '/meetup_bg.png', videoUrl: '#', createdAt: '2026-01-12T10:00:00Z' },
+  { id: 'ws-002', title: 'Resume Polish Workshop', duration: '1h 15m', recordedDate: 'Feb 08, 2026', platform: 'Zoom Recording', thumbnailImage: '/events-meetup.png', videoUrl: '#', createdAt: '2026-02-08T10:00:00Z' },
+  { id: 'ws-003', title: 'Buying Your First Home', duration: '55 mins', recordedDate: 'Mar 15, 2026', platform: 'YouTube', thumbnailImage: '/housing_bg.png', videoUrl: '#', createdAt: '2026-03-15T10:00:00Z' },
+  { id: 'ws-004', title: 'Interview Prep for IT', duration: '1h 05m', recordedDate: 'Apr 02, 2026', platform: 'YouTube', thumbnailImage: '/career-mentorship.png', videoUrl: '#', createdAt: '2026-04-02T10:00:00Z' },
+];
+
+// ========== TEMPLATES ==========
+export const mockTemplates: ContentTemplate[] = [
+  { id: 'tp-001', title: 'Standard Canadian Resume', fileType: 'Word Doc', category: 'Career', image: '/hero-community.png', accessUrl: '#', createdAt: '2026-01-01T10:00:00Z' },
+  { id: 'tp-002', title: 'Professional Cover Letter', fileType: 'Word Doc', category: 'Career', image: '/volunteer-help.png', accessUrl: '#', createdAt: '2026-01-15T10:00:00Z' },
+  { id: 'tp-003', title: 'Networking Message Templates', fileType: 'PDF', category: 'Communication', image: '/events-meetup.png', accessUrl: '#', createdAt: '2026-02-01T10:00:00Z' },
+  { id: 'tp-004', title: 'Rental Application Bundle', fileType: 'ZIP', category: 'Settlement', image: '/settlement-guide.png', accessUrl: '#', createdAt: '2026-02-15T10:00:00Z' },
+];
+
+// ========== EVENTS ==========
+export const mockEvents: CommunityEvent[] = [
+  { id: 'evt-001', title: 'Toronto Monthly Community Meetup', description: 'An informal gathering to welcome newcomers, share settlement guidance, and expand professional networks.', date: '2026-04-25', time: '6:00 PM - 9:00 PM EST', location: 'Downtown Toronto', eventType: 'in_person', capacity: 60, attendees: 0, image: '/meetup_bg.png', isFeatured: true, rsvpUrl: '#', status: 'upcoming', createdAt: '2026-04-01T10:00:00Z' },
+  { id: 'evt-002', title: 'Taxes for Newcomers — Live Workshop', description: 'Weekly financial literacy and cultural adaptation guidance sessions online.', date: '2026-04-22', time: '7:00 PM EST', location: 'Online', eventType: 'virtual', capacity: 200, attendees: 0, image: '/finance_bg.png', isFeatured: false, platform: 'YouTube Live', status: 'upcoming', createdAt: '2026-04-10T10:00:00Z' },
+  { id: 'evt-003', title: 'Resume Polish Workshop', description: 'Weekly resume review workshop for professionals.', date: '2026-04-24', time: '6:00 PM EST', location: 'Online', eventType: 'virtual', capacity: 50, attendees: 0, image: '/career-mentorship.png', isFeatured: false, platform: 'Zoom Meeting', status: 'upcoming', createdAt: '2026-04-10T10:00:00Z' },
+  { id: 'evt-004', title: 'March 2026 — Toronto Meetup', description: 'Monthly networking event in downtown Toronto.', date: '2026-03-28', time: '6:00 PM - 9:00 PM EST', location: 'Downtown Toronto', eventType: 'in_person', capacity: 60, attendees: 45, image: '/event_bg.png', isFeatured: false, status: 'past', createdAt: '2026-03-01T10:00:00Z' },
+  { id: 'evt-005', title: 'February 2026 — Tax Season Prep', description: 'Live YouTube workshop covering tax essentials for newcomers.', date: '2026-02-15', time: '7:00 PM EST', location: 'Online', eventType: 'virtual', capacity: 200, attendees: 120, image: '/events-meetup.png', isFeatured: false, platform: 'YouTube Live', status: 'past', createdAt: '2026-02-01T10:00:00Z' },
+  { id: 'evt-006', title: 'January 2026 — New Year Networking', description: 'New year networking social event.', date: '2026-01-31', time: '6:00 PM - 9:00 PM EST', location: 'Downtown Toronto', eventType: 'in_person', capacity: 50, attendees: 38, image: '/event_bg.png', isFeatured: false, status: 'past', createdAt: '2026-01-15T10:00:00Z' },
+  { id: 'evt-007', title: 'December 2025 — Holiday Social', description: 'End-of-year holiday social gathering.', date: '2025-12-20', time: '7:00 PM EST', location: 'Downtown Toronto', eventType: 'in_person', capacity: 80, attendees: 62, image: '/events-meetup.png', isFeatured: false, status: 'past', createdAt: '2025-12-01T10:00:00Z' },
+  { id: 'evt-008', title: 'November 2025 — Resume Workshop', description: 'Practical resume review workshop via Zoom.', date: '2025-11-15', time: '6:00 PM EST', location: 'Online', eventType: 'virtual', capacity: 100, attendees: 95, image: '/event_bg.png', isFeatured: false, platform: 'Zoom', status: 'past', createdAt: '2025-11-01T10:00:00Z' },
+  { id: 'evt-009', title: 'October 2025 — Immigration Q&A', description: 'Immigration Q&A with RCIC consultants.', date: '2025-10-18', time: '7:00 PM EST', location: 'Online', eventType: 'virtual', capacity: 300, attendees: 210, image: '/events-meetup.png', isFeatured: false, platform: 'YouTube Live', status: 'past', createdAt: '2025-10-01T10:00:00Z' },
+];
+
+// ========== TEAM MEMBERS ==========
+export const mockTeamMembers: TeamMember[] = [
+  { id: 'tm-001', name: 'Udit Gupta', role: 'Founder, CEO & Director', bio: 'Udit moved to Canada in 2019 and founded the Professionals Club initiative in August 2022 to simplify the integration process for newcomers.', image: '/hero-community.png', linkedinUrl: '#', order: 1, createdAt: '2025-01-01T10:00:00Z' },
+  { id: 'tm-002', name: 'Priya Nair', role: 'Community Manager', bio: 'Priya oversees all community engagement initiatives, event planning, and member relations across Canada.', image: '/volunteer-help.png', linkedinUrl: '#', order: 2, createdAt: '2025-03-01T10:00:00Z' },
+  { id: 'tm-003', name: 'Raj Malhotra', role: 'Head of Partnerships', bio: 'Raj leads business partnerships, ensuring verified directory listings and member benefit programs.', image: '/career-mentorship.png', linkedinUrl: '#', order: 3, createdAt: '2025-05-01T10:00:00Z' },
+  { id: 'tm-004', name: 'Anita Sharma', role: 'Settlement Program Lead', bio: 'Anita coordinates settlement support services, connecting newcomers with trusted guidance and resources.', image: '/events-meetup.png', linkedinUrl: '#', order: 4, createdAt: '2025-06-01T10:00:00Z' },
+];
+
+// ========== NEWS ARTICLES ==========
+export const mockNewsArticles: NewsArticle[] = [
+  { id: 'news-001', title: 'Professionals Club Reaches 2,000 Members Milestone', summary: 'Our community has grown to over 2,000 active members across Canada, marking a significant milestone in our mission.', content: 'We are thrilled to announce that Professionals Club has officially reached 2,000 active members across Canada. This milestone reflects the growing demand for structured community support among Indian professionals and newcomers.', image: '/hero-community.png', author: 'Udit Gupta', category: 'Announcement', publishedAt: '2026-04-10T10:00:00Z', createdAt: '2026-04-10T10:00:00Z' },
+  { id: 'news-002', title: 'Monthly Meetup Recap — March 2026', summary: '45 professionals gathered at our downtown Toronto meetup for networking and settlement guidance.', content: 'Our March 2026 Toronto meetup was another success, with 45 professionals coming together for an evening of networking, settlement guidance, and community building.', image: '/meetup_bg.png', author: 'Priya Nair', category: 'Events', publishedAt: '2026-03-30T10:00:00Z', createdAt: '2026-03-30T10:00:00Z' },
+  { id: 'news-003', title: 'New Business Partnership — Sharma & Associates CPA', summary: 'We welcome Sharma & Associates CPA to our verified business directory with exclusive member rates.', content: 'Professionals Club is excited to welcome Sharma & Associates CPA as a verified partner in our business directory. Members now enjoy 15% off all tax services.', image: '/finance_bg.png', author: 'Raj Malhotra', category: 'Partnerships', publishedAt: '2026-03-15T10:00:00Z', createdAt: '2026-03-15T10:00:00Z' },
+  { id: 'news-004', title: 'Tax Season 2026 — Free Resources Available', summary: 'Access our free tax filing guides, video workshops, and CPA consultation offers.', content: 'Tax season is here! Professionals Club has compiled a comprehensive set of free resources to help newcomers navigate their first Canadian tax filing.', image: '/events-meetup.png', author: 'Anita Sharma', category: 'Resources', publishedAt: '2026-03-01T10:00:00Z', createdAt: '2026-03-01T10:00:00Z' },
+];
+
+// ========== DONATION CAMPAIGNS ==========
+export const mockDonationCampaigns: DonationCampaign[] = [
+  { id: 'don-001', title: 'Support Our Community Engagement Efforts', description: 'As a non-profit dedicated to strengthening community ties, we invite you to contribute to our events that connect newcomers with local communities. Your donation helps us create more inclusive and vibrant community gatherings.', goalAmount: 10000, raisedAmount: 0, isActive: true, createdAt: '2026-01-01T10:00:00Z' },
+];
+
+// ========== JOB POSTINGS ==========
+export const mockJobPostings: JobPosting[] = [
+  {
+    id: 'job-001', title: 'Senior Full-Stack Developer', company: 'Shopify', companyLogo: '/career-mentorship.png',
+    location: 'Toronto, ON', province: 'Ontario', salaryMin: 120000, salaryMax: 160000, salaryPeriod: 'yearly',
+    jobType: 'full_time', category: 'Developer',
+    description: 'We are looking for a Senior Full-Stack Developer to join our Merchant Platform team. You will build scalable commerce solutions used by millions of merchants worldwide.',
+    requirements: '5+ years full-stack experience, React/TypeScript, Ruby on Rails or Node.js, cloud infrastructure (GCP/AWS), strong testing practices.',
+    responsibilities: 'Design and build merchant-facing features, mentor junior engineers, participate in on-call rotations, drive technical decisions.',
+    contactEmail: 'careers@shopify.com', applyUrl: '#',
+    tags: ['React', 'TypeScript', 'Node.js', 'Remote-Friendly'],
+    isFeatured: true, isActive: true,
+    postedAt: '2026-04-10T10:00:00Z', expiresAt: '2026-05-10T10:00:00Z', createdAt: '2026-04-10T10:00:00Z',
+  },
+  {
+    id: 'job-002', title: 'Staff Accountant', company: 'Sharma & Associates CPA', companyLogo: '/finance_bg.png',
+    location: 'Toronto, ON', province: 'Ontario', salaryMin: 65000, salaryMax: 85000, salaryPeriod: 'yearly',
+    jobType: 'full_time', category: 'Accounting',
+    description: 'Join our award-winning CPA firm as a Staff Accountant. You will work with a diverse client base including newcomers and small businesses across the GTA.',
+    requirements: 'CPA designation or pursuing, 2+ years public accounting experience, proficiency in QuickBooks and TaxPrep, bilingual (English/Hindi) preferred.',
+    responsibilities: 'Prepare personal and corporate tax returns, manage bookkeeping for clients, assist with CRA audits, mentor junior staff.',
+    contactEmail: 'hr@sharmacpa.ca', applyUrl: '#',
+    tags: ['CPA', 'Tax', 'QuickBooks'],
+    isFeatured: false, isActive: true,
+    postedAt: '2026-04-08T10:00:00Z', expiresAt: '2026-05-08T10:00:00Z', createdAt: '2026-04-08T10:00:00Z',
+  },
+  {
+    id: 'job-003', title: 'iOS Developer', company: 'RBC Technology', companyLogo: '/hero-community.png',
+    location: 'Toronto, ON', province: 'Ontario', salaryMin: 95000, salaryMax: 130000, salaryPeriod: 'yearly',
+    jobType: 'full_time', category: 'Technology',
+    description: 'RBC is looking for an experienced iOS Developer to help build the next generation of our mobile banking platform serving millions of Canadians.',
+    requirements: '3+ years iOS development with Swift, experience with UIKit and SwiftUI, familiarity with CI/CD pipelines, understanding of financial services compliance.',
+    responsibilities: 'Develop and maintain iOS applications, implement new features, collaborate with cross-functional teams, ensure code quality through testing.',
+    contactEmail: 'techcareers@rbc.com', applyUrl: '#',
+    tags: ['Swift', 'iOS', 'Banking', 'SwiftUI'],
+    isFeatured: true, isActive: true,
+    postedAt: '2026-04-12T10:00:00Z', expiresAt: '2026-05-12T10:00:00Z', createdAt: '2026-04-12T10:00:00Z',
+  },
+  {
+    id: 'job-004', title: 'Registered Nurse (RN)', company: 'Sunnybrook Health Sciences', companyLogo: '/healthcare_bg.png',
+    location: 'Toronto, ON', province: 'Ontario', salaryMin: 38, salaryMax: 52, salaryPeriod: 'hourly',
+    jobType: 'full_time', category: 'Medical',
+    description: 'Sunnybrook is seeking a Registered Nurse for our Emergency Department. Join one of Canada\'s premier academic health centres.',
+    requirements: 'BScN degree, registered with CNO, current BCLS certification, 2+ years acute care experience, strong communication skills.',
+    responsibilities: 'Provide direct patient care, triage and assessment, administer medications, collaborate with interdisciplinary team, document patient progress.',
+    contactEmail: 'nurse.recruitment@sunnybrook.ca', applyUrl: '#',
+    tags: ['Nursing', 'Emergency', 'Healthcare'],
+    isFeatured: false, isActive: true,
+    postedAt: '2026-04-05T10:00:00Z', expiresAt: '2026-05-05T10:00:00Z', createdAt: '2026-04-05T10:00:00Z',
+  },
+  {
+    id: 'job-005', title: 'Front-End Web Developer', company: 'CloudBridge Solutions', companyLogo: '/career-mentorship.png',
+    location: 'Remote — Canada', province: 'Ontario', salaryMin: 80000, salaryMax: 110000, salaryPeriod: 'yearly',
+    jobType: 'freelance', category: 'Developer',
+    description: 'We are hiring a freelance Front-End Developer for a 6-month project building a SaaS reporting dashboard for a fintech client.',
+    requirements: 'Strong React/Next.js skills, TypeScript, Tailwind CSS or vanilla CSS mastery, experience with chart libraries (Recharts/D3).',
+    responsibilities: 'Build responsive dashboard UI, integrate with REST APIs, implement data visualization components, ensure accessibility compliance.',
+    contactEmail: 'hello@cloudbridge.ca', applyUrl: '#',
+    tags: ['React', 'Next.js', 'Freelance', 'Remote'],
+    isFeatured: false, isActive: true,
+    postedAt: '2026-04-14T10:00:00Z', expiresAt: '2026-05-14T10:00:00Z', createdAt: '2026-04-14T10:00:00Z',
+  },
+  {
+    id: 'job-006', title: 'Marketing Coordinator', company: 'Maple Leaf Immigration', companyLogo: '/toronto-skyline.png',
+    location: 'Toronto, ON', province: 'Ontario', salaryMin: 50000, salaryMax: 65000, salaryPeriod: 'yearly',
+    jobType: 'full_time', category: 'Marketing',
+    description: 'Help us grow our brand! We are looking for a creative Marketing Coordinator to manage content, social media, and client engagement campaigns.',
+    requirements: '2+ years marketing experience, proficiency with social media platforms, basic graphic design skills (Canva/Figma), excellent written English.',
+    responsibilities: 'Plan and execute digital marketing campaigns, manage social media accounts, create marketing collateral, track campaign analytics.',
+    contactEmail: 'careers@mapleleafimmigration.ca', applyUrl: '#',
+    tags: ['Marketing', 'Social Media', 'Content'],
+    isFeatured: false, isActive: true,
+    postedAt: '2026-04-06T10:00:00Z', expiresAt: '2026-05-06T10:00:00Z', createdAt: '2026-04-06T10:00:00Z',
+  },
+  {
+    id: 'job-007', title: 'Restaurant Manager', company: 'Spice Garden Toronto', companyLogo: '/event_bg.png',
+    location: 'Mississauga, ON', province: 'Ontario', salaryMin: 55000, salaryMax: 70000, salaryPeriod: 'yearly',
+    jobType: 'full_time', category: 'Restaurants',
+    description: 'Spice Garden is looking for an experienced Restaurant Manager to oversee daily operations of our popular South Indian restaurant in Mississauga.',
+    requirements: '3+ years restaurant management, SMART Serve certified, strong customer service skills, experience with POS systems, bilingual preferred.',
+    responsibilities: 'Manage front-of-house staff, ensure food quality standards, handle customer relations, manage inventory and ordering, maintain health code compliance.',
+    contactEmail: 'careers@spicegarden.ca', applyUrl: '#',
+    tags: ['Hospitality', 'Management', 'F&B'],
+    isFeatured: false, isActive: true,
+    postedAt: '2026-04-03T10:00:00Z', expiresAt: '2026-05-03T10:00:00Z', createdAt: '2026-04-03T10:00:00Z',
+  },
+  {
+    id: 'job-008', title: 'Data Analyst Intern', company: 'Amazon Canada', companyLogo: '/hero-community.png',
+    location: 'Vancouver, BC', province: 'British Columbia', salaryMin: 25, salaryMax: 35, salaryPeriod: 'hourly',
+    jobType: 'internship', category: 'Technology',
+    description: 'Amazon Canada is offering a 4-month Data Analyst internship for students and recent graduates. Work on real-world datasets and gain hands-on experience.',
+    requirements: 'Pursuing or completed degree in CS/Stats/Math, SQL proficiency, Python (Pandas, NumPy), familiarity with Tableau or Power BI.',
+    responsibilities: 'Analyze large datasets, build dashboards, present insights to stakeholders, automate reporting workflows, collaborate with senior analysts.',
+    contactEmail: 'internships@amazon.ca', applyUrl: '#',
+    tags: ['Data', 'Python', 'Internship', 'SQL'],
+    isFeatured: true, isActive: true,
+    postedAt: '2026-04-15T10:00:00Z', expiresAt: '2026-05-15T10:00:00Z', createdAt: '2026-04-15T10:00:00Z',
+  },
+  {
+    id: 'job-009', title: 'Part-Time Bookkeeper', company: 'NorthStar Insurance', companyLogo: '/finance_bg.png',
+    location: 'Markham, ON', province: 'Ontario', salaryMin: 22, salaryMax: 28, salaryPeriod: 'hourly',
+    jobType: 'part_time', category: 'Accounting',
+    description: 'NorthStar Insurance is hiring a part-time bookkeeper to manage accounts payable/receivable and assist with monthly financial reporting.',
+    requirements: 'Bookkeeping diploma or equivalent, experience with QuickBooks Online, attention to detail, 20-25 hours/week availability.',
+    responsibilities: 'Process invoices and payments, reconcile bank statements, prepare monthly reports, maintain financial records, assist with year-end audit preparation.',
+    contactEmail: 'hr@northstarinsurance.ca', applyUrl: '#',
+    tags: ['Bookkeeping', 'QuickBooks', 'Part-Time'],
+    isFeatured: false, isActive: true,
+    postedAt: '2026-04-01T10:00:00Z', expiresAt: '2026-05-01T10:00:00Z', createdAt: '2026-04-01T10:00:00Z',
+  },
+  {
+    id: 'job-010', title: 'UX/UI Designer', company: 'CloudBridge Solutions', companyLogo: '/career-mentorship.png',
+    location: 'Remote — Canada', province: 'Ontario', salaryMin: 85000, salaryMax: 115000, salaryPeriod: 'yearly',
+    jobType: 'contract', category: 'Design',
+    description: 'CloudBridge is hiring a UX/UI Designer on a 12-month contract to lead design for our enterprise SaaS products. Fully remote.',
+    requirements: 'Portfolio demonstrating SaaS/enterprise design, proficiency in Figma, experience with design systems, understanding of accessibility standards (WCAG).',
+    responsibilities: 'Lead UX research and design for enterprise products, create wireframes and prototypes, maintain design system, conduct user testing sessions.',
+    contactEmail: 'hello@cloudbridge.ca', applyUrl: '#',
+    tags: ['Figma', 'UX', 'Design System', 'Remote'],
+    isFeatured: false, isActive: true,
+    postedAt: '2026-04-11T10:00:00Z', expiresAt: '2026-05-11T10:00:00Z', createdAt: '2026-04-11T10:00:00Z',
   },
 ];

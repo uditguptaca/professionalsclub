@@ -59,37 +59,40 @@ export default function Home() {
           </div>
 
           {/* Right — Service Preview Cards */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[
-              { icon: <Briefcase size={22} />, title: 'Job Referrals & Placement', desc: 'Get matched with volunteers at top Canadian companies for referrals', color: '#6366f1' },
-              { icon: <GraduationCap size={22} />, title: 'Career Mentorship & Resume Review', desc: 'Long-term mentors review documents and guide your career', color: '#dc2626' },
-              { icon: <MapPin size={22} />, title: 'Newcomer Settlement Support', desc: 'Housing, banking, transit, health cards — all guided', color: '#d97706' },
-              { icon: <Shield size={22} />, title: 'Tax & Immigration Guidance', desc: 'CPA volunteers and immigration guidance through admin relay', color: '#7c3aed' },
-              { icon: <Calendar size={22} />, title: 'Join Our Next Meetup Event', desc: 'Connect at our monthly in-person community networking meetups', color: '#ea580c' },
-              { icon: <Building2 size={22} />, title: 'Trusted Local Businesses', desc: 'Verified businesses — discover, connect, and grow in your community.', color: '#059669' },
-            ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 22px', borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)', transition: 'all 0.2s', cursor: 'default' }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: `${item.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, flexShrink: 0 }}>
-                  {item.icon}
+              { icon: <Briefcase size={20} />, title: 'Search for Latest Jobs', desc: 'Browse the latest job opportunities matching your skills', color: '#10b981', href: '/jobs' },
+              { icon: <Users size={20} />, title: 'Join WhatsApp Communities', desc: 'Connect with thousands of professionals in active WhatsApp chapters', color: '#25d366', href: '/groups' },
+              { icon: <Briefcase size={20} />, title: 'Job Referrals & Placement', desc: 'Get matched with volunteers at top Canadian companies for referrals', color: '#6366f1' },
+              { icon: <GraduationCap size={20} />, title: 'Career Mentorship & Resume Review', desc: 'Long-term mentors review documents and guide your career', color: '#dc2626' },
+              { icon: <MapPin size={20} />, title: 'Newcomer Settlement & Tax Support', desc: 'Housing, banking, transit, health cards, and tax filing — all guided', color: '#d97706' },
+              { icon: <Calendar size={20} />, title: 'Join Our Next Meetup Event', desc: 'Connect at our monthly in-person community networking meetups', color: '#ea580c' },
+              { icon: <Building2 size={20} />, title: 'Trusted Local Businesses', desc: 'Verified businesses — discover, connect, and grow in your community.', color: '#059669', href: '/businesses' },
+            ].map((item, i) => {
+              const Card = (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 22px', borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)', transition: 'all 0.2s', cursor: item.href ? 'pointer' : 'default' }} className="hero-feature-card">
+                  <div style={{ width: 40, height: 40, borderRadius: 12, background: `${item.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, flexShrink: 0 }}>
+                    {item.icon}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, color: 'white', fontSize: '0.92rem' }}>{item.title}</div>
+                    <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 2 }}>{item.desc}</div>
+                  </div>
+                  <ChevronRight size={18} style={{ color: item.href ? '#white' : '#475569', marginLeft: 'auto', flexShrink: 0, opacity: item.href ? 1 : 0.5 }} />
                 </div>
-                <div>
-                  <div style={{ fontWeight: 700, color: 'white', fontSize: '0.95rem' }}>{item.title}</div>
-                  <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 2 }}>{item.desc}</div>
-                </div>
-                <ChevronRight size={18} style={{ color: '#475569', marginLeft: 'auto', flexShrink: 0 }} />
-              </div>
-            ))}
+              );
+              return item.href ? <Link href={item.href} key={i} style={{ textDecoration: 'none' }}>{Card}</Link> : Card;
+            })}
           </div>
         </div>
       </section>
 
       {/* ─── HOW IT WORKS ─── */}
-      <section style={{ padding: '100px 0', background: 'white' }}>
+      <section style={{ padding: '100px 0', background: '#f8fafc' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div style={{ textAlign: 'center', marginBottom: 64 }}>
             <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6366f1', marginBottom: 12 }}>How It Works</div>
             <h2 style={{ fontSize: '2.8rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 16 }}>Simple. Safe. Admin-Mediated.</h2>
-            <p style={{ fontSize: '1.1rem', color: '#64748b', maxWidth: 640, margin: '0 auto' }}>No direct member contact. Your privacy and safety are our top priority. Every interaction goes through our trained admin team.</p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0 }}>
@@ -113,6 +116,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+
 
       {/* ─── SERVICES (Side-by-Side #1: Career Support) ─── */}
       <section style={{ padding: '100px 0', background: '#f8fafc' }}>
@@ -184,40 +188,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── SUPPORT CATEGORIES GRID ─── */}
-      <section style={{ padding: '100px 0', background: '#f8fafc' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
-          <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#d97706', marginBottom: 12 }}>10 Support Categories</div>
-            <h2 style={{ fontSize: '2.8rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 16 }}>Help For Every Need</h2>
-            <p style={{ fontSize: '1.05rem', color: '#64748b', maxWidth: 600, margin: '0 auto' }}>Whatever challenge you face in Canada, our volunteer network has experts ready to help — all through our safe, admin-mediated platform.</p>
-          </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16 }}>
-            {[
-              { emoji: '💼', title: 'Job Referrals', img: '/career-mentorship.png' },
-              { emoji: '📄', title: 'Resume Review', img: '/hero-community.png' },
-              { emoji: '🎯', title: 'Career Mentorship', img: '/event_bg.png' },
-              { emoji: '🏠', title: 'Settlement', img: '/housing_bg.png' },
-              { emoji: '💰', title: 'Tax Consultation', img: '/finance_bg.png' },
-              { emoji: '✈️', title: 'Immigration', img: '/toronto-skyline.png' },
-              { emoji: '🎓', title: 'Education', img: '/meetup_bg.png' },
-              { emoji: '⚖️', title: 'Legal Guidance', img: '/settlement-guide.png' },
-              { emoji: '🤝', title: 'Community', img: '/volunteer-help.png' },
-              { emoji: '💡', title: 'Other', img: '/healthcare_bg.png' },
-            ].map((cat, i) => (
-              <div key={i} style={{ position: 'relative', height: 160, borderRadius: 16, overflow: 'hidden', textAlign: 'center', cursor: 'pointer', transition: 'transform 0.2s', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.08)' }} className="hover:-translate-y-1 hover:shadow-lg">
-                <Image src={cat.img} alt={cat.title} fill style={{ objectFit: 'cover' }} />
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.85), rgba(15,23,42,0.65))' }} />
-                <div style={{ position: 'relative', zIndex: 10 }}>
-                  <div style={{ fontSize: '2.4rem', marginBottom: 10, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}>{cat.emoji}</div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'white', letterSpacing: '0.02em', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{cat.title}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ─── EVENTS & COMMUNITY (Side-by-Side #3) ─── */}
       <section style={{ padding: '100px 0', background: 'white' }}>
@@ -336,14 +307,143 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ─── POPULAR JOB CATEGORIES ─── */}
+      <section style={{ padding: '100px 0', background: 'white' }}>
+        <div className="container" style={{ maxWidth: 1200 }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: '#0f172a', marginBottom: 12 }}>Explore Popular Categories!</h2>
+            <p style={{ color: '#64748b', fontSize: '1.05rem', maxWidth: 600, margin: '0 auto' }}>Find jobs in top fields like Technology, Healthcare, and Finance across Canada.</p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+            {[
+              { cat: 'Technology', icon: <Briefcase size={20} />, jobs: 142 },
+              { cat: 'Accounting & Finance', icon: <Briefcase size={20} />, jobs: 89 },
+              { cat: 'Healthcare', icon: <Users size={20} />, jobs: 64 },
+              { cat: 'Government', icon: <Shield size={20} />, jobs: 30 },
+              { cat: 'Marketing', icon: <Star size={20} />, jobs: 45 },
+              { cat: 'Education', icon: <GraduationCap size={20} />, jobs: 52 },
+              { cat: 'Retail & Food', icon: <Briefcase size={20} />, jobs: 110 },
+              { cat: 'Engineering', icon: <Briefcase size={20} />, jobs: 75 }
+            ].map((item, i) => (
+              <Link
+                key={i}
+                href="/jobs"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 16,
+                  background: '#f3e8ff',
+                  border: 'none',
+                  borderRadius: 16,
+                  padding: '20px 24px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'transform 0.2s, background 0.2s',
+                  position: 'relative',
+                  textDecoration: 'none'
+                }}
+                className="category-card-hover"
+              >
+                <div style={{ 
+                  width: 46, 
+                  height: 46, 
+                  borderRadius: '50%', 
+                  background: 'white', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  color: '#a855f7',
+                  flexShrink: 0,
+                  boxShadow: '0 4px 10px rgba(168,85,247,0.1)'
+                }}>
+                  {item.icon}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#0f172a', marginBottom: 4 }}>{item.cat}</div>
+                  <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 500 }}>{item.jobs} Jobs Available</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          <div style={{ textAlign: 'center', marginTop: 40 }}>
+             <Link href="/jobs" style={{ background: 'none', border: 'none', color: '#a855f7', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'opacity 0.2s', textDecoration: 'none' }}>
+               View All Categories <ChevronRight size={16} />
+             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── WHATSAPP COMMUNITY HERO ─── */}
+      <section style={{ padding: '80px 0', background: 'white', position: 'relative' }}>
+        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 1200 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)', gap: 64, alignItems: 'center' }}>
+            
+            {/* Left Side: The list of cards */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
+              {[
+                { name: 'Newcomers & Settlement', members: '3,500+', icon: '🍁', desc: 'Housing, transit, and networking.' },
+                { name: 'Tech & IT Professionals', members: '1,200+', icon: '💻', desc: 'Software, data, and Canadian tech jobs.' },
+                { name: 'Finance & Accounting', members: '850+', icon: '📊', desc: 'CPA pathways, banking, and wealth.' },
+                { name: 'Job Referrals & Hiring', members: '2,100+', icon: '💼', desc: 'Direct job postings and internal referrals.' },
+                { name: 'Entrepreneurs & Startups', members: '600+', icon: '🚀', desc: 'Founders, investors, and small business.' },
+                { name: 'General Community Chat', members: '5,000+', icon: '🌐', desc: 'The main hub for all members.' },
+              ].map((group, i) => (
+                <div key={i} style={{ background: '#f8fafc', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 16, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 20, boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', flexShrink: 0, border: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                    {group.icon}
+                  </div>
+                  <div style={{ flex: 1, textAlign: 'left' }}>
+                    <div style={{ color: '#0f172a', fontWeight: 800, fontSize: '1rem', marginBottom: 2 }}>{group.name}</div>
+                    <div style={{ color: '#64748b', fontSize: '0.85rem' }}>{group.desc}</div>
+                  </div>
+                  <div style={{ background: 'rgba(37,211,102,0.1)', color: '#16a34a', padding: '6px 12px', borderRadius: 8, fontSize: '0.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                    <Users size={12} /> {group.members}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Right Side: Text and Button */}
+            <div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(37,211,102,0.1)', padding: '6px 16px', borderRadius: 99, marginBottom: 16, border: '1px solid rgba(37,211,102,0.2)' }}>
+                <span style={{ fontSize: '15px' }}>💬</span>
+                <span style={{ color: '#16a34a', fontWeight: 800, fontSize: '0.8rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>WhatsApp Communities</span>
+              </div>
+              <h2 style={{ fontSize: '2.8rem', fontWeight: 900, color: '#0f172a', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.1 }}>
+                Join Canada&apos;s Most Active <br /> Professional Groups
+              </h2>
+              <p style={{ color: '#64748b', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: 32 }}>
+                Connect instantly with professionals, job seekers, and industry experts. Find localized groups and curated channels tailored precisely to your needs.
+              </p>
+              
+              <Link href="/portal/auth" style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 10,
+                background: '#0f172a',
+                color: 'white',
+                padding: '14px 32px',
+                borderRadius: 14,
+                fontSize: '1rem',
+                fontWeight: 700,
+                textDecoration: 'none',
+                boxShadow: '0 8px 24px rgba(15,23,42,0.2)',
+              }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                Register to Join Communities
+              </Link>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
       {/* ─── FEATURED BUSINESSES ─── */}
       <section style={{ padding: '100px 0', background: '#f8fafc' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(99,102,241,0.08)', padding: '6px 16px', borderRadius: 99, marginBottom: 16, border: '1px solid rgba(99,102,241,0.15)' }}>
-              <Star size={14} style={{ color: '#6366f1' }} />
-              <span style={{ color: '#4338ca', fontWeight: 700, fontSize: '0.82rem' }}>Verified Business Network</span>
-            </div>
             <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 12 }}>Featured Businesses</h2>
             <p style={{ fontSize: '1.05rem', color: 'var(--text-muted)', maxWidth: 600, margin: '0 auto' }}>
               Trusted local businesses from the Professionals Club community — verified, with exclusive member benefits.

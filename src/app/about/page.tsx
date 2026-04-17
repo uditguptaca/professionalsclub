@@ -55,11 +55,28 @@ export default function AboutPage() {
                 Whether you are here to feel connected, actively access structured support, discover vetted opportunities, or contribute back to the community, you are in exactly the right place.
               </p>
             </div>
-            <div style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)', borderRadius: 32, padding: '48px 32px', textAlign: 'center', boxShadow: '0 20px 40px rgba(79, 70, 229, 0.1)' }}>
-              <h2 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#312e81', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 24 }}>Our Mission</h2>
-              <p style={{ fontSize: '1.35rem', color: '#1e1b4b', lineHeight: 1.6, fontWeight: 600, fontFamily: 'var(--font-display)' }}>
-                "To build a trusted, opportunity-rich community where meaningful connections drive personal and professional growth—ensuring everyone has the support they need to succeed in Canada."
-              </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Mission */}
+              <div style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)', borderRadius: 24, padding: '24px', textAlign: 'center', boxShadow: '0 10px 20px rgba(79, 70, 229, 0.05)' }}>
+                <h2 style={{ fontSize: '0.8rem', fontWeight: 800, color: '#312e81', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Our Mission</h2>
+                <p style={{ fontSize: '1rem', color: '#1e1b4b', lineHeight: 1.5, fontWeight: 600 }}>
+                  "To build a trusted, opportunity-rich community driving personal and professional growth in Canada."
+                </p>
+              </div>
+              {/* Vision */}
+              <div style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%)', borderRadius: 24, padding: '24px', textAlign: 'center', boxShadow: '0 10px 20px rgba(5, 150, 105, 0.05)' }}>
+                <h2 style={{ fontSize: '0.8rem', fontWeight: 800, color: '#064e3b', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Our Vision</h2>
+                <p style={{ fontSize: '1rem', color: '#064e3b', lineHeight: 1.5, fontWeight: 600 }}>
+                  "To be the foremost platform where Indian professionals in Canada seamlessly integrate and thrive together."
+                </p>
+              </div>
+              {/* Goals */}
+              <div style={{ background: 'linear-gradient(135deg, #fffbeb 0%, #fde68a 100%)', borderRadius: 24, padding: '24px', textAlign: 'center', boxShadow: '0 10px 20px rgba(217, 119, 6, 0.05)' }}>
+                <h2 style={{ fontSize: '0.8rem', fontWeight: 800, color: '#78350f', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Our Goals</h2>
+                <p style={{ fontSize: '1rem', color: '#78350f', lineHeight: 1.5, fontWeight: 600 }}>
+                  "Empower professionals, support local businesses, and foster a network of enduring mutual benefit."
+                </p>
+              </div>
             </div>
           </div>
         </div>

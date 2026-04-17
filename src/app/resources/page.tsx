@@ -1,31 +1,14 @@
+'use client';
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
+import { usePortal } from '@/context/portal-context';
 import { BookOpen, Video, FileCheck, FileText, Download, ExternalLink, PlayCircle, GraduationCap, ArrowRight } from 'lucide-react';
 
 export default function ResourcesPage() {
-  const ebooks = [
-    { title: "CPA's Guide to Canada", author: 'Professionals Club', type: 'PDF', size: '2.4 MB', color: '#6366f1' },
-    { title: 'IT Careers in Ontario', author: 'Professionals Club', type: 'PDF', size: '1.8 MB', color: '#059669' },
-    { title: 'Medical Licensing Roadmap', author: 'Professionals Club Health Team', type: 'PDF', size: '3.1 MB', color: '#dc2626' },
-    { title: 'Engineering Success Path', author: 'Professionals Club Engineering', type: 'PDF', size: '2.0 MB', color: '#d97706' },
-  ];
-
-  const workshops = [
-    { title: 'Taxes for Newcomers 2026', duration: '45 mins', date: 'Jan 12, 2026', platform: 'YouTube' },
-    { title: 'Resume Polish Workshop', duration: '1h 15m', date: 'Feb 08, 2026', platform: 'Zoom Recording' },
-    { title: 'Buying Your First Home', duration: '55 mins', date: 'Mar 15, 2026', platform: 'YouTube' },
-    { title: 'Interview Prep for IT', duration: '1h 05m', date: 'Apr 02, 2026', platform: 'YouTube' },
-  ];
-
-  const templates = [
-    { title: 'Standard Canadian Resume', type: 'Word Doc', category: 'Career' },
-    { title: 'Professional Cover Letter', type: 'Word Doc', category: 'Career' },
-    { title: 'Networking Message Templates', type: 'PDF', category: 'Communication' },
-    { title: 'Rental Application Bundle', type: 'ZIP', category: 'Settlement' },
-  ];
+  const { ebooks, workshops, templates } = usePortal();
 
   return (
     <>
@@ -60,8 +43,8 @@ export default function ResourcesPage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
             {ebooks.map((book, idx) => (
-              <div key={idx} style={{ position: 'relative', height: 320, borderRadius: 24, overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} className="hover:-translate-y-1 hover:shadow-xl">
-                <Image src={["/finance_bg.png", "/career-mentorship.png", "/healthcare_bg.png", "/housing_bg.png"][idx % 4]} alt={book.title} fill style={{ objectFit: 'cover' }} />
+              <div key={book.id} style={{ position: 'relative', height: 320, borderRadius: 24, overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} className="hover:-translate-y-1 hover:shadow-xl">
+                <Image src={book.image} alt={book.title} fill style={{ objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.6) 50%, rgba(15,23,42,0.3) 100%)' }} />
                 
                 <div style={{ position: 'absolute', top: 20, right: 20, width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -94,8 +77,8 @@ export default function ResourcesPage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
             {workshops.map((video, idx) => (
-              <div key={idx} style={{ position: 'relative', height: 260, borderRadius: 24, overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} className="hover:-translate-y-1 hover:shadow-xl">
-                <Image src={["/meetup_bg.png", "/events-meetup.png", "/housing_bg.png", "/career-mentorship.png"][idx % 4]} alt={video.title} fill style={{ objectFit: 'cover' }} />
+              <div key={video.id} style={{ position: 'relative', height: 260, borderRadius: 24, overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} className="hover:-translate-y-1 hover:shadow-xl">
+                <Image src={video.thumbnailImage} alt={video.title} fill style={{ objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.7) 60%, rgba(15,23,42,0.3) 100%)' }} />
                 
                 <div style={{ position: 'absolute', inset: 0, padding: 32, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
@@ -111,9 +94,9 @@ export default function ResourcesPage() {
                     <div style={{ display: 'flex', gap: 16, fontSize: '0.85rem', color: '#cbd5e1', marginBottom: 16 }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Video size={14} /> {video.duration}</span>
                       <span>&#8226;</span>
-                      <span>Recorded {video.date}</span>
+                      <span>Recorded {video.recordedDate}</span>
                     </div>
-                    <Link href="#" style={{ fontWeight: 700, color: '#fca5a5', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
+                    <Link href={video.videoUrl} style={{ fontWeight: 700, color: '#fca5a5', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
                       Watch Session <ExternalLink size={16} />
                     </Link>
                   </div>
@@ -133,15 +116,15 @@ export default function ResourcesPage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
             {templates.map((temp, idx) => (
-              <div key={idx} style={{ position: 'relative', height: 280, borderRadius: 24, overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} className="hover:-translate-y-1 hover:shadow-xl">
-                <Image src={["/hero-community.png", "/volunteer-help.png", "/events-meetup.png", "/settlement-guide.png"][idx % 4]} alt={temp.title} fill style={{ objectFit: 'cover' }} />
+              <div key={temp.id} style={{ position: 'relative', height: 280, borderRadius: 24, overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} className="hover:-translate-y-1 hover:shadow-xl">
+                <Image src={temp.image} alt={temp.title} fill style={{ objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.7) 40%, rgba(15,23,42,0.4) 100%)' }} />
                 
                 <div style={{ position: 'absolute', inset: 0, padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
                   <span style={{ fontSize: '0.7rem', fontWeight: 800, padding: '4px 10px', borderRadius: 6, background: 'rgba(5,150,105,0.8)', color: 'white', marginBottom: 16, alignSelf: 'flex-start', backdropFilter: 'blur(4px)' }}>{temp.category}</span>
                   <h3 style={{ fontWeight: 800, fontSize: '1.15rem', marginBottom: 12, color: 'white', lineHeight: 1.3, fontFamily: 'var(--font-display)' }}>{temp.title}</h3>
-                  <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginBottom: 20 }}>{temp.type} &#8226; Free Access</div>
-                  <Link href="#" style={{ fontWeight: 700, color: '#6ee7b7', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginBottom: 20 }}>{temp.fileType} &#8226; Free Access</div>
+                  <Link href={temp.accessUrl} style={{ fontWeight: 700, color: '#6ee7b7', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
                     Access Template <ArrowRight size={16} />
                   </Link>
                 </div>
