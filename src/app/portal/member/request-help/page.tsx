@@ -61,7 +61,7 @@ export default function RequestHelpPage() {
     <div style={{ maxWidth: 720, margin: '0 auto' }} className="animate-fade-in">
       <div style={{ marginBottom: 32 }}>
         <h1 className="text-3xl font-bold font-display mb-2">Request Help</h1>
-        <p className="text-secondary">Tell us what you need. Your request will be reviewed by our admin team and routed to the right volunteer.</p>
+        <p className="text-secondary">Tell us what you need. Your request will be securely reviewed and routed to the right volunteer.</p>
       </div>
 
       {/* Progress */}
@@ -90,7 +90,7 @@ export default function RequestHelpPage() {
         {step === 1 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <h2 className="text-xl font-bold">Your Information</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div className="input-group"><label>First Name</label><input className="input" value={firstName} onChange={e => setFirstName(e.target.value)} /></div>
               <div className="input-group"><label>Last Name</label><input className="input" value={lastName} onChange={e => setLastName(e.target.value)} /></div>
               <div className="input-group"><label>Email</label><input className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} /></div>
@@ -144,7 +144,7 @@ export default function RequestHelpPage() {
               <label>Detailed Description</label>
               <textarea className="input" rows={4} placeholder="Describe your situation and what kind of help you need..." value={description} onChange={e => setDescription(e.target.value)} />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div className="input-group">
                 <label>Urgency</label>
                 <select className="input" value={urgency} onChange={e => setUrgency(e.target.value as any)}>
@@ -192,7 +192,7 @@ export default function RequestHelpPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <h2 className="text-xl font-bold">Review & Submit</h2>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div style={{ padding: 16, borderRadius: 10, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
                 <div style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Name</div>
                 <div style={{ fontWeight: 600 }}>{firstName} {lastName}</div>
@@ -219,7 +219,7 @@ export default function RequestHelpPage() {
             <div style={{ padding: 16, borderRadius: 10, background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', gap: 12 }}>
               <AlertCircle size={18} style={{ color: '#d97706', flexShrink: 0, marginTop: 2 }} />
               <div style={{ fontSize: '0.8rem', color: '#92400e', lineHeight: 1.6 }}>
-                <strong>Important:</strong> Your request will be sent to our admin team for review. A volunteer may be assigned to assist you. All communication will be admin-mediated — no one will contact you directly.
+                <strong>Important:</strong> Your request will be sent for secure review. A volunteer may be assigned to assist you. All communication will be securely routed — no one will contact you directly outside the platform.
               </div>
             </div>
 
@@ -227,7 +227,7 @@ export default function RequestHelpPage() {
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 16px', borderRadius: 10, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
               <input type="checkbox" id="consent" checked={consent} onChange={() => setConsent(!consent)} style={{ marginTop: 3 }} />
               <label htmlFor="consent" style={{ fontSize: '0.8rem', cursor: 'pointer', lineHeight: 1.5 }}>
-                I agree to the platform terms and conditions. I understand that all support is community-based, admin-mediated, and does not constitute professional advice. I consent to admin reviewing my request and assigning a volunteer if appropriate.
+                I agree to the platform terms and conditions. I understand that all support is community-based, securely routed, and does not constitute professional advice. I consent to the platform reviewing my request and assigning a volunteer if appropriate.
               </label>
             </div>
 

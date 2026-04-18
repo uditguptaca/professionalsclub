@@ -19,7 +19,7 @@ export default function AdminAssignmentsPage() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
+      <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
         <div className="card-stat" style={{ borderLeft: '3px solid #f59e0b' }}>
           <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Awaiting Assignment</div>
           <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#d97706' }}>{pendingAssignment.length}</div>
@@ -81,7 +81,7 @@ export default function AdminAssignmentsPage() {
                 </div>
                 <Link href={`/portal/admin/requests/${asg.requestId}`} className="btn btn-outline btn-sm" style={{ fontSize: '0.72rem' }}>View Case</Link>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+              <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
                 <div style={{ padding: 10, borderRadius: 8, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
                   <div style={{ fontSize: '0.65rem', color: '#9ca3af', textTransform: 'uppercase' }}>Volunteer</div>
                   <div style={{ fontSize: '0.85rem', fontWeight: 600, marginTop: 2 }}>{asg.volunteerName}</div>

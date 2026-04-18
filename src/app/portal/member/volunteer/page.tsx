@@ -52,7 +52,7 @@ export default function VolunteerApplicationPage() {
         <p className="text-secondary mb-6">
           {existingApp.status === 'approved'
             ? 'Your volunteer application has been approved. Visit your volunteer dashboard to see assigned cases.'
-            : `Your application is currently: ${existingApp.status.replace(/_/g, ' ')}. Our admin team will review it and get back to you.`}
+            : `Your application is currently: ${existingApp.status.replace(/_/g, ' ')}. Our team will review it and get back to you.`}
         </p>
         <button className="btn btn-primary" onClick={() => router.push('/portal/member/my-volunteer')}>
           View Volunteer Dashboard
@@ -95,7 +95,7 @@ export default function VolunteerApplicationPage() {
     <div style={{ maxWidth: 720, margin: '0 auto' }} className="animate-fade-in">
       <div style={{ marginBottom: 32 }}>
         <h1 className="text-3xl font-bold font-display mb-2">Become a Volunteer / Mentor</h1>
-        <p className="text-secondary">Share your expertise to help community members. All support is admin-mediated.</p>
+        <p className="text-secondary">Share your expertise to help community members. All support is coordinated through the platform.</p>
       </div>
 
       {/* Progress */}
@@ -122,7 +122,7 @@ export default function VolunteerApplicationPage() {
         {step === 1 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <h2 className="text-xl font-bold">Professional Background</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div className="input-group"><label>LinkedIn Profile</label><input className="input" placeholder="linkedin.com/in/..." value={linkedinUrl} onChange={e => setLinkedinUrl(e.target.value)} /></div>
               <div className="input-group"><label>Current Profession</label><input className="input" placeholder="e.g. Software Engineer" value={profession} onChange={e => setProfession(e.target.value)} /></div>
               <div className="input-group"><label>Organization / Employer</label><input className="input" placeholder="e.g. Shopify" value={organization} onChange={e => setOrganization(e.target.value)} /></div>
@@ -148,7 +148,7 @@ export default function VolunteerApplicationPage() {
         {step === 2 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <h2 className="text-xl font-bold">Areas You Can Help With</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               {SUPPORT_CATEGORIES.filter(c => c !== 'Other').map(cat => (
                 <button key={cat} onClick={() => toggleArea(cat)} style={{
                   padding: '12px 14px', borderRadius: 10, border: '2px solid',
@@ -189,10 +189,10 @@ export default function VolunteerApplicationPage() {
               <Shield size={18} style={{ display: 'inline', verticalAlign: '-3px', marginRight: 6, color: 'var(--primary-600)' }} />
               <span style={{ fontSize: '0.8rem', color: '#4338ca', fontWeight: 600 }}>Platform Rules for Volunteers</span>
               <ul style={{ fontSize: '0.8rem', color: '#374151', marginTop: 12, paddingLeft: 16, lineHeight: 1.8 }}>
-                <li>All support must go through admin — you cannot contact members directly.</li>
+                <li>All support must go through the platform — you cannot contact members directly.</li>
                 <li>Personal contact details (phone, email) are never shared between members.</li>
-                <li>Admin will assign cases to you and relay all communication.</li>
-                <li>You agree to submit your responses to admin for review before they are forwarded.</li>
+                <li>The platform will assign cases to you and securely relay all communication.</li>
+                <li>You agree to submit your responses securely through the portal before they are forwarded.</li>
                 <li>Guidance provided is community-based and does not constitute professional advice.</li>
               </ul>
             </div>
@@ -201,8 +201,8 @@ export default function VolunteerApplicationPage() {
               {[
                 { id: 'rules', label: 'I agree to all platform rules above', checked: agreedRules, set: setAgreedRules },
                 { id: 'nocontact', label: 'I will NOT contact any member directly', checked: agreedNoContact, set: setAgreedNoContact },
-                { id: 'admin', label: 'I understand all support goes through admin', checked: agreedAdmin, set: setAgreedAdmin },
-                { id: 'screen', label: 'I consent to admin screening my application', checked: consentScreen, set: setConsentScreen },
+                { id: 'admin', label: 'I understand all support goes through the platform', checked: agreedAdmin, set: setAgreedAdmin },
+                { id: 'screen', label: 'I consent to the platform screening my application', checked: consentScreen, set: setConsentScreen },
               ].map(item => (
                 <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
                   <input type="checkbox" id={item.id} checked={item.checked} onChange={() => item.set(!item.checked)} />

@@ -64,7 +64,7 @@ export default function MyVolunteerPage() {
       {/* Assigned Cases (only for approved volunteers) */}
       {myApp.status === 'approved' && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
+          <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
             <div className="card-stat">
               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Assigned Cases</div>
               <div style={{ fontSize: '1.8rem', fontWeight: 800 }}>{myAssignments.length}</div>

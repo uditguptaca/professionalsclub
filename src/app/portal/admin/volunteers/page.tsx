@@ -78,7 +78,7 @@ export default function AdminVolunteersPage() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 12 }}>
+              <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 12 }}>
                 <div style={{ padding: 10, borderRadius: 8, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
                   <div style={{ fontSize: '0.65rem', color: '#9ca3af', textTransform: 'uppercase' }}>City</div>
                   <div style={{ fontSize: '0.82rem', fontWeight: 600, marginTop: 2 }}>{app.city}, {app.province}</div>

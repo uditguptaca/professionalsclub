@@ -54,7 +54,7 @@ export default function AdminRequestDetailPage() {
         <ArrowLeft size={16} /> Back to Requests
       </Link>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 24 }}>
+      <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 24 }}>
         {/* Main Column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* Header */}

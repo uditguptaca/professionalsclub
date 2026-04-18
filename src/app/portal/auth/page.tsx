@@ -148,7 +148,7 @@ export default function AuthPage() {
         <div style={{ marginTop: 32, padding: '16px 20px', borderRadius: 12, background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.15)', textAlign: 'center' }}>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
             <Shield size={12} style={{ display: 'inline', verticalAlign: '-2px', marginRight: 4 }} />
-            <strong>No direct member contact.</strong> All interactions are admin-mediated for safety and privacy.
+            <strong>No direct member contact.</strong> All interactions are securely routed for safety and privacy.
           </p>
         </div>
       </div>

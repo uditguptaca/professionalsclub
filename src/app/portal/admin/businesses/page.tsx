@@ -36,7 +36,7 @@ export default function AdminBusinesses() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+      <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
         {[
           { label: 'Total Businesses', value: businesses.length, icon: <Building2 size={22} />, color: '#374151', bg: '#f3f4f6' },
           { label: 'Verified', value: verified, icon: <ShieldCheck size={22} />, color: '#059669', bg: 'rgba(5,150,105,0.1)' },

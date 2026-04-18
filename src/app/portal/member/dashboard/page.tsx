@@ -24,7 +24,7 @@ export default function MemberDashboard() {
       </div>
 
       {/* Primary Actions */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <Link href="/portal/member/request-help" style={{ textDecoration: 'none' }}>
           <div className="card card-clickable" style={{ background: 'linear-gradient(135deg, var(--primary-600), var(--primary-400))', color: 'white', border: 'none', padding: '32px 28px', boxShadow: '0 10px 30px rgba(99,102,241,0.25)', transition: 'transform 0.2s', cursor: 'pointer' }}>
             <HelpCircle size={36} style={{ marginBottom: 16, opacity: 0.9 }} />
@@ -49,7 +49,7 @@ export default function MemberDashboard() {
       </div>
 
       {/* Status Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+      <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
         <Link href="/portal/member/my-requests" style={{ textDecoration: 'none' }}>
           <div className="card-stat" style={{ cursor: 'pointer' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

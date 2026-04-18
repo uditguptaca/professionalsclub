@@ -585,7 +585,7 @@ export default function SignupPage() {
               <div className="consent-list">
                 {[
                   { val: consentRegister, set: setConsentRegister, label: 'I consent to register as a member of Professionals Club.', required: true },
-                  { val: consentAdminReview, set: setConsentAdminReview, label: 'I agree that my information will be reviewed by admin for onboarding.', required: true },
+                  { val: consentAdminReview, set: setConsentAdminReview, label: 'I agree that my information will be reviewed by the platform for onboarding.', required: true },
                   { val: consentNoDirectContact, set: setConsentNoDirectContact, label: 'I understand that no direct member-to-member contact is allowed by default.', required: true },
                   { val: consentNoMisuse, set: setConsentNoMisuse, label: 'I agree not to misuse any community or member information.', required: true },
                   { val: consentUpdates, set: setConsentUpdates, label: 'I allow Professionals Club to send me updates and community communications.', required: false },
@@ -648,7 +648,7 @@ export default function SignupPage() {
           <div className="flow-arrow">→</div>
           <div className="flow-step"><span>2</span> Complete Profile</div>
           <div className="flow-arrow">→</div>
-          <div className="flow-step active-flow"><span>3</span> Admin Review</div>
+          <div className="flow-step active-flow"><span>3</span> Initial Review</div>
           <div className="flow-arrow">→</div>
           <div className="flow-step"><span>4</span> Dashboard</div>
         </div>

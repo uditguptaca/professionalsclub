@@ -30,9 +30,9 @@ const JOB_TYPE_LABELS: Record<JobType, string> = {
 const JOB_TYPE_COLORS: Record<JobType, { bg: string; color: string }> = {
   full_time: { bg: '#dbeafe', color: '#1e40af' },
   part_time: { bg: '#fce7f3', color: '#9d174d' },
-  contract: { bg: '#d1fae5', color: '#065f46' },
+  contract: { bg: '#fee2e2', color: '#dc2626' },
   freelance: { bg: '#fef3c7', color: '#92400e' },
-  internship: { bg: '#ede9fe', color: '#5b21b6' },
+  internship: { bg: '#fff1f2', color: '#be123c' },
 };
 
 function formatSalary(min: number, max: number, period: string) {
@@ -141,19 +141,19 @@ export default function JobsPage() {
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.95) 0%, rgba(30,41,59,0.85) 50%, rgba(168,102,247,0.2) 100%)' }} />
         </div>
 
-        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 1200, display: 'grid', gridTemplateColumns: '1fr 420px', gap: 64, alignItems: 'center', padding: '100px 24px 80px' }}>
+        <div className="container mobile-stack" style={{ position: 'relative', zIndex: 10, maxWidth: 1200, display: 'grid', gridTemplateColumns: '1fr 420px', gap: 24, alignItems: 'center', padding: '60px 24px 40px' }}>
           {/* Left */}
           <div>
             <h1 style={{ fontSize: '3.2rem', fontWeight: 900, color: 'white', lineHeight: 1.1, marginBottom: 20, fontFamily: 'var(--font-display)' }}>
-              Best Place To <span style={{ background: 'linear-gradient(135deg, #a855f7, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Grow</span><br />Your Career
+              Best Place To <span style={{ background: 'linear-gradient(135deg, #fb7185, #e11d48)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Grow</span><br />Your Career
             </h1>
-            <p style={{ fontSize: '1.1rem', color: '#c084fc', fontWeight: 600, marginBottom: 16 }}>
+            <p style={{ fontSize: '1.1rem', color: '#fb7185', fontWeight: 600, marginBottom: 16 }}>
               Find Jobs, Employment & Career Opportunities
             </p>
             <p style={{ fontSize: '0.95rem', color: '#94a3b8', lineHeight: 1.7, marginBottom: 32, maxWidth: 480 }}>
-              Browse {activeJobs.length}+ job openings across Canada from verified employers in the Professionals Club network. Find your next career move today.
+              Browse {activeJobs.length}+ jobs.
             </p>
-            <Link href="/portal/auth" className="btn btn-lg" style={{ background: 'linear-gradient(135deg, #a855f7, #9333ea)', color: 'white', border: 'none', padding: '14px 28px', fontSize: '0.95rem', boxShadow: '0 8px 24px rgba(168,102,247,0.35)' }}>
+            <Link href="/portal/auth" className="btn btn-lg" style={{ background: 'linear-gradient(135deg, #e11d48, #be123c)', color: 'white', border: 'none', padding: '14px 28px', fontSize: '0.95rem', boxShadow: '0 8px 24px rgba(225,29,72,0.35)' }}>
               Get Started <ArrowRight size={18} />
             </Link>
           </div>
@@ -161,7 +161,7 @@ export default function JobsPage() {
           {/* Right — Search Panel */}
           <div style={{ background: 'white', borderRadius: 16, padding: '32px 28px', boxShadow: '0 25px 50px rgba(0,0,0,0.25)' }}>
             <h2 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#0f172a', marginBottom: 4, fontFamily: 'var(--font-display)' }}>FIND YOUR JOB!</h2>
-            <div style={{ width: 40, height: 3, background: 'linear-gradient(90deg, #a855f7, #c084fc)', borderRadius: 2, marginBottom: 24 }} />
+            <div style={{ width: 40, height: 3, background: 'linear-gradient(90deg, #e11d48, #fb7185)', borderRadius: 2, marginBottom: 24 }} />
 
             <form onSubmit={handleSearch} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ position: 'relative' }}>
@@ -216,7 +216,7 @@ export default function JobsPage() {
                 <option value="Other">Other</option>
               </select>
 
-              <button type="submit" style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #a855f7, #9333ea)', color: 'white', border: 'none', borderRadius: 8, fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s' }}>
+              <button type="submit" style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #e11d48, #be123c)', color: 'white', border: 'none', borderRadius: 8, fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s' }}>
                 <Search size={16} /> SEARCH
               </button>
 
@@ -231,14 +231,14 @@ export default function JobsPage() {
       </section>
 
       {/* ─── POPULAR CATEGORIES ─── */}
-      <section style={{ padding: '80px 0', background: 'white' }}>
+      <section style={{ padding: '40px 0', background: 'white' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
             <h2 style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: '#0f172a', marginBottom: 12 }}>Dive Into Your Ideal Category!</h2>
-            <p style={{ color: '#64748b', fontSize: '1rem' }}>Browse Top Fields Like Technology, Accounting, and Medical</p>
+            <p style={{ color: '#64748b', fontSize: '1rem' }}>Browse Top Fields</p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+          <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
             {Object.entries(CATEGORY_ICONS).map(([cat, icon]) => (
               <button
                 key={cat}
@@ -247,7 +247,7 @@ export default function JobsPage() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 16,
-                  background: '#f3e8ff',
+                  background: '#fff1f2',
                   border: 'none',
                   borderRadius: 16,
                   padding: '20px 24px',
@@ -257,8 +257,8 @@ export default function JobsPage() {
                   position: 'relative',
                 }}
                 className="category-card-hover"
-                onMouseOver={e => { e.currentTarget.style.background = '#e9d5ff'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                onMouseOut={e => { e.currentTarget.style.background = '#f3e8ff'; e.currentTarget.style.transform = 'none'; }}
+                onMouseOver={e => { e.currentTarget.style.background = '#fff1f2'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                onMouseOut={e => { e.currentTarget.style.background = '#fff1f2'; e.currentTarget.style.transform = 'none'; }}
               >
                 <div style={{ 
                   width: 46, 
@@ -268,9 +268,9 @@ export default function JobsPage() {
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'center', 
-                  color: '#a855f7',
+                  color: '#e11d48',
                   flexShrink: 0,
-                  boxShadow: '0 4px 10px rgba(168,85,247,0.1)'
+                  boxShadow: '0 4px 10px rgba(225,29,72,0.1)'
                 }}>
                   {React.cloneElement(icon as React.ReactElement<{ size?: number }>, { size: 20 })}
                 </div>
@@ -283,7 +283,7 @@ export default function JobsPage() {
           </div>
 
           <div style={{ textAlign: 'center', marginTop: 40 }}>
-             <button onClick={() => { setCategoryFilter(''); setSearchApplied(true); setActiveTab('recent'); }} style={{ background: 'none', border: 'none', color: '#a855f7', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'opacity 0.2s' }} onMouseOver={e=>e.currentTarget.style.opacity='0.8'} onMouseOut={e=>e.currentTarget.style.opacity='1'}>
+             <button onClick={() => { setCategoryFilter(''); setSearchApplied(true); setActiveTab('recent'); }} style={{ background: 'none', border: 'none', color: '#e11d48', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'opacity 0.2s' }} onMouseOver={e=>e.currentTarget.style.opacity='0.8'} onMouseOut={e=>e.currentTarget.style.opacity='1'}>
                View All Categories <ChevronRight size={16} />
              </button>
           </div>
@@ -291,14 +291,14 @@ export default function JobsPage() {
       </section>
 
       {/* ─── TOP JOB CITIES ─── */}
-      <section style={{ padding: '80px 0', background: '#faf5ff' }}>
+      <section style={{ padding: '40px 0', background: '#faf5ff' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
             <h2 style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: '#0f172a', marginBottom: 12 }}>Explore Top Job Cities!</h2>
-            <p style={{ color: '#64748b', fontSize: '1rem' }}>Unlock Opportunities in Canadian Hubs Like Toronto and Vancouver</p>
+            <p style={{ color: '#64748b', fontSize: '1rem' }}>Unlock Opportunities</p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
+          <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
             {[
               { name: 'Toronto, ON', jobs: 120, img: '/toronto-skyline.png' },
               { name: 'Vancouver, BC', jobs: 85, img: '/vancouver-skyline.png' },
@@ -324,16 +324,16 @@ export default function JobsPage() {
       </section>
 
       {/* ─── RECENT JOBS ─── */}
-      <section style={{ padding: '80px 0', background: '#f8fafc' }}>
+      <section style={{ padding: '40px 0', background: '#f8fafc' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
+          <div className="mobile-flex-col mobile-gap-reduce" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
             <div>
               <h2 style={{ fontSize: '1.8rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: '#0f172a', marginBottom: 4 }}>RECENT JOBS</h2>
               <div style={{ width: 40, height: 3, background: 'linear-gradient(90deg, #a855f7, #c084fc)', borderRadius: 2 }} />
             </div>
 
             {/* Tab Filters */}
-            <div style={{ display: 'flex', gap: 0, borderRadius: 8, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+            <div className="mobile-nav-scroll" style={{ display: 'flex', gap: 0, borderRadius: 8, overflow: 'hidden', border: '1px solid #e2e8f0', maxWidth: '100%' }}>
               {tabs.map(tab => (
                 <button
                   key={tab.key}
@@ -346,7 +346,7 @@ export default function JobsPage() {
                     letterSpacing: '0.03em',
                     border: 'none',
                     cursor: 'pointer',
-                    background: activeTab === tab.key ? 'linear-gradient(135deg, #a855f7, #9333ea)' : 'white',
+                    background: activeTab === tab.key ? 'linear-gradient(135deg, #e11d48, #be123c)' : 'white',
                     color: activeTab === tab.key ? 'white' : '#374151',
                     transition: 'all 0.2s',
                     borderRight: '1px solid #e2e8f0',
@@ -363,7 +363,7 @@ export default function JobsPage() {
             <div style={{ textAlign: 'center', padding: '60px 20px', background: 'white', borderRadius: 16, border: '1px solid #e5e7eb' }}>
               <Briefcase size={48} style={{ color: '#cbd5e1', marginBottom: 16 }} />
               <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#374151', marginBottom: 8 }}>No jobs found</h3>
-              <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Try adjusting your search filters or check back later for new postings.</p>
+              <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Adjust filters or check later.</p>
               {searchApplied && (
                 <button onClick={clearSearch} className="btn btn-primary" style={{ marginTop: 16, padding: '10px 24px', fontSize: '0.85rem' }}>
                   Clear All Filters
@@ -371,7 +371,7 @@ export default function JobsPage() {
               )}
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
               {filteredJobs.map(job => {
                 const typeStyle = JOB_TYPE_COLORS[job.jobType];
                 return (
@@ -396,9 +396,9 @@ export default function JobsPage() {
 
                       {/* Job Info */}
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+                        <div className="mobile-flex-col" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
                           <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.3 }}>{job.title}</h3>
-                          <span style={{
+                          <span className="mobile-badge-wrap" style={{
                             padding: '3px 10px',
                             borderRadius: 4,
                             fontSize: '0.65rem',
@@ -413,7 +413,7 @@ export default function JobsPage() {
                             {JOB_TYPE_LABELS[job.jobType]}
                           </span>
                         </div>
-                        <div style={{ fontSize: '0.82rem', color: '#a855f7', fontWeight: 600, marginBottom: 10 }}>{job.company}</div>
+                        <div style={{ fontSize: '0.82rem', color: '#e11d48', fontWeight: 600, marginBottom: 10 }}>{job.company}</div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: '0.8rem', color: '#64748b', marginBottom: 10 }}>
                           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -432,7 +432,7 @@ export default function JobsPage() {
                           </div>
                           <Link href={job.applyUrl || '#'} style={{
                             padding: '6px 18px',
-                            background: 'linear-gradient(135deg, #a855f7, #9333ea)',
+                            background: 'linear-gradient(135deg, #e11d48, #be123c)',
                             color: 'white',
                             borderRadius: 6,
                             fontSize: '0.78rem',
@@ -451,8 +451,8 @@ export default function JobsPage() {
 
                     {/* Tags */}
                     {job.tags.length > 0 && (
-                      <div style={{ marginTop: 14, padding: '10px 14px', background: 'linear-gradient(90deg, #f3e8ff, #faf5ff)', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#9333ea' }}>Tagged as:</span>
+                      <div style={{ marginTop: 14, padding: '10px 14px', background: 'linear-gradient(90deg, #fff1f2, #fff1f2)', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#e11d48' }}>Tagged as:</span>
                         {job.tags.map((tag, i) => (
                           <span key={i} style={{ fontSize: '0.72rem', color: '#475569', fontWeight: 500 }}>
                             {tag}{i < job.tags.length - 1 ? ',' : ''}
@@ -469,15 +469,15 @@ export default function JobsPage() {
       </section>
 
       {/* ─── REFERRAL SECTION ─── */}
-      <section style={{ padding: '80px 0', background: 'white' }}>
+      <section style={{ padding: '40px 0', background: 'white' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center' }}>
+          <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center' }}>
             {/* Left Box (Image Component) */}
             <div style={{ position: 'relative', borderRadius: 24, overflow: 'hidden', height: 480 }}>
               <Image src="/volunteer-help.png" alt="Referral" fill style={{ objectFit: 'cover' }} />
               {/* Floating Badge */}
               <div style={{ position: 'absolute', bottom: 24, left: 24, background: 'white', padding: '12px 24px', borderRadius: 99, display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 8px 30px rgba(0,0,0,0.1)' }}>
-                <div style={{ background: '#0f172a', width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a855f7' }}>
+                <div style={{ background: '#0f172a', width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e11d48' }}>
                    <Briefcase size={20} />
                 </div>
                 <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#0f172a' }}>Get Referred Now!</span>
@@ -487,21 +487,18 @@ export default function JobsPage() {
             {/* Right Box (Text Content) */}
             <div>
               <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: '#0f172a', marginBottom: 20, lineHeight: 1.15 }}>
-                Want a <span style={{ color: '#a855f7' }}>Referral?</span> 
+                Want a <span style={{ color: '#e11d48' }}>Referral?</span> 
               </h2>
               <p style={{ fontSize: '1.05rem', color: '#64748b', lineHeight: 1.7, marginBottom: 32 }}>
-                Submit a help request on our portal specifying the company and role. Our admin team will match you with a volunteer who works there. Log in, register as a member, and look for who can give you the referral for your dream job.
+                Admin matches you with volunteers.
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 40 }}>
                 {[
-                  'Connect with verified professionals in Canada',
-                  'Get direct referrals from top companies',
-                  'Expand your professional network',
-                  'Speed up your job search process'
+                  'Connect with professionals', 'Get direct referrals', 'Expand network', 'Speed up job search'
                 ].map((text, idx) => (
                   <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#f3e8ff', color: '#a855f7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#fff1f2', color: '#e11d48', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <ArrowRight size={16} />
                     </div>
                     <span style={{ fontSize: '0.95rem', color: '#334155', fontWeight: 600 }}>{text}</span>
@@ -510,7 +507,7 @@ export default function JobsPage() {
               </div>
 
               <Link href="/portal/auth" className="btn btn-lg" style={{
-                background: 'linear-gradient(135deg, #a855f7, #9333ea)',
+                background: 'linear-gradient(135deg, #e11d48, #be123c)',
                 color: 'white',
                 border: 'none',
                 padding: '16px 36px',
@@ -518,7 +515,7 @@ export default function JobsPage() {
                 borderRadius: 14,
                 display: 'inline-flex',
                 alignItems: 'center',
-                boxShadow: '0 8px 24px rgba(168,85,247,0.3)',
+                boxShadow: '0 8px 24px rgba(225,29,72,0.3)',
                 textDecoration: 'none'
               }}>
                 Request a Referral <ChevronRight size={18} style={{ marginLeft: 6 }} />
@@ -530,19 +527,19 @@ export default function JobsPage() {
 
       {/* ─── EMPLOYER / CANDIDATE CTA ─── */}
       <section style={{ padding: 0 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: 360 }}>
+        <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
           {/* Employer */}
-          <div style={{ background: '#f8fafc', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 40px', textAlign: 'center' }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#f3e8ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a855f7', marginBottom: 20 }}>
-              <Building2 size={28} />
+          <div style={{ background: '#f8fafc', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 20px', textAlign: 'center' }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#fff1f2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e11d48', marginBottom: 12 }}>
+              <Building2 size={24} />
             </div>
-            <h3 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#0f172a', marginBottom: 6, fontFamily: 'var(--font-display)' }}>I&apos;M AN EMPLOYER</h3>
-            <div style={{ width: 30, height: 2, background: '#a855f7', margin: '0 auto 16px' }} />
-            <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.7, maxWidth: 320, marginBottom: 24 }}>
-              Post job openings and connect with skilled professionals from the Professionals Club community.
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0f172a', marginBottom: 6, fontFamily: 'var(--font-display)' }}>I&apos;M AN EMPLOYER</h3>
+            <div style={{ width: 30, height: 2, background: '#e11d48', margin: '0 auto 12px' }} />
+            <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: 1.6, maxWidth: 320, marginBottom: 16 }}>
+              Post openings and connect.
             </p>
             <Link href="/portal/auth" className="btn" style={{
-              background: 'linear-gradient(135deg, #a855f7, #9333ea)',
+              background: 'linear-gradient(135deg, #e11d48, #be123c)',
               color: 'white',
               border: 'none',
               padding: '12px 28px',
@@ -554,19 +551,19 @@ export default function JobsPage() {
           </div>
 
           {/* Candidate */}
-          <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 40px', textAlign: 'center', overflow: 'hidden' }}>
+          <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 20px', textAlign: 'center', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', inset: 0 }}>
               <Image src="/hero-community.png" alt="Career" fill style={{ objectFit: 'cover', opacity: 0.2 }} />
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.92), rgba(15,23,42,0.85))' }} />
             </div>
             <div style={{ position: 'relative', zIndex: 10 }}>
-              <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(168,102,247,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#c084fc', margin: '0 auto 20px' }}>
-                <Briefcase size={28} />
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(225,29,72,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fb7185', margin: '0 auto 12px' }}>
+                <Briefcase size={24} />
               </div>
-              <h3 style={{ fontSize: '1.3rem', fontWeight: 900, color: 'white', marginBottom: 6, fontFamily: 'var(--font-display)' }}>I&apos;M A CANDIDATE</h3>
-              <div style={{ width: 30, height: 2, background: '#c084fc', margin: '0 auto 16px' }} />
-              <p style={{ fontSize: '0.9rem', color: '#94a3b8', lineHeight: 1.7, maxWidth: 320, marginBottom: 24 }}>
-                Create your profile, browse opportunities, and apply to jobs from trusted Canadian employers.
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: 'white', marginBottom: 6, fontFamily: 'var(--font-display)' }}>I&apos;M A CANDIDATE</h3>
+              <div style={{ width: 30, height: 2, background: '#fb7185', margin: '0 auto 12px' }} />
+              <p style={{ fontSize: '0.85rem', color: '#94a3b8', lineHeight: 1.6, maxWidth: 320, marginBottom: 16 }}>
+                Create a profile and apply.
               </p>
               <Link href="/portal/auth" className="btn" style={{
                 background: 'linear-gradient(135deg, #ef4444, #dc2626)',

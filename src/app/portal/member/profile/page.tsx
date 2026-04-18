@@ -56,7 +56,7 @@ export default function MemberProfilePage() {
       <div className="card" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.04)', marginBottom: 32 }}>
         <h2 className="text-xl font-bold mb-6 border-b pb-4">Personal Details</h2>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
           <div className="input-group">
             <label>First Name</label>
             <input className="input" value={firstName} onChange={e => setFirstName(e.target.value)} />
@@ -81,7 +81,7 @@ export default function MemberProfilePage() {
         
         <h2 className="text-xl font-bold mt-10 mb-6 border-b pb-4">Professional Information</h2>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
           <div className="input-group">
             <label>Industry</label>
             <input className="input" value={industry} onChange={e => setIndustry(e.target.value)} />

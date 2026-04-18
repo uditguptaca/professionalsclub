@@ -176,7 +176,7 @@ export default function JobsManagementPage() {
       <p style={{ color: 'var(--text-secondary)', marginBottom: 32 }}>Manage job postings displayed on the public Jobs page. Add, edit, or remove listings.</p>
 
       {/* Stats row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
+      <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
         {[
           { label: 'Active Jobs', value: activeJobs.length, color: '#059669', bg: '#d1fae5' },
           { label: 'Featured', value: jobPostings.filter(j => j.isFeatured).length, color: '#d97706', bg: '#fef3c7' },
@@ -207,7 +207,7 @@ export default function JobsManagementPage() {
               <div><label style={labelStyle}>Job Title *</label><input style={inputStyle} value={String(form.title || '')} onChange={e => handleChange('title', e.target.value)} placeholder="e.g. Senior Full-Stack Developer" /></div>
 
               {/* Company / Logo */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div><label style={labelStyle}>Company Name *</label><input style={inputStyle} value={String(form.company || '')} onChange={e => handleChange('company', e.target.value)} /></div>
                 <div><label style={labelStyle}>Company Logo (image path)</label><input style={inputStyle} value={String(form.companyLogo || '')} onChange={e => handleChange('companyLogo', e.target.value)} placeholder="/career-mentorship.png" /></div>
               </div>
@@ -216,19 +216,19 @@ export default function JobsManagementPage() {
               <div><label style={labelStyle}>Job Description *</label><textarea style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }} value={String(form.description || '')} onChange={e => handleChange('description', e.target.value)} /></div>
 
               {/* Requirements / Responsibilities */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div><label style={labelStyle}>Requirements</label><textarea style={{ ...inputStyle, minHeight: 70, resize: 'vertical' }} value={String(form.requirements || '')} onChange={e => handleChange('requirements', e.target.value)} /></div>
                 <div><label style={labelStyle}>Responsibilities</label><textarea style={{ ...inputStyle, minHeight: 70, resize: 'vertical' }} value={String(form.responsibilities || '')} onChange={e => handleChange('responsibilities', e.target.value)} /></div>
               </div>
 
               {/* Location / Province */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div><label style={labelStyle}>Location *</label><input style={inputStyle} value={String(form.location || '')} onChange={e => handleChange('location', e.target.value)} placeholder="Toronto, ON" /></div>
                 <div><label style={labelStyle}>Province</label><input style={inputStyle} value={String(form.province || '')} onChange={e => handleChange('province', e.target.value)} placeholder="Ontario" /></div>
               </div>
 
               {/* Salary */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+              <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                 <div><label style={labelStyle}>Salary Min</label><input type="number" style={inputStyle} value={String(form.salaryMin || '')} onChange={e => handleChange('salaryMin', Number(e.target.value))} /></div>
                 <div><label style={labelStyle}>Salary Max</label><input type="number" style={inputStyle} value={String(form.salaryMax || '')} onChange={e => handleChange('salaryMax', Number(e.target.value))} /></div>
                 <div><label style={labelStyle}>Salary Period</label>
@@ -239,7 +239,7 @@ export default function JobsManagementPage() {
               </div>
 
               {/* Type / Category */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div><label style={labelStyle}>Job Type</label>
                   <select style={inputStyle} value={String(form.jobType || 'full_time')} onChange={e => handleChange('jobType', e.target.value)}>
                     {JOB_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -256,13 +256,13 @@ export default function JobsManagementPage() {
               <div><label style={labelStyle}>Tags (comma-separated)</label><input style={inputStyle} value={String(form.tags || '')} onChange={e => handleChange('tags', e.target.value)} placeholder="React, TypeScript, Remote" /></div>
 
               {/* Contact */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div><label style={labelStyle}>Contact Email</label><input style={inputStyle} value={String(form.contactEmail || '')} onChange={e => handleChange('contactEmail', e.target.value)} /></div>
                 <div><label style={labelStyle}>Apply URL</label><input style={inputStyle} value={String(form.applyUrl || '')} onChange={e => handleChange('applyUrl', e.target.value)} placeholder="https://..." /></div>
               </div>
 
               {/* Dates */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div><label style={labelStyle}>Posted Date</label><input type="date" style={inputStyle} value={String(form.postedAt || '')} onChange={e => handleChange('postedAt', e.target.value)} /></div>
                 <div><label style={labelStyle}>Expires Date</label><input type="date" style={inputStyle} value={String(form.expiresAt || '')} onChange={e => handleChange('expiresAt', e.target.value)} /></div>
               </div>

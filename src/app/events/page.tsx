@@ -33,15 +33,15 @@ export default function EventsPage() {
             Connect, Learn & <span style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Grow Together</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: '#94a3b8', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
-            Monthly in-person meetups, weekly virtual workshops, and YouTube livestreams — all designed to help you network, learn, and thrive in Canada.
+            Meetups, workshops, and livestreams to help you thrive.
           </p>
         </div>
       </section>
 
       {/* Featured Event + Sidebar */}
-      <section style={{ padding: '100px 0', background: 'white' }}>
+      <section style={{ padding: '40px 0', background: 'white' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 32 }}>
+          <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 32 }}>
 
             {/* Featured Event */}
             {featuredEvent && (
@@ -52,11 +52,11 @@ export default function EventsPage() {
                   <div style={{ position: 'relative', zIndex: 10 }}>
                     <span style={{ display: 'inline-block', background: '#b45309', color: 'white', padding: '4px 14px', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700, marginBottom: 16 }}>Featured Event</span>
                     <h2 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 8, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}>{featuredEvent.title}</h2>
-                    <p style={{ color: '#f1f5f9', fontSize: '1rem', textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>{featuredEvent.description}</p>
+                    <p style={{ color: '#f1f5f9', fontSize: '1rem', textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>{featuredEvent.description.length > 50 ? featuredEvent.description.substring(0, 47) + '...' : featuredEvent.description}</p>
                   </div>
                 </div>
                 <div style={{ padding: '36px 40px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 32 }}>
+                  <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 32 }}>
                     {[
                       { icon: <Calendar size={20} style={{ color: '#6366f1' }} />, label: featuredEvent.date, sub: 'Recurring monthly' },
                       { icon: <Clock size={20} style={{ color: '#6366f1' }} />, label: featuredEvent.time, sub: 'Eastern Time' },
@@ -87,7 +87,7 @@ export default function EventsPage() {
                   <Video size={20} style={{ color: '#dc2626' }} />
                   <h3 style={{ fontWeight: 800, fontSize: '1.05rem', fontFamily: 'var(--font-display)' }}>Virtual Workshops</h3>
                 </div>
-                <p style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: 16, lineHeight: 1.6 }}>Weekly financial literacy and cultural adaptation guidance sessions online.</p>
+                <p style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: 16, lineHeight: 1.6 }}>Weekly online sessions.</p>
                 {upcomingVirtual.map((w) => (
                   <div key={w.id} style={{ padding: '12px 14px', borderRadius: 10, background: 'white', border: '1px solid #e2e8f0', marginBottom: 8 }}>
                     <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1e293b', marginBottom: 4 }}>{w.title}</div>
@@ -101,8 +101,8 @@ export default function EventsPage() {
 
               {/* Host CTA */}
               <div style={{ borderRadius: 16, padding: 28, background: 'linear-gradient(135deg, #eef2ff, #f5f3ff)', border: '1px solid #e0e7ff', textAlign: 'center' }}>
-                <h3 style={{ fontWeight: 800, fontSize: '1.05rem', fontFamily: 'var(--font-display)', marginBottom: 8, color: '#1e293b' }}>Want to Host an Event?</h3>
-                <p style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: 16, lineHeight: 1.5 }}>If you are a mentor or community leader, we welcome you to lead sessions or local meetups in your city.</p>
+                <h3 style={{ fontWeight: 800, fontSize: '1.05rem', fontFamily: 'var(--font-display)', marginBottom: 8, color: '#1e293b' }}>Host an Event</h3>
+                <p style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: 16, lineHeight: 1.5 }}>Lead sessions in your city.</p>
                 <button className="btn btn-primary" style={{ width: '100%', fontSize: '0.85rem' }}>Contact Organizers</button>
               </div>
             </div>
@@ -111,13 +111,13 @@ export default function EventsPage() {
       </section>
 
       {/* Past Events Gallery */}
-      <section style={{ padding: '80px 0', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+      <section style={{ padding: '40px 0', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <h2 style={{ fontSize: '2.2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 12 }}>Past Events</h2>
-            <p style={{ fontSize: '1rem', color: '#64748b' }}>Highlights from our recent community gatherings.</p>
+            <p style={{ fontSize: '1rem', color: '#64748b' }}>Recent community gatherings.</p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+          <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
             {pastEvents.map((evt, i) => (
               <div key={evt.id} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid #e2e8f0', background: 'white', transition: 'transform 0.2s ease', cursor: 'pointer' }} className="hover:-translate-y-1 hover:shadow-lg">
                 <div style={{ position: 'relative', height: 150, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

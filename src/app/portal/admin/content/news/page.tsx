@@ -85,7 +85,7 @@ export default function NewsManagementPage() {
               <div><label style={labelStyle}>Title</label><input style={inputStyle} value={form.title || ''} onChange={e => handleChange('title', e.target.value)} /></div>
               <div><label style={labelStyle}>Summary</label><textarea style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }} value={form.summary || ''} onChange={e => handleChange('summary', e.target.value)} /></div>
               <div><label style={labelStyle}>Full Content</label><textarea style={{ ...inputStyle, minHeight: 120, resize: 'vertical' }} value={form.content || ''} onChange={e => handleChange('content', e.target.value)} /></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div><label style={labelStyle}>Category</label><input style={inputStyle} value={form.category || ''} onChange={e => handleChange('category', e.target.value)} placeholder="Announcement" /></div>
                 <div><label style={labelStyle}>Author</label><input style={inputStyle} value={form.author || ''} onChange={e => handleChange('author', e.target.value)} /></div>
               </div>

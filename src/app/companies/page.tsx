@@ -50,13 +50,13 @@ export default function CompaniesPage() {
             Companies in Our <span style={{ background: 'linear-gradient(135deg, #818cf8, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Network</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: '#94a3b8', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
-            Organizations where our volunteers work. Request a referral through our admin-mediated help desk.
+            Request a referral.
           </p>
         </div>
       </section>
 
       {/* Search + Grid */}
-      <section style={{ padding: '80px 0', background: 'white' }}>
+      <section style={{ padding: '40px 0', background: 'white' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           {/* Filters */}
           <div style={{ display: 'flex', gap: 16, marginBottom: 48, flexWrap: 'wrap' }}>
@@ -79,7 +79,7 @@ export default function CompaniesPage() {
           </div>
 
           {/* Companies Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+          <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
             {filtered.map(company => (
               <div key={company.id} style={{ borderRadius: 16, border: '1px solid #e2e8f0', overflow: 'hidden', transition: 'box-shadow 0.2s, transform 0.2s', cursor: 'default', background: 'white' }}>
                 <div style={{ height: 8, background: company.color }} />
@@ -112,14 +112,14 @@ export default function CompaniesPage() {
       </section>
 
       {/* CTA */}
-      <section style={{ position: 'relative', padding: '100px 0', textAlign: 'center', overflow: 'hidden' }}>
+      <section style={{ position: 'relative', padding: '40px 0', textAlign: 'center', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
           <Image src="/event_bg.png" alt="Company Referrals" fill style={{ objectFit: 'cover' }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.92), rgba(30,27,75,0.85))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 600 }}>
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Want a Referral?</h2>
-          <p style={{ fontSize: '1.1rem', color: '#cbd5e1', marginBottom: 32 }}>Submit a help request on our portal specifying the company and role. Our admin team will match you with a volunteer who works there.</p>
+          <p style={{ fontSize: '1.1rem', color: '#cbd5e1', marginBottom: 32 }}>Submit a help request on our portal.</p>
           <Link href="/portal/auth" className="btn btn-primary btn-lg" style={{ padding: '16px 36px', boxShadow: '0 8px 24px rgba(99,102,241,0.4)', background: '#4f46e5', color: 'white', border: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             Request a Referral <ArrowRight size={18} />
           </Link>

@@ -20,7 +20,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Summary Counters */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16 }}>
+      <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16 }}>
         {[
           { label: 'Open Requests', value: stats.openRequests, icon: <FileText size={22} />, color: '#6366f1', bg: 'rgba(99,102,241,0.1)', href: '/portal/admin/requests' },
           { label: 'Pending Volunteers', value: pendingApps.length, icon: <HandHeart size={22} />, color: '#059669', bg: 'rgba(5,150,105,0.1)', href: '/portal/admin/volunteers' },
@@ -43,7 +43,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Queue Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {/* New Requests */}
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -100,7 +100,7 @@ export default function AdminDashboard() {
       {/* Metrics */}
       <div className="card">
         <h3 className="font-bold font-display mb-4">Platform Metrics</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+        <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
           {[
             { label: 'Total Requests', value: stats.totalRequests },
             { label: 'Closed Cases', value: stats.closedRequests },

@@ -255,7 +255,7 @@ export default function BusinessSignupPage() {
                 <Building2 size={22} style={{ color: 'var(--primary-600)' }} />
                 <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 800 }}>Business Profile</h2>
               </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 28 }}>Tell us about your business. This information will appear on your public listing.</p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 28 }}>Tell us about your business.</p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div>
@@ -269,7 +269,7 @@ export default function BusinessSignupPage() {
                   <span style={hintStyle}>A short, catchy phrase that describes your business</span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div>
                     <label style={labelStyle}>Business Category <span style={reqStyle}>*</span></label>
                     <select value={category} onChange={e => setCategory(e.target.value)} style={inputStyle}>
@@ -335,10 +335,10 @@ export default function BusinessSignupPage() {
                 <MapPin size={22} style={{ color: 'var(--primary-600)' }} />
                 <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 800 }}>Contact & Location</h2>
               </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 28 }}>How can members reach you? This info will be visible on your listing.</p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 28 }}>How can members reach you?</p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div>
                     <label style={labelStyle}>Contact Person <span style={reqStyle}>*</span></label>
                     <input type="text" value={contactPerson} onChange={e => setContactPerson(e.target.value)} placeholder="Full name" style={inputStyle} />
@@ -349,7 +349,7 @@ export default function BusinessSignupPage() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div>
                     <label style={labelStyle}>Phone Number <span style={reqStyle}>*</span></label>
                     <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 (416) 555-0000" style={inputStyle} />
@@ -372,7 +372,7 @@ export default function BusinessSignupPage() {
                   <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder="123 Business Street, Suite 100" style={inputStyle} />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 16 }}>
+                <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 16 }}>
                   <div>
                     <label style={labelStyle}>City <span style={reqStyle}>*</span></label>
                     <input type="text" value={city} onChange={e => setCity(e.target.value)} placeholder="Toronto" style={inputStyle} />
@@ -406,7 +406,7 @@ export default function BusinessSignupPage() {
                 <Briefcase size={22} style={{ color: 'var(--primary-600)' }} />
                 <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 800 }}>Services & Pricing</h2>
               </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 28 }}>List the services you offer and your general pricing. At least one service is required.</p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 28 }}>List your services and pricing.</p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div>
@@ -431,7 +431,7 @@ export default function BusinessSignupPage() {
                   <span style={hintStyle}>Give members a general idea of your pricing</span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div>
                     <label style={labelStyle}>Consultation Type</label>
                     <select value={consultationType} onChange={e => setConsultationType(e.target.value)} style={inputStyle}>
@@ -458,10 +458,10 @@ export default function BusinessSignupPage() {
                 <Award size={22} style={{ color: 'var(--primary-600)' }} />
                 <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 800 }}>Business Credibility</h2>
               </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 28 }}>Build trust with potential clients. Share your credentials and experience.</p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 28 }}>Share your credentials and experience.</p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div>
                     <label style={labelStyle}>Years in Business</label>
                     <input type="number" value={yearsInBusiness} onChange={e => setYearsInBusiness(e.target.value)} placeholder="e.g. 10" style={inputStyle} min="0" />
@@ -522,13 +522,13 @@ export default function BusinessSignupPage() {
                 <Gift size={22} style={{ color: 'var(--primary-600)' }} />
                 <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 800 }}>Member Benefits</h2>
               </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 8 }}>Offer exclusive benefits to Professionals Club members. This helps attract clients and builds community trust.</p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 8 }}>Offer exclusive benefits.</p>
               <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', fontSize: '0.78rem', color: '#92400e', fontWeight: 500, marginBottom: 28 }}>
                 ⚠️ This section is <strong>mandatory</strong>. All listed businesses must offer at least one member benefit.
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div>
                     <label style={labelStyle}>Discount Percentage</label>
                     <input type="text" value={discountPercent} onChange={e => setDiscountPercent(e.target.value)} placeholder="e.g. 15%" style={inputStyle} />
@@ -583,7 +583,7 @@ export default function BusinessSignupPage() {
                 <Camera size={22} style={{ color: 'var(--primary-600)' }} />
                 <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 800 }}>Operations & Media</h2>
               </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 28 }}>Tell us when and how you operate, and share media to enhance your listing.</p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 28 }}>Tell us how you operate.</p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div>
@@ -641,7 +641,7 @@ export default function BusinessSignupPage() {
                 <Megaphone size={22} style={{ color: 'var(--primary-600)' }} />
                 <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 800 }}>Social Links & Promotion</h2>
               </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 28 }}>Add your social profiles and let us know if you&rsquo;re interested in premium promotion.</p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 28 }}>Add your social profiles.</p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div>
@@ -694,13 +694,13 @@ export default function BusinessSignupPage() {
                 <ShieldCheck size={22} style={{ color: 'var(--primary-600)' }} />
                 <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 800 }}>Verification & Consent</h2>
               </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 28 }}>Review and confirm the following before submitting your application.</p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 28 }}>Review and confirm.</p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {/* Summary */}
                 <div style={{ padding: 20, borderRadius: 14, background: 'var(--gray-50)', border: '1px solid var(--gray-200)' }}>
                   <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 12 }}>📋 Application Summary</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                  <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
                     <div><strong>Business:</strong> {businessName || '—'}</div>
                     <div><strong>Category:</strong> {category || '—'}</div>
                     <div><strong>Contact:</strong> {contactPerson || '—'}</div>
@@ -720,7 +720,7 @@ export default function BusinessSignupPage() {
                       <input type="checkbox" checked={accuracyConfirm} onChange={e => setAccuracyConfirm(e.target.checked)} style={checkboxStyle} />
                       <div>
                         <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>Accuracy Confirmation <span style={reqStyle}>*</span></div>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>I confirm that all information provided is accurate and truthful. I understand that misrepresentation may result in listing removal.</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>I confirm that all information provided is accurate.</div>
                       </div>
                     </label>
 
@@ -728,7 +728,7 @@ export default function BusinessSignupPage() {
                       <input type="checkbox" checked={adminReviewAgree} onChange={e => setAdminReviewAgree(e.target.checked)} style={checkboxStyle} />
                       <div>
                         <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>Admin Review Agreement <span style={reqStyle}>*</span></div>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>I understand that my listing will be reviewed by the Professionals Club admin team before publication. Listing will not go live until verified.</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>I understand that my listing is subject to admin review.</div>
                       </div>
                     </label>
                   </div>
@@ -744,7 +744,7 @@ export default function BusinessSignupPage() {
                       <input type="checkbox" checked={allowPublicListing} onChange={e => setAllowPublicListing(e.target.checked)} style={checkboxStyle} />
                       <div>
                         <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>Allow Public Listing <span style={reqStyle}>*</span></div>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>I authorize Professionals Club to display my business name, description, services, and contact details on the public Business Directory.</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>I authorize public display on the Business Directory.</div>
                       </div>
                     </label>
 
@@ -752,7 +752,7 @@ export default function BusinessSignupPage() {
                       <input type="checkbox" checked={allowDirectContact} onChange={e => setAllowDirectContact(e.target.checked)} style={checkboxStyle} />
                       <div>
                         <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>Allow Direct Contact by Members</div>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>I authorize members to contact my business directly via the provided phone number, email, and website. (Recommended)</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>I authorize direct contact.</div>
                       </div>
                     </label>
 
@@ -760,7 +760,7 @@ export default function BusinessSignupPage() {
                       <input type="checkbox" checked={acceptTerms} onChange={e => setAcceptTerms(e.target.checked)} style={checkboxStyle} />
                       <div>
                         <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>Accept Platform Terms <span style={reqStyle}>*</span></div>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>I agree to the Professionals Club Business Directory Terms of Service and understand that my listing may be removed if I violate community guidelines.</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>I agree to the Terms of Service.</div>
                       </div>
                     </label>
                   </div>

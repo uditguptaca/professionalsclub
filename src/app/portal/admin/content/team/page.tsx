@@ -49,7 +49,7 @@ export default function TeamManagementPage() {
         <button className="btn btn-primary" onClick={openAdd}><Plus size={16} /> Add Member</button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
+      <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
         {sorted.map(member => (
           <div key={member.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ height: 160, background: `url(${member.image}) center/cover no-repeat`, position: 'relative' }}>
@@ -83,7 +83,7 @@ export default function TeamManagementPage() {
               <div><label style={labelStyle}>Role / Title</label><input style={inputStyle} value={String(form.role || '')} onChange={e => handleChange('role', e.target.value)} /></div>
               <div><label style={labelStyle}>Bio</label><textarea style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }} value={String(form.bio || '')} onChange={e => handleChange('bio', e.target.value)} /></div>
               <div><label style={labelStyle}>Image Path</label><input style={inputStyle} value={String(form.image || '')} onChange={e => handleChange('image', e.target.value)} placeholder="/hero-community.png" /></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div><label style={labelStyle}>LinkedIn URL</label><input style={inputStyle} value={String(form.linkedinUrl || '')} onChange={e => handleChange('linkedinUrl', e.target.value)} /></div>
                 <div><label style={labelStyle}>Display Order</label><input type="number" style={inputStyle} value={String(form.order || '')} onChange={e => handleChange('order', Number(e.target.value))} /></div>
               </div>

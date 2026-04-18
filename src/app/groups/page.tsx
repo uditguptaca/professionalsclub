@@ -186,7 +186,7 @@ export default function GroupsPage() {
                 Canada&apos;s Biggest <br /><span style={{ background: 'linear-gradient(135deg, #25D366, #128C7E)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Professional</span> Community
               </h1>
               <p style={{ fontSize: '1.15rem', color: '#94a3b8', lineHeight: 1.7, maxWidth: 680, margin: '0 0 40px 0' }}>
-                Join a platform for professionals, students, and experts in Canada. Connect for networking, jobs, mentoring, and knowledge-sharing across {MAIN_COMMUNITY.members} participants.
+                Join Canada&apos;s largest professional networking platform.
               </p>
 
               <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 40, marginTop: 24 }}>
@@ -271,7 +271,7 @@ export default function GroupsPage() {
           key={community.id}
           id={community.id}
           style={{
-            padding: '80px 0',
+            padding: '40px 0',
             background: idx % 2 === 0 ? '#f8fafc' : 'white',
             scrollMarginTop: 100,
           }}
@@ -330,7 +330,7 @@ export default function GroupsPage() {
             </div>
 
             {/* Groups Grid */}
-            <div style={{
+            <div className="mobile-stack-2" style={{
               display: 'grid',
               gridTemplateColumns: community.groups.length <= 4 ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
               gap: 12,
@@ -369,7 +369,7 @@ export default function GroupsPage() {
       ))}
 
       {/* ─── REGISTER AS MEMBER CTA ─── */}
-      <section style={{ padding: '100px 0', background: 'linear-gradient(135deg, #0f172a, #1e1b4b)', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ padding: '40px 0', background: 'linear-gradient(135deg, #0f172a, #1e1b4b)', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
           <Image src="/toronto-skyline.png" alt="Toronto" fill style={{ objectFit: 'cover', opacity: 0.1 }} />
         </div>
@@ -379,7 +379,7 @@ export default function GroupsPage() {
             Register as a Member
           </h2>
           <p style={{ fontSize: '1.1rem', color: '#94a3b8', marginBottom: 12, lineHeight: 1.7 }}>
-            Want to join exclusive groups? Register as a Professionals Club member and our admin team will share the group links with you directly.
+            Register to receive exclusive group links directly.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 32, fontSize: '0.85rem', color: '#fbbf24' }}>
             <Shield size={16} /> All group access is managed by admin for safety and quality
@@ -395,7 +395,7 @@ export default function GroupsPage() {
             }}>
               Register as Member <ArrowRight size={18} />
             </Link>
-            <Link href="/portal/auth" className="btn btn-lg" style={{
+            <Link href="/portal/auth" className="btn btn-lg mobile-hide" style={{
               background: 'rgba(255,255,255,0.08)',
               color: 'white',
               border: '1px solid rgba(255,255,255,0.15)',
@@ -411,8 +411,7 @@ export default function GroupsPage() {
       <section style={{ padding: '40px 0', background: '#fef3c7', borderTop: '2px solid #f59e0b' }}>
         <div className="container" style={{ maxWidth: 800, textAlign: 'center' }}>
           <p style={{ fontSize: '0.9rem', color: '#78350f', fontWeight: 600, lineHeight: 1.6 }}>
-            ⚠️ <strong>Important Note:</strong> This community is only for individuals residing in Canada. Share this page with your friends.
-            Only numbers starting with <strong>+1</strong> will be added. Numbers not starting with +1 will be removed.
+            ⚠️ <strong>Important Note:</strong> Canada residents only (+1 numbers). Others will be removed.
           </p>
         </div>
       </section>

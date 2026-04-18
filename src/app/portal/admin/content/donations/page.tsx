@@ -35,7 +35,7 @@ export default function DonationsManagementPage() {
       <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: 8 }}>Donations Manager</h1>
       <p style={{ color: 'var(--text-secondary)', marginBottom: 32 }}>Manage donation campaigns displayed on the public Donate page.</p>
 
-      <div style={{ display: 'grid', gap: 24 }}>
+      <div className="mobile-stack" style={{ display: 'grid', gap: 24 }}>
         {donationCampaigns.map(campaign => {
           const pct = campaign.goalAmount > 0 ? Math.min(100, (campaign.raisedAmount / campaign.goalAmount) * 100) : 0;
           return (
@@ -54,7 +54,7 @@ export default function DonationsManagementPage() {
               </div>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 24 }}>{campaign.description}</p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24, marginBottom: 24 }}>
+              <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24, marginBottom: 24 }}>
                 <div style={{ padding: 20, background: 'var(--bg-secondary)', borderRadius: 12, textAlign: 'center' }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>Goal</div>
                   <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>${campaign.goalAmount.toLocaleString()}</div>
@@ -87,7 +87,7 @@ export default function DonationsManagementPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div><label style={labelStyle}>Campaign Title</label><input style={inputStyle} value={String(form.title || '')} onChange={e => handleChange('title', e.target.value)} /></div>
               <div><label style={labelStyle}>Description</label><textarea style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }} value={String(form.description || '')} onChange={e => handleChange('description', e.target.value)} /></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div><label style={labelStyle}>Goal Amount ($)</label><input type="number" style={inputStyle} value={String(form.goalAmount || '')} onChange={e => handleChange('goalAmount', Number(e.target.value))} /></div>
                 <div><label style={labelStyle}>Raised Amount ($)</label><input type="number" style={inputStyle} value={String(form.raisedAmount || '')} onChange={e => handleChange('raisedAmount', Number(e.target.value))} /></div>
               </div>

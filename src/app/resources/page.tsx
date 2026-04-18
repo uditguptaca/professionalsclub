@@ -29,19 +29,19 @@ export default function ResourcesPage() {
             Learn. Succeed. <span style={{ background: 'linear-gradient(135deg, #a78bfa, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Thrive.</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: '#94a3b8', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
-            Expert-led guides, professional templates, and video workshops designed specifically for Indian professionals in Canada.
+            Expert-led guides, templates, and video workshops to help you thrive in Canada.
           </p>
         </div>
       </section>
 
       {/* E-Books */}
-      <section style={{ padding: '100px 0', background: 'white' }}>
+      <section style={{ padding: '40px 0', background: 'white' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 36, paddingBottom: 16, borderBottom: '1px solid #e2e8f0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #e2e8f0' }}>
             <BookOpen size={24} style={{ color: '#6366f1' }} />
             <h2 style={{ fontSize: '1.8rem', fontWeight: 900, fontFamily: 'var(--font-display)' }}>E-Books & Detailed Guides</h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
+          <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
             {ebooks.map((book, idx) => (
               <div key={book.id} style={{ position: 'relative', height: 320, borderRadius: 24, overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} className="hover:-translate-y-1 hover:shadow-xl">
                 <Image src={book.image} alt={book.title} fill style={{ objectFit: 'cover' }} />
@@ -69,13 +69,13 @@ export default function ResourcesPage() {
       </section>
 
       {/* Video Workshops */}
-      <section style={{ padding: '80px 0', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+      <section style={{ padding: '40px 0', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 36, paddingBottom: 16, borderBottom: '1px solid #e2e8f0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #e2e8f0' }}>
             <Video size={24} style={{ color: '#dc2626' }} />
             <h2 style={{ fontSize: '1.8rem', fontWeight: 900, fontFamily: 'var(--font-display)' }}>Video Workshop Archive</h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+          <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
             {workshops.map((video, idx) => (
               <div key={video.id} style={{ position: 'relative', height: 260, borderRadius: 24, overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} className="hover:-translate-y-1 hover:shadow-xl">
                 <Image src={video.thumbnailImage} alt={video.title} fill style={{ objectFit: 'cover' }} />
@@ -108,13 +108,13 @@ export default function ResourcesPage() {
       </section>
 
       {/* Templates */}
-      <section style={{ padding: '80px 0', background: 'white', borderTop: '1px solid #e2e8f0' }}>
+      <section style={{ padding: '40px 0', background: 'white', borderTop: '1px solid #e2e8f0' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 36, paddingBottom: 16, borderBottom: '1px solid #e2e8f0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #e2e8f0' }}>
             <FileCheck size={24} style={{ color: '#059669' }} />
             <h2 style={{ fontSize: '1.8rem', fontWeight: 900, fontFamily: 'var(--font-display)' }}>Templates & Worksheets</h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
+          <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
             {templates.map((temp, idx) => (
               <div key={temp.id} style={{ position: 'relative', height: 280, borderRadius: 24, overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} className="hover:-translate-y-1 hover:shadow-xl">
                 <Image src={temp.image} alt={temp.title} fill style={{ objectFit: 'cover' }} />
@@ -135,12 +135,12 @@ export default function ResourcesPage() {
       </section>
 
       {/* Contribute CTA */}
-      <section style={{ padding: '100px 0', background: 'linear-gradient(135deg, #0f172a, #1e1b4b)', textAlign: 'center' }}>
+      <section style={{ padding: '40px 0', background: 'linear-gradient(135deg, #0f172a, #1e1b4b)', textAlign: 'center' }}>
         <div className="container" style={{ maxWidth: 700 }}>
           <GraduationCap size={48} style={{ color: '#a78bfa', margin: '0 auto 24px' }} />
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Want to Contribute?</h2>
-          <p style={{ fontSize: '1.1rem', color: '#94a3b8', marginBottom: 36, lineHeight: 1.7 }}>
-            If you are a subject matter expert or an established professional in Canada, we would love to host your guide or workshop recordings on our platform.
+          <p style={{ fontSize: '1.1rem', color: '#94a3b8', marginBottom: 20, lineHeight: 1.7 }}>
+            Are you a subject matter expert? We'd love to host your guides or workshop recordings.
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
             <Link href="/portal/auth" className="btn btn-lg" style={{ background: 'linear-gradient(135deg, #8b5cf6, #a78bfa)', color: 'white', border: 'none', padding: '16px 32px' }}>Become a Contributor</Link>

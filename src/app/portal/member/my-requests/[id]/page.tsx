@@ -59,7 +59,7 @@ export default function RequestDetailPage() {
             {request.status.replace(/_/g, ' ')}
           </span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+        <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
           <div style={{ padding: 12, borderRadius: 8, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
             <div style={{ fontSize: '0.65rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Category</div>
             <div style={{ fontSize: '0.85rem', fontWeight: 600, marginTop: 2 }}>{request.category}</div>

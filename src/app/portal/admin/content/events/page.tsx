@@ -100,11 +100,11 @@ export default function EventsManagementPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div><label style={labelStyle}>Title</label><input style={inputStyle} value={String(form.title || '')} onChange={e => handleChange('title', e.target.value)} /></div>
               <div><label style={labelStyle}>Description</label><textarea style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }} value={String(form.description || '')} onChange={e => handleChange('description', e.target.value)} /></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div><label style={labelStyle}>Date</label><input type="date" style={inputStyle} value={String(form.date || '')} onChange={e => handleChange('date', e.target.value)} /></div>
                 <div><label style={labelStyle}>Time</label><input style={inputStyle} value={String(form.time || '')} onChange={e => handleChange('time', e.target.value)} placeholder="6:00 PM" /></div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div><label style={labelStyle}>Location</label><input style={inputStyle} value={String(form.location || '')} onChange={e => handleChange('location', e.target.value)} /></div>
                 <div><label style={labelStyle}>Event Type</label>
                   <select style={inputStyle} value={String(form.eventType || 'in_person')} onChange={e => handleChange('eventType', e.target.value)}>
@@ -112,13 +112,13 @@ export default function EventsManagementPage() {
                   </select>
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div><label style={labelStyle}>Capacity</label><input type="number" style={inputStyle} value={String(form.capacity || '')} onChange={e => handleChange('capacity', Number(e.target.value))} /></div>
                 <div><label style={labelStyle}>Attendees</label><input type="number" style={inputStyle} value={String(form.attendees || '')} onChange={e => handleChange('attendees', Number(e.target.value))} /></div>
               </div>
               <div><label style={labelStyle}>Image Path</label><input style={inputStyle} value={String(form.image || '')} onChange={e => handleChange('image', e.target.value)} placeholder="/meetup_bg.png" /></div>
               <div><label style={labelStyle}>Platform (for virtual)</label><input style={inputStyle} value={String(form.platform || '')} onChange={e => handleChange('platform', e.target.value)} placeholder="YouTube Live" /></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div><label style={labelStyle}>Status</label>
                   <select style={inputStyle} value={String(form.status || 'upcoming')} onChange={e => handleChange('status', e.target.value)}>
                     <option value="upcoming">Upcoming</option><option value="past">Past</option>

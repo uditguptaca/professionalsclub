@@ -29,7 +29,7 @@ export default function AdminBusinessRequests() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+      <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
         {[
           { label: 'Pending', value: businessContactRequests.filter(r => r.status === 'pending').length, icon: <Clock size={22} />, color: '#d97706', bg: 'rgba(245,158,11,0.1)' },
           { label: 'In Progress', value: businessContactRequests.filter(r => r.status === 'in_progress').length, icon: <ArrowRight size={22} />, color: '#1e40af', bg: 'rgba(59,130,246,0.1)' },

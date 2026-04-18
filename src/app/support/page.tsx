@@ -36,14 +36,14 @@ export default function SupportPage() {
       <main style={{ flex: 1, padding: '120px 0 100px 0' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           
-          <div style={{ textAlign: 'center', marginBottom: 64 }}>
+          <div style={{ textAlign: 'center', marginBottom: 32 }}>
             <h1 style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: '#0f172a' }}>Support our Projects</h1>
             <p style={{ fontSize: '1.1rem', color: '#64748b', maxWidth: 600, margin: '16px auto 0' }}>
-              Your contributions help us deliver critical resources, education, and community building programs for newcomers across Canada.
+              Your contributions help us deliver critical resources and education for newcomers.
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 32 }}>
+          <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
             {projects.map((project, idx) => (
               <div key={idx} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ position: 'relative', height: 220, width: '100%' }}>

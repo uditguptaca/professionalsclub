@@ -46,16 +46,16 @@ export default function NewsPage() {
             Stay <span style={{ background: 'linear-gradient(135deg, #818cf8, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Informed</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: '#94a3b8', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
-            Community updates, announcements, partnership news, and career tips for Canadian professionals.
+            Community updates and career tips.
           </p>
         </div>
       </section>
 
       {/* Featured Articles */}
-      <section style={{ padding: '80px 0', background: 'white' }}>
+      <section style={{ padding: '40px 0', background: 'white' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <h2 style={{ fontSize: '1.6rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 32 }}>Featured Stories</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {featured.map((article, idx) => {
               const cat = categoryColors[article.category] || { bg: '#f8fafc', text: '#374151' };
               return (
@@ -75,7 +75,7 @@ export default function NewsPage() {
                       <span>By {article.author}</span>
                     </div>
                     <h3 style={{ fontWeight: 900, fontSize: '1.3rem', color: 'white', marginBottom: 12, lineHeight: 1.3, fontFamily: 'var(--font-display)' }}>{article.title}</h3>
-                    <p style={{ fontSize: '0.9rem', color: '#94a3b8', lineHeight: 1.6 }}>{article.summary}</p>
+                    <p style={{ fontSize: '0.9rem', color: '#94a3b8', lineHeight: 1.6 }}>{article.summary.length > 50 ? article.summary.substring(0, 47) + '...' : article.summary}</p>
                   </div>
                 </div>
               );
@@ -86,10 +86,10 @@ export default function NewsPage() {
 
       {/* Latest Articles */}
       {rest.length > 0 && (
-        <section style={{ padding: '80px 0', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+        <section style={{ padding: '40px 0', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
           <div className="container" style={{ maxWidth: 1200 }}>
             <h2 style={{ fontSize: '1.6rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 32 }}>Latest Articles</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
               {rest.map((article, idx) => {
                 const cat = categoryColors[article.category] || { bg: '#f8fafc', text: '#374151' };
                 return (
@@ -106,7 +106,7 @@ export default function NewsPage() {
                         <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600 }}>By {article.author}</span>
                       </div>
                       <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#1e293b', marginBottom: 6, lineHeight: 1.3 }}>{article.title}</div>
-                      <div style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: 1.5 }}>{article.summary}</div>
+                      <div style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: 1.5 }}>{article.summary.length > 50 ? article.summary.substring(0, 47) + '...' : article.summary}</div>
                     </div>
                   </div>
                 );

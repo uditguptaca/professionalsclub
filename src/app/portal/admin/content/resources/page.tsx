@@ -62,7 +62,7 @@ export default function ResourcesManagementPage() {
             {modalType === 'ebook' && (
               <>
                 <div><label style={labelStyle}>Author</label><input style={inputStyle} value={form.author || ''} onChange={e => handleChange('author', e.target.value)} placeholder="Author name" /></div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div><label style={labelStyle}>File Type</label><input style={inputStyle} value={form.type || ''} onChange={e => handleChange('type', e.target.value)} placeholder="PDF" /></div>
                   <div><label style={labelStyle}>File Size</label><input style={inputStyle} value={form.size || ''} onChange={e => handleChange('size', e.target.value)} placeholder="2.4 MB" /></div>
                 </div>
@@ -72,7 +72,7 @@ export default function ResourcesManagementPage() {
             )}
             {modalType === 'workshop' && (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div><label style={labelStyle}>Duration</label><input style={inputStyle} value={form.duration || ''} onChange={e => handleChange('duration', e.target.value)} placeholder="45 mins" /></div>
                   <div><label style={labelStyle}>Platform</label><input style={inputStyle} value={form.platform || ''} onChange={e => handleChange('platform', e.target.value)} placeholder="YouTube" /></div>
                 </div>
@@ -83,7 +83,7 @@ export default function ResourcesManagementPage() {
             )}
             {modalType === 'template' && (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div><label style={labelStyle}>File Type</label><input style={inputStyle} value={form.fileType || ''} onChange={e => handleChange('fileType', e.target.value)} placeholder="Word Doc" /></div>
                   <div><label style={labelStyle}>Category</label><input style={inputStyle} value={form.category || ''} onChange={e => handleChange('category', e.target.value)} placeholder="Career" /></div>
                 </div>
