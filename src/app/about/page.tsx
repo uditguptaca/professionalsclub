@@ -88,27 +88,30 @@ export default function AboutPage() {
           </div>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
             {[
-              { title: 'Members', desc: 'Seeking genuine connections.', icon: <Users size={20} />, color: '#4f46e5', bg: '#eef2ff' },
-              { title: 'Newcomers', desc: 'Looking for settlement guidance.', icon: <Globe size={20} />, color: '#38bdf8', bg: '#0f172a', isDark: true },
-              { title: 'Professionals', desc: 'Searching for job referrals.', icon: <Briefcase size={20} />, color: '#059669', bg: '#f0fdf4' },
-              { title: 'Volunteers & Mentors', desc: 'Leaders wanting to give back.', icon: <HelpingHand size={20} />, color: '#d97706', bg: '#fffbeb' },
-              { title: 'Local Businesses', desc: 'Providers aiming for visibility.', icon: <Building2 size={20} />, color: '#dc2626', bg: '#fef2f2' },
-              { title: 'Students & Grads', desc: 'Building their early careers.', icon: <GraduationCap size={20} />, color: '#7c3aed', bg: '#f3e8ff' }
+              { title: 'Members', desc: 'Seeking genuine connections.', icon: <Users size={20} />, color: '#4f46e5', bg: '#eef2ff', href: '/portal/signup' },
+              { title: 'Newcomers', desc: 'Looking for settlement guidance.', icon: <Globe size={20} />, color: '#38bdf8', bg: '#0f172a', isDark: true, href: '/settlement' },
+              { title: 'Professionals', desc: 'Searching for job referrals.', icon: <Briefcase size={20} />, color: '#059669', bg: '#f0fdf4', href: '/jobs' },
+              { title: 'Volunteers & Mentors', desc: 'Leaders wanting to give back.', icon: <HelpingHand size={20} />, color: '#d97706', bg: '#fffbeb', href: '/portal/signup' },
+              { title: 'Local Businesses', desc: 'Providers aiming for visibility.', icon: <Building2 size={20} />, color: '#dc2626', bg: '#fef2f2', href: '/businesses' },
+              { title: 'Students & Grads', desc: 'Building their early careers.', icon: <GraduationCap size={20} />, color: '#7c3aed', bg: '#f3e8ff', href: '/portal/signup' }
             ].map((item, i) => (
-              <div key={i} style={{ 
+              <Link href={item.href} key={i} style={{ 
                 background: item.isDark ? 'linear-gradient(135deg, #0f172a, #1e293b)' : 'white', 
                 padding: '16px', 
                 borderRadius: 16, 
                 boxShadow: item.isDark ? '0 10px 30px rgba(15,23,42,0.15)' : '0 10px 30px rgba(0,0,0,0.03)', 
                 border: item.isDark ? 'none' : '1px solid #f1f5f9',
-                color: item.isDark ? 'white' : 'inherit'
+                color: item.isDark ? 'white' : 'inherit',
+                textDecoration: 'none',
+                display: 'block',
+                transition: 'transform 0.2s'
               }}>
                 <div style={{ width: 40, height: 40, borderRadius: 12, background: item.isDark ? 'rgba(56, 189, 248, 0.1)' : item.bg, color: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
                   {item.icon}
                 </div>
                 <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: item.isDark ? 'white' : '#1e293b', marginBottom: 6 }}>{item.title}</h3>
                 <p style={{ color: item.isDark ? '#94a3b8' : '#64748b', lineHeight: 1.6, fontSize: '0.8rem' }}>{item.desc}</p>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -148,10 +151,10 @@ export default function AboutPage() {
               'Access Exclusive Events',
               'Find Fresh Opportunities'
             ].map((feat, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+              <Link href="/portal/signup" key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0', textDecoration: 'none', transition: 'transform 0.2s' }}>
                 <CheckCircle2 color="#059669" size={20} style={{ flexShrink: 0 }} />
                 <span style={{ fontWeight: 700, color: '#334155', fontSize: '0.8rem' }}>{feat}</span>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -167,13 +170,13 @@ export default function AboutPage() {
                 { num: '03', title: 'Explore Resources', desc: 'Browse resources and events.' },
                 { num: '04', title: 'Request/Give Help', desc: 'Submit ticket for help.' }
               ].map((step, i) => (
-                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)' }}>
+                <Link href="/portal/signup" key={i} style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)', textDecoration: 'none', transition: 'background 0.2s' }}>
                   <div style={{ fontSize: '2rem', fontWeight: 900, color: '#4f46e5', lineHeight: 1, fontFamily: 'var(--font-display)', opacity: 0.8 }}>{step.num}</div>
                   <div>
                     <h3 style={{ fontSize: '0.8rem', fontWeight: 800, marginBottom: 8, color: '#f8fafc' }}>{step.title}</h3>
                     <p style={{ color: '#94a3b8', lineHeight: 1.5, fontSize: '0.8rem' }}>{step.desc}</p>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
         </div>
@@ -310,13 +313,13 @@ export default function AboutPage() {
                   { title: 'Inclusion', desc: 'Diverse fields.', icon: <Globe size={20} color="#2563eb" /> },
                   { title: 'Integrity', desc: 'High standards.', icon: <Sparkles size={20} color="#7c3aed" /> },
                 ].map((val, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+                  <Link href="/portal/signup" key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0', textDecoration: 'none' }} className="hover:-translate-y-1 hover:shadow-md transition-all">
                     <div style={{ flexShrink: 0 }}>{val.icon}</div>
                     <div>
-                      <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1e293b' }}>{val.title}</h3>
-                      <p style={{ color: '#64748b', fontSize: '0.8rem' }}>{val.desc}</p>
+                      <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1e293b', marginBottom: 2 }}>{val.title}</h3>
+                      <p style={{ color: '#64748b', fontSize: '0.8rem', margin: 0 }}>{val.desc}</p>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>

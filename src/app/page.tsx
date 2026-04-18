@@ -63,26 +63,23 @@ export default function Home() {
             {[
               { icon: <Briefcase size={20} />, title: 'Search for Latest Jobs', desc: 'Browse latest jobs', color: '#e11d48', href: '/jobs' },
               { icon: <Users size={20} />, title: 'Join WhatsApp Communities', desc: 'Connect with professionals', color: '#e11d48', href: '/groups' },
-              { icon: <Briefcase size={20} />, title: 'Job Referrals & Placement', desc: 'Get matched for referrals', color: '#6366f1' },
-              { icon: <GraduationCap size={20} />, title: 'Career Mentorship & Resume Review', desc: 'Long-term mentorship', color: '#dc2626' },
-              { icon: <MapPin size={20} />, title: 'Newcomer Settlement & Tax Support', desc: 'Housing, banking, etc', color: '#d97706' },
-              { icon: <Calendar size={20} />, title: 'Join Our Next Meetup Event', desc: 'Monthly networking meetups', color: '#ea580c' },
+              { icon: <Briefcase size={20} />, title: 'Job Referrals & Placement', desc: 'Get matched for referrals', color: '#6366f1', href: '/portal/signup' },
+              { icon: <GraduationCap size={20} />, title: 'Career Mentorship & Resume Review', desc: 'Long-term mentorship', color: '#dc2626', href: '/portal/signup' },
+              { icon: <MapPin size={20} />, title: 'Newcomer Settlement & Tax Support', desc: 'Housing, banking, etc', color: '#d97706', href: '/settlement' },
+              { icon: <Calendar size={20} />, title: 'Join Our Next Meetup Event', desc: 'Monthly networking meetups', color: '#ea580c', href: '/events' },
               { icon: <Building2 size={20} />, title: 'Trusted Local Businesses', desc: 'Verified businesses', color: '#e11d48', href: '/businesses' },
-            ].map((item, i) => {
-              const Card = (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 22px', borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)', transition: 'all 0.2s', cursor: item.href ? 'pointer' : 'default' }} className="hero-feature-card">
+            ].map((item, i) => (
+                <Link href={item.href || '#'} key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 22px', borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)', transition: 'all 0.2s', cursor: 'pointer', textDecoration: 'none' }} className="hero-feature-card">
                   <div style={{ width: 40, height: 40, borderRadius: 12, background: `${item.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, flexShrink: 0 }}>
                     {item.icon}
                   </div>
-                  <div>
-                    <div style={{ fontWeight: 700, color: 'white', fontSize: '0.92rem' }}>{item.title}</div>
-                    <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 2 }}>{item.desc}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, color: 'white', fontSize: '0.82rem', marginBottom: 2 }}>{item.title}</div>
+                    <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{item.desc}</div>
                   </div>
-                  <ChevronRight size={18} style={{ color: item.href ? '#white' : '#475569', marginLeft: 'auto', flexShrink: 0, opacity: item.href ? 1 : 0.5 }} />
-                </div>
-              );
-              return item.href ? <Link href={item.href} key={i} style={{ textDecoration: 'none' }}>{Card}</Link> : Card;
-            })}
+                  <ChevronRight size={16} color="#475569" style={{ opacity: 0.5 }} />
+                </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -236,9 +233,9 @@ export default function Home() {
                   { label: 'Transit & Driving', icon: '🚌' },
                   { label: 'SIN & Legal Docs', icon: '📋' },
                 ].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 12, background: '#fff1f2', border: '1px solid #fecdd3', fontSize: '0.88rem', fontWeight: 600, color: '#be123c' }}>
+                  <Link href="/settlement" key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 12, background: '#fff1f2', border: '1px solid #fecdd3', fontSize: '0.88rem', fontWeight: 600, color: '#be123c', textDecoration: 'none', transition: 'all 0.2s' }} className="hover:-translate-y-1 hover:shadow-md">
                     <span style={{ fontSize: '1.2rem' }}>{item.icon}</span> {item.label}
-                  </div>
+                  </Link>
                 ))}
               </div>
               <Link href="/settlement" className="btn" style={{ background: '#e11d48', color: 'white', padding: '14px 28px', border: 'none' }}>

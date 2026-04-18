@@ -70,7 +70,7 @@ export default function AuthPage() {
               <div className="input-group">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <label style={{ marginBottom: 0 }}>Password</label>
-                  <a href="#" style={{ fontSize: '0.8rem', color: 'var(--primary-600)', fontWeight: 600 }}>Forgot password?</a>
+                  <Link href="/support" style={{ fontSize: '0.8rem', color: 'var(--primary-600)', fontWeight: 600 }}>Forgot password?</Link>
                 </div>
                 <input 
                   type="password" 
