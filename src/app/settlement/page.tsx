@@ -101,7 +101,7 @@ export default function SettlementPage() {
                 <div style={{ position: 'relative', zIndex: 10, padding: 32, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <div style={{ marginBottom: 20 }}>
                     <div style={{ width: 72, height: 72, borderRadius: 20, background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-                      {React.cloneElement(cat.icon, { size: 36, style: { color: 'white' } })}
+                      {React.cloneElement(cat.icon as React.ReactElement<any>, { size: 36, style: { color: 'white' } })}
                     </div>
                   </div>
                   <div style={{ fontWeight: 800, fontSize: '1.6rem', color: 'white', marginBottom: 16, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>{cat.title}</div>

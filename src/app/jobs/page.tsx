@@ -272,7 +272,7 @@ export default function JobsPage() {
                   flexShrink: 0,
                   boxShadow: '0 4px 10px rgba(225,29,72,0.1)'
                 }}>
-                  {React.cloneElement(icon as React.ReactElement<{ size?: number }>, { size: 20 })}
+                  {React.cloneElement(icon as React.ReactElement<any>, { size: 20 })}
                 </div>
                 <div>
                   <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#0f172a', marginBottom: 4 }}>{cat}</div>

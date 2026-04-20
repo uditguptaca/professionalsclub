@@ -111,7 +111,7 @@ export default function NewsPage() {
                       <Image src={article.image} alt={article.category} fill style={{ objectFit: 'cover' }} />
                       <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <span style={{ color: 'white', opacity: 0.9 }}>
-                          {React.cloneElement((categoryIcons[article.category] || <Newspaper />) as React.ReactElement, { size: 28 })}
+                          {React.cloneElement((categoryIcons[article.category] || <Newspaper />) as React.ReactElement<any>, { size: 28 })}
                         </span>
                       </div>
                     </div>
