@@ -7,18 +7,18 @@ import Footer from '@/components/shared/Footer';
 import { Search, MapPin, ArrowRight, Building2 } from 'lucide-react';
 
 const companies = [
-  { id: 'c1', name: 'Shopify', logo: '🟢', industry: 'Technology', size: '10,000+', location: 'Ottawa, ON', description: 'Commerce platform helping merchants sell online', color: '#96bf48' },
-  { id: 'c2', name: 'Amazon Canada', logo: '📦', industry: 'Technology', size: '50,000+', location: 'Vancouver, BC', description: 'Global technology and e-commerce company', color: '#ff9900' },
-  { id: 'c3', name: 'Royal Bank of Canada', logo: '🏦', industry: 'Banking', size: '50,000+', location: 'Toronto, ON', description: 'Canada\'s largest bank by market capitalization', color: '#003168' },
-  { id: 'c4', name: 'TD Bank', logo: '🟩', industry: 'Banking', size: '50,000+', location: 'Toronto, ON', description: 'One of Canada\'s Big Five banks', color: '#34a853' },
-  { id: 'c5', name: 'Google Canada', logo: '🔍', industry: 'Technology', size: '10,000+', location: 'Waterloo, ON', description: 'Technology giant with offices across Canada', color: '#4285f4' },
-  { id: 'c6', name: 'Microsoft Canada', logo: '🪟', industry: 'Technology', size: '10,000+', location: 'Vancouver, BC', description: 'Global technology leader in cloud and software', color: '#00a4ef' },
-  { id: 'c7', name: 'Deloitte Canada', logo: '🔷', industry: 'Consulting', size: '10,000+', location: 'Toronto, ON', description: 'Global professional services and consulting firm', color: '#86bc25' },
-  { id: 'c8', name: 'CIBC', logo: '🏛️', industry: 'Banking', size: '40,000+', location: 'Toronto, ON', description: 'Full-service financial institution', color: '#c41f3b' },
-  { id: 'c9', name: 'Telus', logo: '📱', industry: 'Telecommunications', size: '30,000+', location: 'Vancouver, BC', description: 'Leading Canadian telecom company', color: '#4b286d' },
-  { id: 'c10', name: 'Scotiabank', logo: '🏦', industry: 'Banking', size: '50,000+', location: 'Toronto, ON', description: 'International banking and financial services', color: '#ef3e42' },
-  { id: 'c11', name: 'Wealthsimple', logo: '💰', industry: 'Fintech', size: '1,000+', location: 'Toronto, ON', description: 'Canadian online investment management service', color: '#ff5722' },
-  { id: 'c12', name: 'Manulife', logo: '🛡️', industry: 'Insurance', size: '30,000+', location: 'Toronto, ON', description: 'Leading international financial services company', color: '#00843d' },
+  { id: 'c1', name: 'Shopify', logo: 'S', industry: 'Technology', size: '10,000+', location: 'Ottawa, ON', description: 'Commerce platform helping merchants sell online', color: '#96bf48' },
+  { id: 'c2', name: 'Amazon Canada', logo: 'A', industry: 'Technology', size: '50,000+', location: 'Vancouver, BC', description: 'Global technology and e-commerce company', color: '#ff9900' },
+  { id: 'c3', name: 'Royal Bank of Canada', logo: 'RBC', industry: 'Banking', size: '50,000+', location: 'Toronto, ON', description: 'Canada\'s largest bank by market capitalization', color: '#003168' },
+  { id: 'c4', name: 'TD Bank', logo: 'TD', industry: 'Banking', size: '50,000+', location: 'Toronto, ON', description: 'One of Canada\'s Big Five banks', color: '#34a853' },
+  { id: 'c5', name: 'Google Canada', logo: 'G', industry: 'Technology', size: '10,000+', location: 'Waterloo, ON', description: 'Technology giant with offices across Canada', color: '#4285f4' },
+  { id: 'c6', name: 'Microsoft Canada', logo: 'MS', industry: 'Technology', size: '10,000+', location: 'Vancouver, BC', description: 'Global technology leader in cloud and software', color: '#00a4ef' },
+  { id: 'c7', name: 'Deloitte Canada', logo: 'D', industry: 'Consulting', size: '10,000+', location: 'Toronto, ON', description: 'Global professional services and consulting firm', color: '#86bc25' },
+  { id: 'c8', name: 'CIBC', logo: 'CI', industry: 'Banking', size: '40,000+', location: 'Toronto, ON', description: 'Full-service financial institution', color: '#c41f3b' },
+  { id: 'c9', name: 'Telus', logo: 'T', industry: 'Telecommunications', size: '30,000+', location: 'Vancouver, BC', description: 'Leading Canadian telecom company', color: '#4b286d' },
+  { id: 'c10', name: 'Scotiabank', logo: 'SB', industry: 'Banking', size: '50,000+', location: 'Toronto, ON', description: 'International banking and financial services', color: '#ef3e42' },
+  { id: 'c11', name: 'Wealthsimple', logo: 'W', industry: 'Fintech', size: '1,000+', location: 'Toronto, ON', description: 'Canadian online investment management service', color: '#ff5722' },
+  { id: 'c12', name: 'Manulife', logo: 'M', industry: 'Insurance', size: '30,000+', location: 'Toronto, ON', description: 'Leading international financial services company', color: '#00843d' },
 ];
 
 export default function CompaniesPage() {

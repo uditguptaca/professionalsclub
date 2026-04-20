@@ -6,7 +6,7 @@ import { useApp } from '@/context/app-context';
 import {
   ArrowRight, ArrowLeft, Check, User, MapPin, Target,
   Briefcase, Bell, Heart, Shield, Eye, EyeOff, ChevronDown,
-  CheckCircle, Link2,
+  CheckCircle, Link2, HelpCircle, HandHeart, Star,
 } from 'lucide-react';
 
 /* ─── STEP DEFINITIONS ─── */
@@ -499,9 +499,9 @@ export default function SignupPage() {
                 <label>I am joining to… <span className="required">*</span></label>
                 <div className="intent-cards">
                   {[
-                    { key: 'help' as const, emoji: '🙋', title: 'Get Help', desc: 'I need guidance or support with my career, settlement, taxes, etc.' },
-                    { key: 'volunteer' as const, emoji: '🤝', title: 'Help Others', desc: 'I want to volunteer my skills and expertise to help community members.' },
-                    { key: 'both' as const, emoji: '💫', title: 'Both', desc: 'I want to receive support and also give back by helping others.' },
+                    { key: 'help' as const, icon: <HelpCircle size={28} />, title: 'Get Help', desc: 'I need guidance or support with my career, settlement, taxes, etc.' },
+                    { key: 'volunteer' as const, icon: <HandHeart size={28} />, title: 'Help Others', desc: 'I want to volunteer my skills and expertise to help community members.' },
+                    { key: 'both' as const, icon: <Star size={28} />, title: 'Both', desc: 'I want to receive support and also give back by helping others.' },
                   ].map(opt => (
                     <button
                       key={opt.key}
@@ -509,7 +509,7 @@ export default function SignupPage() {
                       className={`intent-card ${joiningFor === opt.key ? 'selected' : ''}`}
                       onClick={() => setJoiningFor(opt.key)}
                     >
-                      <div className="intent-emoji">{opt.emoji}</div>
+                      <div className="intent-emoji">{opt.icon}</div>
                       <div className="intent-title">{opt.title}</div>
                       <div className="intent-desc">{opt.desc}</div>
                       {joiningFor === opt.key && <div className="intent-check"><CheckCircle size={18} /></div>}
@@ -521,7 +521,7 @@ export default function SignupPage() {
               {/* If help */}
               {(joiningFor === 'help' || joiningFor === 'both') && (
                 <div className="intent-section animate-fade-in">
-                  <div className="intent-section-label">🙋 Need Help With</div>
+                  <div className="intent-section-label">Need Help With</div>
                   <div className="form-field">
                     <label>Type of Help Needed</label>
                     <div className="select-wrapper">
@@ -542,7 +542,7 @@ export default function SignupPage() {
               {/* If volunteer */}
               {(joiningFor === 'volunteer' || joiningFor === 'both') && (
                 <div className="intent-section animate-fade-in">
-                  <div className="intent-section-label">🤝 I Can Help With</div>
+                  <div className="intent-section-label">I Can Help With</div>
                   <div className="form-field">
                     <label>Areas You Can Help With</label>
                     <div className="chip-grid compact">

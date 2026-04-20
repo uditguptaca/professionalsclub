@@ -3,7 +3,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
-import { ArrowRight, Users, ExternalLink, Shield, MessageCircle } from 'lucide-react';
+import { ArrowRight, Users, ExternalLink, Shield, MessageCircle, Wallet, Globe, Building2, BookOpen, Home, Dumbbell, Briefcase, TrendingUp, TrendingDown, DollarSign, Coins, MapPin, Landmark, Code, Banknote, BarChart3, ShieldCheck, FileText, GraduationCap, PenSquare, Plane, Baby, Mountain, BrickWall, Scale, Megaphone, ShoppingBag, BookOpenCheck, Truck, UsersRound, HardHat, TreePine, Tent, Palette, Snowflake, Heart, Star, CircleDot } from 'lucide-react';
+import React from 'react';
 
 /* ─── DATA ─── */
 const MAIN_COMMUNITY = {
@@ -12,7 +13,7 @@ const MAIN_COMMUNITY = {
 };
 
 interface WhatsAppGroup {
-  emoji: string;
+  icon: React.ReactNode;
   name: string;
   link: string;
 }
@@ -20,7 +21,7 @@ interface WhatsAppGroup {
 interface CommunitySection {
   id: string;
   number: string;
-  emoji: string;
+  icon: React.ReactNode;
   title: string;
   participants: string;
   communityLink: string;
@@ -34,7 +35,7 @@ const COMMUNITIES: CommunitySection[] = [
   {
     id: 'finance',
     number: '1',
-    emoji: '💰',
+    icon: <Wallet size={28} />,
     title: 'Finance Professionals, Jobs & Queries',
     participants: '1,600+',
     communityLink: 'https://chat.whatsapp.com/LZQxOHMI7tx3vrrXCGXit4',
@@ -42,17 +43,17 @@ const COMMUNITIES: CommunitySection[] = [
     color: '#059669',
     colorLight: '#d1fae5',
     groups: [
-      { emoji: '💼', name: 'FP&A, IFRS, Accounts, Audit Professionals', link: 'https://bit.ly/ICPAccounts' },
-      { emoji: '📈', name: 'Finance Queries & Help Group 1', link: 'https://bit.ly/ICPFinance1' },
-      { emoji: '📉', name: 'Finance Queries & Help Group 2', link: 'https://bit.ly/ICPFinance2' },
-      { emoji: '💵', name: 'Direct Tax Professionals', link: 'https://bit.ly/ICPDirectTax' },
-      { emoji: '💰', name: 'Indirect Tax Professionals', link: 'https://bit.ly/ICPIndirectTax' },
+      { icon: <Briefcase size={20} />, name: 'FP&A, IFRS, Accounts, Audit Professionals', link: 'https://bit.ly/ICPAccounts' },
+      { icon: <TrendingUp size={20} />, name: 'Finance Queries & Help Group 1', link: 'https://bit.ly/ICPFinance1' },
+      { icon: <TrendingDown size={20} />, name: 'Finance Queries & Help Group 2', link: 'https://bit.ly/ICPFinance2' },
+      { icon: <DollarSign size={20} />, name: 'Direct Tax Professionals', link: 'https://bit.ly/ICPDirectTax' },
+      { icon: <Coins size={20} />, name: 'Indirect Tax Professionals', link: 'https://bit.ly/ICPIndirectTax' },
     ],
   },
   {
     id: 'ca-india',
     number: '2',
-    emoji: '🇨🇦',
+    icon: <Globe size={28} />,
     title: 'CA India in Canada',
     participants: '1,200+',
     communityLink: 'https://chat.whatsapp.com/K9k0IBLoEOW3L16gx23b0n',
@@ -60,20 +61,20 @@ const COMMUNITIES: CommunitySection[] = [
     color: '#dc2626',
     colorLight: '#fee2e2',
     groups: [
-      { emoji: '🇨🇦', name: 'CA India in Canada Group 1', link: 'https://bit.ly/ICP_CA' },
-      { emoji: '🏙️', name: 'CA India in Canada Group 2', link: 'https://bit.ly/ICPCA2' },
-      { emoji: '🌆', name: 'CA India in Vancouver — Meetups & Jobs', link: 'https://bit.ly/ICPvancouver' },
-      { emoji: '🏔️', name: 'CA India in Alberta — Meetups & Jobs', link: 'https://bit.ly/ICPalberta' },
-      { emoji: '🏛️', name: 'CA India in Ottawa — Meetups & Jobs', link: 'https://bit.ly/ICPottawa' },
-      { emoji: '🏡', name: 'CA India in Quebec — Meetups & Jobs', link: 'https://bit.ly/ICPquebec' },
-      { emoji: '📜', name: 'CA India in Ontario — Jobs, Queries & Help', link: 'https://bit.ly/ICPOntario' },
-      { emoji: '📖', name: 'CA Inter | P2 | CPT | Foundation in Canada', link: 'https://bit.ly/ICPInter' },
+      { icon: <Globe size={20} />, name: 'CA India in Canada Group 1', link: 'https://bit.ly/ICP_CA' },
+      { icon: <Building2 size={20} />, name: 'CA India in Canada Group 2', link: 'https://bit.ly/ICPCA2' },
+      { icon: <MapPin size={20} />, name: 'CA India in Vancouver — Meetups & Jobs', link: 'https://bit.ly/ICPvancouver' },
+      { icon: <Mountain size={20} />, name: 'CA India in Alberta — Meetups & Jobs', link: 'https://bit.ly/ICPalberta' },
+      { icon: <Landmark size={20} />, name: 'CA India in Ottawa — Meetups & Jobs', link: 'https://bit.ly/ICPottawa' },
+      { icon: <Home size={20} />, name: 'CA India in Quebec — Meetups & Jobs', link: 'https://bit.ly/ICPquebec' },
+      { icon: <FileText size={20} />, name: 'CA India in Ontario — Jobs, Queries & Help', link: 'https://bit.ly/ICPOntario' },
+      { icon: <BookOpen size={20} />, name: 'CA Inter | P2 | CPT | Foundation in Canada', link: 'https://bit.ly/ICPInter' },
     ],
   },
   {
     id: 'industry',
     number: '3',
-    emoji: '🏢',
+    icon: <Building2 size={28} />,
     title: 'Industry Experts, Jobs & Queries',
     participants: '1,100+',
     communityLink: 'https://chat.whatsapp.com/KrfRAPFxuAjCLrZ97mlGBp',
@@ -81,27 +82,27 @@ const COMMUNITIES: CommunitySection[] = [
     color: '#6366f1',
     colorLight: '#e0e7ff',
     groups: [
-      { emoji: '🛂', name: 'Immigration Queries and Professionals', link: 'https://bit.ly/ICPImmigration' },
-      { emoji: '💻', name: 'IT, Software & Tech Professionals', link: 'https://bit.ly/ICP_IT' },
-      { emoji: '🏦', name: 'Banking Professionals', link: 'https://bit.ly/ICPBanking' },
-      { emoji: '🏠', name: 'Mortgage Queries, Deals & Professionals', link: 'https://bit.ly/ICPMortgage' },
-      { emoji: '🏘️', name: 'Real Estate Queries & Professionals', link: 'https://bit.ly/ICPRealEstate' },
-      { emoji: '📈', name: 'Business, Enterprise & Self-Employed', link: 'https://bit.ly/ICPBusiness' },
-      { emoji: '⚖️', name: 'Lawyers Queries & Professionals', link: 'https://bit.ly/ICPLawyers' },
-      { emoji: '📊', name: 'Sales & Marketing Professionals', link: 'https://bit.ly/ICP_Marketing' },
-      { emoji: '🛡️', name: 'Insurance Queries & Professionals', link: 'https://bit.ly/ICPInsurance' },
-      { emoji: '📑', name: 'Investment Queries & Discussions', link: 'https://bit.ly/ICPInvestement' },
-      { emoji: '📚', name: 'Education & Content Professionals', link: 'https://bit.ly/ICPEducation' },
-      { emoji: '🧳', name: 'Hospitality & Tourism Professionals', link: 'https://bit.ly/ICPHospitality' },
-      { emoji: '🚚', name: 'Transportation & Logistics Professionals', link: 'https://bit.ly/ICPTransportation' },
-      { emoji: '👥', name: 'Human Resources Professionals', link: 'https://bit.ly/ICPhrprofessionals' },
-      { emoji: '🏗️', name: 'Engineering & Construction Professionals', link: 'https://bit.ly/ICPEngineering' },
+      { icon: <ShieldCheck size={20} />, name: 'Immigration Queries and Professionals', link: 'https://bit.ly/ICPImmigration' },
+      { icon: <Code size={20} />, name: 'IT, Software & Tech Professionals', link: 'https://bit.ly/ICP_IT' },
+      { icon: <Banknote size={20} />, name: 'Banking Professionals', link: 'https://bit.ly/ICPBanking' },
+      { icon: <Home size={20} />, name: 'Mortgage Queries, Deals & Professionals', link: 'https://bit.ly/ICPMortgage' },
+      { icon: <BrickWall size={20} />, name: 'Real Estate Queries & Professionals', link: 'https://bit.ly/ICPRealEstate' },
+      { icon: <TrendingUp size={20} />, name: 'Business, Enterprise & Self-Employed', link: 'https://bit.ly/ICPBusiness' },
+      { icon: <Scale size={20} />, name: 'Lawyers Queries & Professionals', link: 'https://bit.ly/ICPLawyers' },
+      { icon: <Megaphone size={20} />, name: 'Sales & Marketing Professionals', link: 'https://bit.ly/ICP_Marketing' },
+      { icon: <Shield size={20} />, name: 'Insurance Queries & Professionals', link: 'https://bit.ly/ICPInsurance' },
+      { icon: <BarChart3 size={20} />, name: 'Investment Queries & Discussions', link: 'https://bit.ly/ICPInvestement' },
+      { icon: <BookOpenCheck size={20} />, name: 'Education & Content Professionals', link: 'https://bit.ly/ICPEducation' },
+      { icon: <ShoppingBag size={20} />, name: 'Hospitality & Tourism Professionals', link: 'https://bit.ly/ICPHospitality' },
+      { icon: <Truck size={20} />, name: 'Transportation & Logistics Professionals', link: 'https://bit.ly/ICPTransportation' },
+      { icon: <UsersRound size={20} />, name: 'Human Resources Professionals', link: 'https://bit.ly/ICPhrprofessionals' },
+      { icon: <HardHat size={20} />, name: 'Engineering & Construction Professionals', link: 'https://bit.ly/ICPEngineering' },
     ],
   },
   {
     id: 'study',
     number: '4',
-    emoji: '📚',
+    icon: <BookOpen size={28} />,
     title: 'Study Buddy Community',
     participants: '1,000+',
     communityLink: 'https://chat.whatsapp.com/FgNygqhDLDqEWsQC1xZmHZ',
@@ -109,16 +110,16 @@ const COMMUNITIES: CommunitySection[] = [
     color: '#d97706',
     colorLight: '#fef3c7',
     groups: [
-      { emoji: '📖', name: 'CPA Canada Study Group', link: 'https://bit.ly/ICPCPACanada' },
-      { emoji: '📘', name: 'CPA USA Study Group', link: 'https://bit.ly/ICPCPAUSA' },
-      { emoji: '🎓', name: 'CFA Study Group & Professionals', link: 'https://bit.ly/ICPCFA' },
-      { emoji: '📝', name: 'Students in Canada', link: 'https://bit.ly/ICPCanadaStudent' },
+      { icon: <BookOpen size={20} />, name: 'CPA Canada Study Group', link: 'https://bit.ly/ICPCPACanada' },
+      { icon: <FileText size={20} />, name: 'CPA USA Study Group', link: 'https://bit.ly/ICPCPAUSA' },
+      { icon: <GraduationCap size={20} />, name: 'CFA Study Group & Professionals', link: 'https://bit.ly/ICPCFA' },
+      { icon: <PenSquare size={20} />, name: 'Students in Canada', link: 'https://bit.ly/ICPCanadaStudent' },
     ],
   },
   {
     id: 'regional',
     number: '5',
-    emoji: '🏠',
+    icon: <Home size={28} />,
     title: 'Regional & Family Community',
     participants: '900+',
     communityLink: 'https://chat.whatsapp.com/KIjJ7ybzkhtHSVF6BGlXYK',
@@ -126,29 +127,29 @@ const COMMUNITIES: CommunitySection[] = [
     color: '#e11d48',
     colorLight: '#ffe4e6',
     groups: [
-      { emoji: '✈️', name: 'Travel, Food & Leisure', link: 'https://bit.ly/ICPTravel' },
-      { emoji: '👨‍👩‍👧', name: 'Parenting Queries & Help', link: 'https://bit.ly/ICPParenting' },
-      { emoji: '🗻', name: 'Jharkhand की पहाड़ियाँ', link: 'https://bit.ly/ICPJharkhand' },
-      { emoji: '🕌', name: 'Telangana क चारमीनार', link: 'https://bit.ly/ICPTelangana' },
-      { emoji: '🛕', name: 'Odisha क जगन्नाथ पुरी', link: 'https://bit.ly/ICPOdisha' },
-      { emoji: '🙏🏻', name: 'Andhra Pradesh क तिरुपति बालाजी', link: 'https://bit.ly/ICPAndhraPradesh' },
-      { emoji: '🌊', name: 'Karnataka की सिलिकॉन वैली', link: 'https://bit.ly/ICPKarnataka' },
-      { emoji: '☀️', name: 'Bihar का नालंदा विश्वविद्यालय', link: 'https://bit.ly/ICPBihar' },
-      { emoji: '✨', name: 'Uttar Pradesh की राम नगरी', link: 'https://bit.ly/ICPUttarPradesh' },
-      { emoji: '💃', name: 'Maharashtra की लाइफस्टाइल', link: 'https://bit.ly/ICPMaharashtra' },
-      { emoji: '🌾', name: 'Punjab का स्वर्ण मंदिर', link: 'https://bit.ly/ICPPunjab' },
-      { emoji: '🕍', name: 'Rajasthan के किले', link: 'https://bit.ly/ICPRajasthan' },
-      { emoji: '🌲', name: 'Madhya Pradesh के जंगल', link: 'https://bit.ly/ICPMadhyaPradesh' },
-      { emoji: '⛺', name: 'Haryana का कुरुक्षेत्र', link: 'https://bit.ly/ICPHaryana' },
-      { emoji: '🪇', name: 'Gujarat का गरबा', link: 'https://bit.ly/ICPGujrat' },
-      { emoji: '💐', name: 'Tamil Nadu के मंदिर', link: 'https://bit.ly/ICPTamilNadu' },
-      { emoji: '❄️', name: 'Delhi की सर्दी', link: 'https://bit.ly/ICPDelhi' },
+      { icon: <Plane size={20} />, name: 'Travel, Food & Leisure', link: 'https://bit.ly/ICPTravel' },
+      { icon: <Baby size={20} />, name: 'Parenting Queries & Help', link: 'https://bit.ly/ICPParenting' },
+      { icon: <Mountain size={20} />, name: 'Jharkhand की पहाड़ियाँ', link: 'https://bit.ly/ICPJharkhand' },
+      { icon: <Landmark size={20} />, name: 'Telangana क चारमीनार', link: 'https://bit.ly/ICPTelangana' },
+      { icon: <CircleDot size={20} />, name: 'Odisha क जगन्नाथ पुरी', link: 'https://bit.ly/ICPOdisha' },
+      { icon: <Heart size={20} />, name: 'Andhra Pradesh क तिरुपति बालाजी', link: 'https://bit.ly/ICPAndhraPradesh' },
+      { icon: <MapPin size={20} />, name: 'Karnataka की सिलिकॉन वैली', link: 'https://bit.ly/ICPKarnataka' },
+      { icon: <Star size={20} />, name: 'Bihar का नालंदा विश्वविद्यालय', link: 'https://bit.ly/ICPBihar' },
+      { icon: <Star size={20} />, name: 'Uttar Pradesh की राम नगरी', link: 'https://bit.ly/ICPUttarPradesh' },
+      { icon: <Palette size={20} />, name: 'Maharashtra की लाइफस्टाइल', link: 'https://bit.ly/ICPMaharashtra' },
+      { icon: <Star size={20} />, name: 'Punjab का स्वर्ण मंदिर', link: 'https://bit.ly/ICPPunjab' },
+      { icon: <BrickWall size={20} />, name: 'Rajasthan के किले', link: 'https://bit.ly/ICPRajasthan' },
+      { icon: <TreePine size={20} />, name: 'Madhya Pradesh के जंगल', link: 'https://bit.ly/ICPMadhyaPradesh' },
+      { icon: <Tent size={20} />, name: 'Haryana का कुरुक्षेत्र', link: 'https://bit.ly/ICPHaryana' },
+      { icon: <Palette size={20} />, name: 'Gujarat का गरबा', link: 'https://bit.ly/ICPGujrat' },
+      { icon: <Landmark size={20} />, name: 'Tamil Nadu के मंदिर', link: 'https://bit.ly/ICPTamilNadu' },
+      { icon: <Snowflake size={20} />, name: 'Delhi की सर्दी', link: 'https://bit.ly/ICPDelhi' },
     ],
   },
   {
     id: 'sports',
     number: '6',
-    emoji: '🏋️',
+    icon: <Dumbbell size={28} />,
     title: 'Sports, Yoga & Meditation',
     participants: '600+',
     communityLink: 'https://chat.whatsapp.com/JhApEAWvGQoAimRT1nBHBl',
@@ -156,8 +157,8 @@ const COMMUNITIES: CommunitySection[] = [
     color: '#0891b2',
     colorLight: '#cffafe',
     groups: [
-      { emoji: '⚽', name: 'Cricket Group', link: 'https://bit.ly/ICPCricket' },
-      { emoji: '🏋️', name: 'Fitness & Sports Group', link: 'https://bit.ly/ICPFitness' },
+      { icon: <CircleDot size={20} />, name: 'Cricket Group', link: 'https://bit.ly/ICPCricket' },
+      { icon: <Dumbbell size={20} />, name: 'Fitness & Sports Group', link: 'https://bit.ly/ICPFitness' },
     ],
   },
 ];
@@ -206,7 +207,9 @@ export default function GroupsPage() {
             {/* Right Content - Main Community CTA */}
             <div style={{ flex: '1 1 400px', display: 'flex', justifyContent: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(37,211,102,0.08)', padding: '40px 40px', borderRadius: 24, border: '1px solid rgba(37,211,102,0.2)', width: '100%', maxWidth: '440px', backdropFilter: 'blur(10px)', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
-                <div style={{ fontSize: '3rem', marginBottom: 16 }}>💬</div>
+                <div style={{ width: 64, height: 64, borderRadius: 18, background: 'rgba(37,211,102,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#25D366', marginBottom: 16 }}>
+                  <MessageCircle size={32} />
+                </div>
                 <div style={{ fontWeight: 900, fontSize: '1.3rem', color: 'white', marginBottom: 8, fontFamily: 'var(--font-display)', textAlign: 'center' }}>Main Community Channel</div>
                 <div style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: 24, textAlign: 'center' }}>{MAIN_COMMUNITY.members} participants • All groups in one place</div>
                 <a href={MAIN_COMMUNITY.link} target="_blank" rel="noopener noreferrer" style={{
@@ -258,7 +261,7 @@ export default function GroupsPage() {
                   transition: 'all 0.2s',
                 }}
               >
-                <span style={{ fontSize: '1rem' }}>{c.emoji}</span> {c.title.split(',')[0]}
+                <span style={{ display: 'flex', alignItems: 'center' }}>{React.cloneElement(c.icon as React.ReactElement, { size: 16 })}</span> {c.title.split(',')[0]}
               </a>
             ))}
           </div>
@@ -288,10 +291,10 @@ export default function GroupsPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '2rem',
                 flexShrink: 0,
+                color: community.color,
               }}>
-                {community.emoji}
+                {community.icon}
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
@@ -356,7 +359,7 @@ export default function GroupsPage() {
                   onMouseOver={(e: React.MouseEvent<HTMLAnchorElement>) => { (e.currentTarget as HTMLElement).style.borderColor = community.color; (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 14px ${community.color}15`; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
                   onMouseOut={(e: React.MouseEvent<HTMLAnchorElement>) => { (e.currentTarget as HTMLElement).style.borderColor = '#e5e7eb'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.transform = 'none'; }}
                 >
-                  <span style={{ fontSize: '1.5rem', flexShrink: 0 }}>{group.emoji}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', color: community.color, flexShrink: 0 }}>{group.icon}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#0f172a', lineHeight: 1.3 }}>{group.name}</div>
                   </div>
@@ -374,7 +377,9 @@ export default function GroupsPage() {
           <Image src="/toronto-skyline.png" alt="Toronto" fill style={{ objectFit: 'cover', opacity: 0.1 }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 700, textAlign: 'center' }}>
-          <div style={{ fontSize: '3rem', marginBottom: 16 }}>🤝</div>
+          <div style={{ width: 64, height: 64, borderRadius: 18, background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a5b4fc', margin: '0 auto 16px' }}>
+            <UsersRound size={32} />
+          </div>
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16, lineHeight: 1.15 }}>
             Register as a Member
           </h2>
@@ -410,8 +415,8 @@ export default function GroupsPage() {
       {/* ─── IMPORTANT NOTE ─── */}
       <section style={{ padding: '40px 0', background: '#fef3c7', borderTop: '2px solid #f59e0b' }}>
         <div className="container" style={{ maxWidth: 800, textAlign: 'center' }}>
-          <p style={{ fontSize: '0.9rem', color: '#78350f', fontWeight: 600, lineHeight: 1.6 }}>
-            ⚠️ <strong>Important Note:</strong> Canada residents only (+1 numbers). Others will be removed.
+          <p style={{ fontSize: '0.9rem', color: '#78350f', fontWeight: 600, lineHeight: 1.6, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <Shield size={16} style={{ color: '#f59e0b' }} /> <strong>Important Note:</strong> Canada residents only (+1 numbers). Others will be removed.
           </p>
         </div>
       </section>

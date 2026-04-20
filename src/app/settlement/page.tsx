@@ -40,7 +40,7 @@ export default function SettlementPage() {
               desc: 'Finding your first home in Canada. Understanding leases, credit scores for rentals, and popular neighborhoods for newcomers.',
               items: ['Rental Market Overview & Average Costs', 'Credit Score Requirements for Newcomers', 'Tenant Rights & Responsibilities in Ontario', 'Temporary vs Long-term Housing Options'],
               color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe',
-              imgSide: 'right', image: '/housing_bg.png', emoji: '🏠'
+              imgSide: 'right', image: '/housing_bg.png'
             },
             {
               icon: <Banknote size={32} style={{ color: '#059669' }} />,
@@ -48,7 +48,7 @@ export default function SettlementPage() {
               desc: 'Setting up your Canadian financial life. Open accounts, build credit, and understand the tax system from day one.',
               items: ['Opening a Bank Account (RBC, TD, Scotiabank)', 'Building Credit History as a Newcomer', 'GST/HST & Income Tax 101', 'RRSP, TFSA & Registered Savings Accounts'],
               color: '#059669', bg: '#f0fdf4', border: '#bbf7d0',
-              imgSide: 'left', image: '/finance_bg.png', emoji: '🏦'
+              imgSide: 'left', image: '/finance_bg.png'
             },
             {
               icon: <HeartPulse size={32} style={{ color: '#dc2626' }} />,
@@ -56,7 +56,7 @@ export default function SettlementPage() {
               desc: 'Navigating the universal healthcare system. Getting your provincial health card and finding doctors.',
               items: ['Applying for Health Cards (OHIP, MSP, etc.)', 'Finding a Family Doctor or Walk-in Clinic', 'Emergency Room vs Urgent Care', 'Dental & Vision Coverage Options'],
               color: '#dc2626', bg: '#fef2f2', border: '#fecaca',
-              imgSide: 'right', image: '/healthcare_bg.png', emoji: '🏥'
+              imgSide: 'right', image: '/healthcare_bg.png'
             },
             {
               icon: <Car size={32} style={{ color: '#d97706' }} />,
@@ -64,7 +64,7 @@ export default function SettlementPage() {
               desc: 'Getting around your new city. Public transit, driver license exchange, and buying your first car.',
               items: ['Foreign Driver License Exchange Process', 'Public Transit (PRESTO, Compass Card)', 'Car Insurance Basics in Canada', 'Winter Driving Safety Tips'],
               color: '#d97706', bg: '#fffbeb', border: '#fde68a',
-              imgSide: 'left', image: '/toronto-skyline.png', emoji: '🚗'
+              imgSide: 'left', image: '/toronto-skyline.png'
             },
             {
               icon: <ShieldCheck size={32} style={{ color: '#7c3aed' }} />,
@@ -72,7 +72,7 @@ export default function SettlementPage() {
               desc: 'Essential documentation and legal requirements for living and working in Canada.',
               items: ['Social Insurance Number (SIN) Application', 'Work Permits & Authorization', 'PR Card & Residency Obligations', 'Free Legal Aid Resources'],
               color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe',
-              imgSide: 'right', image: '/hero-community.png', emoji: '📋'
+              imgSide: 'right', image: '/hero-community.png'
             },
           ].map((cat, idx) => (
             <div key={idx} className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56, alignItems: 'center', marginBottom: idx < 4 ? 80 : 0, direction: cat.imgSide === 'left' ? 'rtl' : 'ltr' }}>
@@ -99,8 +99,10 @@ export default function SettlementPage() {
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.85), rgba(15,23,42,0.65))' }} />
                 
                 <div style={{ position: 'relative', zIndex: 10, padding: 32, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <div style={{ fontSize: '4.5rem', marginBottom: 20, filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }}>
-                    {cat.emoji}
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ width: 72, height: 72, borderRadius: 20, background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                      {React.cloneElement(cat.icon, { size: 36, style: { color: 'white' } })}
+                    </div>
                   </div>
                   <div style={{ fontWeight: 800, fontSize: '1.6rem', color: 'white', marginBottom: 16, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>{cat.title}</div>
                   <p style={{ fontSize: '0.95rem', color: '#cbd5e1', maxWidth: 300, lineHeight: 1.6 }}>Get personalized guidance.</p>

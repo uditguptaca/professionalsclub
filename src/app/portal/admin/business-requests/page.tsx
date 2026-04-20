@@ -14,11 +14,11 @@ export default function AdminBusinessRequests() {
   };
 
   const helpTypeLabels: Record<string, string> = {
-    introduction: '🤝 Introduction',
-    quote_support: '💰 Quote Support',
-    booking_help: '📅 Booking Help',
-    clarification: '❓ Clarification',
-    other: '📋 Other',
+    introduction: 'Introduction',
+    quote_support: 'Quote Support',
+    booking_help: 'Booking Help',
+    clarification: 'Clarification',
+    other: 'Other',
   };
 
   return (

@@ -65,7 +65,7 @@ export default function HowItWorksPage() {
       <section style={{ padding: '40px 0', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <span style={{ fontSize: '2rem' }}>🤝</span>
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', color: '#059669' }}><HandHeart size={28} /></div>
             <h2 style={{ fontSize: '2.2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 8, marginTop: 12 }}>For Volunteers & Mentors</h2>
             <p style={{ color: '#64748b', fontSize: '1rem' }}>Share your expertise. Help fellow community members.</p>
           </div>

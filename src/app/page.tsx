@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Users, Briefcase, Calendar, Shield, HandHeart, MapPin, FileText, BookOpen, GraduationCap, CheckCircle, Phone, ChevronRight, Star, HelpCircle, ShieldCheck, Tag, Building2 } from 'lucide-react';
+import { ArrowRight, Users, Briefcase, Calendar, Shield, HandHeart, MapPin, FileText, BookOpen, GraduationCap, CheckCircle, Phone, ChevronRight, Star, HelpCircle, ShieldCheck, Tag, Building2, Home, Landmark, Hospital, Bus, ClipboardList, DollarSign, Globe, Wallet } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 
@@ -226,15 +226,15 @@ export default function Home() {
               </p>
               <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 32 }}>
                 {[
-                  { label: 'Housing & Rentals', icon: '🏠' },
-                  { label: 'Banking & Credit', icon: '🏦' },
-                  { label: 'Health Cards', icon: '🏥' },
-                  { label: 'Tax Filing (GST/HST)', icon: '💰' },
-                  { label: 'Transit & Driving', icon: '🚌' },
-                  { label: 'SIN & Legal Docs', icon: '📋' },
+                  { label: 'Housing & Rentals', icon: <Home size={18} /> },
+                  { label: 'Banking & Credit', icon: <Landmark size={18} /> },
+                  { label: 'Health Cards', icon: <Hospital size={18} /> },
+                  { label: 'Tax Filing (GST/HST)', icon: <DollarSign size={18} /> },
+                  { label: 'Transit & Driving', icon: <Bus size={18} /> },
+                  { label: 'SIN & Legal Docs', icon: <ClipboardList size={18} /> },
                 ].map((item, i) => (
                   <Link href="/settlement" key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 12, background: '#fff1f2', border: '1px solid #fecdd3', fontSize: '0.88rem', fontWeight: 600, color: '#be123c', textDecoration: 'none', transition: 'all 0.2s' }} className="hover:-translate-y-1 hover:shadow-md">
-                    <span style={{ fontSize: '1.2rem' }}>{item.icon}</span> {item.label}
+                    <span style={{ display: 'flex', alignItems: 'center' }}>{item.icon}</span> {item.label}
                   </Link>
                 ))}
               </div>
@@ -385,15 +385,15 @@ export default function Home() {
             {/* Left Side: The list of cards */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
               {[
-                { name: 'Finance Professionals', members: '1,600+', icon: '💼', desc: 'Finance networking.', link: 'https://chat.whatsapp.com/LZQxOHMI7tx3vrrXCGXit4' },
-                { name: 'CA India in Canada Community', members: '1,200+', icon: '🇮🇳', desc: 'Indian CAs network.', link: 'https://chat.whatsapp.com/K9k0IBLoEOW3L16gx23b0n' },
-                { name: 'Industry Experts & Jobs', members: '1,100+', icon: '🌍', desc: 'Industry networking.', link: 'https://chat.whatsapp.com/KrfRAPFxuAjCLrZ97mlGBp' },
-                { name: 'Study Buddy Community', members: '1,000+', icon: '📚', desc: 'Peer exam support.', link: 'https://chat.whatsapp.com/FgNygqhDLDqEWsQC1xZmHZ' },
-                { name: 'Regional & Family Community', members: '900+', icon: '🌏', desc: 'Stay connected.', link: 'https://chat.whatsapp.com/KIjJ7ybzkhtHSVF6BGlXYK' },
-                { name: 'Sports, Yoga & Meditation', members: '600+', icon: '⚽', desc: 'Wellness community.', link: 'https://chat.whatsapp.com/JhApEAWvGQoAimRT1nBHBl' },
+                { name: 'Finance Professionals', members: '1,600+', icon: <Wallet size={20} />, desc: 'Finance networking.', link: 'https://chat.whatsapp.com/LZQxOHMI7tx3vrrXCGXit4' },
+                { name: 'CA India in Canada Community', members: '1,200+', icon: <Globe size={20} />, desc: 'Indian CAs network.', link: 'https://chat.whatsapp.com/K9k0IBLoEOW3L16gx23b0n' },
+                { name: 'Industry Experts & Jobs', members: '1,100+', icon: <Briefcase size={20} />, desc: 'Industry networking.', link: 'https://chat.whatsapp.com/KrfRAPFxuAjCLrZ97mlGBp' },
+                { name: 'Study Buddy Community', members: '1,000+', icon: <BookOpen size={20} />, desc: 'Peer exam support.', link: 'https://chat.whatsapp.com/FgNygqhDLDqEWsQC1xZmHZ' },
+                { name: 'Regional & Family Community', members: '900+', icon: <MapPin size={20} />, desc: 'Stay connected.', link: 'https://chat.whatsapp.com/KIjJ7ybzkhtHSVF6BGlXYK' },
+                { name: 'Sports, Yoga & Meditation', members: '600+', icon: <Star size={20} />, desc: 'Wellness community.', link: 'https://chat.whatsapp.com/JhApEAWvGQoAimRT1nBHBl' },
               ].map((group, i) => (
                 <a key={i} href={group.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', borderRadius: 16, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 20, transition: 'all 0.3s' }} className="whatsapp-card-hover">
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(225,29,72,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', flexShrink: 0, border: '1px solid rgba(225,29,72,0.2)' }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(225,29,72,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid rgba(225,29,72,0.2)', color: '#fb7185' }}>
                     {group.icon}
                   </div>
                   <div style={{ flex: 1, textAlign: 'left' }}>
@@ -410,7 +410,7 @@ export default function Home() {
             {/* Right Side: Text and Button */}
             <div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(225,29,72,0.1)', padding: '6px 16px', borderRadius: 99, marginBottom: 20, border: '1px solid rgba(225,29,72,0.2)' }}>
-                <span style={{ fontSize: '15px' }}>🌟</span>
+                <Star size={15} style={{ color: '#fb7185' }} />
                 <span style={{ color: '#fb7185', fontWeight: 800, fontSize: '0.8rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>5000+ Participants</span>
               </div>
               <h2 style={{ fontSize: '3.2rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 24, lineHeight: 1.1 }}>

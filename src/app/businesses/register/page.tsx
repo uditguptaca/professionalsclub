@@ -40,7 +40,7 @@ const SERVICE_MODES = [
 
 const PROMOTION_OPTIONS = [
   { value: 'featured', label: '⭐ Featured Listing — Appear at the top of directory results' },
-  { value: 'homepage', label: '🏠 Homepage Spotlight — Featured on the Professionals Club homepage' },
+  { value: 'homepage', label: 'Homepage Spotlight — Featured on the Professionals Club homepage' },
   { value: 'newsletter', label: '📧 Newsletter Feature — Highlighted in our member newsletter' },
   { value: 'social', label: '📱 Social Media Promotion — Shared on our social media channels' },
   { value: 'event', label: '🎪 Event Sponsorship — Sponsor community events and meetups' },
@@ -524,7 +524,7 @@ export default function BusinessSignupPage() {
               </div>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 8 }}>Offer exclusive benefits.</p>
               <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', fontSize: '0.78rem', color: '#92400e', fontWeight: 500, marginBottom: 28 }}>
-                ⚠️ This section is <strong>mandatory</strong>. All listed businesses must offer at least one member benefit.
+                This section is <strong>mandatory</strong>. All listed businesses must offer at least one member benefit.
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -699,7 +699,7 @@ export default function BusinessSignupPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {/* Summary */}
                 <div style={{ padding: 20, borderRadius: 14, background: 'var(--gray-50)', border: '1px solid var(--gray-200)' }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 12 }}>📋 Application Summary</div>
+                  <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 12 }}>Application Summary</div>
                   <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
                     <div><strong>Business:</strong> {businessName || '—'}</div>
                     <div><strong>Category:</strong> {category || '—'}</div>

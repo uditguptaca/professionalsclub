@@ -18,7 +18,6 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
   'Interview Prep': { bg: '#f5f3ff', text: '#5b21b6' },
 };
 
-const newsIcons: Record<string, string> = { 'Announcement': '📢', 'Events': '📅', 'Partnerships': '🤝', 'Resources': '📚', 'Hiring News': '📢', 'Immigration': '✈️', 'Salary Trends': '💰', 'Industry News': '🏭', 'Interview Prep': '🎯' };
 
 export default function NewsPage() {
   const { newsArticles } = usePortal();

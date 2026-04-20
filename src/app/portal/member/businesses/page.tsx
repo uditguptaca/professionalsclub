@@ -168,7 +168,7 @@ export default function MemberBusinessDirectory() {
 
                 {/* Path B: Admin Assisted */}
                 <div style={{ padding: 16, borderRadius: 12, background: 'rgba(0,103,165,0.04)', border: '1px solid rgba(0,103,165,0.12)' }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.88rem', marginBottom: 10 }}>🤝 Ask Admin to Help Connect</div>
+                  <div style={{ fontWeight: 700, fontSize: '0.88rem', marginBottom: 10 }}>Ask Admin to Help Connect</div>
                   <div className="form-field" style={{ marginBottom: 12 }}>
                     <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--gray-700)' }}>What help do you need?</label>
                     <select className="form-input" value={contactHelpType} onChange={e => setContactHelpType(e.target.value as BusinessContactHelpType)} style={{ fontSize: '0.82rem' }}>
