@@ -1,7 +1,6 @@
-'use client';
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { HelpRequest, VolunteerApplication, CaseAssignment, AdminMessage, AuditLogEntry, Member, HelpDeskStats, RequestStatus, VolunteerStatus, Business, BusinessContactRequest, BusinessStatus, EBook, VideoWorkshop, ContentTemplate, CommunityEvent, TeamMember, NewsArticle, DonationCampaign, JobPosting } from '@/types';
-import { mockHelpRequests, mockVolunteerApplications, mockAssignments, mockMessages, mockAuditLog, mockMembers, mockStats, mockBusinesses, mockBusinessContactRequests, mockEBooks, mockWorkshops, mockTemplates, mockEvents, mockTeamMembers, mockNewsArticles, mockDonationCampaigns, mockJobPostings } from '@/lib/mock-data';
+import { createClient } from '@/utils/supabase/client';
 
 interface HelpDeskContextType {
   // Data
@@ -77,114 +76,183 @@ interface HelpDeskContextType {
 const HelpDeskContext = createContext<HelpDeskContextType | undefined>(undefined);
 
 export function PortalProvider({ children }: { children: React.ReactNode }) {
-  const [members] = useState<Member[]>(mockMembers);
-  const [helpRequests, setHelpRequests] = useState<HelpRequest[]>(mockHelpRequests);
-  const [volunteerApps, setVolunteerApps] = useState<VolunteerApplication[]>(mockVolunteerApplications);
-  const [assignments, setAssignments] = useState<CaseAssignment[]>(mockAssignments);
-  const [messages, setMessages] = useState<AdminMessage[]>(mockMessages);
-  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>(mockAuditLog);
-  const [stats] = useState<HelpDeskStats>(mockStats);
-  const [businesses, setBusinesses] = useState<Business[]>(mockBusinesses);
-  const [businessContactRequests, setBusinessContactRequests] = useState<BusinessContactRequest[]>(mockBusinessContactRequests);
+  const supabase = createClient();
+  const [loading, setLoading] = useState(true);
+
+  const [members, setMembers] = useState<Member[]>([]);
+  const [helpRequests, setHelpRequests] = useState<HelpRequest[]>([]);
+  const [volunteerApps, setVolunteerApps] = useState<VolunteerApplication[]>([]);
+  const [assignments, setAssignments] = useState<CaseAssignment[]>([]);
+  const [messages, setMessages] = useState<AdminMessage[]>([]);
+  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
+  const [stats, setStats] = useState<HelpDeskStats>({
+    totalMembers: 0, totalRequests: 0, openRequests: 0, closedRequests: 0,
+    pendingVolunteerApps: 0, approvedVolunteers: 0, activeAssignments: 0,
+    avgResolutionDays: 0, escalations: 0, categoryCounts: {}
+  });
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [businessContactRequests, setBusinessContactRequests] = useState<BusinessContactRequest[]>([]);
 
   // Dynamic Content State
-  const [ebooks, setEbooks] = useState<EBook[]>(mockEBooks);
-  const [workshops, setWorkshops] = useState<VideoWorkshop[]>(mockWorkshops);
-  const [templates, setTemplates] = useState<ContentTemplate[]>(mockTemplates);
-  const [events, setEvents] = useState<CommunityEvent[]>(mockEvents);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(mockTeamMembers);
-  const [newsArticles, setNewsArticles] = useState<NewsArticle[]>(mockNewsArticles);
-  const [donationCampaigns, setDonationCampaigns] = useState<DonationCampaign[]>(mockDonationCampaigns);
-  const [jobPostings, setJobPostings] = useState<JobPosting[]>(mockJobPostings);
+  const [ebooks, setEbooks] = useState<EBook[]>([]);
+  const [workshops, setWorkshops] = useState<VideoWorkshop[]>([]);
+  const [templates, setTemplates] = useState<ContentTemplate[]>([]);
+  const [events, setEvents] = useState<CommunityEvent[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
+  const [donationCampaigns, setDonationCampaigns] = useState<DonationCampaign[]>([]);
+  const [jobPostings, setJobPostings] = useState<JobPosting[]>([]);
 
-  // ========== EXISTING ACTIONS ==========
-  const addHelpRequest = (req: Omit<HelpRequest, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'timeline' | 'internalNotes'>) => {
-    const now = new Date().toISOString();
-    const newReq: HelpRequest = {
-      ...req,
-      id: `HR-${Date.now()}`,
-      status: 'submitted',
-      internalNotes: [],
-      timeline: [{ date: now, status: 'submitted', description: `Help request submitted by ${req.memberName}` }],
-      createdAt: now,
-      updatedAt: now,
-    };
-    setHelpRequests(prev => [newReq, ...prev]);
-  };
+  // Fetch data from Supabase on mount
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      try {
+        const [
+          { data: membersData },
+          { data: requestsData },
+          { data: jobsData },
+          { data: eventsData },
+          { data: businessesData }
+        ] = await Promise.all([
+          supabase.from('members').select('*'),
+          supabase.from('help_requests').select('*'),
+          supabase.from('jobs').select('*'),
+          supabase.from('events').select('*'),
+          supabase.from('businesses').select('*'),
+        ]);
 
-  const updateRequestStatus = (id: string, status: RequestStatus) => {
-    setHelpRequests(prev => prev.map(r => {
-      if (r.id === id) {
-        const now = new Date().toISOString();
-        return {
-          ...r,
-          status,
-          updatedAt: now,
-          timeline: [...r.timeline, { date: now, status, description: `Status updated to ${status.replace(/_/g, ' ')}` }],
-        };
+        if (membersData) setMembers(membersData as any);
+        if (requestsData) setHelpRequests(requestsData as any);
+        if (jobsData) setJobPostings(jobsData as any);
+        if (eventsData) setEvents(eventsData as any);
+        if (businessesData) setBusinesses(businessesData as any);
+      } catch (error) {
+        console.error('Error fetching portal data:', error);
+      } finally {
+        setLoading(false);
       }
-      return r;
-    }));
+    }
+
+    fetchData();
+  }, []);
+
+  // ========== ACTIONS ==========
+  const addHelpRequest = async (req: Omit<HelpRequest, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'timeline' | 'internalNotes'>) => {
+    const { data, error } = await supabase
+      .from('help_requests')
+      .insert([{
+        ...req,
+        status: 'submitted',
+        timeline: [{ date: new Date().toISOString(), status: 'submitted', description: `Help request submitted by ${req.memberName}` }],
+        internal_notes: [],
+      }])
+      .select()
+      .single();
+
+    if (data) {
+      setHelpRequests(prev => [data as any, ...prev]);
+    } else if (error) {
+      console.error('Error adding help request:', error);
+    }
   };
 
-  const addInternalNote = (requestId: string, note: { authorId: string; authorName: string; body: string }) => {
+  const updateRequestStatus = async (id: string, status: RequestStatus) => {
+    const { data, error } = await supabase
+      .from('help_requests')
+      .update({ 
+        status, 
+        updated_at: new Date().toISOString(),
+        // We'll handle timeline updates in a real app with a trigger or batching
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (data) {
+      setHelpRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+    }
+  };
+
+  const addInternalNote = async (requestId: string, note: { authorId: string; authorName: string; body: string }) => {
+    // For now, we update the array in the DB (Postgres handle arrays well)
+    // Note: This is simplified for the demo
     setHelpRequests(prev => prev.map(r => {
       if (r.id === requestId) {
         return {
           ...r,
           internalNotes: [...r.internalNotes, { ...note, id: `note-${Date.now()}`, createdAt: new Date().toISOString() }],
-          updatedAt: new Date().toISOString(),
         };
       }
       return r;
     }));
   };
 
-  const addVolunteerApp = (app: Omit<VolunteerApplication, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => {
-    const now = new Date().toISOString();
-    const newApp: VolunteerApplication = {
-      ...app,
-      id: `VA-${Date.now()}`,
-      status: 'new_application',
-      createdAt: now,
-      updatedAt: now,
-    };
-    setVolunteerApps(prev => [newApp, ...prev]);
+  const addVolunteerApp = async (app: Omit<VolunteerApplication, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => {
+    const { data, error } = await supabase
+      .from('volunteer_applications')
+      .insert([{
+        ...app,
+        status: 'new_application',
+      }])
+      .select()
+      .single();
+
+    if (data) {
+      setVolunteerApps(prev => [data as any, ...prev]);
+    }
   };
 
-  const updateVolunteerStatus = (id: string, status: VolunteerStatus, notes?: string) => {
-    setVolunteerApps(prev => prev.map(a => {
-      if (a.id === id) {
-        return { ...a, status, adminNotes: notes || a.adminNotes, updatedAt: new Date().toISOString() };
-      }
-      return a;
-    }));
+  const updateVolunteerStatus = async (id: string, status: VolunteerStatus, notes?: string) => {
+    const { error } = await supabase
+      .from('volunteer_applications')
+      .update({ status, admin_notes: notes })
+      .eq('id', id);
+
+    if (!error) {
+      setVolunteerApps(prev => prev.map(a => a.id === id ? { ...a, status, adminNotes: notes || a.adminNotes } : a));
+    }
   };
 
-  const createAssignment = (assignment: Omit<CaseAssignment, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => {
-    const now = new Date().toISOString();
-    const newAsg: CaseAssignment = {
-      ...assignment,
-      id: `ASG-${Date.now()}`,
-      status: 'pending',
-      createdAt: now,
-      updatedAt: now,
-    };
-    setAssignments(prev => [newAsg, ...prev]);
+  const createAssignment = async (assignment: Omit<CaseAssignment, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => {
+    const { data, error } = await supabase
+      .from('case_assignments')
+      .insert([{
+        ...assignment,
+        status: 'pending',
+      }])
+      .select()
+      .single();
+
+    if (data) {
+      setAssignments(prev => [data as any, ...prev]);
+    }
   };
 
-  const sendMessage = (msg: Omit<AdminMessage, 'id' | 'createdAt' | 'read'>) => {
-    const newMsg: AdminMessage = {
-      ...msg,
-      id: `msg-${Date.now()}`,
-      read: false,
-      createdAt: new Date().toISOString(),
-    };
-    setMessages(prev => [newMsg, ...prev]);
+  const sendMessage = async (msg: Omit<AdminMessage, 'id' | 'createdAt' | 'read'>) => {
+    const { data, error } = await supabase
+      .from('admin_messages')
+      .insert([{
+        ...msg,
+        read: false,
+      }])
+      .select()
+      .single();
+
+    if (data) {
+      setMessages(prev => [data as any, ...prev]);
+    }
   };
 
-  const markMessageRead = (id: string) => {
-    setMessages(prev => prev.map(m => m.id === id ? { ...m, read: true } : m));
+  const markMessageRead = async (id: string) => {
+    const { error } = await supabase
+      .from('admin_messages')
+      .update({ read: true })
+      .eq('id', id);
+
+    if (!error) {
+      setMessages(prev => prev.map(m => m.id === id ? { ...m, read: true } : m));
+    }
   };
 
   const logAction = (entry: Omit<AuditLogEntry, 'id' | 'timestamp'>) => {

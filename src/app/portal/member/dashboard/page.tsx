@@ -37,7 +37,7 @@ export default function MemberDashboard() {
         </Link>
 
         <Link href="/portal/member/volunteer" style={{ textDecoration: 'none' }}>
-          <div className="card card-clickable" style={{ background: 'linear-gradient(135deg, #059669, #10b981)', color: 'white', border: 'none', padding: '32px 28px', boxShadow: '0 10px 30px rgba(16,185,129,0.25)', transition: 'transform 0.2s', cursor: 'pointer' }}>
+          <div className="card card-clickable" style={{ background: 'linear-gradient(135deg, #dc2626, #f87171)', color: 'white', border: 'none', padding: '32px 28px', boxShadow: '0 10px 30px rgba(220,38,38,0.25)', transition: 'transform 0.2s', cursor: 'pointer' }}>
             <HandHeart size={36} style={{ marginBottom: 16, opacity: 0.9 }} />
             <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: 8 }}>Volunteer to Help</h2>
             <p style={{ fontSize: '0.85rem', opacity: 0.85, lineHeight: 1.5 }}>Apply to become a volunteer or mentor. Help community members with your professional expertise.</p>
