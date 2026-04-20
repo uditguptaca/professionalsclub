@@ -7,13 +7,14 @@ import {
   Home, HelpCircle, HandHeart, FileText, ClipboardList, MessageSquare,
   LogOut, BarChart3, Users, ListChecks, FolderKanban, Shield, ScrollText,
   Settings, UserCircle, Building2, Inbox, Layers, BookOpen, Calendar,
-  UsersRound, Newspaper, Heart, Briefcase,
+  UsersRound, Newspaper, Heart, Briefcase, Menu, X
 } from 'lucide-react';
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { currentRole, setIsAuthenticated, isAuthenticated } = useApp();
+  const [mobileOpen, setMobileOpen] = React.useState(false);
 
   // Redirect logic
   React.useEffect(() => {
@@ -78,8 +79,13 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
 
   return (
     <div className="portal-layout">
+      {/* Mobile Overlay */}
+      {mobileOpen && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 40 }} onClick={() => setMobileOpen(false)} />
+      )}
+
       {/* Sidebar */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`} style={{ zIndex: 50 }}>
         <div className="sidebar-header">
           <Link href="/" className="flex items-center gap-2">
             <div className="logo-icon" style={{ background: 'linear-gradient(135deg, var(--primary-600), var(--primary-400))', color: 'white', fontWeight: 800, fontSize: '0.8rem', width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>PC</div>
@@ -100,6 +106,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
                 key={link.href}
                 href={link.href}
                 className={`sidebar-link ${isActive ? 'active' : ''}`}
+                onClick={() => setMobileOpen(false)}
               >
                 <Icon className="icon" size={18} />
                 <span>{link.label}</span>
@@ -118,6 +125,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
                     key={link.href}
                     href={link.href}
                     className={`sidebar-link ${isActive ? 'active' : ''}`}
+                    onClick={() => setMobileOpen(false)}
                   >
                     <Icon className="icon" size={18} />
                     <span>{link.label}</span>
@@ -137,13 +145,18 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
       </aside>
 
       {/* Main Content Area */}
-      <main style={{ marginLeft: 'var(--sidebar-width)', width: 'calc(100% - var(--sidebar-width))', background: 'var(--bg-primary)', minHeight: '100vh' }}>
-        <header style={{ height: '72px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 var(--space-6)', position: 'sticky', top: 0, zIndex: 10, background: 'var(--bg-glass)', backdropFilter: 'blur(12px)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Shield size={16} className="text-primary-400" />
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Admin-Mediated • No Direct Contact
-            </span>
+      <main className="portal-main" style={{ background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }}>
+        <header className="portal-topbar" style={{ height: '72px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 var(--space-6)', position: 'sticky', top: 0, zIndex: 10, background: 'var(--bg-glass)', backdropFilter: 'blur(12px)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button className="mobile-only-btn" onClick={() => setMobileOpen(!mobileOpen)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', color: 'var(--text-primary)', cursor: 'pointer', padding: 4 }}>
+              {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Shield size={16} className="text-primary-400" />
+              <span className="portal-header-notice" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Admin-Mediated • No Direct Contact
+              </span>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="badge badge-accent bg-accent-50 text-accent-700 border border-accent-200" style={{ fontSize: '0.7rem' }}>MVP Beta</div>
