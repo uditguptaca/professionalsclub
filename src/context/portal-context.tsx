@@ -1,3 +1,4 @@
+'use client';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { HelpRequest, VolunteerApplication, CaseAssignment, AdminMessage, AuditLogEntry, Member, HelpDeskStats, RequestStatus, VolunteerStatus, Business, BusinessContactRequest, BusinessStatus, EBook, VideoWorkshop, ContentTemplate, CommunityEvent, TeamMember, NewsArticle, DonationCampaign, JobPosting } from '@/types';
 import { createClient } from '@/utils/supabase/client';
@@ -115,7 +116,7 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
           { data: eventsData },
           { data: businessesData }
         ] = await Promise.all([
-          supabase.from('members').select('*'),
+          supabase.from('club_members').select('*'),
           supabase.from('help_requests').select('*'),
           supabase.from('jobs').select('*'),
           supabase.from('events').select('*'),

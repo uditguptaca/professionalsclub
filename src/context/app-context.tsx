@@ -1,3 +1,4 @@
+'use client';
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { UserRole } from '@/types';
 import { createClient } from '@/utils/supabase/client';
@@ -23,48 +24,61 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>('');
 
-  // Hydrate from localStorage & Supabase Auth
+  // Initial Hydration & Auth Setup
   useEffect(() => {
     async function initAuth() {
+      // 1. First, check if we have a real Supabase session
       const { data: { session } } = await supabase.auth.getSession();
+      
       if (session) {
         setIsAuthenticated(true);
         setCurrentUserId(session.user.id);
-        // Map role from metadata or profile if needed
         const role = (session.user.user_metadata?.role as UserRole) || 'member';
         setCurrentRole(role);
       } else {
-        // Fallback to localStorage for mock/dev role if no session
-        const savedRole = localStorage.getItem('pc_role') as UserRole;
-        if (savedRole && (savedRole === 'member' || savedRole === 'admin')) setCurrentRole(savedRole);
+        // 2. Fallback to localStorage for mock/dev role ONLY if not already authenticated via demo
         const savedAuth = localStorage.getItem('pc_auth') === 'true';
-        if (savedAuth) setIsAuthenticated(true);
-        setCurrentUserId(currentRole === 'member' ? 'm1' : 'admin1');
+        if (savedAuth) {
+          setIsAuthenticated(true);
+          const savedRole = localStorage.getItem('pc_role') as UserRole;
+          if (savedRole && (savedRole === 'member' || savedRole === 'admin')) {
+            setCurrentRole(savedRole);
+          }
+        }
       }
+      setHydrated(true);
     }
 
     initAuth();
 
+    // Listen for auth changes (Login/Logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
         setIsAuthenticated(true);
         setCurrentUserId(session.user.id);
-      } else {
+        const role = (session.user.user_metadata?.role as UserRole) || 'member';
+        setCurrentRole(role);
+      } else if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
         setCurrentUserId('');
+        setCurrentRole('member');
       }
     });
 
-    setHydrated(true);
     return () => subscription.unsubscribe();
-  }, [currentRole]);
+  }, []); // Run ONLY once on mount
 
-  // Persist to localStorage
+  // Sync state to localStorage (Separate from Auth check)
   useEffect(() => {
     if (!hydrated) return;
     localStorage.setItem('pc_role', currentRole);
     localStorage.setItem('pc_auth', isAuthenticated.toString());
-  }, [currentRole, isAuthenticated, hydrated]);
+    
+    // Update mock ID based on role if no real user
+    if (!currentUserId && isAuthenticated) {
+      setCurrentUserId(currentRole === 'admin' ? 'admin1' : 'm1');
+    }
+  }, [currentRole, isAuthenticated, hydrated, currentUserId]);
 
   const toggleSidebar = useCallback(() => setSidebarOpen(p => !p), []);
 
