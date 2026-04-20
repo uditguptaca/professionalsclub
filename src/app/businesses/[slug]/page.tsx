@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import {
   ShieldCheck, Star, Tag, MapPin, Phone, Mail, Globe, Clock, Briefcase,
-  ArrowLeft, CheckCircle, ExternalLink, User, Calendar,
+  ArrowLeft, CheckCircle, ExternalLink, User, Calendar, Target,
 } from 'lucide-react';
 import { mockBusinesses } from '@/lib/mock-data';
 
@@ -99,7 +99,9 @@ export default function BusinessProfilePage() {
           {biz.hasMemberRate && (
             <div className="biz-member-rate">
               <div className="biz-member-rate-badge"><Tag size={13} /> {biz.offerBadge || 'Member Rate'}</div>
-              <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, marginBottom: 8 }}>🎯 Exclusive Member Benefits</h3>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Target size={20} className="text-secondary-600" /> Exclusive Member Benefits
+              </h3>
               {biz.memberRateText && <p>{biz.memberRateText}</p>}
               {biz.memberBenefits && biz.memberBenefits.length > 0 && (
                 <ul className="biz-benefit-list">

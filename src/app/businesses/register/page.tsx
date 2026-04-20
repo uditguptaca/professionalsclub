@@ -39,11 +39,11 @@ const SERVICE_MODES = [
 ];
 
 const PROMOTION_OPTIONS = [
-  { value: 'featured', label: '⭐ Featured Listing — Appear at the top of directory results' },
+  { value: 'featured', label: 'Featured Listing — Appear at the top of directory results' },
   { value: 'homepage', label: 'Homepage Spotlight — Featured on the Professionals Club homepage' },
-  { value: 'newsletter', label: '📧 Newsletter Feature — Highlighted in our member newsletter' },
-  { value: 'social', label: '📱 Social Media Promotion — Shared on our social media channels' },
-  { value: 'event', label: '🎪 Event Sponsorship — Sponsor community events and meetups' },
+  { value: 'newsletter', label: 'Newsletter Feature — Highlighted in our member newsletter' },
+  { value: 'social', label: 'Social Media Promotion — Shared on our social media channels' },
+  { value: 'event', label: 'Event Sponsorship — Sponsor community events and meetups' },
 ];
 
 export default function BusinessSignupPage() {

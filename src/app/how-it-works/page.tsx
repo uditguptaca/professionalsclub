@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
-import { HelpCircle, Shield, HandHeart, CheckCircle, ArrowRight, Users, MessageSquare, ClipboardList } from 'lucide-react';
+import { HelpCircle, Shield, HandHeart, CheckCircle, ArrowRight, Users, MessageSquare, ClipboardList, Target } from 'lucide-react';
 
 export default function HowItWorksPage() {
   return (
@@ -30,7 +30,7 @@ export default function HowItWorksPage() {
       <section style={{ padding: '40px 0', background: 'white' }}>
         <div className="container" style={{ maxWidth: 1000 }}>
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <span style={{ fontSize: '2rem' }}>🎯</span>
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', color: '#2563eb' }}><Target size={28} /></div>
             <h2 style={{ fontSize: '2.2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 8, marginTop: 12 }}>For Members Seeking Help</h2>
             <p style={{ color: '#64748b', fontSize: '1rem' }}>Submit a request and let our platform handle the matching.</p>
           </div>

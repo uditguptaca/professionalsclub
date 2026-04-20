@@ -3,7 +3,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
-import { HelpCircle, HandHeart, FileText, ClipboardList, MessageSquare, ArrowRight, Bell, CheckCircle, Building2, Tag, Star } from 'lucide-react';
+import { HelpCircle, HandHeart, FileText, ClipboardList, MessageSquare, ArrowRight, Bell, CheckCircle, Building2, Tag, Star, Lock, XCircle, FileEdit } from 'lucide-react';
 
 export default function MemberDashboard() {
   const { helpRequests, volunteerApps, messages } = usePortal();
@@ -81,8 +81,8 @@ export default function MemberDashboard() {
                     <span style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 4 }}>
                       {myVolunteerApp.status === 'approved' && <><CheckCircle size={16} style={{ color: '#059669' }} /> Approved</>}
                       {myVolunteerApp.status === 'pending_verification' && '⏳ Pending'}
-                      {myVolunteerApp.status === 'new_application' && '📝 Submitted'}
-                      {myVolunteerApp.status === 'rejected' && '❌ Rejected'}
+                      {myVolunteerApp.status === 'new_application' && <><FileEdit size={16} style={{ color: '#d97706' }} /> Submitted</>}
+                      {myVolunteerApp.status === 'rejected' && <><XCircle size={16} style={{ color: '#ef4444' }} /> Rejected</>}
                       {!['approved', 'pending_verification', 'new_application', 'rejected'].includes(myVolunteerApp.status) && myVolunteerApp.status}
                     </span>
                   ) : '—'}
@@ -170,8 +170,8 @@ export default function MemberDashboard() {
 
       {/* Safety Notice */}
       <div style={{ padding: '16px 20px', borderRadius: 12, background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.1)' }}>
-        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.6, textAlign: 'center' }}>
-          🔒 <strong>Your privacy is protected.</strong> All communications go through our admin team. No member can contact you directly.
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.6, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <Lock size={14} className="text-primary-600" /> <strong>Your privacy is protected.</strong> All communications go through our admin team. No member can contact you directly.
         </p>
       </div>
     </div>

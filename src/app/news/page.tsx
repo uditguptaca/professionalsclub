@@ -4,7 +4,19 @@ import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { usePortal } from '@/context/portal-context';
-import { Newspaper, ArrowRight } from 'lucide-react';
+import { Newspaper, ArrowRight, Megaphone, Calendar, Handshake, BookOpen, Briefcase, Plane, TrendingUp, Building2, Target } from 'lucide-react';
+
+const categoryIcons: Record<string, React.ReactNode> = {
+  'Announcement': <Megaphone size={18} />,
+  'Events': <Calendar size={18} />,
+  'Partnerships': <Handshake size={18} />,
+  'Resources': <BookOpen size={18} />,
+  'Hiring News': <Briefcase size={18} />,
+  'Immigration': <Plane size={18} />,
+  'Salary Trends': <TrendingUp size={18} />,
+  'Industry News': <Building2 size={18} />,
+  'Interview Prep': <Target size={18} />,
+};
 
 const categoryColors: Record<string, { bg: string; text: string }> = {
   'Announcement': { bg: '#eef2ff', text: '#4338ca' },
@@ -63,7 +75,9 @@ export default function NewsPage() {
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.6) 50%, rgba(15,23,42,0.2) 100%)' }} />
                   
                   <div style={{ position: 'absolute', top: 24, left: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: '1.2rem', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}>{newsIcons[article.category] || '📰'}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '50%', background: 'rgba(225,255,255,0.2)', color: 'white', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.3)' }}>
+                      {categoryIcons[article.category] || <Newspaper size={18} />}
+                    </span>
                     <span style={{ fontSize: '0.7rem', fontWeight: 800, padding: '4px 12px', borderRadius: 6, background: 'rgba(255,255,255,0.15)', color: 'white', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)' }}>{article.category}</span>
                   </div>
 
@@ -96,7 +110,9 @@ export default function NewsPage() {
                     <div style={{ width: 80, height: 80, borderRadius: 16, overflow: 'hidden', position: 'relative', flexShrink: 0, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                       <Image src={article.image} alt={article.category} fill style={{ objectFit: 'cover' }} />
                       <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ fontSize: '1.8rem', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}>{newsIcons[article.category] || '📰'}</span>
+                        <span style={{ color: 'white', opacity: 0.9 }}>
+                          {React.cloneElement((categoryIcons[article.category] || <Newspaper />) as React.ReactElement, { size: 28 })}
+                        </span>
                       </div>
                     </div>
                     <div style={{ flex: 1 }}>

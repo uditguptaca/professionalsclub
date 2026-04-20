@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Linkedin, Twitter, Instagram, Briefcase, Heart } from 'lucide-react';
+import { Globe, AtSign, Camera, Briefcase, Heart } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -14,9 +14,9 @@ export default function Footer() {
             </div>
             <p>A managed community support desk for Indian professionals in Canada. Get help with job referrals, settlement, tax guidance, mentorship, and more — all admin-mediated.</p>
             <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
-              <span style={{ color: '#94a3b8', cursor: 'pointer' }}><Linkedin size={20} /></span>
-              <span style={{ color: '#94a3b8', cursor: 'pointer' }}><Twitter size={20} /></span>
-              <span style={{ color: '#94a3b8', cursor: 'pointer' }}><Instagram size={20} /></span>
+              <span style={{ color: '#94a3b8', cursor: 'pointer' }}><Globe size={20} /></span>
+              <span style={{ color: '#94a3b8', cursor: 'pointer' }}><AtSign size={20} /></span>
+              <span style={{ color: '#94a3b8', cursor: 'pointer' }}><Camera size={20} /></span>
               <span style={{ color: '#94a3b8', cursor: 'pointer' }}><Briefcase size={20} /></span>
             </div>
           </div>

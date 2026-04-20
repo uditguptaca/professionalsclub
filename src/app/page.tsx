@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Users, Briefcase, Calendar, Shield, HandHeart, MapPin, FileText, BookOpen, GraduationCap, CheckCircle, Phone, ChevronRight, Star, HelpCircle, ShieldCheck, Tag, Building2, Home, Landmark, Hospital, Bus, ClipboardList, DollarSign, Globe, Wallet } from 'lucide-react';
+import { ArrowRight, Users, Briefcase, Calendar, Shield, HandHeart, MapPin, FileText, BookOpen, GraduationCap, CheckCircle, Phone, ChevronRight, Star, HelpCircle, ShieldCheck, Tag, Building2, Home as HomeIcon, Landmark, Hospital, Bus, ClipboardList, DollarSign, Globe, Wallet } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 
@@ -226,7 +226,7 @@ export default function Home() {
               </p>
               <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 32 }}>
                 {[
-                  { label: 'Housing & Rentals', icon: <Home size={18} /> },
+                  { label: 'Housing & Rentals', icon: <HomeIcon size={18} /> },
                   { label: 'Banking & Credit', icon: <Landmark size={18} /> },
                   { label: 'Health Cards', icon: <Hospital size={18} /> },
                   { label: 'Tax Filing (GST/HST)', icon: <DollarSign size={18} /> },

@@ -158,7 +158,9 @@ export default function MemberBusinessDirectory() {
 
                 {/* Path A: Direct */}
                 <div style={{ padding: 16, borderRadius: 12, background: 'var(--gray-50)', border: '1px solid var(--gray-200)', marginBottom: 16 }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.88rem', marginBottom: 10 }}>📞 Contact Directly</div>
+                  <div style={{ fontWeight: 700, fontSize: '0.88rem', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Phone size={16} className="text-primary-600" /> Contact Directly
+                  </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <a href={`tel:${modalBiz.phone}`} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', color: 'var(--primary-600)', textDecoration: 'none', fontWeight: 500 }}><Phone size={14} /> {modalBiz.phone}</a>
                     <a href={`mailto:${modalBiz.email}`} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', color: 'var(--primary-600)', textDecoration: 'none', fontWeight: 500 }}><Mail size={14} /> {modalBiz.email}</a>
