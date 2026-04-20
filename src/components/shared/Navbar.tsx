@@ -52,6 +52,11 @@ export default function Navbar() {
             </Link>
             <ul className="nav-dropdown-menu">
               <li><Link href="/news">News</Link></li>
+              <li><Link href="/e-books">E-Books</Link></li>
+              <li><Link href="/youtube">YouTube</Link></li>
+              <li><Link href="/blogs">Blogs</Link></li>
+              <li><a href="https://www.forbes.com/advisor/ca/income-tax-calculator/" target="_blank" rel="noopener noreferrer">Income Tax Calculator</a></li>
+              <li><a href="https://canadaitclub.ca/consultancies-in-canada/" target="_blank" rel="noopener noreferrer">Canada IT Consultancies</a></li>
             </ul>
           </li>
           <li><Link href="/settlement">Newcomer</Link></li>
