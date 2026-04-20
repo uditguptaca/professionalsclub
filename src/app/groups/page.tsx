@@ -261,7 +261,7 @@ export default function GroupsPage() {
                   transition: 'all 0.2s',
                 }}
               >
-                <span style={{ display: 'flex', alignItems: 'center' }}>{React.cloneElement(c.icon as React.ReactElement, { size: 16 })}</span> {c.title.split(',')[0]}
+                <span style={{ display: 'flex', alignItems: 'center' }}>{React.cloneElement(c.icon as React.ReactElement<any>, { size: 16 })}</span> {c.title.split(',')[0]}
               </a>
             ))}
           </div>
