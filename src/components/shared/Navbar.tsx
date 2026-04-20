@@ -56,8 +56,8 @@ export default function Navbar() {
               <li><Link href="/e-books">E-Books</Link></li>
               <li><Link href="/youtube">YouTube</Link></li>
               <li><Link href="/blogs">Blogs</Link></li>
-              <li><a href="https://www.forbes.com/advisor/ca/income-tax-calculator/" target="_blank" rel="noopener noreferrer">Income Tax Calculator</a></li>
-              <li><a href="https://canadaitclub.ca/consultancies-in-canada/" target="_blank" rel="noopener noreferrer">Canada IT Consultancies</a></li>
+              <li><a href="https://www.forbes.com/advisor/ca/income-tax-calculator/" target="_blank" rel="noopener noreferrer">Tax Calculator</a></li>
+              <li><Link href="/recruit-firms">Recruit Firms</Link></li>
             </ul>
           </li>
           <li><Link href="/settlement">Newcomer</Link></li>
