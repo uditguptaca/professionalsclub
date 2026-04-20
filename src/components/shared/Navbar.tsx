@@ -58,6 +58,7 @@ export default function Navbar() {
               <li><Link href="/blogs">Blogs</Link></li>
               <li><a href="https://www.forbes.com/advisor/ca/income-tax-calculator/" target="_blank" rel="noopener noreferrer">Tax Calculator</a></li>
               <li><Link href="/recruit-firms">Recruit Firms</Link></li>
+              <li><Link href="/imp-links">Imp Links</Link></li>
             </ul>
           </li>
           <li><Link href="/settlement">Newcomer</Link></li>
