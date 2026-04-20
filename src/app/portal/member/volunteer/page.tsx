@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
 import { SUPPORT_CATEGORIES } from '@/types';
-import { CheckCircle2, Upload, ArrowLeft, ArrowRight, Shield, HandHeart } from 'lucide-react';
+import { CheckCircle2, Upload, ArrowLeft, ArrowRight, Shield, HandHeart, Check } from 'lucide-react';
 
 export default function VolunteerApplicationPage() {
   const router = useRouter();
@@ -157,7 +157,7 @@ export default function VolunteerApplicationPage() {
                   cursor: 'pointer', textAlign: 'left', fontSize: '0.82rem', fontWeight: areas.includes(cat) ? 700 : 500,
                   color: areas.includes(cat) ? '#065f46' : '#374151',
                 }}>
-                  {areas.includes(cat) && '✓ '}{cat}
+                  {areas.includes(cat) && <Check size={14} style={{ display: 'inline', verticalAlign: '-1px', marginRight: 4 }} />}{cat}
                 </button>
               ))}
             </div>

@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { Menu, X } from 'lucide-react';
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -77,8 +78,8 @@ export default function Navbar() {
 
         <div className="navbar-actions">
           <Link href="/portal/auth" className="btn btn-primary mobile-hide">Member Login / Signup</Link>
-          <button className="navbar-mobile-toggle" onClick={() => setMobileOpen(!mobileOpen)}>
-            {mobileOpen ? '✕' : '☰'}
+          <button className="navbar-mobile-toggle" onClick={() => setMobileOpen(!mobileOpen)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>

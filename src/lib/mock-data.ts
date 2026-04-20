@@ -242,7 +242,7 @@ export const mockMessages: AdminMessage[] = [
     id: 'msg-003', caseId: 'HR-2026-003', caseTitle: 'First-time filing Canadian taxes as a PR',
     senderRole: 'admin', senderUserId: 'admin1', senderName: 'Admin',
     recipientRole: 'member', moderatedFlag: false, visibilityScope: 'member_only',
-    body: 'Hi Arjun, our volunteer has prepared a comprehensive guide for your tax situation. Please find the guidance below:\n\n1. T4 Filing: File through CRA My Account. Your employer\'s T4 slip has all the info needed.\n2. RRSP: You have contribution room based on your 2025 earned income (18% of earned income, up to the annual limit).\n3. TFSA: As a PR, you accumulate room from the year you became a resident.\n4. Foreign Income: If you had Indian income in 2025, it must be declared. Canada-India tax treaty prevents double taxation.\n\n⚠️ DISCLAIMER: This is general guidance only and not professional tax advice. Please consult a licensed CPA for your specific filing.',
+    body: 'Hi Arjun, our volunteer has prepared a comprehensive guide for your tax situation. Please find the guidance below:\n\n1. T4 Filing: File through CRA My Account. Your employer\'s T4 slip has all the info needed.\n2. RRSP: You have contribution room based on your 2025 earned income (18% of earned income, up to the annual limit).\n3. TFSA: As a PR, you accumulate room from the year you became a resident.\n4. Foreign Income: If you had Indian income in 2025, it must be declared. Canada-India tax treaty prevents double taxation.\n\nNOTICE: This is general guidance only and not professional tax advice. Please consult a licensed CPA for your specific filing.',
     attachments: ['tax_guide_newcomers.pdf'], read: false, createdAt: '2026-03-26T14:00:00Z',
   },
   {
