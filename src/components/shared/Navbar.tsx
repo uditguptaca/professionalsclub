@@ -26,6 +26,7 @@ export default function Navbar() {
             </Link>
             <ul className="nav-dropdown-menu">
               <li><Link href="/companies">Referrals</Link></li>
+              <li><Link href="/build-resume">Build Resume</Link></li>
             </ul>
           </li>
           <li><Link href="/groups" style={{ color: '#e11d48', fontWeight: 700 }}>WhatsApp</Link></li>
