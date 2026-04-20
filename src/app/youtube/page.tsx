@@ -1,14 +1,22 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { usePortal } from '@/context/portal-context';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Video, PlayCircle, ExternalLink } from 'lucide-react';
+import { Video, PlayCircle, ExternalLink, X } from 'lucide-react';
 
 export default function YouTubePage() {
   const { workshops } = usePortal();
+  const [activeVideo, setActiveVideo] = useState<string | null>(null);
+
+  // Helper to extract a YouTube ID (for live URLs if provided in the future, else fallback to a standard ID)
+  // For demonstration, we'll assign a sample YouTube ID to play real video content inline.
+  const getYouTubeId = (videoTitle: string) => {
+    // Return sample YouTube IDs for demonstration of inline playing
+    return 'y-c0W5d3a58'; // The actual CFE Strategy Session video ID found earlier
+  };
 
   return (
     <>
@@ -30,35 +38,65 @@ export default function YouTubePage() {
           </div>
 
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-            {workshops.map((video) => (
-              <div key={video.id} style={{ position: 'relative', height: 320, borderRadius: 24, overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} className="hover:-translate-y-1 hover:shadow-xl">
-                <Image src={video.thumbnailImage} alt={video.title} fill style={{ objectFit: 'cover' }} />
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.7) 60%, rgba(15,23,42,0.3) 100%)' }} />
-                
-                <div style={{ position: 'absolute', inset: 0, padding: 32, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <Link href={video.videoUrl} style={{ textDecoration: 'none' }}>
-                      <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(220,38,38,0.9)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', boxShadow: '0 4px 12px rgba(220,38,38,0.4)', cursor: 'pointer' }} className="hover:scale-110 transition-transform">
-                        <PlayCircle size={28} />
+            {workshops.map((video) => {
+              const videoId = getYouTubeId(video.title);
+              const isPlaying = activeVideo === video.id;
+
+              return (
+              <div key={video.id} style={{ position: 'relative', height: 320, borderRadius: 24, overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', background: 'black' }} className={isPlaying ? '' : 'hover:-translate-y-1 hover:shadow-xl'}>
+                {isPlaying ? (
+                  <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                    <iframe 
+                      width="100%" 
+                      height="100%" 
+                      src={`https://www.youtube.com/embed/${videoId}?autoplay=1`} 
+                      title={video.title} 
+                      frameBorder="0" 
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                      referrerPolicy="strict-origin-when-cross-origin" 
+                      allowFullScreen
+                      style={{ border: 'none' }}
+                    ></iframe>
+                    <button 
+                      onClick={() => setActiveVideo(null)}
+                      style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10 }}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <Image src={video.thumbnailImage} alt={video.title} fill style={{ objectFit: 'cover' }} />
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.7) 60%, rgba(15,23,42,0.3) 100%)' }} />
+                    
+                    <div style={{ position: 'absolute', inset: 0, padding: 32, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div 
+                          onClick={() => setActiveVideo(video.id)}
+                          style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(220,38,38,0.9)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', boxShadow: '0 4px 12px rgba(220,38,38,0.4)', cursor: 'pointer' }} 
+                          className="hover:scale-110 transition-transform"
+                        >
+                          <PlayCircle size={28} />
+                        </div>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 800, padding: '4px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: 'white', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)' }}>{video.platform}</span>
                       </div>
-                    </Link>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 800, padding: '4px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: 'white', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)' }}>{video.platform}</span>
-                  </div>
-                  
-                  <div>
-                    <h3 style={{ fontWeight: 900, fontSize: '1.6rem', color: 'white', marginBottom: 12, fontFamily: 'var(--font-display)', maxWidth: '90%' }}>{video.title}</h3>
-                    <div style={{ display: 'flex', gap: 16, fontSize: '0.85rem', color: '#cbd5e1', marginBottom: 16 }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Video size={14} /> {video.duration}</span>
-                      <span>&#8226;</span>
-                      <span>Recorded {video.recordedDate}</span>
+                      
+                      <div>
+                        <h3 style={{ fontWeight: 900, fontSize: '1.6rem', color: 'white', marginBottom: 12, fontFamily: 'var(--font-display)', maxWidth: '90%' }}>{video.title}</h3>
+                        <div style={{ display: 'flex', gap: 16, fontSize: '0.85rem', color: '#cbd5e1', marginBottom: 16 }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Video size={14} /> {video.duration}</span>
+                          <span>&#8226;</span>
+                          <span>Recorded {video.recordedDate}</span>
+                        </div>
+                        <button onClick={() => setActiveVideo(video.id)} style={{ fontWeight: 700, color: '#fca5a5', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: 6, border: 'none', background: 'transparent', cursor: 'pointer', padding: 0 }}>
+                          Play Video <PlayCircle size={16} />
+                        </button>
+                      </div>
                     </div>
-                    <Link href={video.videoUrl} style={{ fontWeight: 700, color: '#fca5a5', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
-                      Watch Session <ExternalLink size={16} />
-                    </Link>
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
-            ))}
+            )})}
           </div>
 
         </div>

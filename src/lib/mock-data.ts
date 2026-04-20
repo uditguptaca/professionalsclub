@@ -449,10 +449,15 @@ export const mockEBooks: EBook[] = [
 
 // ========== VIDEO WORKSHOPS ==========
 export const mockWorkshops: VideoWorkshop[] = [
-  { id: 'ws-001', title: 'Taxes for Newcomers 2026', duration: '45 mins', recordedDate: 'Jan 12, 2026', platform: 'YouTube', thumbnailImage: '/meetup_bg.png', videoUrl: '#', createdAt: '2026-01-12T10:00:00Z' },
-  { id: 'ws-002', title: 'Resume Polish Workshop', duration: '1h 15m', recordedDate: 'Feb 08, 2026', platform: 'Zoom Recording', thumbnailImage: '/events-meetup.png', videoUrl: '#', createdAt: '2026-02-08T10:00:00Z' },
-  { id: 'ws-003', title: 'Buying Your First Home', duration: '55 mins', recordedDate: 'Mar 15, 2026', platform: 'YouTube', thumbnailImage: '/housing_bg.png', videoUrl: '#', createdAt: '2026-03-15T10:00:00Z' },
-  { id: 'ws-004', title: 'Interview Prep for IT', duration: '1h 05m', recordedDate: 'Apr 02, 2026', platform: 'YouTube', thumbnailImage: '/career-mentorship.png', videoUrl: '#', createdAt: '2026-04-02T10:00:00Z' },
+  { id: 'ws-001', title: 'Learn Canadian Individual Taxes | Canada Tax Series | Lesson 1', duration: '57:22', recordedDate: '1 year ago', platform: 'YouTube', thumbnailImage: '/meetup_bg.png', videoUrl: '#', createdAt: '2026-01-12T10:00:00Z' },
+  { id: 'ws-002', title: 'Complete Guide : How to Become a Realtor in Canada in Year 2025', duration: '46:38', recordedDate: '1 year ago', platform: 'YouTube', thumbnailImage: '/events-meetup.png', videoUrl: '#', createdAt: '2026-02-08T10:00:00Z' },
+  { id: 'ws-003', title: 'How to Become a Mortgage Agent in Ontario?', duration: '24:54', recordedDate: '1 year ago', platform: 'YouTube', thumbnailImage: '/housing_bg.png', videoUrl: '#', createdAt: '2026-03-15T10:00:00Z' },
+  { id: 'ws-004', title: 'Sponsor Parents for Canadian PR Visa Myths and Super Visa', duration: '45 mins', recordedDate: '1 year ago', platform: 'YouTube', thumbnailImage: '/career-mentorship.png', videoUrl: '#', createdAt: '2026-04-02T10:00:00Z' },
+  { id: 'ws-005', title: 'ICP - Bajahan Sandhya in Toronto', duration: '0:51', recordedDate: '3 months ago', platform: 'YouTube', thumbnailImage: '/event_bg.png', videoUrl: '#', createdAt: '2026-04-02T10:00:00Z' },
+  { id: 'ws-006', title: 'CPA Canada - CFE Strategy Session - May 2026', duration: '1:37:42', recordedDate: '6 months ago', platform: 'YouTube', thumbnailImage: '/healthcare_bg.png', videoUrl: '#', createdAt: '2026-04-02T10:00:00Z' },
+  { id: 'ws-007', title: 'Partnership & Trust Tax Basics | Canada Tax Series', duration: '24:50', recordedDate: '7 months ago', platform: 'YouTube', thumbnailImage: '/hero-community.png', videoUrl: '#', createdAt: '2026-04-02T10:00:00Z' },
+  { id: 'ws-008', title: 'CFA: Preparation, Strategy, and Career Pathways', duration: '45 mins', recordedDate: '1 year ago', platform: 'YouTube', thumbnailImage: '/volunteer-help.png', videoUrl: '#', createdAt: '2026-04-02T10:00:00Z' },
+  { id: 'ws-009', title: 'Declaring Bankruptcy and Saving Personal Assets', duration: '1:03:24', recordedDate: '1 year ago', platform: 'YouTube', thumbnailImage: '/finance_bg.png', videoUrl: '#', createdAt: '2026-04-02T10:00:00Z' },
 ];
 
 // ========== TEMPLATES ==========
