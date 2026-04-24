@@ -1,11 +1,10 @@
 'use client';
 import React from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { usePortal } from '@/context/portal-context';
-import { Calendar, MapPin, Clock, Users, Video, ArrowRight, ExternalLink } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, Video, ArrowRight } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 
 // Added a strict TypeScript interface to fix the Vercel build error
@@ -234,6 +233,8 @@ export default function EventsPage() {
             ))}
           </div>
         </div>
+      </section>
+      
       <Footer />
     </>
   );
