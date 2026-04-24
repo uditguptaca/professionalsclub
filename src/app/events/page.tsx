@@ -8,10 +8,19 @@ import { usePortal } from '@/context/portal-context';
 import { Calendar, MapPin, Clock, Users, Video, ArrowRight, ExternalLink } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 
+// Added a strict TypeScript interface to fix the Vercel build error
+interface SupabaseEvent {
+  id: string | number;
+  title?: string;
+  time?: string;
+  date?: string;
+  created_at?: string;
+}
+
 export default function EventsPage() {
   const { events } = usePortal();
   
-  const [supabaseEvents, setSupabaseEvents] = React.useState<any[]>([]);
+  const [supabaseEvents, setSupabaseEvents] = React.useState<SupabaseEvent[]>([]);
   const [activeSection, setActiveSection] = React.useState<string | null>(null);
 
   const toggleSection = (section: string) => {
@@ -23,7 +32,7 @@ export default function EventsPage() {
       try {
         const { data, error } = await supabase.from('events').select('*');
         if (data) {
-          setSupabaseEvents(data);
+          setSupabaseEvents(data as SupabaseEvent[]);
         } else if (error) {
           console.error("Supabase error:", error);
         }
@@ -179,7 +188,7 @@ export default function EventsPage() {
                       </div>
                     )}
 
-                    {supabaseEvents.map((w: any) => (
+                    {supabaseEvents.map((w: SupabaseEvent) => (
                       <div key={w.id} style={{ padding: '12px 14px', borderRadius: 10, background: 'white', border: '1px solid #e2e8f0', marginBottom: 8, boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
                         <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1e293b', marginBottom: 4 }}>{w.title || 'Untitled Event'}</div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem' }}>
