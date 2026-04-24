@@ -6,9 +6,33 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { usePortal } from '@/context/portal-context';
 import { Calendar, MapPin, Clock, Users, Video, ArrowRight, ExternalLink } from 'lucide-react';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function EventsPage() {
   const { events } = usePortal();
+  
+  const [supabaseEvents, setSupabaseEvents] = React.useState<any[]>([]);
+  const [activeSection, setActiveSection] = React.useState<string | null>(null);
+
+  const toggleSection = (section: string) => {
+    setActiveSection(prev => prev === section ? null : section);
+  };
+
+  React.useEffect(() => {
+    async function fetchEvents() {
+      try {
+        const { data, error } = await supabase.from('events').select('*');
+        if (data) {
+          setSupabaseEvents(data);
+        } else if (error) {
+          console.error("Supabase error:", error);
+        }
+      } catch (err) {
+        console.error("Error connecting to Supabase:", err);
+      }
+    }
+    fetchEvents();
+  }, []);
   
   const featuredEvent = events.find(e => e.isFeatured && e.status === 'upcoming');
   const upcomingVirtual = events.filter(e => e.status === 'upcoming' && e.eventType === 'virtual');
@@ -81,30 +105,93 @@ export default function EventsPage() {
 
             {/* Sidebar */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {/* Virtual Workshops */}
-              <div style={{ borderRadius: 16, padding: 28, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                  <Video size={20} style={{ color: '#dc2626' }} />
-                  <h3 style={{ fontWeight: 800, fontSize: '1.05rem', fontFamily: 'var(--font-display)' }}>Virtual Workshops</h3>
+              
+              {/* Virtual Workshops Section */}
+              <div 
+                style={{ borderRadius: 16, border: '1px solid #e2e8f0', background: 'white', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                onClick={() => toggleSection('virtual')}
+              >
+                <div style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: activeSection === 'virtual' ? '#f8fafc' : 'white' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <Video size={20} style={{ color: '#dc2626' }} />
+                    <h3 style={{ fontWeight: 800, fontSize: '1.05rem', fontFamily: 'var(--font-display)', margin: 0 }}>Virtual Workshops</h3>
+                  </div>
+                  <div style={{ fontSize: '1.2rem', color: '#64748b' }}>{activeSection === 'virtual' ? '−' : '+'}</div>
                 </div>
-                <p style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: 16, lineHeight: 1.6 }}>Weekly online sessions.</p>
-                {upcomingVirtual.map((w) => (
-                  <div key={w.id} style={{ padding: '12px 14px', borderRadius: 10, background: 'white', border: '1px solid #e2e8f0', marginBottom: 8 }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1e293b', marginBottom: 4 }}>{w.title}</div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem' }}>
-                      <span style={{ color: '#dc2626', fontWeight: 600 }}>{w.platform || 'Online'}</span>
-                      <span style={{ color: '#94a3b8' }}>{w.time}</span>
+                {activeSection === 'virtual' && (
+                  <div style={{ padding: '0 24px 24px', borderTop: '1px solid #f1f5f9' }}>
+                    <p style={{ fontSize: '0.88rem', color: '#64748b', marginTop: 16, lineHeight: 1.6 }}>Weekly online sessions to level up your skills.</p>
+                    <div style={{ marginTop: 16 }}>
+                      {upcomingVirtual.length > 0 ? (
+                        upcomingVirtual.map((evt, i) => (
+                          <div key={i} style={{ padding: '12px', background: '#f8fafc', borderRadius: 8, marginBottom: 8 }}>
+                            <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{evt.title}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{evt.date} at {evt.time}</div>
+                          </div>
+                        ))
+                      ) : (
+                        <div style={{ fontSize: '0.85rem', color: '#94a3b8', fontStyle: 'italic' }}>No upcoming virtual workshops at the moment.</div>
+                      )}
                     </div>
                   </div>
-                ))}
+                )}
               </div>
 
-              {/* Host CTA */}
-              <div style={{ borderRadius: 16, padding: 28, background: 'linear-gradient(135deg, #eef2ff, #f5f3ff)', border: '1px solid #e0e7ff', textAlign: 'center' }}>
-                <h3 style={{ fontWeight: 800, fontSize: '1.05rem', fontFamily: 'var(--font-display)', marginBottom: 8, color: '#1e293b' }}>Host an Event</h3>
-                <p style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: 16, lineHeight: 1.5 }}>Lead sessions in your city.</p>
-                <button className="btn btn-primary" style={{ width: '100%', fontSize: '0.85rem' }}>Contact Organizers</button>
+              {/* Host an Event Section */}
+              <div 
+                style={{ borderRadius: 16, border: '1px solid #e0e7ff', background: 'linear-gradient(135deg, #eef2ff, #f5f3ff)', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                onClick={() => toggleSection('host')}
+              >
+                <div style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <Users size={20} style={{ color: '#4f46e5' }} />
+                    <h3 style={{ fontWeight: 800, fontSize: '1.05rem', fontFamily: 'var(--font-display)', margin: 0, color: '#1e293b' }}>Host an Event</h3>
+                  </div>
+                  <div style={{ fontSize: '1.2rem', color: '#4f46e5' }}>{activeSection === 'host' ? '−' : '+'}</div>
+                </div>
+                {activeSection === 'host' && (
+                  <div style={{ padding: '0 24px 24px', textAlign: 'center' }}>
+                    <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 16, lineHeight: 1.5 }}>Lead sessions in your city and build your local community.</p>
+                    <button className="btn btn-primary" style={{ width: '100%', fontSize: '0.85rem' }}>Contact Organizers</button>
+                  </div>
+                )}
               </div>
+
+              {/* Upcoming Events Section (Supabase) */}
+              <div 
+                style={{ borderRadius: 16, border: '1px solid #e2e8f0', background: 'white', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                onClick={() => toggleSection('upcoming')}
+              >
+                <div style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: activeSection === 'upcoming' ? '#f8fafc' : 'white' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <Calendar size={20} style={{ color: '#0ea5e9' }} />
+                    <h3 style={{ fontWeight: 800, fontSize: '1.05rem', fontFamily: 'var(--font-display)', margin: 0 }}>Upcoming events</h3>
+                  </div>
+                  <div style={{ fontSize: '1.2rem', color: '#64748b' }}>{activeSection === 'upcoming' ? '−' : '+'}</div>
+                </div>
+                {activeSection === 'upcoming' && (
+                  <div style={{ padding: '0 24px 24px', borderTop: '1px solid #f1f5f9' }}>
+                    <p style={{ fontSize: '0.82rem', color: '#64748b', marginTop: 16, marginBottom: 16, lineHeight: 1.6 }}>Upcoming live events pulled from our database.</p>
+                    
+                    {supabaseEvents.length === 0 && (
+                      <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', padding: 10, textAlign: 'center', background: '#f1f5f9', borderRadius: 8 }}>
+                        No events found in Supabase table.<br/>Add a row in the dashboard!
+                      </div>
+                    )}
+
+                    {supabaseEvents.map((w: any) => (
+                      <div key={w.id} style={{ padding: '12px 14px', borderRadius: 10, background: 'white', border: '1px solid #e2e8f0', marginBottom: 8, boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1e293b', marginBottom: 4 }}>{w.title || 'Untitled Event'}</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem' }}>
+                          <span style={{ color: '#16a34a', fontWeight: 600 }}>Live Data</span>
+                          <span style={{ color: '#94a3b8' }}>{w.time || w.date || w.created_at?.split('T')[0] || 'Today'}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
             </div>
           </div>
         </div>
@@ -138,8 +225,6 @@ export default function EventsPage() {
             ))}
           </div>
         </div>
-      </section>
-
       <Footer />
     </>
   );
