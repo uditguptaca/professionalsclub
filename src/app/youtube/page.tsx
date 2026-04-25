@@ -12,7 +12,7 @@ const CATEGORY_CONFIG: Record<string, { icon: React.ReactNode; color: string; bg
     color: '#2563eb',
     bgColor: '#eff6ff',
     borderColor: '#bfdbfe',
-    description: 'Explore resources to help you navigate the Canadian job market — from building a standout resume and cover letter, to finding freelance or full-time opportunities.',
+    description: 'Explore resources to help you navigate the Canadian job market - from building a standout resume and cover letter, to finding freelance or full-time opportunities.',
   },
   'Tax & Finance': {
     icon: <DollarSign size={22} />,
@@ -145,8 +145,7 @@ export default function YouTubePage() {
                   style={{
                     borderRadius: 16,
                     border: `1px solid ${isExpanded ? config.borderColor : '#e2e8f0'}`,
-                    background: 'white',
-                    overflow: 'hidden',
+                    background: 'white',                    overflow: 'hidden',
                     transition: 'all 0.25s ease',
                     boxShadow: isExpanded ? '0 4px 20px rgba(0,0,0,0.06)' : 'none',
                   }}
@@ -159,8 +158,7 @@ export default function YouTubePage() {
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       cursor: 'pointer',
-                      background: isExpanded ? config.bgColor : 'white',
-                      transition: 'background 0.2s ease',
+                      background: isExpanded ? config.bgColor : 'white',                      transition: 'background 0.2s ease',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -199,7 +197,7 @@ export default function YouTubePage() {
                       </p>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {categoryVideos.map((video: any) => (
+                        {categoryVideos.map((video) => (
                           <a
                             key={video.id}
                             href={video.video_url || '#'}
