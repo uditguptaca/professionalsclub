@@ -17,7 +17,10 @@ const CATEGORIES = [
     gradientFrom: '#2563eb',
     gradientTo: '#3b82f6',
     description: 'Essential guides to help you prepare for your move — visa checklists, document requirements, pre-arrival planning, and everything you need to know before landing in Canada.',
-    files: [] as { name: string; type: string; size: string; url: string }[],
+    files: [
+      { name: 'Before Moving to Canada Guide', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Before-moving-to-Canada.pdf' },
+      { name: 'Document List - A Newcomer\'s Complete Guide', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Document-List-you-should-bring-with-yourself-to-Canada---A-Newcomers-complete-guide-.pdf' }
+    ] as { name: string; type: string; size: string; url: string }[],
   },
   {
     id: 'after-moving',
