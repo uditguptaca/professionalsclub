@@ -2997,3 +2997,23 @@ tr:last-child td { border-bottom: none; }
     display: flex !important;
   }
 }
+
+
+/* E-Books Category Accordion Styles */
+.ebook-category-header {
+    transition: background-color 0.2s ease, transform 0.1s ease !important;
+}
+
+.ebook-category-header:hover {
+    background-color: rgba(0, 0, 0, 0.02) !important;
+}
+
+.ebook-category-header:active {
+    transform: scale(0.995);
+}
+
+/* Hover effect for file rows */
+.hover\:shadow-md:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+    transform: translateY(-1px);
+}
