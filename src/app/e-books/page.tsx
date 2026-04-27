@@ -34,14 +34,14 @@ const CATEGORIES = [
     gradientTo: '#10b981',
     description: 'Settle into your new life with confidence — housing guides, banking setup, SIN application, tax filing basics, healthcare enrollment, and career kickstart resources.',
     files: [
-      { name: 'After You Arrive in Canada', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/After you arrive in Canada as a newcomer.pdf' },
+      { name: 'After You Arrive in Canada', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/After%20you%20arrive%20in%20Canada%20as%20a%20newcomer.pdf' },
       { name: 'Applying for a Job in Canada', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Applying-for-a-job-as-a-newcomer-in-Canada.pdf' },
       { name: 'Bank Accounts for Newcomers', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Bank-accounts-for-newcomers-in-Canada-1.pdf' },
       { name: 'Broadcast TV for Newcomers', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Broadcast-TV-for-newcomers-in-Canada.pdf' },
       { name: 'Enrolling Your Kids in School', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Enrolling-your-kids-in-school-as-a-newcomer-in-Canada.pdf' },
       { name: 'Filing Taxes in Canada', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/File-Tax.pdf' },
-      { name: 'Getting a Driving License in Canada', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Getting a driving license in Canada.pdf' },
-      { name: 'Getting a SIM Card as a Newcomer', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Getting a SIM card as a newcomer in Canada.pdf' },
+      { name: 'Getting a Driving License in Canada', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Getting%20a%20driving%20license%20in%20Canada.pdf' },
+      { name: 'Getting a SIM Card as a Newcomer', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Getting%20a%20SIM%20card%20as%20a%20newcomer%20in%20Canada.pdf' },
       { name: 'Getting Internet as a Newcomer', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Getting-internet-as-a-newcomer-in-Canada.pdf' },
       { name: 'Getting your SIN Card', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Getting-Social-Insurance-Number-SIN-as-a-newcomer-in-Canada.pdf' },
       { name: 'Health Card for Newcomers', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Health-card-for-newcomers-in-Canada-1.pdf' },
@@ -282,6 +282,3 @@ export default function EBooksPage() {
     </>
   );
 }
-Getting DOM...Pressing key...Stopping...
-
-Stop Agent
