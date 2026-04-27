@@ -17,11 +17,7 @@ const CATEGORIES = [
     gradientFrom: '#2563eb',
     gradientTo: '#3b82f6',
     description: 'Essential guides to help you prepare for your move — visa checklists, document requirements, pre-arrival planning, and everything you need to know before landing in Canada.',
-    files: [
-      { name: 'Complete Visa Application Checklist', type: 'PDF Document', size: '1.2 MB', url: '#' },
-      { name: 'Pre-Arrival Packing Guide', type: 'PDF Document', size: '2.4 MB', url: '#' },
-      { name: 'Proof of Funds Template', type: 'Excel Spreadsheet', size: '850 KB', url: '#' }
-    ] as { name: string; type: string; size: string; url: string }[],
+    files: [] as { name: string; type: string; size: string; url: string }[],
   },
   {
     id: 'after-moving',
@@ -34,11 +30,7 @@ const CATEGORIES = [
     gradientFrom: '#059669',
     gradientTo: '#10b981',
     description: 'Settle into your new life with confidence — housing guides, banking setup, SIN application, tax filing basics, healthcare enrollment, and career kickstart resources.',
-    files: [
-      { name: 'First 30 Days Settlement Guide', type: 'PDF Document', size: '3.1 MB', url: '#' },
-      { name: 'How to Apply for a SIN Card', type: 'Step-by-step Guide', size: '940 KB', url: '#' },
-      { name: 'Canadian Resume Format Template', type: 'Word Document', size: '1.5 MB', url: '#' }
-    ] as { name: string; type: string; size: string; url: string }[],
+    files: [] as { name: string; type: string; size: string; url: string }[],
   },
 ];
 
