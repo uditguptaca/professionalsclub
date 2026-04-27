@@ -262,13 +262,13 @@ export default function YouTubePage() {
                 Subscribe to our YouTube channel for new sessions, workshops, and expert interviews every week.
               </p>
               <a
-                href="https://www.youtube.com/@Indocanadaclub"
+                href="https://www.youtube.com/@professionalsclubca"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-primary"
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 32px', background: '#dc2626', color: 'white', borderRadius: 12, fontWeight: 700, textDecoration: 'none' }}
               >
-                <Youtube size={18} /> Subscribe on YouTube
+                <PlayCircle size={18} /> Subscribe on YouTube
               </a>
             </div>
           )}
