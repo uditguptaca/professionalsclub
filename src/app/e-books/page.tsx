@@ -1,11 +1,23 @@
 'use client';
 
 
+
+
+
+
+
+
 import React, { useState } from 'react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import Image from 'next/image';
 import { BookOpen, Plane, MapPin, ChevronDown, FileText, Download, FolderOpen } from 'lucide-react';
+
+
+
+
+
+
 
 
 const CATEGORIES = [
@@ -34,5 +46,3 @@ const CATEGORIES = [
     bgColor: '#f0fdf4',
     borderColor: '#bbf7d0',
     gradientFrom: '#059669',
-    gradientTo: '#10b981',
-    description: 'Settle into your new life with confidence -- housing guides, banking setup, SIN application, tax filing basics, healthcare enrollment, and career kickstart resources.',
