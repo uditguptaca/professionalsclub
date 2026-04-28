@@ -1,4 +1,5 @@
 'use client';
+
 import React, { useState } from 'react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
@@ -16,7 +17,7 @@ const CATEGORIES = [
     borderColor: '#bfdbfe',
     gradientFrom: '#2563eb',
     gradientTo: '#3b82f6',
-    description: 'Essential guides to help you prepare for your move — visa checklists, document requirements, pre-arrival planning, and everything you need to know before landing in Canada.',
+    description: 'Essential guides to help you prepare for your move -- visa checklists, document requirements, pre-arrival planning, and everything you need to know before landing in Canada.',
     files: [
       { name: 'Before Moving to Canada Guide', type: 'PDF Document', size: 'Download', url: 'https://cdn.jsdelivr.net/gh/uditguptaca/professionalsclub@main/Before-moving-to-Canada.pdf' },
       { name: 'Document List - A Newcomer\'s Complete Guide', type: 'PDF Document', size: 'Download', url: 'https://cdn.jsdelivr.net/gh/uditguptaca/professionalsclub@main/Document-List-you-should-bring-with-yourself-to-Canada---A-Newcomers-complete-guide-.pdf' }
@@ -32,7 +33,7 @@ const CATEGORIES = [
     borderColor: '#bbf7d0',
     gradientFrom: '#059669',
     gradientTo: '#10b981',
-    description: 'Settle into your new life with confidence — housing guides, banking setup, SIN application, tax filing basics, healthcare enrollment, and career kickstart resources.',
+    description: 'Settle into your new life with confidence -- housing guides, banking setup, SIN application, tax filing basics, healthcare enrollment, and career kickstart resources.',
     files: [
       { name: 'After You Arrive in Canada', type: 'PDF Document', size: 'Download', url: 'https://cdn.jsdelivr.net/gh/uditguptaca/professionalsclub@main/After%20you%20arrive%20in%20Canada%20as%20a%20newcomer.pdf' },
       { name: 'Applying for a Job in Canada', type: 'PDF Document', size: 'Download', url: 'https://cdn.jsdelivr.net/gh/uditguptaca/professionalsclub@main/Applying-for-a-job-as-a-newcomer-in-Canada.pdf' },
@@ -63,7 +64,6 @@ export default function EBooksPage() {
     <>
       <Navbar />
 
-      {/* Hero */}
       <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: '#0f172a', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
           <Image src="/hero-community.png" alt="E-Books Library" fill style={{ objectFit: 'cover', opacity: 0.2 }} />
@@ -78,35 +78,31 @@ export default function EBooksPage() {
             E-Books <span style={{ background: 'linear-gradient(135deg, #93c5fd, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Library</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: '#94a3b8', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
-            Comprehensive guides to support your Canadian journey — from pre-arrival planning to settling in and thriving.
+            Comprehensive guides to support your Canadian journey -- from pre-arrival planning to settling in and thriving.
           </p>
         </div>
       </section>
 
-      {/* Category Sections */}
       <section style={{ padding: '48px 0 80px', background: '#f8fafc' }}>
         <div className="container" style={{ maxWidth: 900 }}>
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             {CATEGORIES.map((category) => {
               const isExpanded = expandedSection === category.id;
-
               return (
-                <div
-                  key={category.id}
-                  style={{
-                    borderRadius: 16,
-                    border: `1.5px solid ${isExpanded ? category.borderColor : "#e2e8f0"}`,
+                <div 
+                  key={category.id} 
+                  style={{ 
+                    borderRadius: 16, 
+                    border: "1.5px solid " + (isExpanded ? category.borderColor : "#e2e8f0"),
                     background: 'white',
                     overflow: 'hidden',
                     transition: 'all 0.3s ease',
                     boxShadow: isExpanded ? '0 8px 32px rgba(0,0,0,0.08)' : '0 2px 8px rgba(0,0,0,0.03)',
                   }}
                 >
-                  {/* Clickable Header */}
-                  <div
+                  <div 
                     onClick={() => toggleSection(category.id)}
-                    style={{
+                    style={{ 
                       padding: '28px 32px',
                       display: 'flex',
                       justifyContent: 'space-between',
@@ -119,93 +115,52 @@ export default function EBooksPage() {
                     className="ebook-category-header"
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                      <div style={{
-                        width: 52,
-                        height: 52,
-                        borderRadius: 14,
-                        background: `linear-gradient(135deg, ${category.gradientFrom}, ${category.gradientTo})`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'white',
-                        flexShrink: 0,
-                        boxShadow: `0 4px 14px ${category.color}30`,
+                      <div style={{ 
+                        width: 52, 
+                        height: 52, 
+                        borderRadius: 14, 
+                        background: "linear-gradient(135deg, " + category.gradientFrom + ", " + category.gradientTo + ")",
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        color: 'white', 
+                        flexShrink: 0, 
+                        boxShadow: "0 4px 14px " + category.color + "30",
                       }}>
                         {category.icon}
                       </div>
                       <div>
-                        <h2 style={{
-                          fontWeight: 800,
-                          fontSize: '1.3rem',
-                          fontFamily: 'var(--font-display)',
-                          margin: 0,
-                          color: '#0f172a',
-                          lineHeight: 1.3,
-                        }}>
+                        <h2 style={{ fontWeight: 800, fontSize: '1.3rem', fontFamily: 'var(--font-display)', margin: 0, color: '#0f172a', lineHeight: 1.3 }}>
                           {category.title} <span style={{ color: category.color }}>{category.highlight}</span>
                         </h2>
                         <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 500, marginTop: 2, display: 'block' }}>
-                          {category.files.length > 0
-                            ? `${category.files.length} guide${category.files.length !== 1 ? "s" : ""} available`
-                            : 'Click to explore guides'}
+                          {category.files.length > 0 ? category.files.length + " guide" + (category.files.length !== 1 ? "s" : "") + " available" : 'Click to explore guides'}
                         </span>
                       </div>
                     </div>
-                    <div style={{
-                      color: category.color,
-                      transition: 'transform 0.3s ease',
-                      transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                      width: 36,
-                      height: 36,
-                      borderRadius: 10,
-                      background: isExpanded ? `${category.color}15` : '#f1f5f9',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}>
+                    <div style={{ color: category.color, transition: 'transform 0.3s ease', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', width: 36, height: 36, borderRadius: 10, background: isExpanded ? category.color + "15" : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <ChevronDown size={20} />
                     </div>
                   </div>
 
-                  {/* Expanded Content */}
                   {isExpanded && (
-                    <div style={{ padding: '0 32px 32px', borderTop: `1px solid ${category.borderColor}` }}>
-                      {/* Description */}
+                    <div style={{ padding: '0 32px 32px', borderTop: "1px solid " + category.borderColor }}>
                       <p style={{ fontSize: '0.92rem', color: '#64748b', lineHeight: 1.75, marginTop: 24, marginBottom: 28 }}>
                         {category.description}
                       </p>
-                      {/* Files List or Empty State */}
+
                       {category.files.length > 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                           {category.files.map((file, idx) => (
-                            <a
-                              key={idx}
+                            <a 
+                              key={idx} 
                               href={file.url || '#'}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 14,
-                                padding: '14px 18px',
-                                borderRadius: 12,
-                                background: '#f8fafc',
-                                border: '1px solid #e2e8f0',
-                                textDecoration: 'none',
-                                transition: 'all 0.2s ease',
-                                cursor: 'pointer',
-                              }}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderRadius: 12, background: '#f8fafc', border: '1px solid #e2e8f0', textDecoration: 'none', transition: 'all 0.2s ease', cursor: 'pointer' }}
                               className="hover:shadow-md hover:-translate-y-0.5"
                             >
-                              <div style={{
-                                width: 42,
-                                height: 42,
-                                borderRadius: 10,
-                                background: `${category.color}12`,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                flexShrink: 0,
-                              }}>
+                              <div style={{ width: 42, height: 42, borderRadius: 10, background: category.color + "12", display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                 <FileText size={20} style={{ color: category.color }} />
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
@@ -221,24 +176,8 @@ export default function EBooksPage() {
                           ))}
                         </div>
                       ) : (
-                        /* Polished empty state */
-                        <div style={{
-                          textAlign: 'center',
-                          padding: '48px 24px',
-                          borderRadius: 14,
-                          background: category.bgColor,
-                          border: `1.5px dashed ${category.borderColor}`,
-                        }}>
-                          <div style={{
-                            width: 56,
-                            height: 56,
-                            borderRadius: 14,
-                            background: `${category.color}15`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            margin: '0 auto 16px',
-                          }}>
+                        <div style={{ textAlign: 'center', padding: '48px 24px', borderRadius: 14, background: category.bgColor, border: "1.5px dashed " + category.borderColor }}>
+                          <div style={{ width: 56, height: 56, borderRadius: 14, background: category.color + "15", display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                             <FolderOpen size={26} style={{ color: category.color }} />
                           </div>
                           <h4 style={{ fontWeight: 700, fontSize: '1rem', color: '#1e293b', marginBottom: 6, fontFamily: 'var(--font-display)' }}>
@@ -255,24 +194,20 @@ export default function EBooksPage() {
               );
             })}
           </div>
-          {/* Bottom CTA */}
+
           <div style={{ marginTop: 48, textAlign: 'center', padding: '40px 32px', borderRadius: 16, background: 'white', border: '1px solid #e2e8f0' }}>
-            <BookOpen size={36} style={{ color: '#2563eb', margin: '0 auto 16px' }} />
+            <BookOpen size="36" style={{ color: '#2563eb', margin: '0 auto 16px' }} />
             <h3 style={{ fontWeight: 800, fontSize: '1.3rem', color: '#0f172a', marginBottom: 8, fontFamily: 'var(--font-display)' }}>
               Have a guide to share?
             </h3>
             <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: 24, maxWidth: 420, margin: '0 auto 24px' }}>
               If you&apos;ve created a helpful resource for newcomers, we&apos;d love to feature it in our library. Reach out to us!
             </p>
-            <a
-              href="mailto:info@professionalsclub.ca"
-              className="btn btn-primary"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 32px', background: '#2563eb', color: 'white', borderRadius: 12, fontWeight: 700, textDecoration: 'none' }}
-            >
-              <BookOpen size={18} /> Contact Us
+            <a href="mailto:info@professionalsclub.ca" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 32px', background: '#2563eb', color: 'white', borderRadius: 12, fontWeight: 700, textDecoration: 'none' }}>
+              <BookOpen size="18" />
+              Contact Us
             </a>
           </div>
-
         </div>
       </section>
 
