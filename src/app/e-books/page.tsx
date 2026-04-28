@@ -19,8 +19,8 @@ const CATEGORIES = [
     gradientTo: '#3b82f6',
     description: 'Essential guides to help you prepare for your move -- visa checklists, document requirements, pre-arrival planning, and everything you need to know before landing in Canada.',
     files: [
-      { name: 'Before Moving to Canada Guide', type: 'PDF Document', size: 'Download', url: 'https://cdn.jsdelivr.net/gh/uditguptaca/professionalsclub@main/Before-moving-to-Canada.pdf' },
-      { name: 'Document List - A Newcomer\'s Complete Guide', type: 'PDF Document', size: 'Download', url: 'https://cdn.jsdelivr.net/gh/uditguptaca/professionalsclub@main/Document-List-you-should-bring-with-yourself-to-Canada---A-Newcomers-complete-guide-.pdf' }
+      { name: 'Before Moving to Canada Guide', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Before-moving-to-Canada.pdf' },
+      { name: 'Document List - A Newcomer\'s Complete Guide', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Document-List-you-should-bring-with-yourself-to-Canada---A-Newcomers-complete-guide-.pdf' }
     ] as { name: string; type: string; size: string; url: string }[],
   },
   {
@@ -35,20 +35,20 @@ const CATEGORIES = [
     gradientTo: '#10b981',
     description: 'Settle into your new life with confidence -- housing guides, banking setup, SIN application, tax filing basics, healthcare enrollment, and career kickstart resources.',
     files: [
-      { name: 'After You Arrive in Canada', type: 'PDF Document', size: 'Download', url: 'https://cdn.jsdelivr.net/gh/uditguptaca/professionalsclub@main/After%20you%20arrive%20in%20Canada%20as%20a%20newcomer.pdf' },
-      { name: 'Applying for a Job in Canada', type: 'PDF Document', size: 'Download', url: 'https://cdn.jsdelivr.net/gh/uditguptaca/professionalsclub@main/Applying-for-a-job-as-a-newcomer-in-Canada.pdf' },
-      { name: 'Bank Accounts for Newcomers', type: 'PDF Document', size: 'Download', url: 'https://cdn.jsdelivr.net/gh/uditguptaca/professionalsclub@main/Bank-accounts-for-newcomers-in-Canada-1.pdf' },
-      { name: 'Broadcast TV for Newcomers', type: 'PDF Document', size: 'Download', url: 'https://cdn.jsdelivr.net/gh/uditguptaca/professionalsclub@main/Broadcast-TV-for-newcomers-in-Canada.pdf' },
-      { name: 'Enrolling Your Kids in School', type: 'PDF Document', size: 'Download', url: 'https://cdn.jsdelivr.net/gh/uditguptaca/professionalsclub@main/Enrolling-your-kids-in-school-as-a-newcomer-in-Canada.pdf' },
-      { name: 'Filing Taxes in Canada', type: 'PDF Document', size: 'Download', url: 'https://cdn.jsdelivr.net/gh/uditguptaca/professionalsclub@main/File-Tax.pdf' },
-      { name: 'Getting a Driving License in Canada', type: 'PDF Document', size: 'Download', url: 'https://cdn.jsdelivr.net/gh/uditguptaca/professionalsclub@main/Getting%20a%20driving%20license%20in%20Canada.pdf' },
-      { name: 'Getting a SIM Card as a Newcomer', type: 'PDF Document', size: 'Download', url: 'https://cdn.jsdelivr.net/gh/uditguptaca/professionalsclub@main/Getting%20a%20SIM%20card%20as%20a%20newcomer%20in%20Canada.pdf' },
-      { name: 'Getting Internet as a Newcomer', type: 'PDF Document', size: 'Download', url: 'https://cdn.jsdelivr.net/gh/uditguptaca/professionalsclub@main/Getting-internet-as-a-newcomer-in-Canada.pdf' },
-      { name: 'Getting your SIN Card', type: 'PDF Document', size: 'Download', url: 'https://cdn.jsdelivr.net/gh/uditguptaca/professionalsclub@main/Getting-Social-Insurance-Number-SIN-as-a-newcomer-in-Canada.pdf' },
-      { name: 'Health Card for Newcomers', type: 'PDF Document', size: 'Download', url: 'https://cdn.jsdelivr.net/gh/uditguptaca/professionalsclub@main/Health-card-for-newcomers-in-Canada-1.pdf' },
-      { name: 'Keeping Important Documents', type: 'PDF Document', size: 'Download', url: 'https://cdn.jsdelivr.net/gh/uditguptaca/professionalsclub@main/Keep-Important-Documents.pdf' },
-      { name: 'Newcomer Housing in Canada', type: 'PDF Document', size: 'Download', url: 'https://cdn.jsdelivr.net/gh/uditguptaca/professionalsclub@main/Newcomer-housing-in-Canada.pdf' },
-      { name: 'Winter Clothing for Newcomers', type: 'PDF Document', size: 'Download', url: 'https://cdn.jsdelivr.net/gh/uditguptaca/professionalsclub@main/Winter-clothing-for-newcomers-in-Canada-1.pdf' }
+      { name: 'After You Arrive in Canada', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/After%20you%20arrive%20in%20Canada%20as%20a%20newcomer.pdf' },
+      { name: 'Applying for a Job in Canada', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Applying-for-a-job-as-a-newcomer-in-Canada.pdf' },
+      { name: 'Bank Accounts for Newcomers', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Bank-accounts-for-newcomers-in-Canada-1.pdf' },
+      { name: 'Broadcast TV for Newcomers', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Broadcast-TV-for-newcomers-in-Canada.pdf' },
+      { name: 'Enrolling Your Kids in School', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Enrolling-your-kids-in-school-as-a-newcomer-in-Canada.pdf' },
+      { name: 'Filing Taxes in Canada', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/File-Tax.pdf' },
+      { name: 'Getting a Driving License in Canada', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Getting%20a%20driving%20license%20in%20Canada.pdf' },
+      { name: 'Getting a SIM Card as a Newcomer', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Getting%20a%20SIM%20card%20as%20a%20newcomer%20in%20Canada.pdf' },
+      { name: 'Getting Internet as a Newcomer', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Getting-internet-as-a-newcomer-in-Canada.pdf' },
+      { name: 'Getting your SIN Card', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Getting-Social-Insurance-Number-SIN-as-a-newcomer-in-Canada.pdf' },
+      { name: 'Health Card for Newcomers', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Health-card-for-newcomers-in-Canada-1.pdf' },
+      { name: 'Keeping Important Documents', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Keep-Important-Documents.pdf' },
+      { name: 'Newcomer Housing in Canada', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Newcomer-housing-in-Canada.pdf' },
+      { name: 'Winter Clothing for Newcomers', type: 'PDF Document', size: 'Download', url: 'https://raw.githubusercontent.com/uditguptaca/professionalsclub/main/Winter-clothing-for-newcomers-in-Canada-1.pdf' }
     ] as { name: string; type: string; size: string; url: string }[],
   },
 ];
