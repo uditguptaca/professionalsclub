@@ -182,8 +182,6 @@ export default function EBooksPage() {
                             <a
                               key={idx}
                               href={file.url || '#'}
-                              target="_blank"
-                              rel="noopener noreferrer"
                               style={{
                                 display: 'flex',
                                 alignItems: 'center',
