@@ -5,9 +5,6 @@ import Footer from '@/components/shared/Footer';
 import Image from 'next/image';
 import { BookOpen, Plane, MapPin, ChevronDown, FileText, Download, FolderOpen } from 'lucide-react';
 
-
-
-
 const CATEGORIES = [
   {
     id: 'before-moving',
@@ -25,7 +22,7 @@ const CATEGORIES = [
       { name: 'Document List - A Newcomer\'s Complete Guide', type: 'PDF Document', size: 'Download', url: 'Document-List-you-should-bring-with-yourself-to-Canada-–-A-Newcomers-complete-guide-.pdf' }
     ] as { name: string; type: string; size: string; url: string }[],
   },
-];  {
+  {
     id: 'after-moving',
     title: 'After Moving To',
     highlight: 'Canada',
@@ -55,14 +52,14 @@ const CATEGORIES = [
   },
 ];
 
-
 export default function EBooksPage() {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
-
   const toggleSection = (id: string) => {
     setExpandedSection(prev => (prev === id ? null : id));
-  };  return (
+  };
+
+  return (
     <>
       <Navbar />
 
@@ -99,7 +96,7 @@ export default function EBooksPage() {
                   key={category.id}
                   style={{
                     borderRadius: 16,
-                    border: \`1.5px solid \${isExpanded ? category.borderColor : "#e2e8f0"}\`,
+                    border: `1.5px solid ${isExpanded ? category.borderColor : "#e2e8f0"}`,
                     background: 'white',
                     overflow: 'hidden',
                     transition: 'all 0.3s ease',
@@ -126,13 +123,13 @@ export default function EBooksPage() {
                         width: 52,
                         height: 52,
                         borderRadius: 14,
-                        background: \`linear-gradient(135deg, \${category.gradientFrom}, \${category.gradientTo})\`,
+                        background: `linear-gradient(135deg, ${category.gradientFrom}, ${category.gradientTo})`,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: 'white',
                         flexShrink: 0,
-                        boxShadow: \`0 4px 14px \${category.color}30\`,
+                        boxShadow: `0 4px 14px ${category.color}30`,
                       }}>
                         {category.icon}
                       </div>
@@ -159,7 +156,7 @@ export default function EBooksPage() {
                       width: 36,
                       height: 36,
                       borderRadius: 10,
-                      background: isExpanded ? \`\${category.color}15\` : '#f1f5f9',
+                      background: isExpanded ? `${category.color}15` : '#f1f5f9',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -171,7 +168,7 @@ export default function EBooksPage() {
 
                   {/* Expanded Content */}
                   {isExpanded && (
-                    <div style={{ padding: '0 32px 32px', borderTop: \`1px solid \${category.borderColor}\` }}>
+                    <div style={{ padding: '0 32px 32px', borderTop: `1px solid ${category.borderColor}` }}>
                       {/* Description */}
                       <p style={{ fontSize: '0.92rem', color: '#64748b', lineHeight: 1.75, marginTop: 24, marginBottom: 28 }}>
                         {category.description}
@@ -180,7 +177,7 @@ export default function EBooksPage() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {category.files.map((file, idx) => {
                           // Using GitHack to serve PDF with correct headers for native viewing
-                          const nativeUrl = \`https://raw.githack.com/uditguptaca/professionalsclub/main/\${encodeURIComponent(file.url)}\`;
+                          const nativeUrl = `https://raw.githack.com/uditguptaca/professionalsclub/main/${encodeURIComponent(file.url)}`;
                           return (
                             <a
                               key={idx}
@@ -205,7 +202,7 @@ export default function EBooksPage() {
                                 width: 42,
                                 height: 42,
                                 borderRadius: 10,
-                                background: \`\${category.color}12\`,
+                                background: `${category.color}12`,
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
