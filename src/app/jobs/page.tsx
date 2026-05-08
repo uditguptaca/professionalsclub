@@ -238,7 +238,7 @@ export default function JobsPage() {
             <p style={{ color: '#64748b', fontSize: '1rem' }}>Browse Top Fields</p>
           </div>
 
-          <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+          <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
             {Object.entries(CATEGORY_ICONS).map(([cat, icon]) => (
               <button
                 key={cat}
@@ -298,7 +298,7 @@ export default function JobsPage() {
             <p style={{ color: '#64748b', fontSize: '1rem' }}>Unlock Opportunities</p>
           </div>
 
-          <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
+          <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
             {[
               { name: 'Toronto, ON', jobs: 120, img: '/toronto-skyline.png' },
               { name: 'Vancouver, BC', jobs: 85, img: '/vancouver-skyline.png' },

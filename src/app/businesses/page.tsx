@@ -45,7 +45,7 @@ export default function BusinessDirectoryPage() {
 
       {/* Hero */}
       <section className="biz-hero" style={{ padding: '120px 24px 60px' }}>
-        <div className="biz-hero-content" style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 40, textAlign: 'left' }}>
+        <div className="biz-hero-content" style={{ maxWidth: '100%', margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 40, textAlign: 'left' }}>
           {/* Left Side */}
           <div style={{ flex: 1 }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.12)', padding: '5px 14px', borderRadius: 99, marginBottom: 16, border: '1px solid rgba(255,255,255,0.15)', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -80,7 +80,7 @@ export default function BusinessDirectoryPage() {
         </div>
 
         {/* Trust Labels */}
-        <div className="biz-trust-labels" style={{ maxWidth: 1100, margin: '28px auto 0', justifyContent: 'flex-start' }}>
+        <div className="biz-trust-labels" style={{ maxWidth: '100%', margin: '28px auto 0', justifyContent: 'flex-start' }}>
           <div className="biz-trust-label"><ShieldCheck size={14} /> All businesses verified</div>
           <div className="biz-trust-label"><MapPin size={14} /> Local businesses only</div>
           <div className="biz-trust-label"><Clock size={14} /> Updated weekly</div>
@@ -89,7 +89,7 @@ export default function BusinessDirectoryPage() {
       </section>
 
       {/* Directory */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
+      <div className="container" style={{ maxWidth: '100%' }}>
         {/* Filters */}
         <div className="biz-filter-bar">
           <select value={category} onChange={e => setCategory(e.target.value)}>

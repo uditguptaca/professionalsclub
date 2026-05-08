@@ -174,7 +174,7 @@ export default function GroupsPage() {
           <Image src="/events-meetup.png" alt="Community" fill style={{ objectFit: 'cover', opacity: 0.2 }} priority />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.97) 0%, rgba(30,41,59,0.85) 50%, rgba(37,99,235,0.2) 100%)' }} />
         </div>
-        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 1100 }}>
+        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 1280 }}>
           <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 60, flexWrap: 'wrap' }}>
             
             {/* Left Content */}
@@ -240,7 +240,7 @@ export default function GroupsPage() {
 
       {/* ─── QUICK NAV ─── */}
       <section style={{ padding: '40px 0', background: 'white', borderBottom: '1px solid #e2e8f0', position: 'sticky', top: 0, zIndex: 40, backdropFilter: 'blur(12px)', backgroundColor: 'rgba(255,255,255,0.95)' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
+        <div className="container" style={{ maxWidth: '100%' }}>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             {COMMUNITIES.map((c) => (
               <a
@@ -279,7 +279,7 @@ export default function GroupsPage() {
             scrollMarginTop: 100,
           }}
         >
-          <div className="container" style={{ maxWidth: 1100 }}>
+          <div className="container" style={{ maxWidth: '100%' }}>
             {/* Section Header */}
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20, marginBottom: 36 }}>
               <div style={{
@@ -335,7 +335,7 @@ export default function GroupsPage() {
             {/* Groups Grid */}
             <div className="mobile-stack-2" style={{
               display: 'grid',
-              gridTemplateColumns: community.groups.length <= 4 ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
               gap: 12,
             }}>
               {community.groups.map((group, gi) => (

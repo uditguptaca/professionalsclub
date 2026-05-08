@@ -17,7 +17,7 @@ export default function Home() {
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.92) 0%, rgba(30,41,59,0.75) 50%, rgba(225,29,72,0.2) 100%)' }} />
         </div>
 
-        <div className="container mobile-stack" style={{ position: 'relative', zIndex: 10, maxWidth: 1200, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center', paddingTop: 40 }}>
+        <div className="container mobile-stack" style={{ position: 'relative', zIndex: 10, maxWidth: 1400, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center', paddingTop: 40 }}>
           {/* Left */}
           <div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(225,29,72,0.15)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(225,29,72,0.3)' }}>
@@ -86,13 +86,13 @@ export default function Home() {
 
       {/* ─── HOW IT WORKS ─── */}
       <section style={{ padding: '40px 0', background: '#f8fafc' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
+        <div className="container" style={{ maxWidth: '100%' }}>
           <div style={{ textAlign: 'center', marginBottom: 64 }}>
             <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#e11d48', marginBottom: 12 }}>How It Works</div>
             <h2 style={{ fontSize: '2.8rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 16 }}>Simple. Safe. Secure.</h2>
           </div>
 
-          <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0 }}>
+          <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 32 }}>
             {[
               { step: '01', title: 'Submit a Request', desc: 'Describe your need.', icon: <HelpCircle size={28} /> },
               { step: '02', title: 'Request Reviewed', desc: 'Securely matched to volunteer.', icon: <Shield size={28} /> },
@@ -115,8 +115,8 @@ export default function Home() {
 
 
       {/* ─── SERVICES (Side-by-Side #1: Career Support) ─── */}
-      <section style={{ padding: '40px 0', background: '#f8fafc' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
+      <section style={{ padding: '80px 0', background: '#f8fafc' }}>
+        <div className="container" style={{ maxWidth: 1280 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center' }}>
             <div style={{ borderRadius: 24, overflow: 'hidden', boxShadow: '0 25px 50px rgba(0,0,0,0.12)', position: 'relative', aspectRatio: '4/3' }}>
               <Image src="/career-mentorship.png" alt="Career mentorship session" fill style={{ objectFit: 'cover' }} />
@@ -147,14 +147,14 @@ export default function Home() {
       </section>
 
       {/* ─── POPULAR JOB CATEGORIES ─── */}
-      <section style={{ padding: '40px 0', background: 'white' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
+      <section style={{ padding: '80px 0', background: 'white' }}>
+        <div className="container" style={{ maxWidth: 1280 }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: '#0f172a', marginBottom: 12 }}>Explore Popular Categories!</h2>
             <p style={{ color: '#64748b', fontSize: '1.05rem', maxWidth: 600, margin: '0 auto' }}>Find jobs in top fields.</p>
           </div>
 
-          <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+          <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
             {[
               { cat: 'Technology', icon: <Briefcase size={20} />, jobs: 142 },
               { cat: 'Accounting & Finance', icon: <Briefcase size={20} />, jobs: 89 },
@@ -215,8 +215,8 @@ export default function Home() {
       </section>
 
       {/* ─── SERVICES (Side-by-Side #2: Settlement — Reversed) ─── */}
-      <section style={{ padding: '40px 0', background: 'white' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
+      <section style={{ padding: '80px 0', background: 'white' }}>
+        <div className="container" style={{ maxWidth: 1280 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#e11d48', marginBottom: 12 }}>Settlement Support</div>
@@ -255,8 +255,8 @@ export default function Home() {
 
 
       {/* ─── EVENTS & COMMUNITY (Side-by-Side #3) ─── */}
-      <section style={{ padding: '40px 0', background: 'white' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
+      <section style={{ padding: '80px 0', background: 'white' }}>
+        <div className="container" style={{ maxWidth: 1280 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center' }}>
             <div style={{ borderRadius: 24, overflow: 'hidden', boxShadow: '0 25px 50px rgba(0,0,0,0.12)', position: 'relative', aspectRatio: '4/3' }}>
               <Image src="/events-meetup.png" alt="Community meetup event" fill style={{ objectFit: 'cover' }} />
@@ -301,8 +301,8 @@ export default function Home() {
       </section>
 
       {/* ─── VOLUNTEER CTA (Side-by-Side #4) ─── */}
-      <section style={{ padding: '40px 0', background: 'linear-gradient(135deg, #0f172a, #1e293b)' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
+      <section style={{ padding: '80px 0', background: 'linear-gradient(135deg, #0f172a, #1e293b)' }}>
+        <div className="container" style={{ maxWidth: 1280 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#34d399', marginBottom: 12 }}>Give Back</div>
@@ -352,8 +352,8 @@ export default function Home() {
 
       {/* ─── SAFETY BANNER ─── */}
       <section style={{ padding: '40px 0', background: 'linear-gradient(135deg, #fff1f2, #ffe4e6)' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
-          <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+        <div className="container" style={{ maxWidth: '100%' }}>
+          <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
             {[
               { icon: <Shield size={32} />, title: 'Private & Secure', desc: 'Your privacy is strictly protected.' },
               { icon: <Users size={32} />, title: 'Verified Volunteers', desc: 'Volunteers go through checks.' },
@@ -379,7 +379,7 @@ export default function Home() {
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(2,6,23,0.95) 0%, rgba(2,6,23,0.8) 50%, rgba(225,29,72,0.15) 100%)' }} />
         </div>
 
-        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 1200 }}>
+        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: '100%' }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)', gap: 24, alignItems: 'center' }}>
             
             {/* Left Side: The list of cards */}
@@ -446,7 +446,7 @@ export default function Home() {
 
       {/* ─── FEATURED BUSINESSES ─── */}
       <section style={{ padding: '40px 0', background: '#f8fafc' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
+        <div className="container" style={{ maxWidth: '100%' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 12 }}>Featured Businesses</h2>
             <p style={{ fontSize: '1.05rem', color: 'var(--text-muted)', maxWidth: 600, margin: '0 auto' }}>
@@ -454,7 +454,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 24 }}>
             {[
               { name: 'Sharma & Associates CPA', cat: 'Tax & Accounting', desc: 'Trusted tax filing.', badge: '15% Off', city: 'Toronto', years: 15, slug: 'sharma-associates-cpa', img: '/finance_bg.png' },
               { name: 'HomeTrust Realty', cat: 'Real Estate', desc: 'Find your home.', badge: 'Cashback', city: 'Toronto', years: 12, slug: 'hometrust-realty', img: '/housing_bg.png' },

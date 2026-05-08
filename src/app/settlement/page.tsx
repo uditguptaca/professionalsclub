@@ -32,7 +32,7 @@ export default function SettlementPage() {
 
       {/* Settlement Categories — 2-Column Cards */}
       <section style={{ padding: '40px 0', background: 'white' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
+        <div className="container" style={{ maxWidth: 1280 }}>
           {[
             {
               icon: <Home size={32} style={{ color: '#6366f1' }} />,
@@ -75,7 +75,7 @@ export default function SettlementPage() {
               imgSide: 'right', image: '/hero-community.png'
             },
           ].map((cat, idx) => (
-            <div key={idx} className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56, alignItems: 'center', marginBottom: idx < 4 ? 80 : 0, direction: cat.imgSide === 'left' ? 'rtl' : 'ltr' }}>
+            <div key={idx} className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)', gap: 56, alignItems: 'center', marginBottom: idx < 4 ? 80 : 0, direction: cat.imgSide === 'left' ? 'rtl' : 'ltr' }}>
               <div style={{ direction: 'ltr' }}>
                 <div style={{ width: 56, height: 56, borderRadius: 16, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, border: `1px solid ${cat.border}` }}>
                   {cat.icon}
@@ -120,7 +120,7 @@ export default function SettlementPage() {
           <Image src="/study-bg.png" alt="Newcomer Studying Checklist" fill style={{ objectFit: 'cover' }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,27,75,0.85))' }} />
         </div>
-        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 1100 }}>
+        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: '100%' }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24, alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#a5b4fc', marginBottom: 16 }}>Free Download</div>
