@@ -25,7 +25,7 @@ export default function Footer() {
             <ul>
               <li><Link href="/portal/auth">Request Help</Link></li>
               <li><Link href="/portal/auth">Volunteer</Link></li>
-              {process.env.NEXT_PUBLIC_FEATURE_MATRIMONY === 'true' && (
+              {process.env.NEXT_PUBLIC_FEATURE_MATRIMONY !== 'false' && (
                 <li><Link href="/matrimony">Matrimony</Link></li>
               )}
               <li><Link href="/about">How It Works</Link></li>

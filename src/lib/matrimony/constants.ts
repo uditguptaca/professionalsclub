@@ -208,7 +208,7 @@ export const COMPLETENESS_WEIGHTS: Record<string, number> = {
 // ========== FEATURE FLAG HELPER ==========
 export const isMatrimonyEnabled = (): boolean => {
   if (typeof window !== 'undefined') {
-    return process.env.NEXT_PUBLIC_FEATURE_MATRIMONY === 'true';
+    return process.env.NEXT_PUBLIC_FEATURE_MATRIMONY !== 'false';
   }
-  return process.env.NEXT_PUBLIC_FEATURE_MATRIMONY === 'true';
+  return process.env.NEXT_PUBLIC_FEATURE_MATRIMONY !== 'false';
 };

@@ -41,7 +41,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     router.replace('/portal/auth');
   };
 
-  const isMatrimonyEnabled = process.env.NEXT_PUBLIC_FEATURE_MATRIMONY === 'true';
+  const isMatrimonyEnabled = process.env.NEXT_PUBLIC_FEATURE_MATRIMONY !== 'false';
 
   const memberLinks = [
     { label: 'Dashboard', href: '/portal/member/dashboard', icon: Home },
