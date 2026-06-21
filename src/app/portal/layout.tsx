@@ -41,9 +41,12 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     router.replace('/portal/auth');
   };
 
+  const isMatrimonyEnabled = process.env.NEXT_PUBLIC_FEATURE_MATRIMONY === 'true';
+
   const memberLinks = [
     { label: 'Dashboard', href: '/portal/member/dashboard', icon: Home },
     { label: 'My Profile', href: '/portal/member/profile', icon: UserCircle },
+    ...(isMatrimonyEnabled ? [{ label: 'Matrimony', href: '/portal/member/matrimony', icon: Heart }] : []),
     { label: 'Request Help', href: '/portal/member/request-help', icon: HelpCircle },
     { label: 'Become a Volunteer', href: '/portal/member/volunteer', icon: HandHeart },
     { label: 'My Requests', href: '/portal/member/my-requests', icon: FileText },
@@ -54,6 +57,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
 
   const adminLinks = [
     { label: 'Overview', href: '/portal/admin/dashboard', icon: BarChart3 },
+    ...(isMatrimonyEnabled ? [{ label: 'Matrimony', href: '/portal/admin/matrimony', icon: Heart }] : []),
     { label: 'Help Requests', href: '/portal/admin/requests', icon: FileText },
     { label: 'Volunteer Applications', href: '/portal/admin/volunteers', icon: HandHeart },
     { label: 'Assignments', href: '/portal/admin/assignments', icon: FolderKanban },

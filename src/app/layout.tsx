@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AppProvider } from "@/context/app-context";
 import { PortalProvider } from "@/context/portal-context";
+import { MatrimonyProvider } from "@/context/matrimony-context";
 
 export const metadata: Metadata = {
   title: "Professionals Club — Professional Referral & Career Community",
@@ -19,10 +20,13 @@ export default function RootLayout({
       <body>
         <AppProvider>
           <PortalProvider>
-            {children}
+            <MatrimonyProvider>
+              {children}
+            </MatrimonyProvider>
           </PortalProvider>
         </AppProvider>
       </body>
     </html>
   );
 }
+

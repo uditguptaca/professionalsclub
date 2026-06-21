@@ -66,7 +66,9 @@ export default function Navbar() {
 
           <li><Link href="/events">Events</Link></li>
           <li><Link href="/businesses">Businesses</Link></li>
-          
+          {process.env.NEXT_PUBLIC_FEATURE_MATRIMONY === 'true' && (
+            <li><Link href="/matrimony" style={{ color: '#e11d48', fontWeight: 700 }}>Matrimony</Link></li>
+          )}
           {mobileOpen && (
             <li style={{ marginTop: 16 }}>
               <Link href="/portal/auth" className="btn btn-primary" style={{ display: 'block', textAlign: 'center', width: '100%', padding: '12px 16px' }}>
