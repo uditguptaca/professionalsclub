@@ -457,9 +457,9 @@ select.input { appearance: auto; }
   right: 0;
   z-index: 100;
   padding: 24px 0; /* More spaced out and premium padding */
-  background: rgba(12, 12, 14, 0.35); /* Elegant transparent overlay */
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(to bottom, rgba(12, 12, 14, 0.6) 0%, rgba(12, 12, 14, 0.15) 75%, transparent 100%); /* Elegant slight black film */
+  backdrop-filter: blur(4px); /* Light blur to keep background image details sharp */
+  border-bottom: none; /* Removed bottom border to blend seamlessly */
   transition: all var(--transition-base);
 }
 .navbar-inner {
