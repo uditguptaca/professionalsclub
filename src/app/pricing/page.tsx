@@ -94,7 +94,7 @@ export default function PricingPage() {
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {[
               { icon: <Heart size={28} />, title: 'Community-Driven', desc: 'Our team and volunteers manage operations as a community service.', color: '#e85d04' },
-              { icon: <Shield size={28} />, title: 'No Hidden Costs', desc: 'No premium tiers or hidden fees. All features are available.', color: '#0c0c0e' },
+              { icon: <Shield size={28} />, title: '100% Free Forever', desc: 'The entire platform is and will always remain completely free to use, with no hidden fees or charges.', color: '#0c0c0e' },
               { icon: <Users size={28} />, title: 'Pay It Forward', desc: 'Consider volunteering to help the next wave of newcomers.', color: '#e85d04' },
             ].map((item, i) => (
               <div key={i} style={{ textAlign: 'center', padding: '36px 28px', borderRadius: 20, background: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
@@ -114,9 +114,9 @@ export default function PricingPage() {
         <div className="container" style={{ maxWidth: 700 }}>
           <h2 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-display)', textAlign: 'center', marginBottom: 20 }}>FAQ</h2>
           {[
-            { q: 'Is there really no cost?', a: 'Yes, entirely free for members and volunteers.' },
+            { q: 'Is there really no cost?', a: 'Yes, the platform is 100% free for everyone. There are no fees or costs to use any of our services.' },
             { q: 'How do volunteers get compensated?', a: 'Volunteers receive community recognition, badges, and the satisfaction of helping.' },
-            { q: 'Will there ever be paid features?', a: 'Core help desk will always remain free.' },
+            { q: 'Will there ever be paid features?', a: 'No, all current and future features on this platform will always remain 100% free. Nothing will ever be charged.' },
             { q: 'Is my data secure?', a: 'Yes, our platform uses secure routing and all interactions are safely logged.' },
           ].map(item => (
             <div key={item.q} style={{ padding: '20px 24px', marginBottom: 12, borderRadius: 12, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
