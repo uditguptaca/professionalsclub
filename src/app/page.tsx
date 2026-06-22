@@ -89,35 +89,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── HOW IT WORKS ─── */}
-      <section className="section" style={{ background: 'var(--bg-secondary)' }}>
-        <div className="container">
-          <div style={{ textAlign: 'center', marginBottom: 64 }}>
-            <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--primary-600)', marginBottom: 12 }}>How It Works</div>
-            <h2 style={{ fontSize: '2.8rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 16, lineHeight: 1.2, letterSpacing: '-0.01em' }}>Simple. Safe. Secure.</h2>
-          </div>
 
-          <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 32 }}>
-            {[
-              { step: '01', title: 'Submit a Request', desc: 'Describe your need.', icon: <HelpCircle size={28} /> },
-              { step: '02', title: 'Request Reviewed', desc: 'Securely matched to volunteer.', icon: <Shield size={28} /> },
-              { step: '03', title: 'Volunteer Assigned', desc: 'Volunteer assigned privately.', icon: <HandHeart size={28} /> },
-            ].map((item, i) => (
-              <div key={i} style={{ textAlign: 'center', position: 'relative', padding: '0 16px' }}>
-                {/* Connecting Lines */}
-                {i < 2 && <div style={{ position: 'absolute', top: 36, right: 0, width: '50%', height: 2, background: 'linear-gradient(90deg, var(--bg-secondary), var(--primary-600), var(--bg-secondary))' }} />}
-                {i > 0 && <div style={{ position: 'absolute', top: 36, left: 0, width: '50%', height: 2, background: 'linear-gradient(90deg, var(--bg-secondary), var(--primary-600), var(--bg-secondary))' }} />}
-                <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary-600), var(--primary-400))', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', position: 'relative', zIndex: 2, boxShadow: '0 8px 24px rgba(232,93,4,0.25)' }}>
-                  {item.icon}
-                </div>
-                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary-600)', letterSpacing: '0.1em', marginBottom: 8 }}>STEP {item.step}</div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: 8, fontFamily: 'var(--font-display)' }}>{item.title}</h3>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
 
       {/* ─── SERVICES (Side-by-Side #1: Career Support) ─── */}
@@ -317,7 +289,7 @@ export default function Home() {
         <div className="container">
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center' }}>
             <div>
-              <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--success-400)', marginBottom: 12 }}>Give Back</div>
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--primary-400)', marginBottom: 12 }}>Give Back</div>
               <h2 style={{ fontSize: '2.4rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15, color: 'white' }}>Become a Volunteer or Mentor</h2>
               <p style={{ fontSize: '1rem', color: 'var(--gray-400)', lineHeight: 1.8, marginBottom: 28 }}>
                 Share expertise. Receive case assignments.
@@ -331,12 +303,12 @@ export default function Home() {
                   { label: 'Support Newcomers', icon: <HandHeart size={18} /> },
                   { label: 'Track Impact', icon: <FileText size={18} /> },
                 ].map((item, i) => (
-                  <Link href="/portal/auth" key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 12, background: 'rgba(0, 168, 107, 0.12)', border: '1px solid rgba(0, 168, 107, 0.22)', fontSize: '0.88rem', fontWeight: 600, color: 'var(--success-400)', textDecoration: 'none', transition: 'all 0.2s' }} className="hover:-translate-y-1 hover:shadow-md">
-                    <span style={{ display: 'flex', alignItems: 'center', color: 'var(--success-400)' }}>{item.icon}</span> {item.label}
+                  <Link href="/portal/auth" key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 12, background: 'rgba(232, 93, 4, 0.08)', border: '1px solid rgba(232, 93, 4, 0.2)', fontSize: '0.88rem', fontWeight: 600, color: '#ffffff', textDecoration: 'none', transition: 'all 0.2s' }} className="hover:-translate-y-1 hover:shadow-md">
+                    <span style={{ display: 'flex', alignItems: 'center', color: 'var(--primary-400)' }}>{item.icon}</span> {item.label}
                   </Link>
                 ))}
               </div>
-              <Link href="/portal/auth" className="btn btn-lg btn-success" style={{ padding: '16px 32px' }}>
+              <Link href="/portal/auth" className="btn btn-lg btn-primary" style={{ padding: '16px 32px' }}>
                 Apply to Volunteer <ArrowRight size={18} />
               </Link>
             </div>
@@ -368,26 +340,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── SAFETY BANNER ─── */}
-      <section className="section-sm" style={{ background: 'linear-gradient(135deg, rgba(232,93,4,0.05), rgba(232,93,4,0.1))' }}>
-        <div className="container">
-          <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
-            {[
-              { icon: <Shield size={32} />, title: 'Private & Secure', desc: 'Your privacy is strictly protected.' },
-              { icon: <Users size={32} />, title: 'Verified Volunteers', desc: 'Volunteers go through checks.' },
-              { icon: <Star size={32} />, title: 'Case Tracking', desc: 'Full lifecycle tracking.' },
-            ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 20, padding: '28px 24px', borderRadius: 16, background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(26,26,46,0.04)' }}>
-                <div style={{ color: 'var(--primary-600)', flexShrink: 0 }}>{item.icon}</div>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: '1.05rem', marginBottom: 6, color: 'var(--text-primary)' }}>{item.title}</div>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>{item.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+
 
       {/* ─── WHATSAPP COMMUNITY HERO ─── */}
       <section className="section" style={{ background: 'var(--gray-950)', position: 'relative', overflow: 'hidden' }}>
@@ -511,27 +464,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── FINAL CTA ─── */}
-      <section className="section" style={{ position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/toronto-skyline.png" alt="Toronto skyline" fill style={{ objectFit: 'cover', opacity: 0.2 }} />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, var(--gray-900) 0%, var(--gray-950) 100%)' }} />
-        </div>
-        <div className="container" style={{ position: 'relative', zIndex: 10, textAlign: 'center', maxWidth: 700 }}>
-          <h2 style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'white', marginBottom: 20, lineHeight: 1.15 }}>Ready to Get Started?</h2>
-          <p style={{ fontSize: '1.15rem', color: 'var(--gray-400)', marginBottom: 36, lineHeight: 1.7 }}>
-            Request help today.
-          </p>
-          <div className="mobile-wrap" style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
-            <Link href="/portal/auth" className="btn btn-primary btn-lg" style={{ padding: '18px 36px', fontSize: '1.05rem', boxShadow: '0 8px 30px rgba(232,93,4,0.3)' }}>
-              Request Help Now <ArrowRight size={20} />
-            </Link>
-            <Link href="/about" className="btn btn-lg" style={{ background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.15)', padding: '18px 36px' }}>
-              Learn More
-            </Link>
-          </div>
-        </div>
-      </section>
+
 
       <Footer />
     </>

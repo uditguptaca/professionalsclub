@@ -1,10 +1,11 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { usePortal } from '@/context/portal-context';
-import { Calendar, MapPin, Clock, Users, Video, ArrowRight } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, Video, ArrowRight, X, CheckCircle2, Ticket, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 
 interface SupabaseEvent {
@@ -15,17 +16,83 @@ interface SupabaseEvent {
   created_at?: string;
 }
 
+interface UpcomingEvent {
+  id: string;
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  image: string;
+  buttonText: string;
+}
+
+const mockUpcomingEvents: UpcomingEvent[] = [
+  {
+    id: 'up-001',
+    title: "Saturday's Morning Mixer",
+    date: 'Saturday, June 27',
+    time: '9:00 AM',
+    location: 'Downtown Cafe, Toronto',
+    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=350&h=200',
+    buttonText: 'Join This Saturday'
+  },
+  {
+    id: 'up-002',
+    title: 'Morning Business Mixer',
+    date: 'TBA',
+    time: 'Morning Session',
+    location: 'Professionals Club Hall, Vancouver',
+    image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=350&h=200',
+    buttonText: 'RSVP Now'
+  },
+  {
+    id: 'up-003',
+    title: 'Ladies Business Mixer',
+    date: 'Tuesday, July 7',
+    time: '6:00 PM',
+    location: 'Hotel Lounge, Calgary',
+    image: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=350&h=200',
+    buttonText: 'Meet Your Alliances'
+  },
+  {
+    id: 'up-004',
+    title: 'Singles Mixer 3.0 (Spring Edition)',
+    date: 'TBA',
+    time: 'Evening Session',
+    location: 'Social Club, Toronto',
+    image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=350&h=200',
+    buttonText: 'Find Your Match'
+  },
+  {
+    id: 'up-005',
+    title: 'Free Meditation Class',
+    date: 'Weekly',
+    time: 'Every Sunday 10:00 AM',
+    location: 'Online Zoom Session',
+    image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=350&h=200',
+    buttonText: 'View Schedule'
+  }
+];
+
 export default function EventsPage() {
   const { events } = usePortal();
+  const [supabaseEvents, setSupabaseEvents] = useState<SupabaseEvent[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<UpcomingEvent | null>(null);
   
-  const [supabaseEvents, setSupabaseEvents] = React.useState<SupabaseEvent[]>([]);
-  const [activeSection, setActiveSection] = React.useState<string | null>(null);
+  // RSVP Form States
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [tickets, setTickets] = useState(1);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const toggleSection = (section: string) => {
-    setActiveSection(prev => prev === section ? null : section);
-  };
+  // Virtual Workshop Booking States
+  const [bookName, setBookName] = useState('');
+  const [bookEmail, setBookEmail] = useState('');
+  const [bookTopic, setBookTopic] = useState('Career Guidance');
+  const [bookTime, setBookTime] = useState('June 25, 3:00 PM');
+  const [isBooked, setIsBooked] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     async function fetchEvents() {
       try {
         const { data, error } = await supabase.from('events').select('*');
@@ -40,10 +107,24 @@ export default function EventsPage() {
     }
     fetchEvents();
   }, []);
-  
+
   const featuredEvent = events.find(e => e.isFeatured && e.status === 'upcoming');
-  const upcomingVirtual = events.filter(e => e.status === 'upcoming' && e.eventType === 'virtual');
   const pastEvents = events.filter(e => e.status === 'past');
+
+  const handleRSVPSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !email) return;
+    setIsSubmitted(true);
+  };
+
+  const handleBookSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bookName || !bookEmail) return;
+    setIsBooked(false);
+    setTimeout(() => {
+      setIsBooked(true);
+    }, 100);
+  };
 
   return (
     <>
@@ -64,155 +145,210 @@ export default function EventsPage() {
             Connect, Learn & <span style={{ color: 'var(--primary-600)' }}>Grow Together</span>
           </h1>
           <p style={{ fontSize: '1.25rem', color: 'var(--gray-400)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
-            Meetups, workshops, and livestreams to help you thrive.
+            Meetups, workshops, and livestreams to help you thrive in Canada.
           </p>
         </div>
       </section>
 
-      {/* Featured Event + Sidebar */}
-      <section style={{ padding: '80px 0', background: 'var(--bg-primary)' }}>
+      {/* Upcoming Events Grid */}
+      <section style={{ padding: '80px 0 60px', background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
-          <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 40 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 40 }}>
+            <div>
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--primary-600)', marginBottom: 8 }}>Schedule</div>
+              <h2 style={{ fontSize: '2.2rem', fontWeight: 900, fontFamily: 'var(--font-display)', margin: 0 }}>Upcoming Community Events</h2>
+            </div>
+            <span style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontWeight: 600 }}>{mockUpcomingEvents.length} Active Events</span>
+          </div>
 
-            {/* Featured Event */}
-            {featuredEvent && (
-              <div style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-md)', background: 'white' }}>
-                <div style={{ position: 'relative', padding: '48px 40px', minHeight: 280, color: 'white', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-                  <Image src={featuredEvent.image} alt={featuredEvent.title} fill style={{ objectFit: 'cover' }} />
-                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.9), rgba(12,12,14,0.3))' }} />
-                  <div style={{ position: 'relative', zIndex: 10 }}>
-                    <span style={{ display: 'inline-block', background: 'var(--primary-600)', color: 'white', padding: '4px 14px', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700, marginBottom: 16 }}>Featured Event</span>
-                    <h2 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 8, color: 'white' }}>{featuredEvent.title}</h2>
-                    <p style={{ color: 'var(--gray-300)', fontSize: '1rem' }}>{featuredEvent.description.length > 50 ? featuredEvent.description.substring(0, 47) + '...' : featuredEvent.description}</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 24 }}>
+            {mockUpcomingEvents.map(evt => (
+              <div key={evt.id} style={{ display: 'flex', flexDirection: 'column', background: 'white', border: '1px solid var(--border-color)', borderRadius: 20, overflow: 'hidden', boxShadow: 'var(--shadow-sm)', transition: 'transform 0.2s, box-shadow 0.2s' }} className="hover:-translate-y-1 hover:shadow-md">
+                <div style={{ position: 'relative', height: 180, width: '100%' }}>
+                  <img src={evt.image} alt={evt.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div style={{ position: 'absolute', top: 16, left: 16, background: 'rgba(232, 93, 4, 0.95)', color: 'white', padding: '6px 12px', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700 }}>
+                    {evt.date.includes('Weekly') ? 'Weekly Class' : 'Special Event'}
                   </div>
                 </div>
-                <div style={{ padding: '36px 40px' }}>
-                  <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 32 }}>
-                    {[
-                      { icon: <Calendar size={20} style={{ color: 'var(--primary-600)' }} />, label: featuredEvent.date, sub: 'Recurring monthly' },
-                      { icon: <Clock size={20} style={{ color: 'var(--primary-600)' }} />, label: featuredEvent.time, sub: 'Eastern Time' },
-                      { icon: <MapPin size={20} style={{ color: 'var(--primary-600)' }} />, label: featuredEvent.location, sub: 'Venue sent on RSVP' },
-                      { icon: <Users size={20} style={{ color: 'var(--primary-600)' }} />, label: `${featuredEvent.capacity} Capacity`, sub: 'Pre-registration required' },
-                    ].map((item, i) => (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          {item.icon}
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)' }}>{item.label}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.sub}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <button className="btn btn-primary" style={{ padding: '14px 32px', background: 'var(--primary-600)' }}>RSVP for Next Meetup <ArrowRight size={16} /></button>
-                </div>
-              </div>
-            )}
 
-            {/* Sidebar */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-              
-              {/* Virtual Workshops Section */}
-              <div 
-                style={{ borderRadius: 16, border: '1px solid var(--border-color)', background: 'white', overflow: 'hidden', cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}
-                onClick={() => toggleSection('virtual')}
-              >
-                <div style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: activeSection === 'virtual' ? 'var(--bg-secondary)' : 'white' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Video size={20} style={{ color: 'var(--primary-600)' }} />
-                    <h3 style={{ fontWeight: 800, fontSize: '1.05rem', fontFamily: 'var(--font-display)', margin: 0, color: 'var(--text-primary)' }}>Virtual Workshops</h3>
-                  </div>
-                  <div style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>{activeSection === 'virtual' ? '−' : '+'}</div>
-                </div>
-                {activeSection === 'virtual' && (
-                  <div style={{ padding: '0 24px 24px', borderTop: '1px solid var(--border-color)' }}>
-                    <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginTop: 16, lineHeight: 1.6 }}>Weekly online sessions to level up your skills.</p>
-                    <div style={{ marginTop: 16 }}>
-                      {upcomingVirtual.length > 0 ? (
-                        upcomingVirtual.map((evt, i) => (
-                          <div key={i} style={{ padding: '12px', background: 'var(--bg-secondary)', borderRadius: 8, marginBottom: 8, border: '1px solid var(--border-color)' }}>
-                            <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)' }}>{evt.title}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{evt.date} at {evt.time}</div>
-                          </div>
-                        ))
-                      ) : (
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No upcoming virtual workshops at the moment.</div>
-                      )}
+                <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 12, height: '3rem', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                    {evt.title}
+                  </h3>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Calendar size={14} style={{ color: 'var(--primary-600)' }} />
+                      <span>{evt.date}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Clock size={14} style={{ color: 'var(--primary-600)' }} />
+                      <span>{evt.time}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <MapPin size={14} style={{ color: 'var(--primary-600)' }} />
+                      <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{evt.location}</span>
                     </div>
                   </div>
-                )}
-              </div>
 
-              {/* Host an Event Section */}
-              <div 
-                style={{ borderRadius: 16, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', overflow: 'hidden', cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}
-                onClick={() => toggleSection('host')}
-              >
-                <div style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Users size={20} style={{ color: 'var(--primary-600)' }} />
-                    <h3 style={{ fontWeight: 800, fontSize: '1.05rem', fontFamily: 'var(--font-display)', margin: 0, color: 'var(--text-primary)' }}>Host an Event</h3>
-                  </div>
-                  <div style={{ fontSize: '1.2rem', color: 'var(--primary-600)' }}>{activeSection === 'host' ? '−' : '+'}</div>
+                  <button
+                    onClick={() => {
+                      setSelectedEvent(evt);
+                      setIsSubmitted(false);
+                    }}
+                    className="btn btn-primary"
+                    style={{ marginTop: 'auto', width: '100%', background: 'var(--primary-600)', border: 'none', padding: '12px 0', borderRadius: 10, fontWeight: 700, fontSize: '0.88rem', color: 'white', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                  >
+                    {evt.buttonText} <ArrowRight size={14} />
+                  </button>
                 </div>
-                {activeSection === 'host' && (
-                  <div style={{ padding: '0 24px 24px', textAlign: 'center' }}>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.5 }}>Lead sessions in your city and build your local community.</p>
-                    <button className="btn btn-primary" style={{ width: '100%', fontSize: '0.85rem', background: 'var(--primary-600)' }}>Contact Organizers</button>
-                  </div>
-                )}
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-              {/* Upcoming Events Section (Supabase) */}
-              <div 
-                style={{ borderRadius: 16, border: '1px solid var(--border-color)', background: 'white', overflow: 'hidden', cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}
-                onClick={() => toggleSection('upcoming')}
-              >
-                <div style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: activeSection === 'upcoming' ? 'var(--bg-secondary)' : 'white' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Calendar size={20} style={{ color: 'var(--primary-600)' }} />
-                    <h3 style={{ fontWeight: 800, fontSize: '1.05rem', fontFamily: 'var(--font-display)', margin: 0, color: 'var(--text-primary)' }}>Upcoming events</h3>
+      {/* Virtual Bookings & Database Relays */}
+      <section style={{ padding: '80px 0', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
+        <div className="container" style={{ maxWidth: 1200 }}>
+          <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 48, alignItems: 'center' }}>
+            
+            {/* Virtual Booking Info */}
+            <div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(232,93,4,0.06)', border: '1px solid rgba(232,93,4,0.12)', padding: '6px 12px', borderRadius: 8, marginBottom: 16, color: 'var(--primary-700)', fontSize: '0.8rem', fontWeight: 700 }}>
+                <Sparkles size={14} /> Virtual Workshop Bookings
+              </div>
+              <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 20 }}>Book a Virtual Slot</h2>
+              <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: 24 }}>
+                Can't make it to local mixers? Register a virtual booking for our weekly workshops. Select a topic and pick your preferred time slot to receive a secure link.
+              </p>
+
+              {/* Database Events Display */}
+              <div style={{ background: 'white', borderRadius: 16, border: '1px solid var(--border-color)', padding: 24 }}>
+                <h4 style={{ margin: '0 0 16px', fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Ticket size={18} style={{ color: 'var(--primary-600)' }} /> Database Relayed Events
+                </h4>
+                {supabaseEvents.length === 0 ? (
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontStyle: 'italic', background: 'var(--bg-secondary)', padding: '12px', borderRadius: 8, border: '1px solid var(--border-color)' }}>
+                    No events stored in Supabase currently. Create new events in the admin dashboard!
                   </div>
-                  <div style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>{activeSection === 'upcoming' ? '−' : '+'}</div>
-                </div>
-                {activeSection === 'upcoming' && (
-                  <div style={{ padding: '0 24px 24px', borderTop: '1px solid var(--border-color)' }}>
-                    <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: 16, marginBottom: 16, lineHeight: 1.6 }}>Upcoming live events pulled from our database.</p>
-                    
-                    {supabaseEvents.length === 0 && (
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', padding: 10, textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid var(--border-color)' }}>
-                        No events found in Supabase table.<br/>Add a row in the dashboard!
-                      </div>
-                    )}
-
-                    {supabaseEvents.map((w: SupabaseEvent) => (
-                      <div key={w.id} style={{ padding: '12px 14px', borderRadius: 10, background: 'white', border: '1px solid var(--border-color)', marginBottom: 8, boxShadow: 'var(--shadow-sm)' }}>
-                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: 4 }}>{w.title || 'Untitled Event'}</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem' }}>
-                          <span style={{ color: 'var(--primary-600)', fontWeight: 600 }}>Live Data</span>
-                          <span style={{ color: 'var(--text-muted)' }}>{w.time || w.date || w.created_at?.split('T')[0] || 'Today'}</span>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {supabaseEvents.map(w => (
+                      <div key={w.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--bg-secondary)', borderRadius: 10, border: '1px solid var(--border-color)' }}>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)' }}>{w.title || 'Untitled Event'}</div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>Relayed live from DB</div>
                         </div>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary-600)', background: 'white', padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border-color)' }}>{w.time || w.date || 'Today'}</span>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
-
             </div>
+
+            {/* Interactive Booking Form */}
+            <div style={{ background: 'white', border: '1px solid var(--border-color)', borderRadius: 24, padding: 36, boxShadow: 'var(--shadow-sm)' }}>
+              {!isBooked ? (
+                <form onSubmit={handleBookSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  <h3 style={{ fontSize: '1.4rem', fontWeight: 800, fontFamily: 'var(--font-display)', margin: 0 }}>Register Virtual Seat</h3>
+                  
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Your Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Enter your name"
+                      value={bookName}
+                      onChange={e => setBookName(e.target.value)}
+                      style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Your Email</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="you@example.com"
+                      value={bookEmail}
+                      onChange={e => setBookEmail(e.target.value)}
+                      style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Select Workshop Topic</label>
+                    <select
+                      value={bookTopic}
+                      onChange={e => setBookTopic(e.target.value)}
+                      style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none', cursor: 'pointer' }}
+                    >
+                      <option value="Career Guidance">Career Guidance & Job Referrals</option>
+                      <option value="Resume Review">Resume & Cover Letter Polish</option>
+                      <option value="Interview Prep">Mock Technical Interviews</option>
+                      <option value="Tax Filing Support">Newcomer Tax Filing 101</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Preferred Session Slot</label>
+                    <select
+                      value={bookTime}
+                      onChange={e => setBookTime(e.target.value)}
+                      style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none', cursor: 'pointer' }}
+                    >
+                      <option value="June 25, 3:00 PM">Thursday, June 25, 3:00 PM EST</option>
+                      <option value="June 27, 11:00 AM">Saturday, June 27, 11:00 AM EST</option>
+                      <option value="July 02, 3:00 PM">Thursday, July 02, 3:00 PM EST</option>
+                      <option value="Weekly Sunday">Every Sunday, 10:00 AM (Recurring)</option>
+                    </select>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    style={{ padding: '14px 0', fontSize: '0.9rem', fontWeight: 800, background: 'var(--primary-600)', border: 'none', borderRadius: 10, cursor: 'pointer', color: 'white' }}
+                  >
+                    Confirm Booking
+                  </button>
+                </form>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                  <CheckCircle2 size={56} style={{ color: '#10b981', margin: '0 auto 16px' }} />
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 800, marginBottom: 8 }}>Virtual Seat Reserved!</h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.5, marginBottom: 24 }}>
+                    Hey <strong>{bookName}</strong>, your seat for <strong>{bookTopic}</strong> on <strong>{bookTime}</strong> is booked successfully. We sent a calendar invitation and link to <strong>{bookEmail}</strong>.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setIsBooked(false);
+                      setBookName('');
+                      setBookEmail('');
+                    }}
+                    className="btn btn-outline"
+                    style={{ padding: '10px 20px', borderRadius: 8, fontSize: '0.8rem', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}
+                  >
+                    Book Another Slot
+                  </button>
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       </section>
 
       {/* Past Events Gallery */}
-      <section style={{ padding: '80px 0', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)' }}>
+      <section style={{ padding: '80px 0', background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 12 }}>Past Events</h2>
             <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)' }}>Recent community gatherings.</p>
           </div>
-          <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
-            {pastEvents.map((evt, i) => (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24 }}>
+            {pastEvents.map((evt) => (
               <div key={evt.id} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border-color)', background: 'white', transition: 'transform 0.2s ease', cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }} className="hover:-translate-y-1">
                 <div style={{ position: 'relative', height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Image src={evt.image} alt={evt.title} fill style={{ objectFit: 'cover' }} />
@@ -233,7 +369,94 @@ export default function EventsPage() {
           </div>
         </div>
       </section>
-      
+
+      {/* RSVP Modal */}
+      {selectedEvent && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(12,12,14,0.6)', backdropFilter: 'blur(4px)', padding: 16 }}>
+          <div style={{ background: 'white', borderRadius: 24, width: '100%', maxWidth: 480, padding: 32, border: '1px solid var(--border-color)', boxShadow: '0 25px 50px rgba(0,0,0,0.25)', position: 'relative' }}>
+            
+            <button
+              onClick={() => setSelectedEvent(null)}
+              style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+            >
+              <X size={20} />
+            </button>
+
+            {!isSubmitted ? (
+              <form onSubmit={handleRSVPSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, fontFamily: 'var(--font-display)', margin: 0 }}>RSVP for Event</h3>
+                <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', padding: 16, borderRadius: 12 }}>
+                  <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)', marginBottom: 8 }}>{selectedEvent.title}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{selectedEvent.date} • {selectedEvent.time}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4 }}>{selectedEvent.location}</div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Your Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Enter your name"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Your Email</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Number of Tickets</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={5}
+                    value={tickets}
+                    onChange={e => setTickets(parseInt(e.target.value))}
+                    style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ padding: '14px 0', fontSize: '0.9rem', fontWeight: 800, background: 'var(--primary-600)', border: 'none', borderRadius: 10, cursor: 'pointer', color: 'white' }}
+                >
+                  Confirm Registration
+                </button>
+              </form>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                <CheckCircle2 size={56} style={{ color: '#10b981', margin: '0 auto 16px' }} />
+                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, fontFamily: 'var(--font-display)', marginBottom: 8 }}>Registration Confirmed!</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: 24 }}>
+                  Thanks <strong>{name}</strong>! We have registered <strong>{tickets} ticket(s)</strong> for you for <strong>{selectedEvent.title}</strong>. 
+                  Confirmation details and secure tickets have been emailed to <strong>{email}</strong>.
+                </p>
+                <button
+                  onClick={() => setSelectedEvent(null)}
+                  className="btn btn-primary"
+                  style={{ padding: '10px 24px', background: 'var(--primary-600)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700 }}
+                >
+                  Done
+                </button>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+
       <Footer />
     </>
   );

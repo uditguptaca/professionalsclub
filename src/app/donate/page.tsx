@@ -18,13 +18,13 @@ export default function DonatePage() {
         <Image src="/hero-community.png" alt="Community Support" fill style={{ objectFit: 'cover' }} priority />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.9), rgba(12,12,14,0.6))' }} />
         
-        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 1200 }}>
+        <div className="container" style={{ position: 'relative', zIndex: 10 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center' }}>
             <div style={{ maxWidth: 640 }}>
-              <h1 style={{ fontSize: 'clamp(2rem, 6vw, 3rem)', fontWeight: 900, lineHeight: 1.15, fontFamily: 'var(--font-display)', marginBottom: 20 }}>
+              <h1 style={{ fontSize: 'clamp(2rem, 6vw, 3rem)', fontWeight: 900, lineHeight: 1.15, fontFamily: 'var(--font-display)', marginBottom: 20, color: 'white' }}>
                 Supporting professionals in Canada.
               </h1>
-              <p style={{ fontSize: '1.05rem', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 32 }}>
+              <p style={{ fontSize: '1.05rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.6, marginBottom: 32 }}>
                 Aiding individuals from diverse fields in navigating their careers in Canada.
               </p>
               <button className="btn" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '12px 28px', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
@@ -51,7 +51,7 @@ export default function DonatePage() {
       </section>
 
       <main style={{ flex: 1, padding: '40px 0', background: 'var(--bg-secondary)' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
+        <div className="container">
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
             
             {/* Left - Form */}

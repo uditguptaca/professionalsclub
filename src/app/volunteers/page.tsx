@@ -1,0 +1,622 @@
+'use client';
+import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
+import Navbar from '@/components/shared/Navbar';
+import Footer from '@/components/shared/Footer';
+import { Search, MapPin, Building2, Globe, Phone, X, ArrowRight, UserCheck } from 'lucide-react';
+
+const LinkedinIcon = ({ size = 20 }: { size?: number }) => (
+  <svg 
+    viewBox="0 0 24 24" 
+    width={size} 
+    height={size} 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+  >
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+    <rect x="2" y="9" width="4" height="12" />
+    <circle cx="4" cy="4" r="2" />
+  </svg>
+);
+
+interface Volunteer {
+  id: string;
+  name: string;
+  role: string;
+  company: string;
+  industry: string;
+  city: string;
+  province: string;
+  bio: string;
+  image: string;
+  linkedinUrl: string;
+  websiteUrl: string;
+  phone: string;
+  expertise: string[];
+  bannerGradient: string;
+  mutualCount: number;
+  mutualNames: string;
+  mutualAvatars: string[];
+  verified: boolean;
+}
+
+const mockVolunteers: Volunteer[] = [
+  {
+    id: 'vol-001',
+    name: 'Sunil Khatri',
+    role: 'CEO & Founder',
+    company: 'Meshroad Marketing',
+    industry: 'Marketing',
+    city: 'Toronto',
+    province: 'Ontario',
+    bio: 'Helping businesses improve their sales using Sales Funnels, CRM Automation, Search Engine Optimization, and Programmatic Advertising. Proud Google and Meta Ads Partner.',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150&h=150',
+    linkedinUrl: 'https://linkedin.com',
+    websiteUrl: 'https://meshroad.com',
+    phone: '+1-604-555-5679',
+    expertise: ['Sales Funnels', 'CRM Automation', 'SEO', 'Google Ads', 'Meta Ads', 'Programmatic Advertising'],
+    bannerGradient: 'linear-gradient(135deg, #1e1e24 0%, #e85d04 100%)',
+    mutualCount: 24,
+    mutualNames: 'Balinder and 24 other mutual connections',
+    mutualAvatars: [
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=50&h=50',
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=50&h=50'
+    ],
+    verified: true
+  },
+  {
+    id: 'vol-002',
+    name: 'Balinder Singh',
+    role: 'Stock Market Educator',
+    company: 'Morning Bulls',
+    industry: 'Finance',
+    city: 'Calgary',
+    province: 'Alberta',
+    bio: 'Trader, investor, and mentor. Helping newcomers understand Canadian capital markets, personal financial literacy, and investing fundamentals.',
+    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150&h=150',
+    linkedinUrl: 'https://linkedin.com',
+    websiteUrl: 'https://morningbulls.ca',
+    phone: '+1-403-555-0199',
+    expertise: ['Capital Markets', 'Stock Trading', 'Portfolio Management', 'Financial Literacy', 'Investing'],
+    bannerGradient: 'linear-gradient(135deg, #0f172a 0%, #3b82f6 100%)',
+    mutualCount: 18,
+    mutualNames: 'Sunil and 18 other mutual connections',
+    mutualAvatars: [
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=50&h=50',
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=50&h=50'
+    ],
+    verified: true
+  },
+  {
+    id: 'vol-003',
+    name: 'Aanchal Ghai',
+    role: 'Notary Public & Founder',
+    company: 'Anchal Ghai Notary Corp',
+    industry: 'Legal',
+    city: 'Ottawa',
+    province: 'Ontario',
+    bio: 'Professional notary services. Assisting newcomers and residents with document notarization, travel letters, lease validation, and legal declarations.',
+    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150&h=150',
+    linkedinUrl: 'https://linkedin.com',
+    websiteUrl: 'https://ghainotary.ca',
+    phone: '+1-613-555-0811',
+    expertise: ['Notarizations', 'Lease Validation', 'Travel Letters', 'Affidavits', 'Legal Declarations'],
+    bannerGradient: 'linear-gradient(135deg, #111827 0%, #10b981 100%)',
+    mutualCount: 12,
+    mutualNames: 'Dr. Savita and 12 other mutual connections',
+    mutualAvatars: [
+      'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=50&h=50',
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=50&h=50'
+    ],
+    verified: true
+  },
+  {
+    id: 'vol-004',
+    name: 'Dr. Savita Drall',
+    role: 'Yogic Diet & Lifestyle Coach',
+    company: 'Health Gaga',
+    industry: 'Healthcare',
+    city: 'Vancouver',
+    province: 'British Columbia',
+    bio: 'MD background. Guiding clients to improve holistic health, nutrition, wellness, and navigate the Canadian healthcare system.',
+    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=150&h=150',
+    linkedinUrl: 'https://linkedin.com',
+    websiteUrl: 'https://healthgaga.com',
+    phone: '+1-604-555-0123',
+    expertise: ['Holistic Health', 'Yogic Nutrition', 'Wellness Coaching', 'Healthcare Navigation', 'Dietary Guidance'],
+    bannerGradient: 'linear-gradient(135deg, #180828 0%, #8b5cf6 100%)',
+    mutualCount: 15,
+    mutualNames: 'Aanchal and 15 other mutual connections',
+    mutualAvatars: [
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=50&h=50',
+      'https://images.unsplash.com/photo-1620122303020-43ec4b6cf7f8?auto=format&fit=crop&q=80&w=50&h=50'
+    ],
+    verified: true
+  },
+  {
+    id: 'vol-005',
+    name: 'Tarundeep Singh',
+    role: 'Insurance Advisor',
+    company: 'Central Agencies Ltd',
+    industry: 'Finance',
+    city: 'Surrey',
+    province: 'British Columbia',
+    bio: 'Independent advisor with 20+ years of experience helping newcomers select auto, home, life, and business insurance plans suited for new immigrants.',
+    image: 'https://images.unsplash.com/photo-1620122303020-43ec4b6cf7f8?auto=format&fit=crop&q=80&w=150&h=150',
+    linkedinUrl: 'https://linkedin.com',
+    websiteUrl: 'https://centralagencies.com',
+    phone: '+1-778-555-0922',
+    expertise: ['Auto Insurance', 'Home Insurance', 'Life Insurance', 'Commercial Insurance', 'Risk Management'],
+    bannerGradient: 'linear-gradient(135deg, #3b0764 0%, #f43f5e 100%)',
+    mutualCount: 9,
+    mutualNames: 'Balinder and 9 other mutual connections',
+    mutualAvatars: [
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=50&h=50',
+      'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=50&h=50'
+    ],
+    verified: true
+  },
+  {
+    id: 'vol-006',
+    name: 'Mandeep "Meenie" Hundal',
+    role: 'Registered Physiotherapist',
+    company: 'Willow Wellness Physio',
+    industry: 'Healthcare',
+    city: 'Brampton',
+    province: 'Ontario',
+    bio: 'Physiotherapist specialized in rehabilitation, workspace ergonomics, sports injuries, and guiding wellness routines for working professionals.',
+    image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=150&h=150',
+    linkedinUrl: 'https://linkedin.com',
+    websiteUrl: 'https://willowphysio.ca',
+    phone: '+1-905-555-0248',
+    expertise: ['Physical Therapy', 'Workplace Ergonomics', 'Rehabilitation', 'Sports Injuries', 'Pain Management'],
+    bannerGradient: 'linear-gradient(135deg, #1e3a8a 0%, #06b6d4 100%)',
+    mutualCount: 11,
+    mutualNames: 'Akashdeep and 11 other mutual connections',
+    mutualAvatars: [
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=50&h=50',
+      'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=50&h=50'
+    ],
+    verified: true
+  },
+  {
+    id: 'vol-007',
+    name: 'Sanj Garg',
+    role: 'Licensed Financial Planner',
+    company: 'Independent Financial Partners',
+    industry: 'Finance',
+    city: 'Mississauga',
+    province: 'Ontario',
+    bio: 'Specialized in helping newcomer families set up wealth accumulation structures, buy their first homes, and design Canadian tax-sheltered portfolios.',
+    image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=150&h=150',
+    linkedinUrl: 'https://linkedin.com',
+    websiteUrl: 'https://independentfp.ca',
+    phone: '+1-905-555-0812',
+    expertise: ['Wealth Accumulation', 'First-Time Home Buyers', 'TFSA/RRSP Planning', 'Tax Sheltering', 'Budgeting'],
+    bannerGradient: 'linear-gradient(135deg, #022c22 0%, #14b8a6 100%)',
+    mutualCount: 14,
+    mutualNames: 'Tarundeep and 14 other mutual connections',
+    mutualAvatars: [
+      'https://images.unsplash.com/photo-1620122303020-43ec4b6cf7f8?auto=format&fit=crop&q=80&w=50&h=50',
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=50&h=50'
+    ],
+    verified: true
+  },
+  {
+    id: 'vol-008',
+    name: 'Akashdeep Kaur',
+    role: 'Registered Physiotherapist',
+    company: 'Langley Registered Physiotherapy',
+    industry: 'Healthcare',
+    city: 'Surrey',
+    province: 'British Columbia',
+    bio: 'Clinical manager and physiotherapist with extensive experience in neuro-musculoskeletal conditions, active rehab, and home care exercises.',
+    image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=150&h=150',
+    linkedinUrl: 'https://linkedin.com',
+    websiteUrl: 'https://langleyphysio.com',
+    phone: '+1-604-555-0723',
+    expertise: ['Active Rehabilitation', 'Neuro-musculoskeletal Care', 'Home Exercise Plans', 'Pain Relief', 'Joint Mobilization'],
+    bannerGradient: 'linear-gradient(135deg, #4c0519 0%, #db2777 100%)',
+    mutualCount: 8,
+    mutualNames: 'Mandeep and 8 other mutual connections',
+    mutualAvatars: [
+      'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=50&h=50',
+      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=50&h=50'
+    ],
+    verified: true
+  },
+  {
+    id: 'vol-009',
+    name: 'Raj Kumar',
+    role: 'Staff Software Engineer',
+    company: 'Shopify',
+    industry: 'Technology',
+    city: 'Ottawa',
+    province: 'Ontario',
+    bio: 'Over 12 years in software engineering. Ready to assist newcomers with resume reviews, engineering mentorship, and tech interview prep.',
+    image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=150&h=150',
+    linkedinUrl: 'https://linkedin.com',
+    websiteUrl: 'https://shopify.com',
+    phone: '+1-613-555-0404',
+    expertise: ['Software Engineering', 'Technical Interview Prep', 'Resume Reviews', 'Shopify Ecosystem', 'System Design'],
+    bannerGradient: 'linear-gradient(135deg, #062006 0%, #5e8a11 100%)',
+    mutualCount: 22,
+    mutualNames: 'Sunil and 22 other mutual connections',
+    mutualAvatars: [
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=50&h=50',
+      'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=50&h=50'
+    ],
+    verified: true
+  },
+  {
+    id: 'vol-010',
+    name: 'Meera Joshi',
+    role: 'CPA & Financial Advisor',
+    company: 'Joshi Tax & Accounting',
+    industry: 'Finance',
+    city: 'Waterloo',
+    province: 'Ontario',
+    bio: 'Certified Public Accountant. Helping newcomer families organize their tax returns, declare global assets, and manage self-employment finance.',
+    image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150&h=150',
+    linkedinUrl: 'https://linkedin.com',
+    websiteUrl: 'https://joshitax.ca',
+    phone: '+1-519-555-0505',
+    expertise: ['CPA Tax Services', 'Global Asset Declaration', 'Self-Employed Bookkeeping', 'CRA Relays', 'GST/HST Setup'],
+    bannerGradient: 'linear-gradient(135deg, #111827 0%, #4b5563 100%)',
+    mutualCount: 13,
+    mutualNames: 'Sanj and 13 other mutual connections',
+    mutualAvatars: [
+      'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=50&h=50',
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=50&h=50'
+    ],
+    verified: true
+  }
+];
+
+export default function VolunteerDirectoryPage() {
+  const [search, setSearch] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
+  const [selectedIndustry, setSelectedIndustry] = useState('');
+  const [selectedCompany, setSelectedCompany] = useState('');
+  const [dismissedVolunteers, setDismissedVolunteers] = useState<string[]>([]);
+  const [activeVolunteer, setActiveVolunteer] = useState<Volunteer | null>(null);
+
+  const cities = useMemo(() => [...new Set(mockVolunteers.map(v => v.city))].sort(), []);
+  const industries = useMemo(() => [...new Set(mockVolunteers.map(v => v.industry))].sort(), []);
+  const companies = useMemo(() => [...new Set(mockVolunteers.map(v => v.company))].sort(), []);
+
+  const filteredVolunteers = useMemo(() => {
+    return mockVolunteers.filter(v => {
+      if (dismissedVolunteers.includes(v.id)) return false;
+
+      const query = search.toLowerCase();
+      const matchesSearch = v.name.toLowerCase().includes(query) || 
+                            v.role.toLowerCase().includes(query) || 
+                            v.company.toLowerCase().includes(query) || 
+                            v.industry.toLowerCase().includes(query) ||
+                            v.expertise.some(e => e.toLowerCase().includes(query));
+      
+      const matchesCity = selectedCity ? v.city === selectedCity : true;
+      const matchesIndustry = selectedIndustry ? v.industry === selectedIndustry : true;
+      const matchesCompany = selectedCompany ? v.company === selectedCompany : true;
+
+      return matchesSearch && matchesCity && matchesIndustry && matchesCompany;
+    });
+  }, [search, selectedCity, selectedIndustry, selectedCompany, dismissedVolunteers]);
+
+  const handleResetFilters = () => {
+    setSearch('');
+    setSelectedCity('');
+    setSelectedIndustry('');
+    setSelectedCompany('');
+  };
+
+  const handleResetDismissed = () => {
+    setDismissedVolunteers([]);
+  };
+
+  return (
+    <>
+      <Navbar />
+
+      {/* Hero Section */}
+      <section style={{ position: 'relative', paddingTop: 160, paddingBottom: 80, background: '#0c0c0e', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0 }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(8, 8, 12, 0.7) 0%, rgba(8, 8, 12, 0.98) 100%), linear-gradient(135deg, rgba(8, 8, 12, 0.9) 0%, rgba(232, 93, 4, 0.15) 100%)' }} />
+        </div>
+        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(232,93,4,0.12)', padding: '6px 16px', borderRadius: 99, marginBottom: 20, border: '1px solid rgba(232,93,4,0.2)' }}>
+            <UserCheck size={14} style={{ color: 'var(--primary-600)' }} />
+            <span style={{ color: 'var(--primary-400)', fontWeight: 700, fontSize: '0.82rem' }}>Community Mentors</span>
+          </div>
+          <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16, lineHeight: 1.15 }}>
+            Volunteer & Mentor <span style={{ color: 'var(--primary-600)' }}>Directory</span>
+          </h1>
+          <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
+            Find and connect with verified professional volunteers who can guide you on your Canadian journey.
+          </p>
+        </div>
+      </section>
+
+      {/* Directory Content */}
+      <section style={{ paddingBottom: 100, background: 'var(--bg-primary)' }}>
+        <div className="container" style={{ maxWidth: 1200 }}>
+          
+          {/* Filters Bar */}
+          <div className="biz-filter-bar" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', padding: '24px 0', borderBottom: '1px solid var(--border-color)', marginBottom: 40 }}>
+            <div style={{ flex: 1, minWidth: 260, position: 'relative' }}>
+              <Search size={16} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input
+                type="text"
+                placeholder="Search volunteers by name, company, role, or skill..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{ width: '100%', padding: '12px 16px 12px 42px', borderRadius: 99, border: '1.5px solid var(--border-color)', background: 'white', color: 'var(--text-primary)', outline: 'none', fontSize: '0.9rem' }}
+              />
+            </div>
+            
+            <select
+              value={selectedCity}
+              onChange={e => setSelectedCity(e.target.value)}
+              style={{ padding: '12px 20px', borderRadius: 99, border: '1.5px solid var(--border-color)', background: 'white', color: 'var(--text-primary)', fontSize: '0.9rem', cursor: 'pointer', outline: 'none' }}
+            >
+              <option value="">All Cities</option>
+              {cities.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            
+            <select
+              value={selectedIndustry}
+              onChange={e => setSelectedIndustry(e.target.value)}
+              style={{ padding: '12px 20px', borderRadius: 99, border: '1.5px solid var(--border-color)', background: 'white', color: 'var(--text-primary)', fontSize: '0.9rem', cursor: 'pointer', outline: 'none' }}
+            >
+              <option value="">All Industries</option>
+              {industries.map(ind => <option key={ind} value={ind}>{ind}</option>)}
+            </select>
+
+            <select
+              value={selectedCompany}
+              onChange={e => setSelectedCompany(e.target.value)}
+              style={{ padding: '12px 20px', borderRadius: 99, border: '1.5px solid var(--border-color)', background: 'white', color: 'var(--text-primary)', fontSize: '0.9rem', cursor: 'pointer', outline: 'none' }}
+            >
+              <option value="">All Companies</option>
+              {companies.map(comp => <option key={comp} value={comp}>{comp}</option>)}
+            </select>
+
+            {(search || selectedCity || selectedIndustry || selectedCompany) && (
+              <button
+                onClick={handleResetFilters}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 20px', borderRadius: 99, border: '1.5px solid var(--primary-600)', background: 'rgba(232, 93, 4, 0.05)', color: 'var(--primary-600)', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', outline: 'none', transition: 'background 0.2s' }}
+              >
+                Reset
+              </button>
+            )}
+
+            {dismissedVolunteers.length > 0 && (
+              <button
+                onClick={handleResetDismissed}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 20px', borderRadius: 99, border: '1.5px solid var(--gray-300)', background: 'white', color: 'var(--text-secondary)', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', outline: 'none', transition: 'background 0.2s' }}
+              >
+                Restore Hidden ({dismissedVolunteers.length})
+              </button>
+            )}
+
+            <div className="biz-results-count" style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontWeight: 600, marginLeft: 'auto' }}>
+              {filteredVolunteers.length} volunteer{filteredVolunteers.length !== 1 ? 's' : ''} found
+            </div>
+          </div>
+
+          {/* Grid Layout */}
+          {filteredVolunteers.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--bg-secondary)', borderRadius: 20, border: '1px solid var(--border-color)' }}>
+              <h3 style={{ fontSize: '1.3rem', fontWeight: 800, marginBottom: 8 }}>No volunteers match your search criteria</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 16 }}>Try clearing some filters or restoring hidden profiles.</p>
+              <button
+                onClick={handleResetFilters}
+                style={{ padding: '10px 24px', background: 'var(--primary-600)', color: 'white', border: 'none', borderRadius: 99, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Clear Search & Filters
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
+              {filteredVolunteers.map(vol => (
+                <div 
+                  key={vol.id} 
+                  onClick={() => setActiveVolunteer(vol)}
+                  style={{ display: 'flex', flexDirection: 'column', background: 'white', border: '1px solid var(--border-color)', borderRadius: 16, overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: 'var(--shadow-sm)', position: 'relative', cursor: 'pointer' }} 
+                  className="hover:-translate-y-1 hover:shadow-md"
+                >
+                  
+                  {/* LinkedIn-style top banner */}
+                  <div style={{ height: 70, background: vol.bannerGradient, position: 'relative' }}>
+                    {/* Close / Dismiss Icon */}
+                    <button
+                      title="Hide recommendation"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDismissedVolunteers(prev => [...prev, vol.id]);
+                      }}
+                      style={{ position: 'absolute', top: 8, right: 8, width: 26, height: 26, borderRadius: '50%', background: 'rgba(0, 0, 0, 0.45)', color: 'white', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10, outline: 'none' }}
+                      className="hover:bg-black/60"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+
+                  {/* Avatar centered and overlapping */}
+                  <div style={{ position: 'relative', marginTop: -38, alignSelf: 'center', width: 76, height: 76, borderRadius: '50%', overflow: 'hidden', border: '3.5px solid white', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
+                    <img src={vol.image} alt={vol.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+
+                  <div style={{ padding: '16px 20px 20px', display: 'flex', flexDirection: 'column', flex: 1, alignItems: 'center', textAlign: 'center' }}>
+                    {/* Name & Verified check */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>{vol.name}</div>
+                      {vol.verified && (
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="var(--primary-600)" style={{ flexShrink: 0 }}>
+                          <title>Verified Volunteer</title>
+                          <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                      )}
+                    </div>
+                    
+                    {/* Headline Role at Company */}
+                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.35, height: '2.4rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: 6 }}>
+                      {vol.role} at <span style={{ fontWeight: 700 }}>{vol.company}</span>
+                    </div>
+
+                    {/* Location */}
+                    <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 3, marginBottom: 12 }}>
+                      <MapPin size={12} style={{ color: 'var(--primary-600)' }} /> {vol.city}, {vol.province}
+                    </div>
+
+                    {/* LinkedIn-style Mutual Connections Facepile */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 'auto', padding: '10px 0', borderTop: '1px solid #f3f4f6', width: '100%', justifyContent: 'center' }}>
+                      <div style={{ display: 'flex', marginRight: 2 }}>
+                        {vol.mutualAvatars.map((av, index) => (
+                          <div 
+                            key={index} 
+                            style={{ 
+                              width: 18, 
+                              height: 18, 
+                              borderRadius: '50%', 
+                              overflow: 'hidden', 
+                              border: '1px solid white', 
+                              marginLeft: index > 0 ? -6 : 0,
+                              position: 'relative',
+                              zIndex: 2 - index
+                            }}
+                          >
+                            <img src={av} alt="Connection" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          </div>
+                        ))}
+                      </div>
+                      <span style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', textAlign: 'left', lineHeight: 1.2 }}>
+                        {vol.mutualNames}
+                      </span>
+                    </div>
+
+                    {/* Prominent LinkedIn-style Connect Button ("Ask for Help") */}
+                    <Link 
+                      href={`/volunteers/ask-help?volunteerId=${vol.id}`} 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                      className="btn hover:bg-primary-600 hover:text-white"
+                      style={{ 
+                        width: '100%', 
+                        padding: '8px 0', 
+                        fontSize: '0.84rem', 
+                        fontWeight: 700, 
+                        borderRadius: 20, 
+                        border: '1.5px solid var(--primary-600)', 
+                        background: 'white', 
+                        color: 'var(--primary-600)', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        gap: 6, 
+                        textDecoration: 'none',
+                        transition: 'all 0.2s',
+                        marginTop: 10
+                      }}
+                    >
+                      <UserCheck size={14} /> Ask for Help
+                    </Link>
+                  </div>
+
+                </div>
+              ))}
+            </div>
+          )}
+
+        </div>
+      </section>
+
+      {/* Volunteer Profile Details Modal */}
+      {activeVolunteer && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(12,12,14,0.65)', backdropFilter: 'blur(4px)', padding: 16 }}>
+          <div style={{ background: 'white', borderRadius: 24, width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto', border: '1px solid var(--border-color)', boxShadow: '0 25px 50px rgba(0,0,0,0.25)', position: 'relative' }}>
+            
+            {/* Close Button */}
+            <button
+              onClick={() => setActiveVolunteer(null)}
+              style={{ position: 'absolute', top: 16, right: 16, border: 'none', cursor: 'pointer', color: 'white', zIndex: 10, width: 30, height: 30, borderRadius: '50%', background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <X size={18} />
+            </button>
+
+            {/* Profile Header Background */}
+            <div style={{ height: 110, background: activeVolunteer.bannerGradient }} />
+            
+            <div style={{ padding: '0 32px 32px' }}>
+              
+              {/* Avatar circle */}
+              <div style={{ marginTop: -55, width: 100, height: 100, borderRadius: '50%', overflow: 'hidden', border: '5px solid white', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', marginBottom: 16 }}>
+                <img src={activeVolunteer.image} alt={activeVolunteer.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+
+              {/* Name & Verified Badge */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <h2 style={{ fontSize: '1.8rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', margin: 0 }}>{activeVolunteer.name}</h2>
+                {activeVolunteer.verified && (
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="var(--primary-600)" style={{ flexShrink: 0 }}>
+                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                )}
+              </div>
+              
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', marginBottom: 20 }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{activeVolunteer.role} at {activeVolunteer.company}</span>
+                <span style={{ color: 'var(--gray-300)' }}>•</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={14} style={{ color: 'var(--primary-600)' }} /> {activeVolunteer.city}, {activeVolunteer.province}</span>
+              </div>
+
+              <div style={{ marginBottom: 24 }}>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 8 }}>About Me</h4>
+                <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>{activeVolunteer.bio}</p>
+              </div>
+
+              {/* Skills Tags */}
+              <div style={{ marginBottom: 32 }}>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 12 }}>Expertise & Help Areas</h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {activeVolunteer.expertise.map((tag, i) => (
+                    <span key={i} style={{ fontSize: '0.76rem', fontWeight: 600, padding: '6px 12px', borderRadius: 8, background: 'rgba(232,93,4,0.06)', border: '1px solid rgba(232,93,4,0.12)', color: 'var(--primary-700)' }}>{tag}</span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Modal Actions */}
+              <div style={{ display: 'flex', gap: 16, borderTop: '1px solid var(--border-color)', paddingTop: 24, alignItems: 'center' }}>
+                
+                {/* Socials */}
+                <div style={{ display: 'flex', gap: 16 }}>
+                  <a href={activeVolunteer.linkedinUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)' }} className="hover:text-primary-600"><LinkedinIcon size={20} /></a>
+                  <a href={activeVolunteer.websiteUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)' }} className="hover:text-primary-600"><Globe size={20} /></a>
+                  <a href={`tel:${activeVolunteer.phone}`} style={{ color: 'var(--text-muted)' }} className="hover:text-primary-600"><Phone size={20} /></a>
+                </div>
+
+                {/* Main Action */}
+                <Link 
+                  href={`/volunteers/ask-help?volunteerId=${activeVolunteer.id}`}
+                  className="btn btn-primary"
+                  style={{ flex: 1, padding: '14px 24px', fontSize: '0.9rem', fontWeight: 800, background: 'var(--primary-600)', border: 'none', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: 'white', textDecoration: 'none' }}
+                >
+                  Ask for Help <ArrowRight size={16} />
+                </Link>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      <Footer />
+    </>
+  );
+}
