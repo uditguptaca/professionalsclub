@@ -24,8 +24,6 @@ const LANDMARKS: Landmark[] = [
 
 export default function CanadaTimeLapseVideo() {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [timeHour, setTimeHour] = useState(8);
-  const [timeMin, setTimeMin] = useState(0);
 
   // Rotate images every 1.5s (high speed montage)
   useEffect(() => {
@@ -36,36 +34,7 @@ export default function CanadaTimeLapseVideo() {
     return () => clearInterval(slideInterval);
   }, []);
 
-  // Time-lapse clock simulation (runs extremely fast)
-  useEffect(() => {
-    const clockInterval = setInterval(() => {
-      setTimeMin((prevMin) => {
-        let nextMin = prevMin + 15;
-        if (nextMin >= 60) {
-          nextMin = 0;
-          setTimeHour((prevHour) => {
-            let nextHour = prevHour + 1;
-            // Loop from 8:00 AM to 6:00 PM (18:00)
-            if (nextHour > 18) {
-              return 8;
-            }
-            return nextHour;
-          });
-        }
-        return nextMin;
-      });
-    }, 80); // ticks fast
 
-    return () => clearInterval(clockInterval);
-  }, []);
-
-  // Format time display
-  const formatTime = () => {
-    const ampm = timeHour >= 12 ? 'PM' : 'AM';
-    const displayHour = timeHour > 12 ? timeHour - 12 : timeHour;
-    const padMin = timeMin.toString().padStart(2, '0');
-    return `${displayHour}:${padMin} ${ampm}`;
-  };
 
   // Assign different Ken Burns animations for rotation variety
   const getAnimationClass = (index: number) => {
@@ -161,47 +130,6 @@ export default function CanadaTimeLapseVideo() {
             </div>
             <div style={{ fontSize: '0.8rem', color: 'var(--gray-400)' }}>
               {LANDMARKS[activeIndex].location}
-            </div>
-          </div>
-
-          {/* Bottom Right: Digital Time-Lapse Clock */}
-          <div style={{
-            position: 'absolute',
-            bottom: '24px',
-            right: '24px',
-            background: 'rgba(12, 12, 14, 0.7)',
-            backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '16px',
-            padding: '14px 20px',
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '14px',
-            fontFamily: 'monospace',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
-          }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-              <div style={{ fontSize: '0.62rem', color: 'var(--gray-400)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Fast Forward Time
-              </div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#e85d04' }}>
-                {formatTime()}
-              </div>
-            </div>
-            <div style={{
-              background: 'rgba(232, 93, 4, 0.15)',
-              border: '1px solid rgba(232, 93, 4, 0.3)',
-              borderRadius: '8px',
-              padding: '6px 10px',
-              fontSize: '0.85rem',
-              fontWeight: 'bold',
-              color: 'var(--primary-400)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}>
-              ⏩ FF
             </div>
           </div>
 

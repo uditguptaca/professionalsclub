@@ -41,7 +41,6 @@ export default function Home() {
             <div className="mobile-wrap" style={{ display: 'flex', gap: 40, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 32 }}>
               {[
                 { val: '5,000+', label: 'Members' },
-                { val: '89+', label: 'Cases Resolved' },
                 { val: '18', label: 'Active Volunteers' },
               ].map((s, i) => (
                 <div key={i}>
