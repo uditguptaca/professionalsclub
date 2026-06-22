@@ -64,12 +64,28 @@ export default function CanadaTimeLapseVideo() {
         </div>
       ))}
 
-      {/* Cinematic Gradient Overlays (fully transparent in center to showcase day theme) */}
+      {/* Cinematic Tint & Gradient Overlays (combining solid dark overlay + linear gradients for rich contrast) */}
       <div 
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'linear-gradient(180deg, rgba(12, 12, 14, 0.45) 0%, rgba(12, 12, 14, 0.1) 40%, rgba(12, 12, 14, 0.3) 70%, rgba(12, 12, 14, 0.95) 100%)',
+          background: 'rgba(12, 12, 14, 0.45)', // Solid black film to darken bright images
+          zIndex: 2
+        }} 
+      />
+      <div 
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(to right, rgba(12, 12, 14, 0.65) 0%, rgba(12, 12, 14, 0.2) 60%, rgba(12, 12, 14, 0.45) 100%)', // Darker film on the left for text readability
+          zIndex: 3
+        }} 
+      />
+      <div 
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(180deg, rgba(12, 12, 14, 0.4) 0%, transparent 40%, rgba(12, 12, 14, 0.3) 70%, rgba(12, 12, 14, 0.95) 100%)', // Vertical blend
           zIndex: 3
         }} 
       />

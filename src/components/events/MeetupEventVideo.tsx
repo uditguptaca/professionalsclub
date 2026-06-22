@@ -56,12 +56,20 @@ export default function MeetupEventVideo() {
         </div>
       ))}
 
-      {/* Gradient overlay to merge with theme background */}
+      {/* Cinematic Tint & Gradient Overlays (combining solid dark overlay + linear gradient for rich contrast) */}
       <div 
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'linear-gradient(135deg, rgba(12, 12, 14, 0.95) 0%, rgba(12, 12, 14, 0.4) 60%, rgba(232, 93, 4, 0.25) 100%)',
+          background: 'rgba(12, 12, 14, 0.4)', // Solid black film to darken images
+          zIndex: 2
+        }} 
+      />
+      <div 
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(135deg, rgba(12, 12, 14, 0.95) 0%, rgba(12, 12, 14, 0.45) 60%, rgba(232, 93, 4, 0.25) 100%)',
           zIndex: 3
         }} 
       />
