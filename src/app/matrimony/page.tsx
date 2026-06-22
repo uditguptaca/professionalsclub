@@ -95,10 +95,10 @@ export default function MatrimonyLandingPage() {
       }}>
         {/* Background Video */}
         <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
-          <video autoPlay loop muted playsInline style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.15 }}>
+          <video autoPlay loop muted playsInline style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.5 }}>
             <source src="/videos/couple.mp4" type="video/mp4" />
           </video>
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(8, 8, 12, 0.4) 0%, rgba(8, 8, 12, 0.98) 100%), linear-gradient(135deg, rgba(8, 8, 12, 0.8) 0%, rgba(232, 93, 4, 0.12) 100%)' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at center, rgba(12, 12, 14, 0.3) 0%, rgba(12, 12, 14, 0.75) 60%, rgba(12, 12, 14, 0.98) 100%)' }} />
         </div>
 
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 1280 }}>
