@@ -356,7 +356,7 @@ export default function AboutPage() {
           
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/portal/signup" className="btn btn-primary btn-lg" style={{ padding: '16px 36px', fontSize: '0.95rem', borderRadius: 12, background: 'var(--primary-600)', boxShadow: '0 8px 24px rgba(232, 93, 4, 0.3)' }}>
-              Join the Membership
+              Join the Community
             </Link>
             <Link href="/businesses" className="btn btn-lg" style={{ padding: '16px 36px', fontSize: '0.95rem', borderRadius: 12, background: 'rgba(255,255,255,0.06)', color: 'white', border: '1px solid rgba(255,255,255,0.12)' }}>
               Explore Businesses

@@ -72,7 +72,7 @@ const faqs = [
   },
   {
     q: 'Is there a fee for the Matrimony service?',
-    a: 'The basic matrimony service is included with your Professionals Club membership at no additional cost. Premium features may be available in the future.',
+    a: 'No, the matrimony service is 100% free. The Professionals Club is a completely free platform to join, and all services, including matrimony, are provided entirely free of cost for everyone.',
   },
 ];
 
