@@ -78,32 +78,7 @@ export default function CanadaTimeLapseVideo() {
       <div style={{ position: 'absolute', inset: 0, zIndex: 4, pointerEvents: 'none', padding: '24px' }}>
         <div style={{ width: '100%', height: '100%', position: 'relative' }}>
           
-          {/* Top Right: Playback Status */}
-          <div style={{
-            position: 'absolute',
-            top: '20px',
-            right: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            background: 'rgba(12, 12, 14, 0.65)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            padding: '8px 16px',
-            borderRadius: '12px',
-            color: 'white',
-            fontFamily: 'monospace',
-            fontSize: '0.8rem',
-            fontWeight: 'bold',
-            letterSpacing: '0.05em'
-          }} className="speed-sweep">
-            <span style={{ display: 'inline-block', width: '8px', height: '8px', background: '#e85d04', borderRadius: '50%' }} className="pulse-rec" />
-            <span style={{ color: '#e85d04' }}>REC</span>
-            <span>|</span>
-            <span>2.0x SPEED</span>
-            <span>|</span>
-            <span style={{ color: 'var(--gray-400)' }}>DAYTIME TIMELAPSE</span>
-          </div>
+
 
           {/* Bottom Left: Landmark Label HUD */}
           <div style={{
