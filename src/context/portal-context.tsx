@@ -2,6 +2,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { HelpRequest, VolunteerApplication, CaseAssignment, AdminMessage, AuditLogEntry, Member, HelpDeskStats, RequestStatus, VolunteerStatus, Business, BusinessContactRequest, BusinessStatus, EBook, VideoWorkshop, ContentTemplate, CommunityEvent, TeamMember, NewsArticle, DonationCampaign, JobPosting } from '@/types';
 import { createClient } from '@/utils/supabase/client';
+import { 
+  mockMembers, mockHelpRequests, mockVolunteerApplications, mockAssignments, 
+  mockMessages, mockAuditLog, mockStats, mockBusinesses, mockBusinessContactRequests, 
+  mockEBooks, mockWorkshops, mockTemplates, mockEvents, mockTeamMembers, 
+  mockNewsArticles, mockDonationCampaigns, mockJobPostings 
+} from '@/lib/mock-data';
 
 interface HelpDeskContextType {
   // Data
@@ -80,29 +86,25 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
 
-  const [members, setMembers] = useState<Member[]>([]);
-  const [helpRequests, setHelpRequests] = useState<HelpRequest[]>([]);
-  const [volunteerApps, setVolunteerApps] = useState<VolunteerApplication[]>([]);
-  const [assignments, setAssignments] = useState<CaseAssignment[]>([]);
-  const [messages, setMessages] = useState<AdminMessage[]>([]);
-  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
-  const [stats, setStats] = useState<HelpDeskStats>({
-    totalMembers: 0, totalRequests: 0, openRequests: 0, closedRequests: 0,
-    pendingVolunteerApps: 0, approvedVolunteers: 0, activeAssignments: 0,
-    avgResolutionDays: 0, escalations: 0, categoryCounts: {}
-  });
-  const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [businessContactRequests, setBusinessContactRequests] = useState<BusinessContactRequest[]>([]);
+  const [members, setMembers] = useState<Member[]>(mockMembers);
+  const [helpRequests, setHelpRequests] = useState<HelpRequest[]>(mockHelpRequests);
+  const [volunteerApps, setVolunteerApps] = useState<VolunteerApplication[]>(mockVolunteerApplications);
+  const [assignments, setAssignments] = useState<CaseAssignment[]>(mockAssignments);
+  const [messages, setMessages] = useState<AdminMessage[]>(mockMessages);
+  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>(mockAuditLog);
+  const [stats, setStats] = useState<HelpDeskStats>(mockStats);
+  const [businesses, setBusinesses] = useState<Business[]>(mockBusinesses);
+  const [businessContactRequests, setBusinessContactRequests] = useState<BusinessContactRequest[]>(mockBusinessContactRequests);
 
   // Dynamic Content State
-  const [ebooks, setEbooks] = useState<EBook[]>([]);
-  const [workshops, setWorkshops] = useState<VideoWorkshop[]>([]);
-  const [templates, setTemplates] = useState<ContentTemplate[]>([]);
-  const [events, setEvents] = useState<CommunityEvent[]>([]);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
-  const [donationCampaigns, setDonationCampaigns] = useState<DonationCampaign[]>([]);
-  const [jobPostings, setJobPostings] = useState<JobPosting[]>([]);
+  const [ebooks, setEbooks] = useState<EBook[]>(mockEBooks);
+  const [workshops, setWorkshops] = useState<VideoWorkshop[]>(mockWorkshops);
+  const [templates, setTemplates] = useState<ContentTemplate[]>(mockTemplates);
+  const [events, setEvents] = useState<CommunityEvent[]>(mockEvents);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(mockTeamMembers);
+  const [newsArticles, setNewsArticles] = useState<NewsArticle[]>(mockNewsArticles);
+  const [donationCampaigns, setDonationCampaigns] = useState<DonationCampaign[]>(mockDonationCampaigns);
+  const [jobPostings, setJobPostings] = useState<JobPosting[]>(mockJobPostings);
 
   // Fetch data from Supabase on mount
   useEffect(() => {

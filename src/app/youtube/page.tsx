@@ -45,6 +45,65 @@ const DEFAULT_CONFIG = {
   description: 'Watch our latest videos in this category.',
 };
 
+const MOCK_YOUTUBE_VIDEOS = [
+  {
+    id: 'yt-001',
+    title: 'How to land a Tech Job in Canada as a Newcomer',
+    category: 'Career & Job Search',
+    video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    duration: '45 mins',
+    recorded_date: 'June 10, 2026'
+  },
+  {
+    id: 'yt-002',
+    title: 'Building a Canadian Style Tech Resume & Portfolio',
+    category: 'Career & Job Search',
+    video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    duration: '32 mins',
+    recorded_date: 'May 28, 2026'
+  },
+  {
+    id: 'yt-003',
+    title: 'Canadian Tax Filing System 101 - CRA Account Walkthrough',
+    category: 'Tax & Finance',
+    video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    duration: '58 mins',
+    recorded_date: 'April 15, 2026'
+  },
+  {
+    id: 'yt-004',
+    title: 'Understanding RRSP, TFSA, and FHSA Accounts',
+    category: 'Tax & Finance',
+    video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    duration: '24 mins',
+    recorded_date: 'March 22, 2026'
+  },
+  {
+    id: 'yt-005',
+    title: 'Immigration Pathways: Express Entry & Provincial Nomination (PNP)',
+    category: 'Immigration & Visas',
+    video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    duration: '1 hr 12 mins',
+    recorded_date: 'January 18, 2026'
+  },
+  {
+    id: 'yt-006',
+    title: 'Canada PR Process Steps - Newcomer Checklist',
+    category: 'Immigration & Visas',
+    video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    duration: '38 mins',
+    recorded_date: 'February 5, 2026'
+  },
+  {
+    id: 'yt-007',
+    title: 'CPA Pathways & Licensing Process for Foreign Accountants',
+    category: 'Certifications & Licensing',
+    video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    duration: '50 mins',
+    recorded_date: 'May 02, 2026'
+  }
+];
+
 export default function YouTubePage() {
   const [videos, setVideos] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -61,14 +120,20 @@ export default function YouTubePage() {
           .select('*')
           .order('created_at', { ascending: true });
 
-        if (data) {
+        if (data && data.length > 0) {
           setVideos(data);
           const firstCat = data.find(v => v.category)?.category;
           if (firstCat) setExpandedSection(firstCat);
+        } else {
+          // Fallback to rich mock data if empty or error
+          setVideos(MOCK_YOUTUBE_VIDEOS);
+          setExpandedSection(MOCK_YOUTUBE_VIDEOS[0].category);
         }
         if (error) console.error('Supabase error:', error);
       } catch (err) {
         console.error('Error connecting to Supabase:', err);
+        setVideos(MOCK_YOUTUBE_VIDEOS);
+        setExpandedSection(MOCK_YOUTUBE_VIDEOS[0].category);
       } finally {
         setLoading(false);
       }

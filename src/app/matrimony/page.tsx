@@ -39,7 +39,6 @@ const trustBadges = [
   { icon: UserCheck, title: 'Admin-Verified Profiles', desc: 'Every profile is manually reviewed', color: 'var(--primary-600)' },
   { icon: Lock, title: 'Private & Secure', desc: 'Your data is never shared publicly', color: 'var(--primary-600)' },
   { icon: Eye, title: '100% Confidential', desc: 'Contact info visible only on consent', color: 'var(--primary-600)' },
-  { icon: Fingerprint, title: 'PIPEDA Compliant', desc: 'Full Canadian privacy law compliance', color: 'var(--primary-600)' },
 ];
 
 const stats = [

@@ -93,17 +93,25 @@ export default function EventsPage() {
   const [bookTime, setBookTime] = useState('June 25, 3:00 PM');
   const [isBooked, setIsBooked] = useState(false);
 
+  const MOCK_DB_EVENTS = [
+    { id: 'db-evt-1', title: 'Tech Career & Mock Interview Workshop', time: '10:00 AM', date: '2026-06-30' },
+    { id: 'db-evt-2', title: 'Finance & Tax Q&A for Newcomers', time: '2:00 PM', date: '2026-07-04' },
+    { id: 'db-evt-3', title: 'Virtual Resume Clinic & Peer Review', time: '6:30 PM', date: '2026-07-08' }
+  ];
+
   useEffect(() => {
     async function fetchEvents() {
       try {
         const { data, error } = await supabase.from('events').select('*');
-        if (data) {
+        if (data && data.length > 0) {
           setSupabaseEvents(data as SupabaseEvent[]);
-        } else if (error) {
-          console.error("Supabase error:", error);
+        } else {
+          setSupabaseEvents(MOCK_DB_EVENTS);
         }
+        if (error) console.error("Supabase error:", error);
       } catch (err) {
         console.error("Error connecting to Supabase:", err);
+        setSupabaseEvents(MOCK_DB_EVENTS);
       }
     }
     fetchEvents();
