@@ -20,7 +20,7 @@ const DigitalCover = ({ title, chapter, color }: { title: string; chapter: strin
     }}>
       {/* Header Mimic */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '10px' }}>
-        <span style={{ color: 'var(--primary-600)', fontWeight: 900, fontSize: '0.6rem', letterSpacing: '0.5px' }}>INDOCANADA</span>
+        <span style={{ color: 'var(--primary-600)', fontWeight: 900, fontSize: '0.6rem', letterSpacing: '0.5px' }}>CANADA</span>
         <span style={{ color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.6rem', letterSpacing: '0.5px' }}>PROFESSIONALS</span>
       </div>
 

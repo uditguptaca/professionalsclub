@@ -355,7 +355,7 @@ export default function Home() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
               {[
                 { name: 'Finance Professionals', members: '1,600+', icon: <Wallet size={20} />, desc: 'Finance networking.', link: 'https://chat.whatsapp.com/LZQxOHMI7tx3vrrXCGXit4' },
-                { name: 'CA India in Canada Community', members: '1,200+', icon: <Globe size={20} />, desc: 'Indian CAs network.', link: 'https://chat.whatsapp.com/K9k0IBLoEOW3L16gx23b0n' },
+                { name: 'CA Community in Canada', members: '1,200+', icon: <Globe size={20} />, desc: 'CA professionals network.', link: 'https://chat.whatsapp.com/K9k0IBLoEOW3L16gx23b0n' },
                 { name: 'Industry Experts & Jobs', members: '1,100+', icon: <Briefcase size={20} />, desc: 'Industry networking.', link: 'https://chat.whatsapp.com/KrfRAPFxuAjCLrZ97mlGBp' },
                 { name: 'Study Buddy Community', members: '1,000+', icon: <BookOpen size={20} />, desc: 'Peer exam support.', link: 'https://chat.whatsapp.com/FgNygqhDLDqEWsQC1xZmHZ' },
                 { name: 'Regional & Family Community', members: '900+', icon: <MapPin size={20} />, desc: 'Stay connected.', link: 'https://chat.whatsapp.com/KIjJ7ybzkhtHSVF6BGlXYK' },
@@ -383,7 +383,7 @@ export default function Home() {
                 <span style={{ color: 'var(--primary-400)', fontWeight: 800, fontSize: '0.8rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>5000+ Participants</span>
               </div>
               <h2 style={{ fontSize: '3.2rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 24, lineHeight: 1.1 }}>
-                Canada&apos;s Largest Indian <br /> 
+                Canada&apos;s Largest <br /> 
                 <span style={{ color: 'var(--primary-600)' }}>Professional Community</span>
               </h2>
               <p style={{ color: 'var(--gray-400)', fontSize: '1.15rem', lineHeight: 1.7, marginBottom: 36, maxWidth: 500 }}>

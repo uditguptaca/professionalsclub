@@ -22,7 +22,7 @@ export default function Footer() {
                 </text>
               </svg>
             </Link>
-            <p>A managed community support desk for Indian professionals in Canada. Get help with job referrals, settlement, tax guidance, mentorship, and more — all admin-mediated.</p>
+            <p>A managed community support desk for professionals in Canada. Get help with job referrals, settlement, tax guidance, mentorship, and more — all admin-mediated.</p>
             <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
               <span style={{ color: '#94a3b8', cursor: 'pointer' }}><Globe size={20} /></span>
               <span style={{ color: '#94a3b8', cursor: 'pointer' }}><AtSign size={20} /></span>

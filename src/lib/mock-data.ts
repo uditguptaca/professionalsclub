@@ -98,9 +98,9 @@ export const mockHelpRequests: HelpRequest[] = [
   {
     id: 'HR-2026-003', memberId: 'm2', memberName: 'Arjun Patel',
     category: 'Tax Consultation', title: 'First-time filing Canadian taxes as a PR',
-    description: 'I became a permanent resident in 2025. This is my first time filing taxes in Canada and I need help understanding RRSP, TFSA, and whether I should declare my foreign income from India.',
+    description: 'I became a permanent resident in 2025. This is my first time filing taxes in Canada and I need help understanding RRSP, TFSA, and whether I should declare my foreign income.',
     urgency: 'medium', preferredTimeline: 'Before April 30', previouslyRequested: false,
-    documentsRequired: true, documents: ['t4_slip.pdf', 'india_income_cert.pdf'], consentGiven: true,
+    documentsRequired: true, documents: ['t4_slip.pdf', 'foreign_income_cert.pdf'], consentGiven: true,
     supportType: 'one_time', openToGroupResources: true, contactByAdminOnly: true,
     status: 'response_sent', assignedAdminId: 'admin1', assignedVolunteerId: 'm5', assignedVolunteerName: 'Meera Joshi',
     internalNotes: [
@@ -242,7 +242,7 @@ export const mockMessages: AdminMessage[] = [
     id: 'msg-003', caseId: 'HR-2026-003', caseTitle: 'First-time filing Canadian taxes as a PR',
     senderRole: 'admin', senderUserId: 'admin1', senderName: 'Admin',
     recipientRole: 'member', moderatedFlag: false, visibilityScope: 'member_only',
-    body: 'Hi Arjun, our volunteer has prepared a comprehensive guide for your tax situation. Please find the guidance below:\n\n1. T4 Filing: File through CRA My Account. Your employer\'s T4 slip has all the info needed.\n2. RRSP: You have contribution room based on your 2025 earned income (18% of earned income, up to the annual limit).\n3. TFSA: As a PR, you accumulate room from the year you became a resident.\n4. Foreign Income: If you had Indian income in 2025, it must be declared. Canada-India tax treaty prevents double taxation.\n\nNOTICE: This is general guidance only and not professional tax advice. Please consult a licensed CPA for your specific filing.',
+    body: 'Hi Arjun, our volunteer has prepared a comprehensive guide for your tax situation. Please find the guidance below:\n\n1. T4 Filing: File through CRA My Account. Your employer\'s T4 slip has all the info needed.\n2. RRSP: You have contribution room based on your 2025 earned income (18% of earned income, up to the annual limit).\n3. TFSA: As a PR, you accumulate room from the year you became a resident.\n4. Foreign Income: If you had foreign income in 2025, it must be declared. Tax treaties prevent double taxation.\n\nNOTICE: This is general guidance only and not professional tax advice. Please consult a licensed CPA for your specific filing.',
     attachments: ['tax_guide_newcomers.pdf'], read: false, createdAt: '2026-03-26T14:00:00Z',
   },
   {
@@ -317,7 +317,7 @@ export const mockBusinesses: Business[] = [
     id: 'biz-002', name: 'Maple Leaf Immigration', slug: 'maple-leaf-immigration',
     logo: '', coverImage: '/toronto-skyline.png',
     category: 'Immigration Services', descriptionShort: 'RCIC-licensed immigration consultants helping you build your Canadian future.',
-    descriptionFull: 'Maple Leaf Immigration is a licensed RCIC firm with a 95% application success rate. We help professionals navigate Express Entry, PNP programs, work permits, PR applications, citizenship, and spousal sponsorship. Our consultants have processed over 2,000 successful applications and specialize in helping Indian professionals transition to permanent residency.',
+    descriptionFull: 'Maple Leaf Immigration is a licensed RCIC firm with a 95% application success rate. We help professionals navigate Express Entry, PNP programs, work permits, PR applications, citizenship, and spousal sponsorship. Our consultants have processed over 2,000 successful applications and specialize in helping professionals transition to permanent residency.',
     services: ['Express Entry Applications', 'Provincial Nominee Programs', 'Work Permit Extensions', 'PR Applications', 'Citizenship Applications', 'Spousal Sponsorship', 'LMIA Processing', 'Study Permits'],
     contactPerson: 'Anita Mehta, RCIC', phone: '+1 (647) 555-0230', email: 'consult@mapleleafimmigration.ca', website: 'https://mapleleafimmigration.ca',
     socialLinks: [{ platform: 'Instagram', url: 'https://instagram.com/mapleleafimmigration' }],
@@ -363,7 +363,7 @@ export const mockBusinesses: Business[] = [
     id: 'biz-005', name: 'CloudBridge Solutions', slug: 'cloudbridge-solutions',
     logo: '', coverImage: '/career-mentorship.png',
     category: 'IT Services', descriptionShort: 'Web development, cloud infrastructure, and IT consulting for businesses.',
-    descriptionFull: 'CloudBridge Solutions is a boutique IT consulting firm run by experienced professionals from the Indian tech community. We build websites, mobile apps, and cloud infrastructure for startups and small businesses. Our team has delivered 100+ projects for clients across Canada, with expertise in AWS, Azure, React, and Node.js.',
+    descriptionFull: 'CloudBridge Solutions is a boutique IT consulting firm run by experienced professionals from the tech community. We build websites, mobile apps, and cloud infrastructure for startups and small businesses. Our team has delivered 100+ projects for clients across Canada, with expertise in AWS, Azure, React, and Node.js.',
     services: ['Website Development', 'Mobile App Development', 'Cloud Migration (AWS/Azure)', 'IT Consulting', 'DevOps & CI/CD', 'UI/UX Design', 'Cybersecurity Audits', 'SaaS Product Development'],
     contactPerson: 'Rohan Desai', phone: '+1 (647) 555-0567', email: 'hello@cloudbridge.ca', website: 'https://cloudbridge.ca',
     socialLinks: [{ platform: 'GitHub', url: 'https://github.com/cloudbridge' }, { platform: 'LinkedIn', url: 'https://linkedin.com/company/cloudbridge' }],
@@ -491,7 +491,7 @@ export const mockTeamMembers: TeamMember[] = [
 
 // ========== NEWS ARTICLES ==========
 export const mockNewsArticles: NewsArticle[] = [
-  { id: 'news-001', title: 'Professionals Club Reaches 2,000 Members Milestone', summary: 'Our community has grown to over 2,000 active members across Canada, marking a significant milestone in our mission.', content: 'We are thrilled to announce that Professionals Club has officially reached 2,000 active members across Canada. This milestone reflects the growing demand for structured community support among Indian professionals and newcomers.', image: '/hero-community.png', author: 'Udit Gupta', category: 'Announcement', publishedAt: '2026-04-10T10:00:00Z', createdAt: '2026-04-10T10:00:00Z' },
+  { id: 'news-001', title: 'Professionals Club Reaches 2,000 Members Milestone', summary: 'Our community has grown to over 2,000 active members across Canada, marking a significant milestone in our mission.', content: 'We are thrilled to announce that Professionals Club has officially reached 2,000 active members across Canada. This milestone reflects the growing demand for structured community support among professionals and newcomers.', image: '/hero-community.png', author: 'Udit Gupta', category: 'Announcement', publishedAt: '2026-04-10T10:00:00Z', createdAt: '2026-04-10T10:00:00Z' },
   { id: 'news-002', title: 'Monthly Meetup Recap — March 2026', summary: '45 professionals gathered at our downtown Toronto meetup for networking and settlement guidance.', content: 'Our March 2026 Toronto meetup was another success, with 45 professionals coming together for an evening of networking, settlement guidance, and community building.', image: '/meetup_bg.png', author: 'Priya Nair', category: 'Events', publishedAt: '2026-03-30T10:00:00Z', createdAt: '2026-03-30T10:00:00Z' },
   { id: 'news-003', title: 'New Business Partnership — Sharma & Associates CPA', summary: 'We welcome Sharma & Associates CPA to our verified business directory with exclusive member rates.', content: 'Professionals Club is excited to welcome Sharma & Associates CPA as a verified partner in our business directory. Members now enjoy 15% off all tax services.', image: '/finance_bg.png', author: 'Raj Malhotra', category: 'Partnerships', publishedAt: '2026-03-15T10:00:00Z', createdAt: '2026-03-15T10:00:00Z' },
   { id: 'news-004', title: 'Tax Season 2026 — Free Resources Available', summary: 'Access our free tax filing guides, video workshops, and CPA consultation offers.', content: 'Tax season is here! Professionals Club has compiled a comprehensive set of free resources to help newcomers navigate their first Canadian tax filing.', image: '/events-meetup.png', author: 'Anita Sharma', category: 'Resources', publishedAt: '2026-03-01T10:00:00Z', createdAt: '2026-03-01T10:00:00Z' },
@@ -580,7 +580,7 @@ export const mockJobPostings: JobPosting[] = [
     id: 'job-007', title: 'Restaurant Manager', company: 'Spice Garden Toronto', companyLogo: '/event_bg.png',
     location: 'Mississauga, ON', province: 'Ontario', salaryMin: 55000, salaryMax: 70000, salaryPeriod: 'yearly',
     jobType: 'full_time', category: 'Restaurants',
-    description: 'Spice Garden is looking for an experienced Restaurant Manager to oversee daily operations of our popular South Indian restaurant in Mississauga.',
+    description: 'Spice Garden is looking for an experienced Restaurant Manager to oversee daily operations of our popular restaurant in Mississauga.',
     requirements: '3+ years restaurant management, SMART Serve certified, strong customer service skills, experience with POS systems, bilingual preferred.',
     responsibilities: 'Manage front-of-house staff, ensure food quality standards, handle customer relations, manage inventory and ordering, maintain health code compliance.',
     contactEmail: 'careers@spicegarden.ca', applyUrl: '#',

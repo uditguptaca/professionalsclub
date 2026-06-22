@@ -52,7 +52,7 @@ const stats = [
 const faqs = [
   {
     q: 'Who can join the Matrimony service?',
-    a: 'Any registered member of the Professionals Club who is of legal marriageable age can create a matrimony profile. The service is designed specifically for the Indo-Canadian professional community.',
+    a: 'Any registered member of the Professionals Club who is of legal marriageable age can create a matrimony profile. The service is designed specifically for our professional community.',
   },
   {
     q: 'Is my profile visible to everyone?',
@@ -88,7 +88,7 @@ const MOCK_MATRIMONY_PROFILES = [
     city: 'Toronto',
     province: 'Ontario',
     country: 'Canada',
-    nationality: 'Indian',
+    nationality: 'British',
     about_me: 'This profile is of my daughter who is a software engineer. She is simple and good looking, family-oriented.',
   },
   {
@@ -116,7 +116,7 @@ const MOCK_MATRIMONY_PROFILES = [
     city: 'Hamilton',
     province: 'Ontario',
     country: 'Canada',
-    nationality: 'Indian',
+    nationality: 'American',
     about_me: 'This profile is of my sister who is simple and good looking. She is currently residing in Hamilton.',
   },
   {
@@ -144,7 +144,7 @@ const MOCK_MATRIMONY_PROFILES = [
     city: 'Brampton',
     province: 'Ontario',
     country: 'Canada',
-    nationality: 'Indian',
+    nationality: 'Australian',
     about_me: 'Civil engineer working in Brampton. Looking for a companion who shares similar family values.',
   },
   {
@@ -292,7 +292,7 @@ export default function MatrimonyLandingPage() {
             }}>
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary-600)', animation: 'pulse 2s infinite' }} />
               <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
-                Trusted by Indo-Canadian Professionals
+                Trusted by Diverse Professionals
               </span>
             </div>
 
@@ -314,7 +314,7 @@ export default function MatrimonyLandingPage() {
               fontSize: 'clamp(1rem, 2.5vw, 1.25rem)', color: 'var(--gray-400)',
               lineHeight: 1.7, maxWidth: 620, margin: '0 auto 40px',
             }}>
-              Admin-verified profiles. Complete privacy. Built exclusively for the Indo-Canadian professional community.
+              Admin-verified profiles. Complete privacy. Built exclusively for our professional community.
               A safe, trusted space to find meaningful connections.
             </p>
 
@@ -373,22 +373,54 @@ export default function MatrimonyLandingPage() {
             border: '1px solid var(--border-color)',
             padding: '24px 32px',
           }}>
-            <h3 style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: '1.25rem',
-              fontWeight: 800,
-              marginBottom: 20,
-              color: 'var(--text-primary)',
+            <div style={{
               display: 'flex',
+              justifyContent: 'space-between',
               alignItems: 'center',
-              gap: 8,
+              marginBottom: 20,
+              flexWrap: 'wrap',
+              gap: 12,
             }}>
-              <Search size={20} style={{ color: 'var(--primary-600)' }} /> Search for Life Partner in Canada
-            </h3>
+              <h3 style={{
+                fontSize: '1.25rem',
+                fontWeight: 800,
+                color: 'var(--text-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                margin: 0,
+              }}>
+                <Search size={20} style={{ color: 'var(--primary-600)' }} /> Search for Life Partner in Canada
+              </h3>
+              <button 
+                onClick={() => {
+                  setSearchGender('female');
+                  setSearchReligion('any');
+                  setSearchNationality('any');
+                  setMinAge(18);
+                  setMaxAge(50);
+                  setActiveTab('brides');
+                }}
+                style={{
+                  background: 'rgba(232, 93, 4, 0.08)',
+                  border: '1px solid rgba(232, 93, 4, 0.2)',
+                  color: 'var(--primary-600)',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  padding: '6px 12px',
+                  borderRadius: 6,
+                  transition: 'all 0.2s',
+                }}
+                className="clear-filters-btn"
+              >
+                Clear Filters
+              </button>
+            </div>
             
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
               gap: 20,
               alignItems: 'flex-end',
             }}>
@@ -503,38 +535,15 @@ export default function MatrimonyLandingPage() {
                   }}
                 >
                   <option value="any">Any Nationality</option>
-                  <option value="Indian">Indian</option>
                   <option value="Canadian">Canadian</option>
+                  <option value="British">British</option>
+                  <option value="American">American</option>
+                  <option value="Australian">Australian</option>
                   <option value="Other">Other</option>
                 </select>
               </div>
 
-              {/* Reset/Clear */}
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button 
-                  onClick={() => {
-                    setSearchGender('female');
-                    setSearchReligion('any');
-                    setSearchNationality('any');
-                    setMinAge(18);
-                    setMaxAge(50);
-                    setActiveTab('brides');
-                  }}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: 10,
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--bg-secondary)',
-                    color: 'var(--text-primary)',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    flex: 1,
-                  }}
-                >
-                  Clear Filters
-                </button>
-              </div>
+
             </div>
             <div style={{ marginTop: 12, fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
               <Globe size={12} /> Strictly displaying profiles residing in <strong>Canada</strong>.
@@ -719,7 +728,7 @@ export default function MatrimonyLandingPage() {
                           </div>
                           <div style={{ display: 'flex', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                             <span style={{ width: 100, fontWeight: 600 }}>Nationality:</span>
-                            <span>{profile.nationality || 'Indo-Canadian'}</span>
+                            <span>{profile.nationality || 'Canadian'}</span>
                           </div>
                           <div style={{ display: 'flex', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                             <span style={{ width: 100, fontWeight: 600 }}>Mother Tongue:</span>
@@ -827,7 +836,7 @@ export default function MatrimonyLandingPage() {
                   <li>All members are verified by Professionals Club admins.</li>
                   <li>Photos are blurred by default for maximum privacy.</li>
                   <li>Contact details are shared only upon mutual consent.</li>
-                  <li>This service is strictly for Indo-Canadian residents in Canada.</li>
+                  <li>This service is strictly for verified residents in Canada.</li>
                 </ul>
               </div>
             </div>
@@ -949,7 +958,7 @@ export default function MatrimonyLandingPage() {
               { icon: ShieldCheck, title: 'Verified Community', desc: 'Only admin-verified profiles are visible. No fake or spam profiles — ever.' },
               { icon: Eye, title: 'Photo Privacy Controls', desc: 'Set photos to visible, blurred, or request-only. You\'re always in control.' },
               { icon: Send, title: 'Admin-Mediated Intros', desc: 'Contact details are shared only through our admin team after mutual consent.' },
-              { icon: Globe, title: 'Indo-Canadian Focus', desc: 'Designed specifically for Indian professionals in Canada — PRs, citizens, and work permit holders.' },
+              { icon: Globe, title: 'Global Connections', desc: 'Designed specifically for professionals residing in Canada — PRs, citizens, and work permit holders.' },
               { icon: Clock, title: 'Active Profiles Only', desc: 'We track activity and encourage engagement. No dormant or abandoned profiles cluttering your search.' },
             ].map((feature) => {
               const Icon = feature.icon;
@@ -1077,7 +1086,7 @@ export default function MatrimonyLandingPage() {
             fontSize: '1.1rem', color: 'var(--gray-400)',
             maxWidth: 500, margin: '0 auto 36px', lineHeight: 1.7,
           }}>
-            Join hundreds of verified Indo-Canadian professionals on their journey to meaningful connections.
+            Join hundreds of verified professionals on their journey to meaningful connections.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/portal/member/matrimony/create" className="btn btn-lg" style={{
