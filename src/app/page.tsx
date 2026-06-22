@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Users, Briefcase, Calendar, Shield, HandHeart, MapPin, FileText, BookOpen, GraduationCap, CheckCircle, Phone, ChevronRight, Star, HelpCircle, ShieldCheck, Tag, Building2, Home as HomeIcon, Landmark, Hospital, Bus, ClipboardList, DollarSign, Globe, Wallet } from 'lucide-react';
+import { ArrowRight, Heart, Users, Briefcase, Calendar, Shield, HandHeart, MapPin, FileText, BookOpen, GraduationCap, CheckCircle, Phone, ChevronRight, Star, HelpCircle, ShieldCheck, Tag, Building2, Home as HomeIcon, Landmark, Hospital, Bus, ClipboardList, DollarSign, Globe, Wallet } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 
@@ -67,7 +67,7 @@ export default function Home() {
           }}>
             {[
               { icon: <Briefcase size={20} />, title: 'Search for Latest Jobs', desc: 'Browse latest jobs', color: 'var(--primary-600)', href: '/jobs' },
-              { icon: <Users size={20} />, title: 'Join WhatsApp Communities', desc: 'Connect with professionals', color: 'var(--primary-600)', href: '/groups' },
+              { icon: <Heart size={20} />, title: 'Verified Matrimonial Portal', desc: 'Find your life partner in Canada', color: 'var(--primary-600)', href: '/matrimony' },
               { icon: <Briefcase size={20} />, title: 'Job Referrals & Placement', desc: 'Get matched for referrals', color: 'var(--primary-500)', href: '/portal/signup' },
               { icon: <GraduationCap size={20} />, title: 'Career Mentorship & Resume Review', desc: 'Long-term mentorship', color: 'var(--primary-600)', href: '/portal/signup' },
               { icon: <MapPin size={20} />, title: 'Newcomer Settlement & Tax Support', desc: 'Housing, banking, etc', color: 'var(--accent-600)', href: '/settlement' },
