@@ -16,15 +16,27 @@ export default function Navbar() {
   return (
     <nav className="navbar">
       <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(232, 93, 4, 0.12)', border: '1.5px solid var(--primary-600)', boxShadow: '0 0 15px rgba(232, 93, 4, 0.25)', flexShrink: 0 }}>
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2l1.35 3.03 2.9-.62-.77 2.92 2.77-1.28-.9 2.76 2.92.51-2.25 1.94 1.13 2.59-2.92-.59.6 2.85-2.02-.9v3.63h-1.63v-3.63l-2.02.9.6-2.85-2.92.59 1.13-2.59-2.25-1.94 2.92-.51-.9-2.76 2.77 1.28-.77-2.92 2.9.62L12 2z" fill="#e85d04" stroke="#ffffff" strokeWidth="0.75" />
-            </svg>
-          </div>
-          <span style={{ fontSize: '1.3rem', fontWeight: 900, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em', color: '#ffffff', whiteSpace: 'nowrap' }}>
-            Professionals <span style={{ color: 'var(--primary-600)' }}>Club</span>
-          </span>
+        <Link href="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          <svg viewBox="0 0 210 44" width="210" height="44" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
+            {/* Maple Leaf Icon on the left */}
+            <g transform="translate(0, 2)">
+              {/* Back glow for maple leaf */}
+              <path d="M18 2l2.02 4.55 4.35-.93-1.15 4.38 4.16-1.92-1.35 4.14 4.38.77-3.38 2.9 1.69 3.89-4.38-.88.9 4.27-3.03-1.35v5.44h-2.45v-5.44l-3.03 1.35.9-4.27-4.38.88 1.69-3.89-3.38-2.9 4.38-.77-1.35-4.14 4.16 1.92-1.15-4.38 4.35.93L18 2z" fill="rgba(232, 93, 4, 0.25)" />
+              {/* Maple Leaf border and fill */}
+              <path d="M18 2l2.02 4.55 4.35-.93-1.15 4.38 4.16-1.92-1.35 4.14 4.38.77-3.38 2.9 1.69 3.89-4.38-.88.9 4.27-3.03-1.35v5.44h-2.45v-5.44l-3.03 1.35.9-4.27-4.38.88 1.69-3.89-3.38-2.9 4.38-.77-1.35-4.14 4.16 1.92-1.15-4.38 4.35.93L18 2z" fill="#e85d04" stroke="#ffffff" strokeWidth="0.8" strokeLinejoin="round" />
+            </g>
+            
+            {/* Stacked Typography on the right */}
+            {/* "PROFESSIONALS" in small spaced uppercase white text */}
+            <text x="44" y="16" fill="#ffffff" fontSize="10" fontWeight="900" letterSpacing="1.8" fontFamily="var(--font-display), system-ui, sans-serif">
+              PROFESSIONALS
+            </text>
+            
+            {/* "CLUB" in bold uppercase orange text */}
+            <text x="44" y="36" fill="#e85d04" fontSize="19.5" fontWeight="950" letterSpacing="0.8" fontFamily="var(--font-display), system-ui, sans-serif">
+              CLUB
+            </text>
+          </svg>
         </Link>
 
         <ul className="navbar-links" style={mobileOpen ? { display: 'flex', position: 'absolute', top: '100%', left: 0, right: 0, background: 'rgba(12, 12, 14, 0.98)', flexDirection: 'column', gap: '16px', padding: 'var(--space-6)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', alignItems: 'stretch' } : {}}>
