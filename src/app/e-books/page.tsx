@@ -274,7 +274,7 @@ export default function EBooksPage() {
             E-Books <span style={{ color: 'var(--primary-600)' }}>Library</span>
           </h1>
           <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
-            Premium guides curated by experts to simplify your Canadian settlement journey.
+            Comprehensive guides curated by experts to simplify your Canadian settlement journey.
           </p>
         </div>
       </section>

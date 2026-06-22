@@ -787,9 +787,9 @@ export default function MatrimonyLandingPage() {
 
             {/* Sidebar */}
             <div>
-              {/* Premium Card */}
+              {/* Free Platform Card */}
               <div style={{
-                background: 'linear-gradient(135deg, #1e1b4b, #311005)',
+                background: 'linear-gradient(135deg, #0f172a, #1e293b)',
                 borderRadius: 20,
                 padding: 28,
                 color: 'white',
@@ -799,18 +799,18 @@ export default function MatrimonyLandingPage() {
               }}>
                 <Sparkles size={32} style={{ color: 'var(--primary-400)', marginBottom: 16 }} />
                 <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 800, color: 'white', marginBottom: 12 }}>
-                  Premium Brides & Grooms
+                  100% Free Platform
                 </h4>
                 <p style={{ fontSize: '0.82rem', color: 'rgba(255, 255, 255, 0.75)', lineHeight: 1.6, marginBottom: 20 }}>
-                  Get matching profiles suggested directly to your inbox, contact verified members directly, and boost your profile visibility.
+                  This portal is completely free to use. There are no premium tiers, registration fees, or hidden charges. We are a community initiative dedicated to helping professionals connect.
                 </p>
                 <Link 
-                  href="/portal/member/matrimony/upgrade" 
+                  href="/portal/member/matrimony/create" 
                   style={{
                     display: 'block',
                     textAlign: 'center',
-                    background: 'white',
-                    color: '#1e1b4b',
+                    background: 'var(--primary-600)',
+                    color: 'white',
                     padding: '12px',
                     borderRadius: 10,
                     fontWeight: 700,
@@ -818,7 +818,7 @@ export default function MatrimonyLandingPage() {
                     textDecoration: 'none',
                   }}
                 >
-                  Upgrade to Premium
+                  Create Your Free Profile
                 </Link>
               </div>
 

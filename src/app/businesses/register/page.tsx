@@ -673,7 +673,7 @@ export default function BusinessSignupPage() {
                 {/* Promotion Interest */}
                 <div>
                   <label style={labelStyle}>Promotion Interest <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
-                  <span style={hintStyle}>Select any premium promotions you&rsquo;d be interested in. Our team will reach out with details.</span>
+                  <span style={hintStyle}>Select any featured promotion options you&rsquo;d be interested in. Our team will reach out with details.</span>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
                     {PROMOTION_OPTIONS.map(opt => (
                       <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 10, border: `1.5px solid ${promotionInterests.includes(opt.value) ? 'var(--primary-500)' : 'var(--gray-200)'}`, cursor: 'pointer', background: promotionInterests.includes(opt.value) ? 'rgba(99,102,241,0.04)' : 'white', transition: 'all 0.15s' }}>
