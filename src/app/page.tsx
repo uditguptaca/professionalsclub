@@ -11,7 +11,7 @@ export default function Home() {
       <Navbar />
       
       {/* ─── HERO ─── */}
-      <section style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: '#0c0c0e' }}>
+      <section className="hero-section">
         {/* Background Video (Canada Landmarks - Fast 2x Speed) */}
         <CanadaTimeLapseVideo />
 
@@ -19,12 +19,12 @@ export default function Home() {
         <div className="container mobile-stack" style={{ position: 'relative', zIndex: 10, display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 40, alignItems: 'center' }}>
           {/* Left */}
           <div>
-            <h1 style={{ fontSize: '4.2rem', fontWeight: 900, color: 'white', lineHeight: 1.15, letterSpacing: '-0.02em', marginBottom: 24, fontFamily: 'var(--font-display)' }}>
+            <h1>
               Your Canadian Journey,<br />
               <span style={{ color: 'var(--primary-600)' }}>Fully Supported.</span>
             </h1>
 
-            <p style={{ fontSize: '1.25rem', color: 'rgba(255, 255, 255, 0.9)', lineHeight: 1.7, marginBottom: 36, maxWidth: 520, textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)' }}>
+            <p style={{ fontSize: '1.25rem', color: 'rgba(255, 255, 255, 0.95)', lineHeight: 1.7, marginBottom: 36, maxWidth: 520, textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)' }}>
               Expert volunteers. Secure support.
             </p>
 

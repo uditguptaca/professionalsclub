@@ -74,14 +74,14 @@ export default function MeetupEventVideo() {
 
           {/* Bottom Left / Top Right (Mobile): Event Activity HUD */}
           <div className="event-hud">
-            <div className="event-hud-count" style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary-400)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            <div className="event-hud-count">
               Meetup Feed
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <div className="event-hud-title" style={{ fontSize: '1.1rem', fontWeight: 900, letterSpacing: '-0.01em', fontFamily: 'var(--font-display)' }}>
+              <div className="event-hud-title">
                 {MEETUP_IMAGES[activeIndex].title}
               </div>
-              <div className="event-hud-subtitle" style={{ fontSize: '0.8rem', color: 'var(--gray-400)' }}>
+              <div className="event-hud-subtitle">
                 {MEETUP_IMAGES[activeIndex].desc}
               </div>
             </div>

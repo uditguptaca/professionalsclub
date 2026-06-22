@@ -82,14 +82,14 @@ export default function CanadaTimeLapseVideo() {
 
           {/* Bottom Left / Top Right (Mobile): Landmark Label HUD */}
           <div className="landmark-hud">
-            <div className="landmark-hud-count" style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary-400)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            <div className="landmark-hud-count">
               Landmark {activeIndex + 1}/{LANDMARKS.length}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <div className="landmark-hud-title" style={{ fontSize: '1.2rem', fontWeight: 900, letterSpacing: '-0.01em', fontFamily: 'var(--font-display)' }}>
+              <div className="landmark-hud-title">
                 {LANDMARKS[activeIndex].name}
               </div>
-              <div className="landmark-hud-subtitle" style={{ fontSize: '0.8rem', color: 'var(--gray-400)' }}>
+              <div className="landmark-hud-subtitle">
                 {LANDMARKS[activeIndex].location}
               </div>
             </div>

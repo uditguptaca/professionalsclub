@@ -132,17 +132,17 @@ export default function EventsPage() {
       <Navbar />
 
       {/* Hero */}
-      <section style={{ position: 'relative', paddingTop: 160, paddingBottom: 100, background: '#0c0c0e', overflow: 'hidden' }}>
+      <section className="events-hero-section">
         <MeetupEventVideo />
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(232,93,4,0.15)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(232,93,4,0.3)' }}>
             <Calendar size={14} style={{ color: 'var(--primary-400)' }} />
             <span style={{ color: 'var(--primary-200)', fontWeight: 700, fontSize: '0.82rem' }}>Events & Meetups</span>
           </div>
-          <h1 style={{ fontSize: '3.6rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
+          <h1>
             Connect, Learn & <span style={{ color: 'var(--primary-600)' }}>Grow Together</span>
           </h1>
-          <p style={{ fontSize: '1.25rem', color: 'var(--gray-400)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
+          <p style={{ fontSize: '1.25rem', color: 'rgba(255, 255, 255, 0.95)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto', textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)' }}>
             Meetups, workshops, and livestreams to help you thrive in Canada.
           </p>
         </div>
