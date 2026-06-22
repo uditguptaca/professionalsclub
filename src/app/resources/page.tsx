@@ -15,14 +15,14 @@ export default function ResourcesPage() {
       <Navbar />
 
       {/* Hero */}
-      <section style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: '#0c0c0e' }}>
+      <section className="resources-hero-section" style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: '#0c0c0e' }}>
         {/* Background Animation (Resources) */}
         <div className="cinematic-bg-container">
           <img 
             src="/images/resources_hero.png" 
             alt="Learning resources background" 
             className="cinematic-bg"
-            style={{ opacity: 0.25 }}
+            style={{ opacity: 0.42 }}
           />
           <div className="cinematic-overlay" />
         </div>

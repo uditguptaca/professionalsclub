@@ -169,14 +169,14 @@ export default function GroupsPage() {
       <Navbar />
 
       {/* ─── HERO ─── */}
-      <section style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: '#0c0c0e' }}>
+      <section className="groups-hero-section" style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: '#0c0c0e' }}>
         {/* Background Animation (WhatsApp Communities) */}
         <div className="cinematic-bg-container">
           <img 
             src="/images/whatsapp_hero.png" 
             alt="WhatsApp Communities background" 
             className="cinematic-bg"
-            style={{ opacity: 0.22 }}
+            style={{ opacity: 0.42 }}
           />
           <div className="cinematic-overlay" />
         </div>

@@ -124,14 +124,14 @@ export default function SettlementPage() {
       <Navbar />
 
       {/* Hero */}
-      <section style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: '#0c0c0e' }}>
+      <section className="settlement-hero-section" style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: '#0c0c0e' }}>
         {/* Background Animation (Toronto Skyline CN Tower) */}
         <div className="cinematic-bg-container">
           <img 
             src="/images/toronto_skyline_hero.png" 
             alt="Settlement background" 
             className="cinematic-bg"
-            style={{ opacity: 0.25 }}
+            style={{ opacity: 0.45 }}
           />
           <div className="cinematic-overlay" />
         </div>

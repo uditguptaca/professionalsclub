@@ -260,9 +260,16 @@ export default function VolunteerDirectoryPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section style={{ position: 'relative', paddingTop: 160, paddingBottom: 80, background: '#0c0c0e', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0 }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(8, 8, 12, 0.7) 0%, rgba(8, 8, 12, 0.98) 100%), linear-gradient(135deg, rgba(8, 8, 12, 0.9) 0%, rgba(232, 93, 4, 0.15) 100%)' }} />
+      <section className="volunteers-hero-section" style={{ position: 'relative', paddingTop: 160, paddingBottom: 80, background: '#0c0c0e', overflow: 'hidden' }}>
+        {/* Background Animation (Volunteers) */}
+        <div className="cinematic-bg-container">
+          <img 
+            src="/volunteer-help.png" 
+            alt="Volunteers background" 
+            className="cinematic-bg"
+            style={{ opacity: 0.42 }}
+          />
+          <div className="cinematic-overlay" />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(232,93,4,0.12)', padding: '6px 16px', borderRadius: 99, marginBottom: 20, border: '1px solid rgba(232,93,4,0.2)' }}>

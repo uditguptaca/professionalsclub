@@ -3963,8 +3963,40 @@ tr:last-child td { border-bottom: none; }
 .cinematic-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(12, 12, 14, 0.4) 0%, rgba(12, 12, 14, 0.72) 40%, rgba(12, 12, 14, 0.98) 100%);
+  background: linear-gradient(180deg, rgba(12, 12, 14, 0.45) 0%, rgba(12, 12, 14, 0.58) 50%, rgba(12, 12, 14, 0.96) 100%);
   z-index: 2;
+}
+
+/* Cinematic Page Hero Heading Styles & Shadows for absolute legibility */
+.about-hero-section h1,
+.biz-hero h1,
+.groups-hero-section h1,
+.resources-hero-section h1,
+.settlement-hero-section h1,
+.volunteers-hero-section h1 {
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.7) !important;
+}
+
+@media (max-width: 768px) {
+  .about-hero-section h1,
+  .biz-hero h1,
+  .groups-hero-section h1,
+  .resources-hero-section h1,
+  .settlement-hero-section h1,
+  .volunteers-hero-section h1 {
+    font-size: 2.0rem !important;
+    line-height: 1.25 !important;
+  }
+  
+  .about-hero-section,
+  .biz-hero,
+  .groups-hero-section,
+  .resources-hero-section,
+  .settlement-hero-section,
+  .volunteers-hero-section {
+    padding-top: 150px !important;
+    padding-bottom: 70px !important;
+  }
 }
 
 /* Time-Lapse Video Background Simulator Classes */
