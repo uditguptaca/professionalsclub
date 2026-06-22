@@ -72,31 +72,18 @@ export default function MeetupEventVideo() {
           
 
 
-          {/* Bottom Left: Event Activity HUD */}
-          <div style={{
-            position: 'absolute',
-            bottom: '20px',
-            left: '20px',
-            background: 'rgba(12, 12, 14, 0.7)',
-            backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(232, 93, 4, 0.3)',
-            borderRadius: '16px',
-            padding: '14px 18px',
-            color: 'white',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '4px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-            maxWidth: '360px'
-          }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary-400)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Meetup Event Feed • Active Loop
+          {/* Bottom Left / Top Right (Mobile): Event Activity HUD */}
+          <div className="event-hud">
+            <div className="event-hud-count" style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary-400)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              Meetup Feed
             </div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 900, letterSpacing: '-0.01em', fontFamily: 'var(--font-display)' }}>
-              {MEETUP_IMAGES[activeIndex].title}
-            </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--gray-400)' }}>
-              {MEETUP_IMAGES[activeIndex].desc}
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className="event-hud-title" style={{ fontSize: '1.1rem', fontWeight: 900, letterSpacing: '-0.01em', fontFamily: 'var(--font-display)' }}>
+                {MEETUP_IMAGES[activeIndex].title}
+              </div>
+              <div className="event-hud-subtitle" style={{ fontSize: '0.8rem', color: 'var(--gray-400)' }}>
+                {MEETUP_IMAGES[activeIndex].desc}
+              </div>
             </div>
           </div>
 

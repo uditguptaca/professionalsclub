@@ -80,31 +80,18 @@ export default function CanadaTimeLapseVideo() {
           
 
 
-          {/* Bottom Left: Landmark Label HUD */}
-          <div style={{
-            position: 'absolute',
-            bottom: '24px',
-            left: '24px',
-            background: 'rgba(12, 12, 14, 0.7)',
-            backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(232, 93, 4, 0.3)',
-            borderRadius: '16px',
-            padding: '16px 20px',
-            color: 'white',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '4px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-            maxWidth: '340px'
-          }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary-400)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Canadian Landmark {activeIndex + 1} of {LANDMARKS.length}
+          {/* Bottom Left / Top Right (Mobile): Landmark Label HUD */}
+          <div className="landmark-hud">
+            <div className="landmark-hud-count" style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary-400)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              Landmark {activeIndex + 1}/{LANDMARKS.length}
             </div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 900, letterSpacing: '-0.01em', fontFamily: 'var(--font-display)' }}>
-              {LANDMARKS[activeIndex].name}
-            </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--gray-400)' }}>
-              {LANDMARKS[activeIndex].location}
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className="landmark-hud-title" style={{ fontSize: '1.2rem', fontWeight: 900, letterSpacing: '-0.01em', fontFamily: 'var(--font-display)' }}>
+                {LANDMARKS[activeIndex].name}
+              </div>
+              <div className="landmark-hud-subtitle" style={{ fontSize: '0.8rem', color: 'var(--gray-400)' }}>
+                {LANDMARKS[activeIndex].location}
+              </div>
             </div>
           </div>
 

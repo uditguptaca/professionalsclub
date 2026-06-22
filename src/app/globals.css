@@ -4068,4 +4068,103 @@ tr:last-child td { border-bottom: none; }
   }
 }
 
+/* Responsive HUD style for Canada Landmark time-lapse */
+.landmark-hud {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  background: rgba(12, 12, 14, 0.75);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(232, 93, 4, 0.35);
+  border-radius: 16px;
+  padding: 16px 20px;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  max-width: 340px;
+  z-index: 10;
+  pointer-events: none;
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .landmark-hud {
+    bottom: auto !important;
+    left: auto !important;
+    top: 92px !important;
+    right: 16px !important;
+    padding: 8px 14px !important;
+    border-radius: 99px !important;
+    max-width: 290px !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
+  }
+  .landmark-hud-subtitle {
+    display: none !important;
+  }
+  .landmark-hud-count {
+    font-size: 0.65rem !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    padding-right: 8px;
+    margin-right: 2px;
+  }
+  .landmark-hud-title {
+    font-size: 0.82rem !important;
+  }
+}
+
+/* Responsive HUD style for Event Activity */
+.event-hud {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(12, 12, 14, 0.75);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(232, 93, 4, 0.35);
+  border-radius: 16px;
+  padding: 14px 18px;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  max-width: 360px;
+  z-index: 10;
+  pointer-events: none;
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .event-hud {
+    bottom: auto !important;
+    left: auto !important;
+    top: 92px !important;
+    right: 16px !important;
+    padding: 8px 14px !important;
+    border-radius: 99px !important;
+    max-width: 290px !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
+  }
+  .event-hud-subtitle {
+    display: none !important;
+  }
+  .event-hud-count {
+    font-size: 0.65rem !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    padding-right: 8px;
+    margin-right: 2px;
+  }
+  .event-hud-title {
+    font-size: 0.82rem !important;
+  }
+}
+
+
 
