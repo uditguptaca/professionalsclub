@@ -106,7 +106,7 @@ export default function Navbar() {
         </ul>
 
         <div className="navbar-actions">
-          <Link href="/portal/auth" className="btn btn-primary mobile-hide">Login / Signup</Link>
+          <Link href="/portal/auth" className="btn btn-primary mobile-hide" style={{ padding: '8px 16px', fontSize: '0.85rem', borderRadius: '8px' }}>Login / Signup</Link>
           <button className="navbar-mobile-toggle" onClick={() => setMobileOpen(!mobileOpen)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {mobileOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
