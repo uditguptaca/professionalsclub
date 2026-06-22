@@ -7,6 +7,7 @@ import Footer from '@/components/shared/Footer';
 import { usePortal } from '@/context/portal-context';
 import { Calendar, MapPin, Clock, Users, Video, ArrowRight, X, CheckCircle2, Ticket, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import MeetupEventVideo from '@/components/events/MeetupEventVideo';
 
 interface SupabaseEvent {
   id: string | number;
@@ -132,10 +133,7 @@ export default function EventsPage() {
 
       {/* Hero */}
       <section style={{ position: 'relative', paddingTop: 160, paddingBottom: 100, background: '#0c0c0e', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/events-meetup.png" alt="Community meetup event" fill style={{ objectFit: 'cover', opacity: 0.25 }} />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.95), rgba(232,93,4,0.25))' }} />
-        </div>
+        <MeetupEventVideo />
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(232,93,4,0.15)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(232,93,4,0.3)' }}>
             <Calendar size={14} style={{ color: 'var(--primary-400)' }} />

@@ -16,10 +16,14 @@ export default function Navbar() {
   return (
     <nav className="navbar">
       <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-          <img src="/professionals-club-logo.png" alt="Professionals Club Logo" style={{ width: '40px', height: '40px', objectFit: 'contain', filter: 'brightness(0) invert(1)', flexShrink: 0 }} />
-          <span style={{ fontSize: '1.25rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em', color: '#ffffff', whiteSpace: 'nowrap' }}>
-            Professionals <span style={{ color: 'var(--primary-600)', fontWeight: 500 }}>Club</span>
+        <Link href="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(232, 93, 4, 0.12)', border: '1.5px solid var(--primary-600)', boxShadow: '0 0 15px rgba(232, 93, 4, 0.25)', flexShrink: 0 }}>
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2l1.35 3.03 2.9-.62-.77 2.92 2.77-1.28-.9 2.76 2.92.51-2.25 1.94 1.13 2.59-2.92-.59.6 2.85-2.02-.9v3.63h-1.63v-3.63l-2.02.9.6-2.85-2.92.59 1.13-2.59-2.25-1.94 2.92-.51-.9-2.76 2.77 1.28-.77-2.92 2.9.62L12 2z" fill="#e85d04" stroke="#ffffff" strokeWidth="0.75" />
+            </svg>
+          </div>
+          <span style={{ fontSize: '1.3rem', fontWeight: 900, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em', color: '#ffffff', whiteSpace: 'nowrap' }}>
+            Professionals <span style={{ color: 'var(--primary-600)' }}>Club</span>
           </span>
         </Link>
 

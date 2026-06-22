@@ -37,241 +37,178 @@ interface Volunteer {
   phone: string;
   expertise: string[];
   bannerGradient: string;
-  mutualCount: number;
-  mutualNames: string;
-  mutualAvatars: string[];
   verified: boolean;
 }
 
 const mockVolunteers: Volunteer[] = [
   {
     id: 'vol-001',
-    name: 'Sunil Khatri',
-    role: 'CEO & Founder',
-    company: 'Meshroad Marketing',
-    industry: 'Marketing',
+    name: 'Sarah Jenkins',
+    role: 'Senior UX Designer',
+    company: 'DesignCraft Studio',
+    industry: 'Design',
     city: 'Toronto',
     province: 'Ontario',
-    bio: 'Helping businesses improve their sales using Sales Funnels, CRM Automation, Search Engine Optimization, and Programmatic Advertising. Proud Google and Meta Ads Partner.',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150&h=150',
+    bio: 'Specializing in user research, wireframing, and interactive design. Excited to guide newcomers on entering the Canadian creative and product design industries.',
+    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=150&h=150',
     linkedinUrl: 'https://linkedin.com',
-    websiteUrl: 'https://meshroad.com',
+    websiteUrl: 'https://designcraft.ca',
     phone: '+1-604-555-5679',
-    expertise: ['Sales Funnels', 'CRM Automation', 'SEO', 'Google Ads', 'Meta Ads', 'Programmatic Advertising'],
+    expertise: ['UX Design', 'User Research', 'Figma', 'Product Strategy', 'Creative Portfolio'],
     bannerGradient: 'linear-gradient(135deg, #1e1e24 0%, #e85d04 100%)',
-    mutualCount: 24,
-    mutualNames: 'Balinder and 24 other mutual connections',
-    mutualAvatars: [
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=50&h=50',
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=50&h=50'
-    ],
     verified: true
   },
   {
     id: 'vol-002',
-    name: 'Balinder Singh',
-    role: 'Stock Market Educator',
-    company: 'Morning Bulls',
-    industry: 'Finance',
+    name: 'David Chen',
+    role: 'Senior Systems Architect',
+    company: 'TechFlow Solutions',
+    industry: 'Technology',
     city: 'Calgary',
     province: 'Alberta',
-    bio: 'Trader, investor, and mentor. Helping newcomers understand Canadian capital markets, personal financial literacy, and investing fundamentals.',
-    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150&h=150',
+    bio: 'Over 15 years designing scalable cloud infrastructure and enterprise software. Ready to help newcomers with cloud certification pathing and resume updates.',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150&h=150',
     linkedinUrl: 'https://linkedin.com',
-    websiteUrl: 'https://morningbulls.ca',
+    websiteUrl: 'https://techflow.ca',
     phone: '+1-403-555-0199',
-    expertise: ['Capital Markets', 'Stock Trading', 'Portfolio Management', 'Financial Literacy', 'Investing'],
+    expertise: ['Cloud Infrastructure', 'System Architecture', 'AWS/Azure', 'DevOps', 'Tech Careers'],
     bannerGradient: 'linear-gradient(135deg, #0f172a 0%, #3b82f6 100%)',
-    mutualCount: 18,
-    mutualNames: 'Sunil and 18 other mutual connections',
-    mutualAvatars: [
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=50&h=50',
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=50&h=50'
-    ],
     verified: true
   },
   {
     id: 'vol-003',
-    name: 'Aanchal Ghai',
-    role: 'Notary Public & Founder',
-    company: 'Anchal Ghai Notary Corp',
-    industry: 'Legal',
+    name: 'Amara Okafor',
+    role: 'Clinical Nurse Specialist',
+    company: 'CareFirst Health',
+    industry: 'Healthcare',
     city: 'Ottawa',
     province: 'Ontario',
-    bio: 'Professional notary services. Assisting newcomers and residents with document notarization, travel letters, lease validation, and legal declarations.',
-    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150&h=150',
+    bio: 'Passionate healthcare professional with a background in nursing education. Helping foreign-trained medical graduates navigate licensing and credential validation.',
+    image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=150&h=150',
     linkedinUrl: 'https://linkedin.com',
-    websiteUrl: 'https://ghainotary.ca',
+    websiteUrl: 'https://carefirsthealth.ca',
     phone: '+1-613-555-0811',
-    expertise: ['Notarizations', 'Lease Validation', 'Travel Letters', 'Affidavits', 'Legal Declarations'],
+    expertise: ['Nursing Licensing', 'Credential Evaluation', 'Healthcare Navigation', 'Patient Care', 'Residency Prep'],
     bannerGradient: 'linear-gradient(135deg, #111827 0%, #10b981 100%)',
-    mutualCount: 12,
-    mutualNames: 'Dr. Savita and 12 other mutual connections',
-    mutualAvatars: [
-      'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=50&h=50',
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=50&h=50'
-    ],
     verified: true
   },
   {
     id: 'vol-004',
-    name: 'Dr. Savita Drall',
-    role: 'Yogic Diet & Lifestyle Coach',
-    company: 'Health Gaga',
-    industry: 'Healthcare',
-    city: 'Vancouver',
-    province: 'British Columbia',
-    bio: 'MD background. Guiding clients to improve holistic health, nutrition, wellness, and navigate the Canadian healthcare system.',
-    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=150&h=150',
+    name: 'Jean-Pierre Dubois',
+    role: 'Corporate Legal Counsel',
+    company: 'Apex Legal Advisors',
+    industry: 'Legal',
+    city: 'Montreal',
+    province: 'Quebec',
+    bio: 'Bilingual legal counsel specializing in corporate governance and contract negotiation. Assisting newcomers in understanding business law and licensing.',
+    image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=150&h=150',
     linkedinUrl: 'https://linkedin.com',
-    websiteUrl: 'https://healthgaga.com',
-    phone: '+1-604-555-0123',
-    expertise: ['Holistic Health', 'Yogic Nutrition', 'Wellness Coaching', 'Healthcare Navigation', 'Dietary Guidance'],
+    websiteUrl: 'https://apexlegal.ca',
+    phone: '+1-514-555-0123',
+    expertise: ['Corporate Governance', 'Contract Negotiation', 'Business Law', 'Regulatory Compliance', 'Legal Advising'],
     bannerGradient: 'linear-gradient(135deg, #180828 0%, #8b5cf6 100%)',
-    mutualCount: 15,
-    mutualNames: 'Aanchal and 15 other mutual connections',
-    mutualAvatars: [
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=50&h=50',
-      'https://images.unsplash.com/photo-1620122303020-43ec4b6cf7f8?auto=format&fit=crop&q=80&w=50&h=50'
-    ],
     verified: true
   },
   {
     id: 'vol-005',
-    name: 'Tarundeep Singh',
-    role: 'Insurance Advisor',
-    company: 'Central Agencies Ltd',
+    name: 'Elena Rostova',
+    role: 'Principal Financial Analyst',
+    company: 'Maple Wealth Management',
     industry: 'Finance',
-    city: 'Surrey',
+    city: 'Vancouver',
     province: 'British Columbia',
-    bio: 'Independent advisor with 20+ years of experience helping newcomers select auto, home, life, and business insurance plans suited for new immigrants.',
-    image: 'https://images.unsplash.com/photo-1620122303020-43ec4b6cf7f8?auto=format&fit=crop&q=80&w=150&h=150',
+    bio: 'Chartered Financial Analyst advising high-net-worth clients. Assisting newcomers with Canadian personal finance, investment basics, and wealth planning.',
+    image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150&h=150',
     linkedinUrl: 'https://linkedin.com',
-    websiteUrl: 'https://centralagencies.com',
-    phone: '+1-778-555-0922',
-    expertise: ['Auto Insurance', 'Home Insurance', 'Life Insurance', 'Commercial Insurance', 'Risk Management'],
+    websiteUrl: 'https://maplewealth.ca',
+    phone: '+1-604-555-0922',
+    expertise: ['CFA Pathways', 'Investment Planning', 'Wealth Management', 'Personal Finance', 'Tax Optimization'],
     bannerGradient: 'linear-gradient(135deg, #3b0764 0%, #f43f5e 100%)',
-    mutualCount: 9,
-    mutualNames: 'Balinder and 9 other mutual connections',
-    mutualAvatars: [
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=50&h=50',
-      'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=50&h=50'
-    ],
     verified: true
   },
   {
     id: 'vol-006',
-    name: 'Mandeep "Meenie" Hundal',
-    role: 'Registered Physiotherapist',
-    company: 'Willow Wellness Physio',
-    industry: 'Healthcare',
-    city: 'Brampton',
-    province: 'Ontario',
-    bio: 'Physiotherapist specialized in rehabilitation, workspace ergonomics, sports injuries, and guiding wellness routines for working professionals.',
-    image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=150&h=150',
+    name: 'Marcus Aurelius',
+    role: 'Construction Project Manager',
+    company: 'Nova Infrastructure',
+    industry: 'Engineering',
+    city: 'Halifax',
+    province: 'Nova Scotia',
+    bio: 'Civil engineer overseeing major highway and transit developments. Happy to counsel engineers on obtaining their P.Eng. designation in Canada.',
+    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150&h=150',
     linkedinUrl: 'https://linkedin.com',
-    websiteUrl: 'https://willowphysio.ca',
-    phone: '+1-905-555-0248',
-    expertise: ['Physical Therapy', 'Workplace Ergonomics', 'Rehabilitation', 'Sports Injuries', 'Pain Management'],
+    websiteUrl: 'https://novainfra.ca',
+    phone: '+1-902-555-0248',
+    expertise: ['Civil Engineering', 'Project Management', 'P.Eng Designation', 'Infrastructure Design', 'Safety Regulations'],
     bannerGradient: 'linear-gradient(135deg, #1e3a8a 0%, #06b6d4 100%)',
-    mutualCount: 11,
-    mutualNames: 'Akashdeep and 11 other mutual connections',
-    mutualAvatars: [
-      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=50&h=50',
-      'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=50&h=50'
-    ],
     verified: true
   },
   {
     id: 'vol-007',
-    name: 'Sanj Garg',
-    role: 'Licensed Financial Planner',
-    company: 'Independent Financial Partners',
-    industry: 'Finance',
+    name: 'Priya Sharma',
+    role: 'Marketing Director',
+    company: 'Zenith Brand Co',
+    industry: 'Marketing',
     city: 'Mississauga',
     province: 'Ontario',
-    bio: 'Specialized in helping newcomer families set up wealth accumulation structures, buy their first homes, and design Canadian tax-sheltered portfolios.',
-    image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=150&h=150',
+    bio: 'Creative strategist building multi-channel advertising campaigns. Offering resume reviews and networking strategies for aspiring marketers.',
+    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150&h=150',
     linkedinUrl: 'https://linkedin.com',
-    websiteUrl: 'https://independentfp.ca',
+    websiteUrl: 'https://zenithbrand.ca',
     phone: '+1-905-555-0812',
-    expertise: ['Wealth Accumulation', 'First-Time Home Buyers', 'TFSA/RRSP Planning', 'Tax Sheltering', 'Budgeting'],
+    expertise: ['Brand Strategy', 'Digital Marketing', 'Public Relations', 'Content Creation', 'Campaign Optimization'],
     bannerGradient: 'linear-gradient(135deg, #022c22 0%, #14b8a6 100%)',
-    mutualCount: 14,
-    mutualNames: 'Tarundeep and 14 other mutual connections',
-    mutualAvatars: [
-      'https://images.unsplash.com/photo-1620122303020-43ec4b6cf7f8?auto=format&fit=crop&q=80&w=50&h=50',
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=50&h=50'
-    ],
     verified: true
   },
   {
     id: 'vol-008',
-    name: 'Akashdeep Kaur',
-    role: 'Registered Physiotherapist',
-    company: 'Langley Registered Physiotherapy',
-    industry: 'Healthcare',
+    name: 'Kenji Sato',
+    role: 'DevOps Engineer',
+    company: 'CloudScale Technologies',
+    industry: 'Technology',
     city: 'Surrey',
     province: 'British Columbia',
-    bio: 'Clinical manager and physiotherapist with extensive experience in neuro-musculoskeletal conditions, active rehab, and home care exercises.',
-    image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=150&h=150',
+    bio: 'Specialist in container orchestration, continuous integration, and Kubernetes pipelines. Assisting tech graduates in starting their Canadian DevOps careers.',
+    image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=150&h=150',
     linkedinUrl: 'https://linkedin.com',
-    websiteUrl: 'https://langleyphysio.com',
+    websiteUrl: 'https://cloudscale.ca',
     phone: '+1-604-555-0723',
-    expertise: ['Active Rehabilitation', 'Neuro-musculoskeletal Care', 'Home Exercise Plans', 'Pain Relief', 'Joint Mobilization'],
+    expertise: ['Kubernetes', 'CI/CD Pipelines', 'Docker', 'Automation', 'Infrastructure as Code'],
     bannerGradient: 'linear-gradient(135deg, #4c0519 0%, #db2777 100%)',
-    mutualCount: 8,
-    mutualNames: 'Mandeep and 8 other mutual connections',
-    mutualAvatars: [
-      'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=50&h=50',
-      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=50&h=50'
-    ],
     verified: true
   },
   {
     id: 'vol-009',
-    name: 'Raj Kumar',
-    role: 'Staff Software Engineer',
-    company: 'Shopify',
-    industry: 'Technology',
-    city: 'Ottawa',
-    province: 'Ontario',
-    bio: 'Over 12 years in software engineering. Ready to assist newcomers with resume reviews, engineering mentorship, and tech interview prep.',
-    image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=150&h=150',
+    name: 'Chloe Dupont',
+    role: 'HR Specialist',
+    company: 'TalentPulse Consulting',
+    industry: 'HR & Recruitment',
+    city: 'Quebec City',
+    province: 'Quebec',
+    bio: 'Recruiter and HR professional helping companies scale. Offering invaluable feedback on resume templates, job hunt strategies, and interview conduct.',
+    image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150&h=150',
     linkedinUrl: 'https://linkedin.com',
-    websiteUrl: 'https://shopify.com',
-    phone: '+1-613-555-0404',
-    expertise: ['Software Engineering', 'Technical Interview Prep', 'Resume Reviews', 'Shopify Ecosystem', 'System Design'],
+    websiteUrl: 'https://talentpulse.ca',
+    phone: '+1-418-555-0404',
+    expertise: ['Resume Formatting', 'Interview Coaching', 'Job Hunt Strategies', 'Talent Acquisition', 'HR Policies'],
     bannerGradient: 'linear-gradient(135deg, #062006 0%, #5e8a11 100%)',
-    mutualCount: 22,
-    mutualNames: 'Sunil and 22 other mutual connections',
-    mutualAvatars: [
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=50&h=50',
-      'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=50&h=50'
-    ],
     verified: true
   },
   {
     id: 'vol-010',
-    name: 'Meera Joshi',
-    role: 'CPA & Financial Advisor',
-    company: 'Joshi Tax & Accounting',
-    industry: 'Finance',
-    city: 'Waterloo',
-    province: 'Ontario',
-    bio: 'Certified Public Accountant. Helping newcomer families organize their tax returns, declare global assets, and manage self-employment finance.',
-    image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150&h=150',
+    name: 'Mateo Rodriguez',
+    role: 'Operations Director',
+    company: 'Global Logistics',
+    industry: 'Operations',
+    city: 'Winnipeg',
+    province: 'Manitoba',
+    bio: 'Supply chain expert managing cross-border freight. Ready to advise professionals on supply chain logistics pathways and professional certifications.',
+    image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=150&h=150',
     linkedinUrl: 'https://linkedin.com',
-    websiteUrl: 'https://joshitax.ca',
-    phone: '+1-519-555-0505',
-    expertise: ['CPA Tax Services', 'Global Asset Declaration', 'Self-Employed Bookkeeping', 'CRA Relays', 'GST/HST Setup'],
+    websiteUrl: 'https://globallogistics.ca',
+    phone: '+1-204-555-0505',
+    expertise: ['Supply Chain Management', 'Logistics Operations', 'Freight Management', 'Inventory Control', 'Process Optimization'],
     bannerGradient: 'linear-gradient(135deg, #111827 0%, #4b5563 100%)',
-    mutualCount: 13,
-    mutualNames: 'Sanj and 13 other mutual connections',
-    mutualAvatars: [
-      'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=50&h=50',
-      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=50&h=50'
-    ],
     verified: true
   }
 ];
@@ -473,32 +410,6 @@ export default function VolunteerDirectoryPage() {
                       <MapPin size={12} style={{ color: 'var(--primary-600)' }} /> {vol.city}, {vol.province}
                     </div>
 
-                    {/* LinkedIn-style Mutual Connections Facepile */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 'auto', padding: '10px 0', borderTop: '1px solid #f3f4f6', width: '100%', justifyContent: 'center' }}>
-                      <div style={{ display: 'flex', marginRight: 2 }}>
-                        {vol.mutualAvatars.map((av, index) => (
-                          <div 
-                            key={index} 
-                            style={{ 
-                              width: 18, 
-                              height: 18, 
-                              borderRadius: '50%', 
-                              overflow: 'hidden', 
-                              border: '1px solid white', 
-                              marginLeft: index > 0 ? -6 : 0,
-                              position: 'relative',
-                              zIndex: 2 - index
-                            }}
-                          >
-                            <img src={av} alt="Connection" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          </div>
-                        ))}
-                      </div>
-                      <span style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', textAlign: 'left', lineHeight: 1.2 }}>
-                        {vol.mutualNames}
-                      </span>
-                    </div>
-
                     {/* Prominent LinkedIn-style Connect Button ("Ask for Help") */}
                     <Link 
                       href={`/volunteers/ask-help?volunteerId=${vol.id}`} 
@@ -521,7 +432,7 @@ export default function VolunteerDirectoryPage() {
                         gap: 6, 
                         textDecoration: 'none',
                         transition: 'all 0.2s',
-                        marginTop: 10
+                        marginTop: 'auto'
                       }}
                     >
                       <UserCheck size={14} /> Ask for Help

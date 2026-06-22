@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { ArrowRight, Heart, Users, Briefcase, Calendar, Shield, HandHeart, MapPin, FileText, BookOpen, GraduationCap, CheckCircle, Phone, ChevronRight, Star, HelpCircle, ShieldCheck, Tag, Building2, Home as HomeIcon, Landmark, Hospital, Bus, ClipboardList, DollarSign, Globe, Wallet } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
+import CanadaTimeLapseVideo from '@/components/home/CanadaTimeLapseVideo';
 
 export default function Home() {
   return (
@@ -10,16 +11,12 @@ export default function Home() {
       <Navbar />
       
       {/* ─── HERO ─── */}
-      <section style={{ position: 'relative', padding: '120px 0', display: 'flex', alignItems: 'center', overflow: 'hidden', background: '#0c0c0e' }}>
-        {/* Background Video */}
-        <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
-          <video autoPlay loop muted playsInline style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.55 }}>
-            <source src="/videos/canada.mp4" type="video/mp4" />
-          </video>
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(12, 12, 14, 0.92) 0%, rgba(12, 12, 14, 0.7) 50%, rgba(12, 12, 14, 0.35) 100%)' }} />
-        </div>
+      <section style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: '#0c0c0e' }}>
+        {/* Background Video (Canada Landmarks - Fast 2x Speed) */}
+        <CanadaTimeLapseVideo />
 
-        <div className="container mobile-stack" style={{ position: 'relative', zIndex: 10, display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 40, alignItems: 'center', paddingTop: 40 }}>
+
+        <div className="container mobile-stack" style={{ position: 'relative', zIndex: 10, display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 40, alignItems: 'center' }}>
           {/* Left */}
           <div>
             <h1 style={{ fontSize: '4.2rem', fontWeight: 900, color: 'white', lineHeight: 1.15, letterSpacing: '-0.02em', marginBottom: 24, fontFamily: 'var(--font-display)' }}>

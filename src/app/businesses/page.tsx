@@ -44,13 +44,16 @@ export default function BusinessDirectoryPage() {
       <Navbar />
 
       {/* Hero */}
-      <section className="biz-hero" style={{ position: 'relative', padding: '120px 0 60px', overflow: 'hidden' }}>
-        {/* Background Video */}
-        <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
-          <video autoPlay loop muted playsInline style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.5 }}>
-            <source src="/videos/canada.mp4" type="video/mp4" />
-          </video>
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(12, 12, 14, 0.9) 0%, rgba(12, 12, 14, 0.65) 50%, rgba(12, 12, 14, 0.3) 100%)' }} />
+      <section className="biz-hero" style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: '#0c0c0e' }}>
+        {/* Background Animation (Toronto Skyline CN Tower) */}
+        <div className="cinematic-bg-container">
+          <img 
+            src="/images/toronto_skyline_hero.png" 
+            alt="Toronto Skyline with CN Tower" 
+            className="cinematic-bg"
+            style={{ opacity: 0.5 }}
+          />
+          <div className="cinematic-overlay" />
         </div>
 
         <div className="container" style={{ position: 'relative', zIndex: 10 }}>

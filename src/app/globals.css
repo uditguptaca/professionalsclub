@@ -456,10 +456,10 @@ select.input { appearance: auto; }
   left: 0;
   right: 0;
   z-index: 100;
-  padding: var(--space-4) 0;
-  background: rgba(12, 12, 14, 0.96);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 24px 0; /* More spaced out and premium padding */
+  background: rgba(12, 12, 14, 0.35); /* Elegant transparent overlay */
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   transition: all var(--transition-base);
 }
 .navbar-inner {
@@ -3930,4 +3930,142 @@ tr:last-child td { border-bottom: none; }
     grid-template-columns: 1fr;
   }
 }
+
+/* ─── CINEMATIC PANNING HERO BACKGROUNDS ─── */
+@keyframes kenburns-pan-zoom {
+  0% {
+    transform: scale(1.02) translate(0, 0);
+  }
+  50% {
+    transform: scale(1.10) translate(-1%, -0.5%);
+  }
+  100% {
+    transform: scale(1.02) translate(0, 0);
+  }
+}
+
+.cinematic-bg-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.cinematic-bg {
+  position: absolute;
+  inset: -30px;
+  width: calc(100% + 60px);
+  height: calc(100% + 60px);
+  object-fit: cover;
+  animation: kenburns-pan-zoom 30s ease-in-out infinite;
+}
+
+.cinematic-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(12, 12, 14, 0.4) 0%, rgba(12, 12, 14, 0.72) 40%, rgba(12, 12, 14, 0.98) 100%);
+  z-index: 2;
+}
+
+/* Time-Lapse Video Background Simulator Classes */
+.time-lapse-slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+}
+
+.time-lapse-slide.active {
+  opacity: 1;
+  z-index: 2;
+}
+
+.animate-ken-burns-1 {
+  animation: kb-zoom-in-right 12s ease-in-out infinite alternate;
+}
+
+.animate-ken-burns-2 {
+  animation: kb-zoom-out-left 12s ease-in-out infinite alternate;
+}
+
+.animate-ken-burns-3 {
+  animation: kb-zoom-in-center 12s ease-in-out infinite alternate;
+}
+
+@keyframes kb-zoom-in-right {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  100% {
+    transform: scale(1.18) translate(-2%, -1%);
+  }
+}
+
+@keyframes kb-zoom-out-left {
+  0% {
+    transform: scale(1.18) translate(2%, 1%);
+  }
+  100% {
+    transform: scale(1) translate(0, 0);
+  }
+}
+
+@keyframes kb-zoom-in-center {
+  0% {
+    transform: scale(1.05) translate(0, 0);
+  }
+  100% {
+    transform: scale(1.22) translate(1%, -2%);
+  }
+}
+
+/* Blinking REC dot */
+.pulse-rec {
+  animation: pulse-dot 1.2s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.2;
+    transform: scale(0.9);
+  }
+}
+
+/* Speed indicator highlight sweep */
+.speed-sweep {
+  position: relative;
+  overflow: hidden;
+}
+
+.speed-sweep::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: sweep 2.5s infinite;
+}
+
+@keyframes sweep {
+  0% {
+    left: -100%;
+  }
+  50% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
 

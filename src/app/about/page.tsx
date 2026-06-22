@@ -16,9 +16,16 @@ export default function AboutPage() {
       <Navbar />
 
       {/* 1. HERO SECTION */}
-      <section style={{ padding: '160px 0 100px', background: '#0c0c0e', color: 'white', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, opacity: 0.15 }}>
-          <Image src="/hero-community.png" alt="Community Background" fill style={{ objectFit: 'cover' }} />
+      <section style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: '#0c0c0e', color: 'white', textAlign: 'center' }}>
+        {/* Background Animation (Toronto Skyline CN Tower) */}
+        <div className="cinematic-bg-container">
+          <img 
+            src="/images/toronto_skyline_hero.png" 
+            alt="About Us background" 
+            className="cinematic-bg"
+            style={{ opacity: 0.18 }}
+          />
+          <div className="cinematic-overlay" />
         </div>
         <div className="container" style={{ maxWidth: 850, position: 'relative', zIndex: 10 }}>
           <h1 style={{ fontSize: '3.6rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15, color: '#ffffff' }}>

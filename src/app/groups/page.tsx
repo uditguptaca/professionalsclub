@@ -169,10 +169,16 @@ export default function GroupsPage() {
       <Navbar />
 
       {/* ─── HERO ─── */}
-      <section style={{ position: 'relative', paddingTop: 130, paddingBottom: 90, background: '#0c0c0e', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/events-meetup.png" alt="Community" fill style={{ objectFit: 'cover', opacity: 0.15 }} priority />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(8, 8, 12, 0.5) 0%, rgba(8, 8, 12, 0.98) 100%), linear-gradient(135deg, rgba(8, 8, 12, 0.9) 0%, rgba(232, 93, 4, 0.18) 100%)' }} />
+      <section style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: '#0c0c0e' }}>
+        {/* Background Animation (WhatsApp Communities) */}
+        <div className="cinematic-bg-container">
+          <img 
+            src="/images/whatsapp_hero.png" 
+            alt="WhatsApp Communities background" 
+            className="cinematic-bg"
+            style={{ opacity: 0.22 }}
+          />
+          <div className="cinematic-overlay" />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 1280 }}>
           <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 60, flexWrap: 'wrap' }}>

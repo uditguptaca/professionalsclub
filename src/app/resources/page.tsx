@@ -15,10 +15,16 @@ export default function ResourcesPage() {
       <Navbar />
 
       {/* Hero */}
-      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: '#0c0c0e', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/career-mentorship.png" alt="Learning resources" fill style={{ objectFit: 'cover', opacity: 0.2 }} />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(8, 8, 12, 0.5) 0%, rgba(8, 8, 12, 0.98) 100%), linear-gradient(135deg, rgba(8, 8, 12, 0.9) 0%, rgba(232, 93, 4, 0.18) 100%)' }} />
+      <section style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: '#0c0c0e' }}>
+        {/* Background Animation (Resources) */}
+        <div className="cinematic-bg-container">
+          <img 
+            src="/images/resources_hero.png" 
+            alt="Learning resources background" 
+            className="cinematic-bg"
+            style={{ opacity: 0.25 }}
+          />
+          <div className="cinematic-overlay" />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 1280, textAlign: 'center' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(232, 93, 4, 0.15)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(232, 93, 4, 0.3)' }}>

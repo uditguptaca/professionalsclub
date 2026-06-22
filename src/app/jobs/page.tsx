@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Search, MapPin, Briefcase, ChevronRight, Code2, Calculator, Cpu, Stethoscope, Landmark, Tv2, UtensilsCrossed, GraduationCap, Heart, DollarSign, ArrowRight, Filter, Building2, Clock, ExternalLink } from 'lucide-react';
+import { Search, MapPin, Briefcase, ChevronRight, Code2, Calculator, Cpu, Stethoscope, Landmark, Tv2, UtensilsCrossed, GraduationCap, Heart, DollarSign, ArrowRight, Filter, Building2, Clock, ExternalLink, ChevronDown, Tag } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { usePortal } from '@/context/portal-context';
@@ -135,16 +135,16 @@ export default function JobsPage() {
       <Navbar />
 
       {/* ─── HERO ─── */}
-      <section style={{ position: 'relative', minHeight: '520px', display: 'flex', alignItems: 'center', overflow: 'hidden', background: '#0c0c0e' }}>
+      <section style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: '#0c0c0e' }}>
         {/* Background Video */}
         <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
-          <video autoPlay loop muted playsInline style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.5 }}>
+          <video autoPlay loop muted playsInline style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.55 }}>
             <source src="/videos/work.mp4" type="video/mp4" />
           </video>
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(12, 12, 14, 0.9) 0%, rgba(12, 12, 14, 0.65) 50%, rgba(12, 12, 14, 0.3) 100%)' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(12, 12, 14, 0.9) 0%, rgba(12, 12, 14, 0.72) 50%, rgba(12, 12, 14, 0.45) 100%)' }} />
         </div>
 
-        <div className="container mobile-stack" style={{ position: 'relative', zIndex: 10, maxWidth: 1200, display: 'grid', gridTemplateColumns: '1fr 420px', gap: 24, alignItems: 'center', padding: '60px 24px 40px' }}>
+        <div className="container mobile-stack" style={{ position: 'relative', zIndex: 10, maxWidth: 1200, display: 'grid', gridTemplateColumns: '1fr 420px', gap: 24, alignItems: 'center' }}>
           {/* Left */}
           <div>
             <h1 style={{ fontSize: '3.2rem', fontWeight: 900, color: 'white', lineHeight: 1.1, marginBottom: 20, fontFamily: 'var(--font-display)' }}>
@@ -189,35 +189,43 @@ export default function JobsPage() {
                 />
               </div>
 
-              <select
-                value={typeFilter}
-                onChange={e => setTypeFilter(e.target.value)}
-                style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-secondary)', color: typeFilter ? 'var(--text-primary)' : 'var(--text-muted)' }}
-              >
-                <option value="">All Types</option>
-                <option value="full_time">Full Time</option>
-                <option value="part_time">Part Time</option>
-                <option value="contract">Contract</option>
-                <option value="freelance">Freelance</option>
-                <option value="internship">Internship</option>
-              </select>
+              <div style={{ position: 'relative' }}>
+                <Filter size={16} style={{ position: 'absolute', left: 14, top: 14, color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                <select
+                  value={typeFilter}
+                  onChange={e => setTypeFilter(e.target.value)}
+                  style={{ width: '100%', padding: '12px 36px 12px 40px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-secondary)', color: typeFilter ? 'var(--text-primary)' : 'var(--text-muted)', appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none' }}
+                >
+                  <option value="">All Types</option>
+                  <option value="full_time">Full Time</option>
+                  <option value="part_time">Part Time</option>
+                  <option value="contract">Contract</option>
+                  <option value="freelance">Freelance</option>
+                  <option value="internship">Internship</option>
+                </select>
+                <ChevronDown size={16} style={{ position: 'absolute', right: 14, top: 14, color: 'var(--text-muted)', pointerEvents: 'none' }} />
+              </div>
 
-              <select
-                value={categoryFilter}
-                onChange={e => setCategoryFilter(e.target.value)}
-                style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-secondary)', color: categoryFilter ? 'var(--text-primary)' : 'var(--text-muted)' }}
-              >
-                <option value="">Choose a category...</option>
-                {Object.keys(CATEGORY_ICONS).map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-                <option value="Marketing">Marketing</option>
-                <option value="Finance">Finance</option>
-                <option value="Legal">Legal</option>
-                <option value="HR & Recruitment">HR & Recruitment</option>
-                <option value="Design">Design</option>
-                <option value="Other">Other</option>
-              </select>
+              <div style={{ position: 'relative' }}>
+                <Tag size={16} style={{ position: 'absolute', left: 14, top: 14, color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                <select
+                  value={categoryFilter}
+                  onChange={e => setCategoryFilter(e.target.value)}
+                  style={{ width: '100%', padding: '12px 36px 12px 40px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-secondary)', color: categoryFilter ? 'var(--text-primary)' : 'var(--text-muted)', appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none' }}
+                >
+                  <option value="">Choose a category...</option>
+                  {Object.keys(CATEGORY_ICONS).map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                  <option value="Marketing">Marketing</option>
+                  <option value="Finance">Finance</option>
+                  <option value="Legal">Legal</option>
+                  <option value="HR & Recruitment">HR & Recruitment</option>
+                  <option value="Design">Design</option>
+                  <option value="Other">Other</option>
+                </select>
+                <ChevronDown size={16} style={{ position: 'absolute', right: 14, top: 14, color: 'var(--text-muted)', pointerEvents: 'none' }} />
+              </div>
 
               <button type="submit" style={{ width: '100%', padding: '14px', background: 'var(--primary-600)', color: 'white', border: 'none', borderRadius: 8, fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s' }}>
                 <Search size={16} /> SEARCH
