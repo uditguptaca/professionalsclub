@@ -24,7 +24,7 @@ export default function Home() {
               <span style={{ color: 'var(--primary-600)' }}>Fully Supported.</span>
             </h1>
 
-            <p style={{ fontSize: '1.25rem', color: 'var(--gray-400)', lineHeight: 1.7, marginBottom: 36, maxWidth: 520 }}>
+            <p style={{ fontSize: '1.25rem', color: 'rgba(255, 255, 255, 0.9)', lineHeight: 1.7, marginBottom: 36, maxWidth: 520, textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)' }}>
               Expert volunteers. Secure support.
             </p>
 
