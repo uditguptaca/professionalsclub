@@ -10,18 +10,18 @@ export default function CommunityPage() {
       <Navbar />
 
       {/* Hero */}
-      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: '#0f172a', overflow: 'hidden' }}>
+      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: '#0c0c0e', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
           <Image src="/volunteer-help.png" alt="Community support" fill style={{ objectFit: 'cover', opacity: 0.25 }} />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.95), rgba(220,38,38,0.25))' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.95), rgba(232,93,4,0.15))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.15)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(239,68,68,0.3)' }}>
-            <Video size={14} style={{ color: '#fca5a5' }} />
-            <span style={{ color: '#fca5a5', fontWeight: 700, fontSize: '0.82rem' }}>Community Hub</span>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(232,93,4,0.08)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(232,93,4,0.2)' }}>
+            <Video size={14} style={{ color: 'var(--primary-600)' }} />
+            <span style={{ color: 'var(--primary-600)', fontWeight: 700, fontSize: '0.82rem' }}>Community Hub</span>
           </div>
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
-            Community & <span style={{ background: 'linear-gradient(135deg, #f87171, #fb923c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Media</span>
+            Community & <span style={{ color: 'var(--primary-600)' }}>Media</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
             Community-driven content designed to help you settle smoothly in Canada.
@@ -34,16 +34,16 @@ export default function CommunityPage() {
         <div className="container" style={{ maxWidth: 1200 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center' }}>
             <div>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fef2f2', padding: '6px 14px', borderRadius: 99, marginBottom: 20, border: '1px solid #fecaca' }}>
-                <Video size={14} style={{ color: '#dc2626' }} />
-                <span style={{ color: '#dc2626', fontWeight: 700, fontSize: '0.78rem' }}>Official Channel</span>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--primary-50)', padding: '6px 14px', borderRadius: 99, marginBottom: 20, border: '1px solid rgba(232, 93, 4, 0.2)' }}>
+                <Video size={14} style={{ color: 'var(--primary-600)' }} />
+                <span style={{ color: 'var(--primary-600)', fontWeight: 700, fontSize: '0.78rem' }}>Official Channel</span>
               </div>
               <h2 style={{ fontSize: '2.4rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>Professionals Club on YouTube</h2>
               <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: 28 }}>
                 Watch our past workshops, tutorials, and settlement guidance sessions on our official YouTube channel.
               </p>
               <div style={{ display: 'flex', gap: 12 }}>
-                <button className="btn" style={{ background: '#dc2626', color: 'white', border: 'none', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button className="btn" style={{ background: 'var(--primary-600)', color: 'white', border: 'none', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <PlayCircle size={18} /> Subscribe on YouTube
                 </button>
                 <button className="btn btn-outline" style={{ background: 'var(--bg-primary)', padding: '14px 24px' }}>Browse Videos</button>
@@ -51,10 +51,10 @@ export default function CommunityPage() {
             </div>
 
             {/* Featured Video Embed */}
-            <div style={{ borderRadius: 20, overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.15)', position: 'relative', aspectRatio: '16/9', background: '#0f172a', cursor: 'pointer' }}>
+            <div style={{ borderRadius: 20, overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.15)', position: 'relative', aspectRatio: '16/9', background: '#0c0c0e', cursor: 'pointer' }}>
               <Image src="/events-meetup.png" alt="Video thumbnail" fill style={{ objectFit: 'cover', opacity: 0.5 }} />
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)' }} />
-              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 72, height: 72, borderRadius: '50%', background: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(220,38,38,0.4)' }}>
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(12,12,14,0.7), transparent)' }} />
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 72, height: 72, borderRadius: '50%', background: 'var(--primary-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(232,93,4,0.4)' }}>
                 <PlayCircle size={36} style={{ color: 'white', marginLeft: 3 }} />
               </div>
               <div style={{ position: 'absolute', bottom: 20, left: 24, right: 24, zIndex: 2 }}>
@@ -67,7 +67,7 @@ export default function CommunityPage() {
       </section>
 
       {/* Additional Resources */}
-      <section style={{ padding: '40px 0', background: 'var(--bg-secondary)', borderTop: '1px solid #e2e8f0' }}>
+      <section style={{ padding: '40px 0', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
             <h2 style={{ fontSize: '2.2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 12 }}>More Community Resources</h2>
@@ -75,12 +75,12 @@ export default function CommunityPage() {
           </div>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {[
-              { icon: <TrendingUp size={28} />, title: 'Finance & Tax Guides', desc: 'Tutorials on building Canadian credit and filing your first tax return.', color: '#6366f1', link: '/resources' },
-              { icon: <HandHeart size={28} />, title: 'Cultural Adaptation Forums', desc: 'Engage with fellow newcomers and ask questions about daily life.', color: '#059669', link: '/portal/auth' },
-              { icon: <BookOpen size={28} />, title: 'Professional E-Books', desc: 'Download settlement checklists and e-books authored by mentors.', color: '#d97706', link: '/resources' },
+              { icon: <TrendingUp size={28} />, title: 'Finance & Tax Guides', desc: 'Tutorials on building Canadian credit and filing your first tax return.', color: '#e85d04', link: '/resources' },
+              { icon: <HandHeart size={28} />, title: 'Cultural Adaptation Forums', desc: 'Engage with fellow newcomers and ask questions about daily life.', color: '#0c0c0e', link: '/portal/auth' },
+              { icon: <BookOpen size={28} />, title: 'Professional E-Books', desc: 'Download settlement checklists and e-books authored by mentors.', color: '#e85d04', link: '/resources' },
             ].map((item, i) => (
               <div key={i} style={{ borderRadius: 20, padding: '36px 28px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', transition: 'box-shadow 0.2s' }}>
-                <div style={{ width: 52, height: 52, borderRadius: 14, background: `${item.color}10`, border: `1px solid ${item.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, marginBottom: 20 }}>
+                <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(232, 93, 4, 0.08)', border: '1px solid rgba(232, 93, 4, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, marginBottom: 20 }}>
                   {item.icon}
                 </div>
                 <h3 style={{ fontWeight: 800, fontSize: '1.15rem', marginBottom: 10, fontFamily: 'var(--font-display)' }}>{item.title}</h3>
@@ -95,14 +95,14 @@ export default function CommunityPage() {
       </section>
 
       {/* CTA */}
-      <section style={{ padding: '40px 0', background: 'linear-gradient(135deg, #0f172a, #1e293b)', textAlign: 'center' }}>
+      <section style={{ padding: '40px 0', background: '#0c0c0e', textAlign: 'center' }}>
         <div className="container" style={{ maxWidth: 700 }}>
-          <MessageSquare size={40} style={{ color: '#818cf8', margin: '0 auto 20px' }} />
+          <MessageSquare size={40} style={{ color: 'var(--primary-600)', margin: '0 auto 20px' }} />
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Have Questions About Settling In?</h2>
           <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.7 }}>
             Submit a request for personalized guidance tailored to your background.
           </p>
-          <Link href="/portal/auth" className="btn btn-primary btn-lg" style={{ padding: '16px 36px', boxShadow: '0 8px 24px rgba(99,102,241,0.4)' }}>
+          <Link href="/portal/auth" className="btn btn-primary btn-lg" style={{ padding: '16px 36px', background: 'var(--primary-600)', border: 'none', boxShadow: '0 8px 24px rgba(232,93,4,0.3)' }}>
             Request Guidance <ArrowRight size={18} />
           </Link>
         </div>

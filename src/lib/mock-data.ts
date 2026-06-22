@@ -441,10 +441,10 @@ export const mockBusinessContactRequests: BusinessContactRequest[] = [
 
 // ========== E-BOOKS ==========
 export const mockEBooks: EBook[] = [
-  { id: 'eb-001', title: "CPA's Guide to Canada", author: 'Professionals Club', type: 'PDF', size: '2.4 MB', color: '#6366f1', image: '/finance_bg.png', downloadUrl: '#', createdAt: '2026-01-15T10:00:00Z' },
-  { id: 'eb-002', title: 'IT Careers in Ontario', author: 'Professionals Club', type: 'PDF', size: '1.8 MB', color: '#059669', image: '/career-mentorship.png', downloadUrl: '#', createdAt: '2026-02-01T10:00:00Z' },
-  { id: 'eb-003', title: 'Medical Licensing Roadmap', author: 'Professionals Club Health Team', type: 'PDF', size: '3.1 MB', color: '#dc2626', image: '/healthcare_bg.png', downloadUrl: '#', createdAt: '2026-02-15T10:00:00Z' },
-  { id: 'eb-004', title: 'Engineering Success Path', author: 'Professionals Club Engineering', type: 'PDF', size: '2.0 MB', color: '#d97706', image: '/housing_bg.png', downloadUrl: '#', createdAt: '2026-03-01T10:00:00Z' },
+  { id: 'eb-001', title: "CPA's Guide to Canada", author: 'Professionals Club', type: 'PDF', size: '2.4 MB', color: '#e85d04', image: '/finance_bg.png', downloadUrl: '#', createdAt: '2026-01-15T10:00:00Z' },
+  { id: 'eb-002', title: 'IT Careers in Ontario', author: 'Professionals Club', type: 'PDF', size: '1.8 MB', color: '#0c0c0e', image: '/career-mentorship.png', downloadUrl: '#', createdAt: '2026-02-01T10:00:00Z' },
+  { id: 'eb-003', title: 'Medical Licensing Roadmap', author: 'Professionals Club Health Team', type: 'PDF', size: '3.1 MB', color: '#e85d04', image: '/healthcare_bg.png', downloadUrl: '#', createdAt: '2026-02-15T10:00:00Z' },
+  { id: 'eb-004', title: 'Engineering Success Path', author: 'Professionals Club Engineering', type: 'PDF', size: '2.0 MB', color: '#0c0c0e', image: '/housing_bg.png', downloadUrl: '#', createdAt: '2026-03-01T10:00:00Z' },
 ];
 
 // ========== VIDEO WORKSHOPS ==========

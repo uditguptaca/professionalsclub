@@ -11,18 +11,18 @@ export default function SettlementPage() {
       <Navbar />
 
       {/* Hero */}
-      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: '#0f172a', overflow: 'hidden' }}>
+      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: '#0c0c0e', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
           <Image src="/settlement-guide.png" alt="Newcomers arriving in Canada" fill style={{ objectFit: 'cover', opacity: 0.25 }} />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.95), rgba(5,150,105,0.3))' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.95), rgba(232,93,4,0.15))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(16,185,129,0.15)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(16,185,129,0.3)' }}>
-            <MapPin size={14} style={{ color: '#6ee7b7' }} />
-            <span style={{ color: '#6ee7b7', fontWeight: 700, fontSize: '0.82rem' }}>Settlement Hub</span>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(232,93,4,0.08)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(232,93,4,0.2)' }}>
+            <MapPin size={14} style={{ color: 'var(--primary-600)' }} />
+            <span style={{ color: 'var(--primary-600)', fontWeight: 700, fontSize: '0.82rem' }}>Settlement Hub</span>
           </div>
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
-            Welcome to <span style={{ background: 'linear-gradient(135deg, #34d399, #6ee7b7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Canada</span>
+            Welcome to <span style={{ color: 'var(--primary-600)' }}>Canada</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
             Your comprehensive guide to settling smoothly in your first months in Canada.
@@ -35,43 +35,43 @@ export default function SettlementPage() {
         <div className="container" style={{ maxWidth: 1280 }}>
           {[
             {
-              icon: <Home size={32} style={{ color: '#6366f1' }} />,
+              icon: <Home size={32} style={{ color: '#e85d04' }} />,
               title: 'Housing & Rentals',
               desc: 'Finding your first home in Canada. Understanding leases, credit scores for rentals, and popular neighborhoods for newcomers.',
               items: ['Rental Market Overview & Average Costs', 'Credit Score Requirements for Newcomers', 'Tenant Rights & Responsibilities in Ontario', 'Temporary vs Long-term Housing Options'],
-              color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe',
+              color: '#e85d04', bg: '#fff7ed', border: 'rgba(232, 93, 4, 0.2)',
               imgSide: 'right', image: '/housing_bg.png'
             },
             {
-              icon: <Banknote size={32} style={{ color: '#059669' }} />,
+              icon: <Banknote size={32} style={{ color: '#e85d04' }} />,
               title: 'Financial Literacy & Banking',
               desc: 'Setting up your Canadian financial life. Open accounts, build credit, and understand the tax system from day one.',
               items: ['Opening a Bank Account (RBC, TD, Scotiabank)', 'Building Credit History as a Newcomer', 'GST/HST & Income Tax 101', 'RRSP, TFSA & Registered Savings Accounts'],
-              color: '#059669', bg: '#f0fdf4', border: '#bbf7d0',
+              color: '#e85d04', bg: '#fff7ed', border: 'rgba(232, 93, 4, 0.2)',
               imgSide: 'left', image: '/finance_bg.png'
             },
             {
-              icon: <HeartPulse size={32} style={{ color: '#dc2626' }} />,
+              icon: <HeartPulse size={32} style={{ color: '#e85d04' }} />,
               title: 'Healthcare Access',
               desc: 'Navigating the universal healthcare system. Getting your provincial health card and finding doctors.',
               items: ['Applying for Health Cards (OHIP, MSP, etc.)', 'Finding a Family Doctor or Walk-in Clinic', 'Emergency Room vs Urgent Care', 'Dental & Vision Coverage Options'],
-              color: '#dc2626', bg: '#fef2f2', border: '#fecaca',
+              color: '#e85d04', bg: '#fff7ed', border: 'rgba(232, 93, 4, 0.2)',
               imgSide: 'right', image: '/healthcare_bg.png'
             },
             {
-              icon: <Car size={32} style={{ color: '#d97706' }} />,
+              icon: <Car size={32} style={{ color: '#e85d04' }} />,
               title: 'Transportation & Driving',
               desc: 'Getting around your new city. Public transit, driver license exchange, and buying your first car.',
               items: ['Foreign Driver License Exchange Process', 'Public Transit (PRESTO, Compass Card)', 'Car Insurance Basics in Canada', 'Winter Driving Safety Tips'],
-              color: '#d97706', bg: '#fffbeb', border: '#fde68a',
+              color: '#e85d04', bg: '#fff7ed', border: 'rgba(232, 93, 4, 0.2)',
               imgSide: 'left', image: '/toronto-skyline.png'
             },
             {
-              icon: <ShieldCheck size={32} style={{ color: '#7c3aed' }} />,
+              icon: <ShieldCheck size={32} style={{ color: '#e85d04' }} />,
               title: 'Legal Documentation & SIN',
               desc: 'Essential documentation and legal requirements for living and working in Canada.',
               items: ['Social Insurance Number (SIN) Application', 'Work Permits & Authorization', 'PR Card & Residency Obligations', 'Free Legal Aid Resources'],
-              color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe',
+              color: '#e85d04', bg: '#fff7ed', border: 'rgba(232, 93, 4, 0.2)',
               imgSide: 'right', image: '/hero-community.png'
             },
           ].map((cat, idx) => (
@@ -96,7 +96,7 @@ export default function SettlementPage() {
               </div>
               <div style={{ direction: 'ltr', position: 'relative', borderRadius: 24, overflow: 'hidden', minHeight: 400, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
                 <Image src={cat.image} alt={cat.title} fill style={{ objectFit: 'cover' }} />
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.85), rgba(15,23,42,0.65))' }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.85), rgba(12,12,14,0.65))' }} />
                 
                 <div style={{ position: 'relative', zIndex: 10, padding: 32, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <div style={{ marginBottom: 20 }}>
@@ -118,36 +118,36 @@ export default function SettlementPage() {
       <section style={{ position: 'relative', padding: '40px 0', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
           <Image src="/study-bg.png" alt="Newcomer Studying Checklist" fill style={{ objectFit: 'cover' }} />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,27,75,0.85))' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.95), rgba(12,12,14,0.85))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: '100%' }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24, alignItems: 'center' }}>
             <div>
-              <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#a5b4fc', marginBottom: 16 }}>Free Download</div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--primary-600)', marginBottom: 16 }}>Free Download</div>
               <h2 style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 24, lineHeight: 1.15, color: 'white' }}>The Ultimate Newcomer Checklist</h2>
               <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', lineHeight: 1.8, marginBottom: 40 }}>
                 Download our comprehensive PDF checklist covering your first 30 days in Canada.
               </p>
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 32px', fontSize: '1rem', boxShadow: '0 8px 24px rgba(99,102,241,0.4)' }}>
+                <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 32px', fontSize: '1rem', background: 'var(--primary-600)', border: 'none', boxShadow: '0 8px 24px rgba(232,93,4,0.3)' }}>
                   <Download size={20} /> Download PDF Guide
                 </button>
                 <Link href="/resources" className="btn" style={{ padding: '16px 32px', fontSize: '1rem', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}>View All Resources</Link>
               </div>
             </div>
             <div style={{ background: 'var(--bg-card)', borderRadius: 8, padding: 40, border: '1px solid var(--border-color)', transform: 'rotate(2deg)', boxShadow: '0 25px 50px rgba(0,0,0,0.4), 0 0 0 12px rgba(255,255,255,0.05)' }}>
-              <h4 style={{ fontWeight: 800, fontSize: '1.3rem', marginBottom: 24, paddingBottom: 16, borderBottom: '2px dashed #e2e8f0', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <FileText size={24} style={{ color: '#6366f1' }} />
+              <h4 style={{ fontWeight: 800, fontSize: '1.3rem', marginBottom: 24, paddingBottom: 16, borderBottom: '2px dashed var(--border-color)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <FileText size={24} style={{ color: 'var(--primary-600)' }} />
                 First 7 Days Checklist
               </h4>
               {['Applied for SIN at Service Canada', 'Opened a Canadian Bank Account', 'Obtained a Canadian Phone Number', 'Applied for Provincial Health Card', 'Explored local transit routes', 'Registered with settlement agency'].map((item, i) => {
                 const isChecked = i === 1 || i === 2;
                 return (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0', borderBottom: i < 5 ? '1px solid #f1f5f9' : 'none' }}>
-                    <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${isChecked ? '#6366f1' : '#cbd5e1'}`, flexShrink: 0, background: isChecked ? '#6366f1' : '#f8fafc', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0', borderBottom: i < 5 ? '1px solid var(--border-color)' : 'none' }}>
+                    <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${isChecked ? 'var(--primary-600)' : 'var(--border-color)'}`, flexShrink: 0, background: isChecked ? 'var(--primary-600)' : 'var(--bg-secondary)', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {isChecked && <CheckCircle size={14} style={{ color: 'white' }} />}
                     </div>
-                    <span style={{ fontSize: '0.95rem', color: isChecked ? '#94a3b8' : '#475569', fontWeight: 500, textDecoration: isChecked ? 'line-through' : 'none' }}>{item}</span>
+                    <span style={{ fontSize: '0.95rem', color: isChecked ? 'var(--text-muted)' : 'var(--text-primary)', fontWeight: 500, textDecoration: isChecked ? 'line-through' : 'none' }}>{item}</span>
                   </div>
                 );
               })}
@@ -157,11 +157,11 @@ export default function SettlementPage() {
       </section>
 
       {/* CTA */}
-      <section style={{ padding: '40px 0', background: 'linear-gradient(135deg, #059669, #10b981)', textAlign: 'center' }}>
+      <section style={{ padding: '40px 0', background: 'var(--primary-600)', textAlign: 'center' }}>
         <div className="container" style={{ maxWidth: 700 }}>
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Need Personalized Help?</h2>
           <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.85)', marginBottom: 32 }}>A trained volunteer will guide you through your specific settlement needs.</p>
-          <Link href="/portal/auth" className="btn btn-lg" style={{ background: 'var(--bg-primary)', color: '#059669', fontWeight: 700, padding: '16px 36px', border: 'none' }}>
+          <Link href="/portal/auth" className="btn btn-lg" style={{ background: 'var(--bg-primary)', color: 'var(--primary-600)', fontWeight: 700, padding: '16px 36px', border: 'none' }}>
             Request Settlement Help <ArrowRight size={18} />
           </Link>
         </div>

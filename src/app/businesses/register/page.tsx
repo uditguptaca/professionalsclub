@@ -162,16 +162,16 @@ export default function BusinessSignupPage() {
 
   if (submitted) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #f8fafc, #eef2ff)' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #ffffff, #fff7ed)' }}>
         <div style={{ maxWidth: 520, textAlign: 'center', padding: 40 }}>
-          <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'linear-gradient(135deg, #059669, #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', boxShadow: '0 8px 32px rgba(5,150,105,0.3)' }}>
+          <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary-600), var(--primary-500))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', boxShadow: '0 8px 32px rgba(232,93,4,0.3)' }}>
             <CheckCircle size={40} color="white" />
           </div>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 900, marginBottom: 12 }}>Application Submitted!</h1>
           <p style={{ fontSize: '1rem', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 8 }}>
             Your business listing for <strong>{businessName}</strong> has been submitted for admin review.
           </p>
-          <div style={{ padding: 20, borderRadius: 14, background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', margin: '24px 0', textAlign: 'left' }}>
+          <div style={{ padding: 20, borderRadius: 14, background: 'rgba(232,93,4,0.06)', border: '1px solid rgba(232,93,4,0.15)', margin: '24px 0', textAlign: 'left' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: '0.85rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Clock size={16} style={{ color: 'var(--primary-600)' }} /> <strong>Status:</strong> Pending Review</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><ShieldCheck size={16} style={{ color: 'var(--primary-600)' }} /> <strong>Next:</strong> Admin team will verify your business details</div>
@@ -192,14 +192,14 @@ export default function BusinessSignupPage() {
 
   if (!mounted) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f8fafc, #eef2ff)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #ffffff, #fff7ed)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ padding: 40, textAlign: 'center', color: 'var(--primary-600)', fontWeight: 600 }}>Loading form...</div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f8fafc, #eef2ff)' }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #ffffff, #fff7ed)' }}>
       {/* Header */}
       <div style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-color)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 20 }}>
         <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -219,7 +219,7 @@ export default function BusinessSignupPage() {
             <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{Math.round(progress)}% complete</span>
           </div>
           <div style={{ height: 6, borderRadius: 99, background: 'var(--gray-200)', overflow: 'hidden' }}>
-            <div style={{ height: '100%', borderRadius: 99, background: 'linear-gradient(90deg, var(--primary-500), #8b5cf6)', width: `${progress}%`, transition: 'width 0.4s ease' }} />
+            <div style={{ height: '100%', borderRadius: 99, background: 'linear-gradient(90deg, var(--primary-500), var(--primary-600))', width: `${progress}%`, transition: 'width 0.4s ease' }} />
           </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 14, overflowX: 'auto', paddingBottom: 4 }}>
             {STEPS.map(s => {
@@ -233,8 +233,8 @@ export default function BusinessSignupPage() {
                   onClick={() => { if (isDone) setStep(s.id); }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 99, fontSize: '0.72rem', fontWeight: 600, border: 'none', cursor: isDone ? 'pointer' : 'default', whiteSpace: 'nowrap', transition: 'all 0.2s',
-                    background: isActive ? 'var(--primary-600)' : isDone ? 'rgba(5,150,105,0.1)' : 'var(--gray-100)',
-                    color: isActive ? 'white' : isDone ? '#059669' : 'var(--gray-500)',
+                    background: isActive ? 'var(--primary-600)' : isDone ? 'rgba(232,93,4,0.1)' : 'var(--gray-100)',
+                    color: isActive ? 'white' : isDone ? 'var(--primary-600)' : 'var(--gray-500)',
                   }}
                 >
                   {isDone ? <CheckCircle size={12} /> : <Icon size={12} />}
@@ -417,7 +417,7 @@ export default function BusinessSignupPage() {
                       <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <input type="text" value={svc} onChange={e => updateService(i, e.target.value)} placeholder={`Service ${i + 1} (e.g. Personal Tax Filing)`} style={{ ...inputStyle, flex: 1 }} />
                         {services.length > 1 && (
-                          <button type="button" onClick={() => removeService(i)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.2rem', padding: '4px 8px' }}>×</button>
+                          <button type="button" onClick={() => removeService(i)} style={{ background: 'none', border: 'none', color: 'var(--primary-600)', cursor: 'pointer', fontSize: '1.2rem', padding: '4px 8px' }}>×</button>
                         )}
                       </div>
                     ))}
@@ -494,7 +494,7 @@ export default function BusinessSignupPage() {
                     {['English', 'Hindi', 'Punjabi', 'Gujarati', 'Tamil', 'Telugu', 'Marathi', 'Bengali', 'Urdu', 'French', 'Other'].map(lang => (
                       <button key={lang} type="button" onClick={() => toggleLanguage(lang)}
                         style={{ padding: '6px 12px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 500, border: '1.5px solid', cursor: 'pointer', transition: 'all 0.15s',
-                          background: languages.includes(lang) ? 'rgba(99,102,241,0.08)' : 'white',
+                          background: languages.includes(lang) ? 'rgba(232,93,4,0.08)' : 'white',
                           borderColor: languages.includes(lang) ? 'var(--primary-500)' : 'var(--gray-200)',
                           color: languages.includes(lang) ? 'var(--primary-700)' : 'var(--gray-600)' }}
                       >{lang}</button>
@@ -523,7 +523,7 @@ export default function BusinessSignupPage() {
                 <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 800 }}>Member Benefits</h2>
               </div>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 8 }}>Offer exclusive benefits.</p>
-              <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', fontSize: '0.78rem', color: '#92400e', fontWeight: 500, marginBottom: 28 }}>
+              <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(232,93,4,0.06)', border: '1px solid rgba(232,93,4,0.15)', fontSize: '0.78rem', color: 'var(--primary-600)', fontWeight: 500, marginBottom: 28 }}>
                 This section is <strong>mandatory</strong>. All listed businesses must offer at least one member benefit.
               </div>
 
@@ -565,7 +565,7 @@ export default function BusinessSignupPage() {
                       <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <input type="text" value={b} onChange={e => updateBenefit(i, e.target.value)} placeholder={`Benefit ${i + 1} (e.g. Free initial assessment)`} style={{ ...inputStyle, flex: 1 }} />
                         {additionalBenefits.length > 1 && (
-                          <button type="button" onClick={() => removeBenefit(i)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.2rem', padding: '4px 8px' }}>×</button>
+                          <button type="button" onClick={() => removeBenefit(i)} style={{ background: 'none', border: 'none', color: 'var(--primary-600)', cursor: 'pointer', fontSize: '1.2rem', padding: '4px 8px' }}>×</button>
                         )}
                       </div>
                     ))}
@@ -595,7 +595,7 @@ export default function BusinessSignupPage() {
                   <label style={labelStyle}>Service Mode <span style={reqStyle}>*</span></label>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
                     {SERVICE_MODES.map(mode => (
-                      <label key={mode.value} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 10, border: `1.5px solid ${serviceMode === mode.value ? 'var(--primary-500)' : 'var(--gray-200)'}`, cursor: 'pointer', background: serviceMode === mode.value ? 'rgba(99,102,241,0.04)' : 'white', transition: 'all 0.15s' }}>
+                      <label key={mode.value} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 10, border: `1.5px solid ${serviceMode === mode.value ? 'var(--primary-500)' : 'var(--gray-200)'}`, cursor: 'pointer', background: serviceMode === mode.value ? 'rgba(232,93,4,0.04)' : 'white', transition: 'all 0.15s' }}>
                         <input type="radio" name="serviceMode" value={mode.value} checked={serviceMode === mode.value} onChange={e => setServiceMode(e.target.value)} style={{ accentColor: 'var(--primary-600)' }} />
                         <span style={{ fontSize: '0.85rem', fontWeight: serviceMode === mode.value ? 600 : 400 }}>{mode.label}</span>
                       </label>
@@ -767,7 +767,7 @@ export default function BusinessSignupPage() {
                 </div>
 
                 {/* What happens next */}
-                <div style={{ padding: 16, borderRadius: 12, background: 'rgba(0,103,165,0.04)', border: '1px solid rgba(0,103,165,0.12)', marginTop: 8 }}>
+                <div style={{ padding: 16, borderRadius: 12, background: 'rgba(232,93,4,0.04)', border: '1px solid rgba(232,93,4,0.12)', marginTop: 8 }}>
                   <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--primary-700)', marginBottom: 8 }}>What happens after submission?</div>
                   <ol style={{ margin: 0, paddingLeft: 18, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
                     <li>Your application is stored as <strong>&ldquo;Pending Review&rdquo;</strong></li>
@@ -798,7 +798,7 @@ export default function BusinessSignupPage() {
                 Continue <ArrowRight size={16} />
               </button>
             ) : (
-              <button type="button" onClick={handleSubmit} disabled={!canProceed()} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.9rem', padding: '12px 28px', opacity: canProceed() ? 1 : 0.5, cursor: canProceed() ? 'pointer' : 'not-allowed', background: 'linear-gradient(135deg, #059669, #10b981)', boxShadow: '0 8px 24px rgba(5,150,105,0.3)' }}>
+              <button type="button" onClick={handleSubmit} disabled={!canProceed()} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.9rem', padding: '12px 28px', opacity: canProceed() ? 1 : 0.5, cursor: canProceed() ? 'pointer' : 'not-allowed', background: 'linear-gradient(135deg, var(--primary-600), var(--primary-500))', boxShadow: '0 8px 24px rgba(232,93,4,0.3)' }}>
                 <CheckCircle size={18} /> Submit Application
               </button>
             )}
@@ -813,7 +813,7 @@ export default function BusinessSignupPage() {
 const labelStyle: React.CSSProperties = {
   display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--gray-700)', marginBottom: 6,
 };
-const reqStyle: React.CSSProperties = { color: '#ef4444', fontWeight: 700 };
+const reqStyle: React.CSSProperties = { color: 'var(--primary-600)', fontWeight: 700 };
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid var(--gray-200)',
   fontSize: '0.85rem', outline: 'none', fontFamily: 'var(--font-sans)', background: 'var(--bg-primary)',

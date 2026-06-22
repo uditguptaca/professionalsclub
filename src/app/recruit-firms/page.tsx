@@ -38,7 +38,7 @@ export default function RecruitFirmsPage() {
         <div className="container" style={{ maxWidth: 1200 }}>
           
           <div style={{ textAlign: 'center', marginBottom: 60 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 64, height: 64, borderRadius: '50%', background: 'rgba(56,189,248,0.1)', color: '#0284c7', marginBottom: 20 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 64, height: 64, borderRadius: '50%', background: 'rgba(232, 93, 4, 0.08)', color: 'var(--primary-600)', marginBottom: 20 }}>
               <Briefcase size={32} />
             </div>
             <h1 style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 16 }}>
@@ -99,11 +99,11 @@ export default function RecruitFirmsPage() {
                     gap: 6,
                     fontSize: '0.85rem',
                     fontWeight: 600,
-                    color: '#0284c7',
+                    color: 'var(--primary-600)',
                     textDecoration: 'none',
                     padding: '8px 16px',
                     borderRadius: 99,
-                    background: 'rgba(56,189,248,0.1)'
+                    background: 'rgba(232, 93, 4, 0.08)'
                   }}
                   className="hover:bg-sky-100 transition-colors"
                 >

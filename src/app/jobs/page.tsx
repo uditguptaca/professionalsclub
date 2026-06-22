@@ -28,11 +28,11 @@ const JOB_TYPE_LABELS: Record<JobType, string> = {
 };
 
 const JOB_TYPE_COLORS: Record<JobType, { bg: string; color: string }> = {
-  full_time: { bg: '#dbeafe', color: '#1e40af' },
-  part_time: { bg: '#fce7f3', color: '#9d174d' },
-  contract: { bg: '#fee2e2', color: '#dc2626' },
-  freelance: { bg: '#fef3c7', color: '#92400e' },
-  internship: { bg: 'rgba(232, 93, 4, 0.08)', color: 'var(--primary-700)' },
+  full_time: { bg: '#fff7ed', color: '#e85d04' },
+  part_time: { bg: '#fff7ed', color: '#e85d04' },
+  contract: { bg: 'rgba(12, 12, 14, 0.05)', color: '#0c0c0e' },
+  freelance: { bg: 'rgba(12, 12, 14, 0.05)', color: '#0c0c0e' },
+  internship: { bg: 'rgba(232, 93, 4, 0.08)', color: '#e85d04' },
 };
 
 function formatSalary(min: number, max: number, period: string) {
@@ -135,25 +135,25 @@ export default function JobsPage() {
       <Navbar />
 
       {/* ─── HERO ─── */}
-      <section style={{ position: 'relative', minHeight: '520px', display: 'flex', alignItems: 'center', overflow: 'hidden', background: '#0f172a' }}>
+      <section style={{ position: 'relative', minHeight: '520px', display: 'flex', alignItems: 'center', overflow: 'hidden', background: '#0c0c0e' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
           <Image src="/career-mentorship.png" alt="Career growth" fill style={{ objectFit: 'cover', objectPosition: 'center', opacity: 0.25 }} priority />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.95) 0%, rgba(30,41,59,0.85) 50%, rgba(168,102,247,0.2) 100%)' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.95) 0%, rgba(12,12,14,0.85) 50%, rgba(232,93,4,0.15) 100%)' }} />
         </div>
 
         <div className="container mobile-stack" style={{ position: 'relative', zIndex: 10, maxWidth: 1200, display: 'grid', gridTemplateColumns: '1fr 420px', gap: 24, alignItems: 'center', padding: '60px 24px 40px' }}>
           {/* Left */}
           <div>
             <h1 style={{ fontSize: '3.2rem', fontWeight: 900, color: 'white', lineHeight: 1.1, marginBottom: 20, fontFamily: 'var(--font-display)' }}>
-              Best Place To <span style={{ background: 'linear-gradient(135deg, #fb7185, var(--primary-600))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Grow</span><br />Your Career
+              Best Place To <span style={{ color: 'var(--primary-600)' }}>Grow</span><br />Your Career
             </h1>
-            <p style={{ fontSize: '1.1rem', color: '#fb7185', fontWeight: 600, marginBottom: 16 }}>
+            <p style={{ fontSize: '1.1rem', color: 'var(--primary-600)', fontWeight: 600, marginBottom: 16 }}>
               Find Jobs, Employment & Career Opportunities
             </p>
             <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 32, maxWidth: 480 }}>
               Browse {activeJobs.length}+ jobs.
             </p>
-            <Link href="/portal/auth" className="btn btn-lg" style={{ background: 'linear-gradient(135deg, var(--primary-600), var(--primary-700))', color: 'white', border: 'none', padding: '14px 28px', fontSize: '0.95rem', boxShadow: '0 8px 24px rgba(225,29,72,0.35)' }}>
+            <Link href="/portal/auth" className="btn btn-lg" style={{ background: 'var(--primary-600)', color: 'white', border: 'none', padding: '14px 28px', fontSize: '0.95rem', boxShadow: '0 8px 24px rgba(232,93,4,0.3)' }}>
               Get Started <ArrowRight size={18} />
             </Link>
           </div>
@@ -161,7 +161,7 @@ export default function JobsPage() {
           {/* Right — Search Panel */}
           <div style={{ background: 'var(--bg-primary)', borderRadius: 16, padding: '32px 28px', boxShadow: '0 25px 50px rgba(0,0,0,0.25)' }}>
             <h2 style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'var(--font-display)' }}>FIND YOUR JOB!</h2>
-            <div style={{ width: 40, height: 3, background: 'linear-gradient(90deg, var(--primary-600), #fb7185)', borderRadius: 2, marginBottom: 24 }} />
+            <div style={{ width: 40, height: 3, background: 'var(--primary-600)', borderRadius: 2, marginBottom: 24 }} />
 
             <form onSubmit={handleSearch} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ position: 'relative' }}>
@@ -189,7 +189,7 @@ export default function JobsPage() {
               <select
                 value={typeFilter}
                 onChange={e => setTypeFilter(e.target.value)}
-                style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-secondary)', color: typeFilter ? '#0f172a' : '#94a3b8' }}
+                style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-secondary)', color: typeFilter ? 'var(--text-primary)' : 'var(--text-muted)' }}
               >
                 <option value="">All Types</option>
                 <option value="full_time">Full Time</option>
@@ -202,7 +202,7 @@ export default function JobsPage() {
               <select
                 value={categoryFilter}
                 onChange={e => setCategoryFilter(e.target.value)}
-                style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-secondary)', color: categoryFilter ? '#0f172a' : '#94a3b8' }}
+                style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-secondary)', color: categoryFilter ? 'var(--text-primary)' : 'var(--text-muted)' }}
               >
                 <option value="">Choose a category...</option>
                 {Object.keys(CATEGORY_ICONS).map(cat => (
@@ -216,7 +216,7 @@ export default function JobsPage() {
                 <option value="Other">Other</option>
               </select>
 
-              <button type="submit" style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, var(--primary-600), var(--primary-700))', color: 'white', border: 'none', borderRadius: 8, fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s' }}>
+              <button type="submit" style={{ width: '100%', padding: '14px', background: 'var(--primary-600)', color: 'white', border: 'none', borderRadius: 8, fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s' }}>
                 <Search size={16} /> SEARCH
               </button>
 
@@ -270,7 +270,7 @@ export default function JobsPage() {
                   justifyContent: 'center', 
                   color: 'var(--primary-600)',
                   flexShrink: 0,
-                  boxShadow: '0 4px 10px rgba(225,29,72,0.1)'
+                  boxShadow: '0 4px 10px rgba(232,93,4,0.1)'
                 }}>
                   {React.cloneElement(icon as React.ReactElement<any>, { size: 20 })}
                 </div>
@@ -291,7 +291,7 @@ export default function JobsPage() {
       </section>
 
       {/* ─── TOP JOB CITIES ─── */}
-      <section style={{ padding: '40px 0', background: '#faf5ff' }}>
+      <section style={{ padding: '40px 0', background: '#fff7ed' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
             <h2 style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 12 }}>Explore Top Job Cities!</h2>
@@ -316,7 +316,7 @@ export default function JobsPage() {
           </div>
 
           <div style={{ textAlign: 'center', marginTop: 40 }}>
-             <button style={{ background: 'none', border: 'none', color: '#a855f7', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'opacity 0.2s' }} onMouseOver={e=>e.currentTarget.style.opacity='0.8'} onMouseOut={e=>e.currentTarget.style.opacity='1'}>
+             <button style={{ background: 'none', border: 'none', color: 'var(--primary-600)', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'opacity 0.2s' }} onMouseOver={e=>e.currentTarget.style.opacity='0.8'} onMouseOut={e=>e.currentTarget.style.opacity='1'}>
                Explore More <ChevronRight size={16} />
              </button>
           </div>
@@ -329,7 +329,7 @@ export default function JobsPage() {
           <div className="mobile-flex-col mobile-gap-reduce" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
             <div>
               <h2 style={{ fontSize: '1.8rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 4 }}>RECENT JOBS</h2>
-              <div style={{ width: 40, height: 3, background: 'linear-gradient(90deg, #a855f7, #c084fc)', borderRadius: 2 }} />
+              <div style={{ width: 40, height: 3, background: 'var(--primary-600)', borderRadius: 2 }} />
             </div>
 
             {/* Tab Filters */}
@@ -346,10 +346,10 @@ export default function JobsPage() {
                     letterSpacing: '0.03em',
                     border: 'none',
                     cursor: 'pointer',
-                    background: activeTab === tab.key ? 'linear-gradient(135deg, var(--primary-600), var(--primary-700))' : 'white',
+                    background: activeTab === tab.key ? 'var(--primary-600)' : 'white',
                     color: activeTab === tab.key ? 'white' : '#374151',
                     transition: 'all 0.2s',
-                    borderRight: '1px solid #e2e8f0',
+                    borderRight: '1px solid var(--border-color)',
                   }}
                 >
                   {tab.label}
@@ -385,8 +385,8 @@ export default function JobsPage() {
                     position: 'relative',
                     overflow: 'hidden',
                   }}
-                    onMouseOver={e => { e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.08)'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
-                    onMouseOut={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = '#e5e7eb'; }}
+                    onMouseOver={e => { e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.08)'; e.currentTarget.style.borderColor = 'var(--primary-600)'; }}
+                    onMouseOut={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
                   >
                     <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                       {/* Company Logo */}
@@ -432,7 +432,7 @@ export default function JobsPage() {
                           </div>
                           <Link href={job.applyUrl || '#'} style={{
                             padding: '6px 18px',
-                            background: 'linear-gradient(135deg, var(--primary-600), var(--primary-700))',
+                            background: 'var(--primary-600)',
                             color: 'white',
                             borderRadius: 6,
                             fontSize: '0.78rem',
@@ -477,8 +477,8 @@ export default function JobsPage() {
               <Image src="/volunteer-help.png" alt="Referral" fill style={{ objectFit: 'cover' }} />
               {/* Floating Badge */}
               <div style={{ position: 'absolute', bottom: 24, left: 24, background: 'var(--bg-primary)', padding: '12px 24px', borderRadius: 99, display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 8px 30px rgba(0,0,0,0.1)' }}>
-                <div style={{ background: '#0f172a', width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-600)' }}>
-                   <Briefcase size={20} />
+                <div style={{ background: '#0c0c0e', width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-600)' }}>
+                  <Briefcase size={20} />
                 </div>
                 <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>Get Referred Now!</span>
               </div>
@@ -501,13 +501,13 @@ export default function JobsPage() {
                     <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(232, 93, 4, 0.08)', color: 'var(--primary-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <ArrowRight size={16} />
                     </div>
-                    <span style={{ fontSize: '0.95rem', color: '#334155', fontWeight: 600 }}>{text}</span>
+                    <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{text}</span>
                   </div>
                 ))}
               </div>
 
               <Link href="/portal/auth" className="btn btn-lg" style={{
-                background: 'linear-gradient(135deg, var(--primary-600), var(--primary-700))',
+                background: 'var(--primary-600)',
                 color: 'white',
                 border: 'none',
                 padding: '16px 36px',
@@ -515,7 +515,7 @@ export default function JobsPage() {
                 borderRadius: 14,
                 display: 'inline-flex',
                 alignItems: 'center',
-                boxShadow: '0 8px 24px rgba(225,29,72,0.3)',
+                boxShadow: '0 8px 24px rgba(232, 93, 4, 0.3)',
                 textDecoration: 'none'
               }}>
                 Request a Referral <ChevronRight size={18} style={{ marginLeft: 6 }} />
@@ -539,7 +539,7 @@ export default function JobsPage() {
               Post openings and connect.
             </p>
             <Link href="/portal/auth" className="btn" style={{
-              background: 'linear-gradient(135deg, var(--primary-600), var(--primary-700))',
+              background: 'var(--primary-600)',
               color: 'white',
               border: 'none',
               padding: '12px 28px',
@@ -554,19 +554,19 @@ export default function JobsPage() {
           <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 20px', textAlign: 'center', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', inset: 0 }}>
               <Image src="/hero-community.png" alt="Career" fill style={{ objectFit: 'cover', opacity: 0.2 }} />
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.92), rgba(15,23,42,0.85))' }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.92), rgba(12,12,14,0.85))' }} />
             </div>
             <div style={{ position: 'relative', zIndex: 10 }}>
-              <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(225,29,72,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fb7185', margin: '0 auto 12px' }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(232, 93, 4, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-600)', margin: '0 auto 12px' }}>
                 <Briefcase size={24} />
               </div>
               <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: 'white', marginBottom: 6, fontFamily: 'var(--font-display)' }}>I&apos;M A CANDIDATE</h3>
-              <div style={{ width: 30, height: 2, background: '#fb7185', margin: '0 auto 12px' }} />
+              <div style={{ width: 30, height: 2, background: 'var(--primary-600)', margin: '0 auto 12px' }} />
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: 320, marginBottom: 16 }}>
                 Create a profile and apply.
               </p>
               <Link href="/portal/auth" className="btn" style={{
-                background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                background: 'var(--primary-600)',
                 color: 'white',
                 border: 'none',
                 padding: '12px 28px',

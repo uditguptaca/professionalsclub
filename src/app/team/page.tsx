@@ -13,7 +13,7 @@ export default function TeamPage() {
   const sorted = [...teamMembers].sort((a, b) => a.order - b.order);
 
   return (
-    <div style={{ background: '#fcfcfc', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: 'var(--bg-secondary)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
 
       <main style={{ flex: 1, padding: '40px 0' }}>
@@ -21,7 +21,7 @@ export default function TeamPage() {
           
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: 40 }}>
-            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#334155', marginBottom: 12 }}>Our team</div>
+            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 12 }}>Our team</div>
             <h1 style={{ fontSize: '3rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 20 }}>
               Leadership team
             </h1>
@@ -38,13 +38,13 @@ export default function TeamPage() {
                   <Image src={member.image} alt={member.name} width={100} height={100} style={{ objectFit: 'cover' }} />
                 </div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>{member.name}</h3>
-                <div style={{ fontSize: '0.9rem', color: '#4f46e5', fontWeight: 600, marginBottom: 12 }}>{member.role}</div>
+                <div style={{ fontSize: '0.9rem', color: 'var(--primary-600)', fontWeight: 600, marginBottom: 12 }}>{member.role}</div>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 20, minHeight: 40 }}>
                   {member.bio.length > 50 ? member.bio.substring(0, 47) + '...' : member.bio}
                 </p>
                 <div style={{ display: 'flex', gap: 16 }}>
                   {member.linkedinUrl && (
-                    <Link href={member.linkedinUrl} style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 700 }} className="hover:text-blue-600 transition-colors">IN</Link>
+                    <Link href={member.linkedinUrl} style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 700 }} onMouseOver={e=>e.currentTarget.style.color='var(--primary-600)'} onMouseOut={e=>e.currentTarget.style.color='var(--text-muted)'}>IN</Link>
                   )}
                 </div>
               </div>

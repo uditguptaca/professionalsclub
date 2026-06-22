@@ -7,18 +7,18 @@ import Footer from '@/components/shared/Footer';
 import { Search, MapPin, ArrowRight, Building2 } from 'lucide-react';
 
 const companies = [
-  { id: 'c1', name: 'Shopify', logo: 'S', industry: 'Technology', size: '10,000+', location: 'Ottawa, ON', description: 'Commerce platform helping merchants sell online', color: '#96bf48' },
-  { id: 'c2', name: 'Amazon Canada', logo: 'A', industry: 'Technology', size: '50,000+', location: 'Vancouver, BC', description: 'Global technology and e-commerce company', color: '#ff9900' },
-  { id: 'c3', name: 'Royal Bank of Canada', logo: 'RBC', industry: 'Banking', size: '50,000+', location: 'Toronto, ON', description: 'Canada\'s largest bank by market capitalization', color: '#003168' },
-  { id: 'c4', name: 'TD Bank', logo: 'TD', industry: 'Banking', size: '50,000+', location: 'Toronto, ON', description: 'One of Canada\'s Big Five banks', color: '#34a853' },
-  { id: 'c5', name: 'Google Canada', logo: 'G', industry: 'Technology', size: '10,000+', location: 'Waterloo, ON', description: 'Technology giant with offices across Canada', color: '#4285f4' },
-  { id: 'c6', name: 'Microsoft Canada', logo: 'MS', industry: 'Technology', size: '10,000+', location: 'Vancouver, BC', description: 'Global technology leader in cloud and software', color: '#00a4ef' },
-  { id: 'c7', name: 'Deloitte Canada', logo: 'D', industry: 'Consulting', size: '10,000+', location: 'Toronto, ON', description: 'Global professional services and consulting firm', color: '#86bc25' },
-  { id: 'c8', name: 'CIBC', logo: 'CI', industry: 'Banking', size: '40,000+', location: 'Toronto, ON', description: 'Full-service financial institution', color: '#c41f3b' },
-  { id: 'c9', name: 'Telus', logo: 'T', industry: 'Telecommunications', size: '30,000+', location: 'Vancouver, BC', description: 'Leading Canadian telecom company', color: '#4b286d' },
-  { id: 'c10', name: 'Scotiabank', logo: 'SB', industry: 'Banking', size: '50,000+', location: 'Toronto, ON', description: 'International banking and financial services', color: '#ef3e42' },
-  { id: 'c11', name: 'Wealthsimple', logo: 'W', industry: 'Fintech', size: '1,000+', location: 'Toronto, ON', description: 'Canadian online investment management service', color: '#ff5722' },
-  { id: 'c12', name: 'Manulife', logo: 'M', industry: 'Insurance', size: '30,000+', location: 'Toronto, ON', description: 'Leading international financial services company', color: '#00843d' },
+  { id: 'c1', name: 'Shopify', logo: 'S', industry: 'Technology', size: '10,000+', location: 'Ottawa, ON', description: 'Commerce platform helping merchants sell online', color: '#e85d04' },
+  { id: 'c2', name: 'Amazon Canada', logo: 'A', industry: 'Technology', size: '50,000+', location: 'Vancouver, BC', description: 'Global technology and e-commerce company', color: '#e85d04' },
+  { id: 'c3', name: 'Royal Bank of Canada', logo: 'RBC', industry: 'Banking', size: '50,000+', location: 'Toronto, ON', description: 'Canada\'s largest bank by market capitalization', color: '#e85d04' },
+  { id: 'c4', name: 'TD Bank', logo: 'TD', industry: 'Banking', size: '50,000+', location: 'Toronto, ON', description: 'One of Canada\'s Big Five banks', color: '#e85d04' },
+  { id: 'c5', name: 'Google Canada', logo: 'G', industry: 'Technology', size: '10,000+', location: 'Waterloo, ON', description: 'Technology giant with offices across Canada', color: '#e85d04' },
+  { id: 'c6', name: 'Microsoft Canada', logo: 'MS', industry: 'Technology', size: '10,000+', location: 'Vancouver, BC', description: 'Global technology leader in cloud and software', color: '#e85d04' },
+  { id: 'c7', name: 'Deloitte Canada', logo: 'D', industry: 'Consulting', size: '10,000+', location: 'Toronto, ON', description: 'Global professional services and consulting firm', color: '#e85d04' },
+  { id: 'c8', name: 'CIBC', logo: 'CI', industry: 'Banking', size: '40,000+', location: 'Toronto, ON', description: 'Full-service financial institution', color: '#e85d04' },
+  { id: 'c9', name: 'Telus', logo: 'T', industry: 'Telecommunications', size: '30,000+', location: 'Vancouver, BC', description: 'Leading Canadian telecom company', color: '#e85d04' },
+  { id: 'c10', name: 'Scotiabank', logo: 'SB', industry: 'Banking', size: '50,000+', location: 'Toronto, ON', description: 'International banking and financial services', color: '#e85d04' },
+  { id: 'c11', name: 'Wealthsimple', logo: 'W', industry: 'Fintech', size: '1,000+', location: 'Toronto, ON', description: 'Canadian online investment management service', color: '#e85d04' },
+  { id: 'c12', name: 'Manulife', logo: 'M', industry: 'Insurance', size: '30,000+', location: 'Toronto, ON', description: 'Leading international financial services company', color: '#e85d04' },
 ];
 
 export default function CompaniesPage() {
@@ -36,18 +36,18 @@ export default function CompaniesPage() {
       <Navbar />
 
       {/* Hero */}
-      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: '#0f172a', overflow: 'hidden' }}>
+      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: '#0c0c0e', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
           <Image src="/toronto-skyline.png" alt="Toronto skyline" fill style={{ objectFit: 'cover', opacity: 0.2 }} />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.95), rgba(99,102,241,0.25))' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.95), rgba(232,93,4,0.15))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(99,102,241,0.15)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(99,102,241,0.3)' }}>
-            <Building2 size={14} style={{ color: '#c7d2fe' }} />
-            <span style={{ color: '#c7d2fe', fontWeight: 700, fontSize: '0.82rem' }}>Partner Network</span>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(232,93,4,0.08)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(232,93,4,0.2)' }}>
+            <Building2 size={14} style={{ color: 'var(--primary-600)' }} />
+            <span style={{ color: 'var(--primary-600)', fontWeight: 700, fontSize: '0.82rem' }}>Partner Network</span>
           </div>
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
-            Companies in Our <span style={{ background: 'linear-gradient(135deg, #818cf8, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Network</span>
+            Companies in Our <span style={{ color: 'var(--primary-600)' }}>Network</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
             Request a referral.
@@ -115,12 +115,12 @@ export default function CompaniesPage() {
       <section style={{ position: 'relative', padding: '40px 0', textAlign: 'center', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
           <Image src="/event_bg.png" alt="Company Referrals" fill style={{ objectFit: 'cover' }} />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.92), rgba(30,27,75,0.85))' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.92), rgba(12,12,14,0.85))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 600 }}>
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Want a Referral?</h2>
           <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: 32 }}>Submit a help request on our portal.</p>
-          <Link href="/portal/auth" className="btn btn-primary btn-lg" style={{ padding: '16px 36px', boxShadow: '0 8px 24px rgba(99,102,241,0.4)', background: '#4f46e5', color: 'white', border: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <Link href="/portal/auth" className="btn btn-primary btn-lg" style={{ padding: '16px 36px', boxShadow: '0 8px 24px rgba(232,93,4,0.3)', background: 'var(--primary-600)', color: 'white', border: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             Request a Referral <ArrowRight size={18} />
           </Link>
         </div>

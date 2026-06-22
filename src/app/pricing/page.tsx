@@ -10,10 +10,10 @@ export default function PricingPage() {
       <Navbar />
 
       {/* Hero */}
-      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 80, background: 'linear-gradient(135deg, #0f172a, #1e1b4b)', overflow: 'hidden' }}>
+      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 80, background: '#0c0c0e', overflow: 'hidden' }}>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
-            Completely <span style={{ background: 'linear-gradient(135deg, #34d399, #6ee7b7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Free</span>
+            Completely <span style={{ color: 'var(--primary-600)' }}>Free</span>
           </h1>
           <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 600, margin: '0 auto' }}>
             A community-driven platform with no fees or hidden costs.
@@ -26,10 +26,10 @@ export default function PricingPage() {
         <div className="container" style={{ maxWidth: 800 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             {/* Members */}
-            <div style={{ borderRadius: 20, border: '2px solid #6366f1', padding: 40, background: 'var(--bg-primary)', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: 'linear-gradient(90deg, #6366f1, #8b5cf6)' }} />
+            <div style={{ borderRadius: 20, border: '2px solid var(--primary-600)', padding: 40, background: 'var(--bg-primary)', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: 'var(--primary-600)' }} />
               <div style={{ textAlign: 'center', marginBottom: 28 }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.1em' }}>For Members</span>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>For Members</span>
                 <div style={{ fontSize: '3.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', margin: '8px 0' }}>$0</div>
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Forever free</div>
               </div>
@@ -43,21 +43,21 @@ export default function PricingPage() {
                 'Secure messaging',
                 'Full request lifecycle tracking',
               ].map((f, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < 7 ? '1px solid #f1f5f9' : 'none' }}>
-                  <CheckCircle size={16} style={{ color: '#059669', flexShrink: 0 }} />
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < 7 ? '1px solid var(--border-color)' : 'none' }}>
+                  <CheckCircle size={16} style={{ color: 'var(--primary-600)', flexShrink: 0 }} />
                   <span style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>{f}</span>
                 </div>
               ))}
-              <Link href="/portal/auth" className="btn btn-primary" style={{ width: '100%', marginTop: 28, padding: '14px 0', textAlign: 'center', display: 'block' }}>
+              <Link href="/portal/auth" className="btn btn-primary" style={{ width: '100%', marginTop: 28, padding: '14px 0', textAlign: 'center', display: 'block', background: 'var(--primary-600)', border: 'none' }}>
                 Get Started Free
               </Link>
             </div>
 
             {/* Volunteers */}
-            <div style={{ borderRadius: 20, border: '2px solid #059669', padding: 40, background: 'var(--bg-primary)', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: 'linear-gradient(90deg, #059669, #10b981)' }} />
+            <div style={{ borderRadius: 20, border: '2px solid var(--border-color)', padding: 40, background: 'var(--bg-primary)', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: '#0c0c0e' }} />
               <div style={{ textAlign: 'center', marginBottom: 28 }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.1em' }}>For Volunteers</span>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0c0c0e', textTransform: 'uppercase', letterSpacing: '0.1em' }}>For Volunteers</span>
                 <div style={{ fontSize: '3.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', margin: '8px 0' }}>$0</div>
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Always free</div>
               </div>
@@ -71,12 +71,12 @@ export default function PricingPage() {
                 'Impact dashboard & metrics',
                 'Flexible availability settings',
               ].map((f, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < 7 ? '1px solid #f1f5f9' : 'none' }}>
-                  <CheckCircle size={16} style={{ color: '#059669', flexShrink: 0 }} />
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < 7 ? '1px solid var(--border-color)' : 'none' }}>
+                  <CheckCircle size={16} style={{ color: 'var(--primary-600)', flexShrink: 0 }} />
                   <span style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>{f}</span>
                 </div>
               ))}
-              <Link href="/portal/auth" className="btn" style={{ width: '100%', marginTop: 28, padding: '14px 0', textAlign: 'center', display: 'block', background: '#059669', color: 'white', border: 'none' }}>
+              <Link href="/portal/auth" className="btn" style={{ width: '100%', marginTop: 28, padding: '14px 0', textAlign: 'center', display: 'block', background: '#0c0c0e', color: 'white', border: 'none' }}>
                 Apply to Volunteer
               </Link>
             </div>
@@ -85,7 +85,7 @@ export default function PricingPage() {
       </section>
 
       {/* Why Free */}
-      <section style={{ padding: '40px 0', background: 'var(--bg-secondary)', borderTop: '1px solid #e2e8f0' }}>
+      <section style={{ padding: '40px 0', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)' }}>
         <div className="container" style={{ maxWidth: 1000 }}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
             <h2 style={{ fontSize: '2.2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 12 }}>Why Is It Free?</h2>
@@ -93,12 +93,12 @@ export default function PricingPage() {
           </div>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {[
-              { icon: <Heart size={28} />, title: 'Community-Driven', desc: 'Our team and volunteers manage operations as a community service.', color: '#dc2626' },
-              { icon: <Shield size={28} />, title: 'No Hidden Costs', desc: 'No premium tiers or hidden fees. All features are available.', color: '#6366f1' },
-              { icon: <Users size={28} />, title: 'Pay It Forward', desc: 'Consider volunteering to help the next wave of newcomers.', color: '#059669' },
+              { icon: <Heart size={28} />, title: 'Community-Driven', desc: 'Our team and volunteers manage operations as a community service.', color: '#e85d04' },
+              { icon: <Shield size={28} />, title: 'No Hidden Costs', desc: 'No premium tiers or hidden fees. All features are available.', color: '#0c0c0e' },
+              { icon: <Users size={28} />, title: 'Pay It Forward', desc: 'Consider volunteering to help the next wave of newcomers.', color: '#e85d04' },
             ].map((item, i) => (
               <div key={i} style={{ textAlign: 'center', padding: '36px 28px', borderRadius: 20, background: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
-                <div style={{ width: 56, height: 56, borderRadius: '50%', background: `${item.color}12`, color: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(232, 93, 4, 0.08)', color: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
                   {item.icon}
                 </div>
                 <h3 style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: 8, fontFamily: 'var(--font-display)' }}>{item.title}</h3>
@@ -110,7 +110,7 @@ export default function PricingPage() {
       </section>
 
       {/* FAQ */}
-      <section style={{ padding: '40px 0', background: 'var(--bg-primary)', borderTop: '1px solid #e2e8f0' }}>
+      <section style={{ padding: '40px 0', background: 'var(--bg-primary)', borderTop: '1px solid var(--border-color)' }}>
         <div className="container" style={{ maxWidth: 700 }}>
           <h2 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-display)', textAlign: 'center', marginBottom: 20 }}>FAQ</h2>
           {[

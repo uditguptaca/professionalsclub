@@ -53,13 +53,13 @@ export default function SupportPage() {
                 <div style={{ padding: 24, display: 'flex', flexDirection: 'column', flex: 1 }}>
                   {/* Progress Stats */}
                   <div style={{ marginBottom: 16 }}>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 400, color: '#334155', marginBottom: 8, display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 400, color: 'var(--text-secondary)', marginBottom: 8, display: 'flex', alignItems: 'baseline', gap: 6 }}>
                       <span style={{ fontSize: '1.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>${project.raised.toLocaleString()}</span> 
                       <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>of ${project.goal.toLocaleString()} raised</span>
                     </div>
                     {/* Progress Bar Container */}
-                    <div style={{ width: '100%', height: 8, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
-                      <div style={{ width: `${(project.raised / project.goal) * 100}%`, height: '100%', background: '#0ea5e9', borderRadius: 4 }}></div>
+                    <div style={{ width: '100%', height: 8, background: 'var(--border-color)', borderRadius: 4, overflow: 'hidden' }}>
+                      <div style={{ width: `${(project.raised / project.goal) * 100}%`, height: '100%', background: 'var(--primary-600)', borderRadius: 4 }}></div>
                     </div>
                   </div>
 
@@ -70,7 +70,7 @@ export default function SupportPage() {
                     {project.desc}
                   </p>
 
-                  <button className="btn" style={{ width: 'fit-content', background: '#1e293b', color: 'white', padding: '12px 24px', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, border: 'none', borderRadius: 6 }}>
+                  <button className="btn" style={{ width: 'fit-content', background: 'var(--primary-600)', color: 'white', padding: '12px 24px', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, border: 'none', borderRadius: 6 }}>
                     Donate Now
                   </button>
                 </div>

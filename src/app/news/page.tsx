@@ -19,15 +19,15 @@ const categoryIcons: Record<string, React.ReactNode> = {
 };
 
 const categoryColors: Record<string, { bg: string; text: string }> = {
-  'Announcement': { bg: '#eef2ff', text: '#4338ca' },
-  'Events': { bg: '#ecfdf5', text: '#065f46' },
-  'Partnerships': { bg: '#fffbeb', text: '#92400e' },
-  'Resources': { bg: '#fef2f2', text: '#991b1b' },
-  'Hiring News': { bg: '#eef2ff', text: '#4338ca' },
-  'Immigration': { bg: '#ecfdf5', text: '#065f46' },
-  'Salary Trends': { bg: '#fffbeb', text: '#92400e' },
-  'Industry News': { bg: '#fef2f2', text: '#991b1b' },
-  'Interview Prep': { bg: '#f5f3ff', text: '#5b21b6' },
+  'Announcement': { bg: '#fff7ed', text: '#e85d04' },
+  'Events': { bg: 'rgba(12, 12, 14, 0.05)', text: '#0c0c0e' },
+  'Partnerships': { bg: '#fff7ed', text: '#e85d04' },
+  'Resources': { bg: 'rgba(12, 12, 14, 0.05)', text: '#0c0c0e' },
+  'Hiring News': { bg: '#fff7ed', text: '#e85d04' },
+  'Immigration': { bg: 'rgba(12, 12, 14, 0.05)', text: '#0c0c0e' },
+  'Salary Trends': { bg: '#fff7ed', text: '#e85d04' },
+  'Industry News': { bg: 'rgba(12, 12, 14, 0.05)', text: '#0c0c0e' },
+  'Interview Prep': { bg: '#fff7ed', text: '#e85d04' },
 };
 
 
@@ -43,18 +43,18 @@ export default function NewsPage() {
       <Navbar />
 
       {/* Hero */}
-      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: '#0f172a', overflow: 'hidden' }}>
+      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: '#0c0c0e', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
           <Image src="/toronto-skyline.png" alt="Toronto" fill style={{ objectFit: 'cover', opacity: 0.15 }} />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.97), rgba(30,41,59,0.85))' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.97), rgba(12,12,14,0.85))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(99,102,241,0.15)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(99,102,241,0.3)' }}>
-            <Newspaper size={14} style={{ color: '#c7d2fe' }} />
-            <span style={{ color: '#c7d2fe', fontWeight: 700, fontSize: '0.82rem' }}>Community News</span>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(232,93,4,0.08)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(232,93,4,0.2)' }}>
+            <Newspaper size={14} style={{ color: 'var(--primary-600)' }} />
+            <span style={{ color: 'var(--primary-600)', fontWeight: 700, fontSize: '0.82rem' }}>Community News</span>
           </div>
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
-            Stay <span style={{ background: 'linear-gradient(135deg, #818cf8, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Informed</span>
+            Stay <span style={{ color: 'var(--primary-600)' }}>Informed</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
             Community updates and career tips.
@@ -68,11 +68,11 @@ export default function NewsPage() {
           <h2 style={{ fontSize: '1.6rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 32 }}>Featured Stories</h2>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {featured.map((article, idx) => {
-              const cat = categoryColors[article.category] || { bg: '#f8fafc', text: '#374151' };
+              const cat = categoryColors[article.category] || { bg: '#fff7ed', text: '#0c0c0e' };
               return (
                 <div key={article.id} style={{ position: 'relative', height: 380, borderRadius: 24, overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 10px 25px rgba(0,0,0,0.15)' }} className="hover:-translate-y-1 hover:shadow-xl">
                   <Image src={article.image} alt={article.title} fill style={{ objectFit: 'cover' }} />
-                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.6) 50%, rgba(15,23,42,0.2) 100%)' }} />
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(12,12,14,0.95) 0%, rgba(12,12,14,0.6) 50%, rgba(12,12,14,0.2) 100%)' }} />
                   
                   <div style={{ position: 'absolute', top: 24, left: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '50%', background: 'rgba(225,255,255,0.2)', color: 'white', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.3)' }}>
@@ -99,17 +99,17 @@ export default function NewsPage() {
 
       {/* Latest Articles */}
       {rest.length > 0 && (
-        <section style={{ padding: '40px 0', background: 'var(--bg-secondary)', borderTop: '1px solid #e2e8f0' }}>
+        <section style={{ padding: '40px 0', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)' }}>
           <div className="container" style={{ maxWidth: 1200 }}>
             <h2 style={{ fontSize: '1.6rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 32 }}>Latest Articles</h2>
             <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
               {rest.map((article, idx) => {
-                const cat = categoryColors[article.category] || { bg: '#f8fafc', text: '#374151' };
+                const cat = categoryColors[article.category] || { bg: '#fff7ed', text: '#0c0c0e' };
                 return (
-                  <div key={article.id} style={{ display: 'flex', alignItems: 'center', gap: 24, padding: '20px 24px', borderRadius: 20, background: 'linear-gradient(135deg, rgba(15,23,42,0.02), rgba(15,23,42,0.05))', border: '1px solid var(--border-color)', cursor: 'pointer', transition: 'box-shadow 0.2s, transform 0.2s' }} className="hover:-translate-y-1 hover:shadow-lg">
+                  <div key={article.id} style={{ display: 'flex', alignItems: 'center', gap: 24, padding: '20px 24px', borderRadius: 20, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', cursor: 'pointer', transition: 'box-shadow 0.2s, transform 0.2s' }} className="hover:-translate-y-1 hover:shadow-lg">
                     <div style={{ width: 80, height: 80, borderRadius: 16, overflow: 'hidden', position: 'relative', flexShrink: 0, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                       <Image src={article.image} alt={article.category} fill style={{ objectFit: 'cover' }} />
-                      <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ position: 'absolute', inset: 0, background: 'rgba(12,12,14,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <span style={{ color: 'white', opacity: 0.9 }}>
                           {React.cloneElement((categoryIcons[article.category] || <Newspaper />) as React.ReactElement<any>, { size: 28 })}
                         </span>

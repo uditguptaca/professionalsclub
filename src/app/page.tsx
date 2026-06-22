@@ -20,11 +20,6 @@ export default function Home() {
         <div className="container mobile-stack" style={{ position: 'relative', zIndex: 10, maxWidth: 1400, display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 40, alignItems: 'center', paddingTop: 40 }}>
           {/* Left */}
           <div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(232,93,4,0.15)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(232,93,4,0.3)' }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary-400)', animation: 'pulse 2s infinite' }} />
-              <span style={{ color: 'var(--primary-100)', fontWeight: 700, fontSize: '0.82rem' }}>Secure Community Support</span>
-            </div>
-
             <h1 style={{ fontSize: '4.2rem', fontWeight: 900, color: 'white', lineHeight: 1.15, letterSpacing: '-0.02em', marginBottom: 24, fontFamily: 'var(--font-display)' }}>
               Your Canadian Journey,<br />
               <span style={{ color: 'var(--primary-600)' }}>Fully Supported.</span>
@@ -70,9 +65,6 @@ export default function Home() {
             flexDirection: 'column',
             gap: 12
           }}>
-            <div style={{ fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--primary-400)', letterSpacing: '0.08em', marginBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: 12 }}>
-              Our Direct Channels
-            </div>
             {[
               { icon: <Briefcase size={20} />, title: 'Search for Latest Jobs', desc: 'Browse latest jobs', color: 'var(--primary-600)', href: '/jobs' },
               { icon: <Users size={20} />, title: 'Join WhatsApp Communities', desc: 'Connect with professionals', color: 'var(--primary-600)', href: '/groups' },
@@ -134,7 +126,7 @@ export default function Home() {
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center' }}>
             <div style={{ borderRadius: 24, overflow: 'hidden', boxShadow: '0 25px 50px rgba(0,0,0,0.12)', position: 'relative', aspectRatio: '4/3' }}>
               <Image src="/career-mentorship.png" alt="Career mentorship session" fill style={{ objectFit: 'cover' }} />
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '24px 28px', background: 'linear-gradient(transparent, rgba(0,0,0,0.7))' }}>
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '24px 28px', background: 'linear-gradient(transparent, rgba(12,12,14,0.7))' }}>
                 <span style={{ color: 'white', fontWeight: 700, fontSize: '0.85rem' }}>Career Support & Job Referrals</span>
               </div>
             </div>
@@ -258,7 +250,7 @@ export default function Home() {
             </div>
             <div style={{ borderRadius: 24, overflow: 'hidden', boxShadow: '0 25px 50px rgba(0,0,0,0.12)', position: 'relative', aspectRatio: '4/3' }}>
               <Image src="/settlement-guide.png" alt="Newcomer settlement" fill style={{ objectFit: 'cover' }} />
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '24px 28px', background: 'linear-gradient(transparent, rgba(0,0,0,0.7))' }}>
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '24px 28px', background: 'linear-gradient(transparent, rgba(12,12,14,0.7))' }}>
                 <span style={{ color: 'white', fontWeight: 700, fontSize: '0.85rem' }}>Newcomer Settlement Support</span>
               </div>
             </div>
@@ -338,7 +330,7 @@ export default function Home() {
             </div>
             <div style={{ borderRadius: 24, overflow: 'hidden', boxShadow: '0 25px 50px rgba(0,0,0,0.3)', position: 'relative', aspectRatio: '4/3' }}>
               <Image src="/volunteer-help.png" alt="Volunteers helping newcomers" fill style={{ objectFit: 'cover' }} />
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '24px 28px', background: 'linear-gradient(transparent, rgba(0,0,0,0.8))' }}>
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '24px 28px', background: 'linear-gradient(transparent, rgba(12,12,14,0.8))' }}>
                 <span style={{ color: 'white', fontWeight: 700, fontSize: '0.85rem' }}>18 Active Volunteers • 89 Cases Resolved</span>
               </div>
             </div>

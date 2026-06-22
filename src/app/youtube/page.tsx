@@ -9,30 +9,30 @@ import { supabase } from '@/lib/supabaseClient';
 const CATEGORY_CONFIG: Record<string, { icon: React.ReactNode; color: string; bgColor: string; borderColor: string; description: string }> = {
   'Career & Job Search': {
     icon: <Briefcase size={22} />,
-    color: '#2563eb',
-    bgColor: '#eff6ff',
-    borderColor: '#bfdbfe',
+    color: '#e85d04',
+    bgColor: '#fff7ed',
+    borderColor: 'rgba(232, 93, 4, 0.2)',
     description: 'Explore resources to help you navigate the Canadian job market - from building a standout resume and cover letter, to finding freelance or full-time opportunities.',
   },
   'Tax & Finance': {
     icon: <DollarSign size={22} />,
-    color: '#16a34a',
-    bgColor: '#f0fdf4',
-    borderColor: '#bbf7d0',
+    color: '#0c0c0e',
+    bgColor: 'rgba(12, 12, 14, 0.05)',
+    borderColor: 'rgba(12, 12, 14, 0.1)',
     description: 'A comprehensive series on understanding the Canadian tax system, CRA filings, partnership structures, and personal finance management.',
   },
   'Certifications & Licensing': {
     icon: <ShieldCheck size={22} />,
-    color: '#9333ea',
-    bgColor: '#faf5ff',
-    borderColor: '#e9d5ff',
+    color: '#e85d04',
+    bgColor: '#fff7ed',
+    borderColor: 'rgba(232, 93, 4, 0.2)',
     description: 'Expert strategy sessions and step-by-step guides on obtaining professional designations like CPA, CFA, or a Real Estate license in Canada.',
   },
   'Immigration & Visas': {
     icon: <Globe size={22} />,
-    color: '#ea580c',
-    bgColor: '#fff7ed',
-    borderColor: '#fed7aa',
+    color: '#0c0c0e',
+    bgColor: 'rgba(12, 12, 14, 0.05)',
+    borderColor: 'rgba(12, 12, 14, 0.1)',
     description: 'Clarifying common myths and providing walkthroughs for Express Entry profiles, Parent Sponsorships, Super Visas, and the PR process.',
   },
 };
@@ -40,8 +40,8 @@ const CATEGORY_CONFIG: Record<string, { icon: React.ReactNode; color: string; bg
 const DEFAULT_CONFIG = {
   icon: <PlayCircle size={22} />,
   color: 'var(--text-secondary)',
-  bgColor: '#f8fafc',
-  borderColor: '#e2e8f0',
+  bgColor: '#fff7ed',
+  borderColor: 'var(--border-color)',
   description: 'Watch our latest videos in this category.',
 };
 
@@ -99,18 +99,18 @@ export default function YouTubePage() {
       <Navbar />
 
       {/* Hero */}
-      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: '#0f172a', overflow: 'hidden' }}>
+      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: '#0c0c0e', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
           <Image src="/meetup_bg.png" alt="YouTube Archive" fill style={{ objectFit: 'cover', opacity: 0.25 }} />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.95), rgba(220,38,38,0.25))' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.95), rgba(232,93,4,0.15))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.15)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(239,68,68,0.3)' }}>
-            <PlayCircle size={14} style={{ color: '#f87171' }} />
-            <span style={{ color: '#f87171', fontWeight: 700, fontSize: '0.82rem' }}>YouTube Archive</span>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(232,93,4,0.08)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(232,93,4,0.2)' }}>
+            <PlayCircle size={14} style={{ color: 'var(--primary-600)' }} />
+            <span style={{ color: 'var(--primary-600)', fontWeight: 700, fontSize: '0.82rem' }}>YouTube Archive</span>
           </div>
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
-            Learn, Watch & <span style={{ background: 'linear-gradient(135deg, #f87171, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Grow</span>
+            Learn, Watch & <span style={{ color: 'var(--primary-600)' }}>Grow</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
             Browse our curated video library organized by topic. Find expert sessions, tutorials, and community recordings.
@@ -143,7 +143,7 @@ export default function YouTubePage() {
                   key={category}
                   style={{
                     borderRadius: 16,
-                    border: '1px solid ' + (isExpanded ? config.borderColor : '#e2e8f0'),
+                    border: '1px solid ' + (isExpanded ? config.borderColor : 'var(--border-color)'),
                     background: 'var(--bg-primary)',
                     overflow: 'hidden',
                     transition: 'all 0.25s ease',
@@ -222,13 +222,13 @@ export default function YouTubePage() {
                               width: 40,
                               height: 40,
                               borderRadius: 10,
-                              background: '#fee2e2',
+                              background: 'var(--primary-50)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                               flexShrink: 0,
                             }}>
-                              <PlayCircle size={20} style={{ color: '#dc2626' }} />
+                              <PlayCircle size={20} style={{ color: 'var(--primary-600)' }} />
                             </div>
 
                             <div style={{ flex: 1, minWidth: 0 }}>
@@ -255,7 +255,7 @@ export default function YouTubePage() {
 
           {!loading && orderedCategories.length > 0 && (
             <div style={{ marginTop: 48, textAlign: 'center', padding: '40px 32px', borderRadius: 16, background: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
-              <PlayCircle size={36} style={{ color: '#dc2626', margin: '0 auto 16px' }} />
+              <PlayCircle size={36} style={{ color: 'var(--primary-600)', margin: '0 auto 16px' }} />
               <h3 style={{ fontWeight: 800, fontSize: '1.3rem', color: 'var(--text-primary)', marginBottom: 8, fontFamily: 'var(--font-display)' }}>
                 Want more content?
               </h3>
@@ -267,7 +267,7 @@ export default function YouTubePage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-primary"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 32px', background: '#dc2626', color: 'white', borderRadius: 12, fontWeight: 700, textDecoration: 'none' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 32px', background: 'var(--primary-600)', color: 'white', borderRadius: 12, fontWeight: 700, textDecoration: 'none', border: 'none' }}
               >
                 <PlayCircle size={18} /> Subscribe on YouTube
               </a>

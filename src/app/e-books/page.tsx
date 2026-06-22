@@ -99,7 +99,7 @@ const CATEGORIES = [
     title: 'Before Moving To',
     highlight: 'Canada',
     icon: <Plane size={24} />,
-    color: '#2563eb',
+    color: '#e85d04',
     description: 'Essential guides to help you prepare for your move - visa checklists, document requirements, and pre-arrival planning.',
     files: [
       { name: 'Before Moving to Canada Guide', chapter: '1', url: 'Before-moving-to-Canada.pdf' },
@@ -111,7 +111,7 @@ const CATEGORIES = [
     title: 'After Moving To',
     highlight: 'Canada',
     icon: <MapPin size={24} />,
-    color: '#059669',
+    color: '#0c0c0e',
     description: 'Settle into your new life with confidence - housing, banking, SIN, taxes, and healthcare resources.',
     files: [
       { name: 'After You Arrive in Canada', chapter: '3', url: 'After you arrive in Canada as a newcomer.pdf' },
@@ -194,7 +194,7 @@ const BookCard = ({ file, categoryColor }: { file: any; categoryColor: string })
               justifyContent: 'center',
               gap: '10px',
               padding: '12px 20px',
-              background: '#0f172a',
+              background: 'var(--primary-600)',
               color: 'white',
               borderRadius: '12px',
               fontWeight: 700,
@@ -202,7 +202,7 @@ const BookCard = ({ file, categoryColor }: { file: any; categoryColor: string })
               textDecoration: 'none',
               transition: 'all 0.2s ease',
             }}
-            className="hover:bg-slate-800 active:scale-95"
+            className="hover:bg-orange-600 active:scale-95"
           >
             Download E-Book <Download size={18} />
           </a>
@@ -235,7 +235,7 @@ export default function EBooksPage() {
       <section style={{ 
         paddingTop: '160px', 
         paddingBottom: '80px', 
-        background: 'linear-gradient(to bottom, #0f172a 0%, #1e293b 100%)', 
+        background: '#0c0c0e', 
         textAlign: 'center',
         position: 'relative',
         overflow: 'hidden'
@@ -245,7 +245,7 @@ export default function EBooksPage() {
           position: 'absolute', 
           inset: 0, 
           opacity: 0.1, 
-          backgroundImage: 'radial-gradient(#3b82f6 1px, transparent 1px)', 
+          backgroundImage: 'radial-gradient(var(--primary-600) 1px, transparent 1px)', 
           backgroundSize: '30px 30px' 
         }} />
         
@@ -253,13 +253,13 @@ export default function EBooksPage() {
           <div style={{ 
             display: 'inline-block', 
             padding: '8px 20px', 
-            background: 'rgba(59, 130, 246, 0.1)', 
+            background: 'rgba(232, 93, 4, 0.08)', 
             borderRadius: '99px', 
-            color: '#60a5fa', 
+            color: 'var(--primary-600)', 
             fontSize: '0.9rem', 
             fontWeight: 700, 
             marginBottom: '24px',
-            border: '1px solid rgba(59, 130, 246, 0.2)'
+            border: '1px solid rgba(232, 93, 4, 0.2)'
           }}>
             Newcomer Resources
           </div>
@@ -271,7 +271,7 @@ export default function EBooksPage() {
             lineHeight: 1,
             fontFamily: 'var(--font-display)'
           }}>
-            E-Books <span style={{ color: '#3b82f6' }}>Library</span>
+            E-Books <span style={{ color: 'var(--primary-600)' }}>Library</span>
           </h1>
           <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
             Premium guides curated by experts to simplify your Canadian settlement journey.
@@ -341,7 +341,7 @@ export default function EBooksPage() {
             textAlign: 'center', 
             padding: '80px 40px', 
             borderRadius: '32px', 
-            background: '#0f172a', 
+            background: '#0c0c0e', 
             color: 'white',
             position: 'relative',
             overflow: 'hidden'
@@ -352,7 +352,7 @@ export default function EBooksPage() {
               right: '-100px', 
               width: '300px', 
               height: '300px', 
-              background: 'radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)' 
+              background: 'radial-gradient(circle, rgba(232, 93, 4, 0.15) 0%, transparent 70%)' 
             }} />
             
             <h3 style={{ fontWeight: 900, fontSize: '2rem', marginBottom: '16px', fontFamily: 'var(--font-display)' }}>

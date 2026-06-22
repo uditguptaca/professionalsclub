@@ -16,7 +16,7 @@ export default function DonatePage() {
       {/* Hero Section */}
       <section style={{ position: 'relative', padding: '120px 0 80px', color: 'white', overflow: 'hidden' }}>
         <Image src="/hero-community.png" alt="Community Support" fill style={{ objectFit: 'cover' }} priority />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,23,42,0.9), rgba(15,23,42,0.6))' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.9), rgba(12,12,14,0.6))' }} />
         
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 1200 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center' }}>
@@ -63,12 +63,12 @@ export default function DonatePage() {
 
               {activeCampaign && (
                 <div style={{ marginBottom: 40 }}>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 400, color: '#334155', marginBottom: 12, display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 400, color: 'var(--text-secondary)', marginBottom: 12, display: 'flex', alignItems: 'baseline', gap: 8 }}>
                     <span style={{ fontSize: '2rem', fontWeight: 600, color: 'var(--text-primary)' }}>${activeCampaign.raisedAmount.toLocaleString()}</span> 
                     <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>of ${activeCampaign.goalAmount.toLocaleString()} raised</span>
                   </div>
-                  <div style={{ width: '100%', height: 10, background: '#e2e8f0', borderRadius: 5, overflow: 'hidden' }}>
-                    <div style={{ width: `${Math.min(100, (activeCampaign.raisedAmount / activeCampaign.goalAmount) * 100)}%`, height: '100%', background: 'linear-gradient(90deg, #059669, #34d399)', borderRadius: 5, transition: 'width 0.5s ease' }} />
+                  <div style={{ width: '100%', height: 10, background: 'var(--border-color)', borderRadius: 5, overflow: 'hidden' }}>
+                    <div style={{ width: `${Math.min(100, (activeCampaign.raisedAmount / activeCampaign.goalAmount) * 100)}%`, height: '100%', background: 'var(--primary-600)', borderRadius: 5, transition: 'width 0.5s ease' }} />
                   </div>
                 </div>
               )}
@@ -89,7 +89,7 @@ export default function DonatePage() {
                   <button style={{ padding: '12px', border: '1px solid var(--border-color)', borderRadius: 8, background: 'var(--bg-primary)', color: 'var(--text-secondary)', fontWeight: 600 }}>$10.00</button>
                   <button style={{ padding: '12px', border: '1px solid var(--border-color)', borderRadius: 8, background: 'var(--bg-primary)', color: 'var(--text-secondary)', fontWeight: 600 }}>$25.00</button>
                   <button style={{ padding: '12px', border: '1px solid var(--border-color)', borderRadius: 8, background: 'var(--bg-primary)', color: 'var(--text-secondary)', fontWeight: 600 }}>$50.00</button>
-                  <button style={{ padding: '12px', border: 'none', borderRadius: 8, background: '#1e293b', color: 'white', fontWeight: 600 }}>$100.00</button>
+                  <button style={{ padding: '12px', border: 'none', borderRadius: 8, background: 'var(--primary-600)', color: 'white', fontWeight: 600 }}>$100.00</button>
                   <button style={{ padding: '12px', border: '1px solid var(--border-color)', borderRadius: 8, background: 'var(--bg-primary)', color: 'var(--text-secondary)', fontWeight: 600 }}>$250.00</button>
                   <button style={{ padding: '12px', border: '1px solid var(--border-color)', borderRadius: 8, background: 'var(--bg-primary)', color: 'var(--text-secondary)', fontWeight: 600, gridColumn: 'span 2' }}>Custom Amount</button>
                 </div>
@@ -112,8 +112,8 @@ export default function DonatePage() {
               </div>
               <input type="email" placeholder="Email Address *" style={{ padding: '12px 16px', border: '1px solid var(--border-color)', borderRadius: 8, width: '100%', outline: 'none', marginBottom: 32 }} />
 
-              <div style={{ textAlign: 'center', borderTop: '1px solid #f1f5f9', paddingTop: 32 }}>
-                 <div style={{ fontSize: '2rem', fontWeight: 900, color: '#6366f1', marginBottom: 12 }}>stripe</div>
+              <div style={{ textAlign: 'center', borderTop: '1px solid var(--border-color)', paddingTop: 32 }}>
+                 <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--primary-600)', marginBottom: 12 }}>stripe</div>
                  <h5 style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>Donate quickly and securely with Stripe</h5>
                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 24, padding: '0 20px', lineHeight: 1.6 }}>
                    Stripe securely processes your checkout, then returns you here.
@@ -121,7 +121,7 @@ export default function DonatePage() {
                  <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 24, padding: '16px', background: 'var(--bg-secondary)', borderRadius: 8 }}>
                    Donation Total: $100.00
                  </div>
-                 <button style={{ padding: '16px 48px', background: '#1e293b', color: 'white', fontWeight: 700, borderRadius: 8, border: 'none', fontSize: '1rem', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                 <button style={{ padding: '16px 48px', background: 'var(--primary-600)', color: 'white', fontWeight: 700, borderRadius: 8, border: 'none', fontSize: '1rem', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                    Donate Now
                  </button>
               </div>
@@ -129,8 +129,8 @@ export default function DonatePage() {
 
             {/* Right - Text */}
             <div style={{ padding: '40px 0' }}>
-              <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 32, lineHeight: 1.2 }}>
-                Building Bridges, Enriching Lives: <span style={{ color: '#334155' }}>Professionals Club.</span> <br />
+             <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 32, lineHeight: 1.2 }}>
+                Building Bridges, Enriching Lives: <span style={{ color: 'var(--text-secondary)' }}>Professionals Club.</span> <br />
                 <span style={{ color: 'var(--text-muted)' }}>Facilitating smoother transitions for immigrants.</span> Connecting communities, creating opportunities.
               </h2>
               <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: 32 }}>

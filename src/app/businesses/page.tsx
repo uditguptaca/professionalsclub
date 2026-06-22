@@ -69,7 +69,7 @@ export default function BusinessDirectoryPage() {
           {/* Right Side — Register CTA */}
           <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
             <Link href="/businesses/register" style={{ textDecoration: 'none' }}>
-              <div style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', padding: '18px 36px', borderRadius: 14, color: 'white', fontWeight: 800, fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 32px rgba(99,102,241,0.4)', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', whiteSpace: 'nowrap' }}>
+              <div style={{ background: 'var(--primary-600)', padding: '18px 36px', borderRadius: 14, color: 'white', fontWeight: 800, fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 32px rgba(232,93,4,0.3)', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', whiteSpace: 'nowrap' }}>
                 List Your Business <ArrowRight size={18} />
               </div>
             </Link>
