@@ -561,6 +561,13 @@ select.input { appearance: auto; }
   padding: var(--space-2);
 }
 
+@media (max-width: 1350px) {
+  .navbar-links a {
+    padding: var(--space-2) var(--space-2);
+    font-size: 0.85rem;
+  }
+}
+
 @media (max-width: 1200px) {
   .navbar-links {
     display: none;

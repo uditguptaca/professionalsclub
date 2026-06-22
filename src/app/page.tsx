@@ -66,13 +66,13 @@ export default function Home() {
             gap: 12
           }}>
             {[
-              { icon: <Briefcase size={20} />, title: 'Search for Latest Jobs', desc: 'Browse latest jobs', color: 'var(--primary-600)', href: '/jobs' },
-              { icon: <Heart size={20} />, title: 'Verified Matrimonial Portal', desc: 'Find your life partner in Canada', color: 'var(--primary-600)', href: '/matrimony' },
               { icon: <Briefcase size={20} />, title: 'Job Referrals & Placement', desc: 'Get matched for referrals', color: 'var(--primary-500)', href: '/portal/signup' },
+              { icon: <Briefcase size={20} />, title: 'Search for Latest Jobs', desc: 'Browse latest jobs', color: 'var(--primary-600)', href: '/jobs' },
               { icon: <GraduationCap size={20} />, title: 'Career Mentorship & Resume Review', desc: 'Long-term mentorship', color: 'var(--primary-600)', href: '/portal/signup' },
               { icon: <MapPin size={20} />, title: 'Newcomer Settlement & Tax Support', desc: 'Housing, banking, etc', color: 'var(--accent-600)', href: '/settlement' },
               { icon: <Calendar size={20} />, title: 'Join Our Next Meetup Event', desc: 'Monthly networking meetups', color: 'var(--primary-500)', href: '/events' },
               { icon: <Building2 size={20} />, title: 'Trusted Local Businesses', desc: 'Verified businesses', color: 'var(--primary-600)', href: '/businesses' },
+              { icon: <Heart size={20} />, title: 'Verified Matrimonial Portal', desc: 'Find your life partner in Canada', color: 'var(--primary-600)', href: '/matrimony' },
             ].map((item, i) => (
                 <Link href={item.href || '#'} key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 18px', borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', transition: 'all 0.2s', cursor: 'pointer', textDecoration: 'none' }} className="hero-feature-card">
                   <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(232, 93, 4, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-400)', flexShrink: 0 }}>
@@ -136,12 +136,18 @@ export default function Home() {
               <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: 28 }}>
                 Match with professionals for referrals.
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
-                {['Job referrals', 'Resume reviews', 'Mock interviews', 'LinkedIn optimization'].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.92rem' }}>
-                    <CheckCircle size={18} style={{ color: 'var(--primary-600)', flexShrink: 0 }} />
-                    <span style={{ color: 'var(--text-primary)' }}>{item}</span>
-                  </div>
+              <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 32 }}>
+                {[
+                  { label: 'Job Referrals', icon: <Briefcase size={18} /> },
+                  { label: 'Resume Reviews', icon: <FileText size={18} /> },
+                  { label: 'Mock Interviews', icon: <Users size={18} /> },
+                  { label: 'LinkedIn Optimization', icon: <Globe size={18} /> },
+                  { label: 'Career Mentorship', icon: <GraduationCap size={18} /> },
+                  { label: 'Job Search Strategy', icon: <BookOpen size={18} /> },
+                ].map((item, i) => (
+                  <Link href="/portal/auth" key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 12, background: 'rgba(232, 93, 4, 0.08)', border: '1px solid rgba(232, 93, 4, 0.15)', fontSize: '0.88rem', fontWeight: 600, color: 'var(--primary-700)', textDecoration: 'none', transition: 'all 0.2s' }} className="hover:-translate-y-1 hover:shadow-md">
+                    <span style={{ display: 'flex', alignItems: 'center' }}>{item.icon}</span> {item.label}
+                  </Link>
                 ))}
               </div>
               <Link href="/portal/auth" className="btn btn-primary" style={{ padding: '14px 28px' }}>
@@ -316,12 +322,18 @@ export default function Home() {
               <p style={{ fontSize: '1rem', color: 'var(--gray-400)', lineHeight: 1.8, marginBottom: 28 }}>
                 Share expertise. Receive case assignments.
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
-                {['Choose expertise', 'Set case limit', 'Strict privacy', 'Background screening'].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.9rem' }}>
-                    <CheckCircle size={18} style={{ color: 'var(--success-400)', flexShrink: 0 }} />
-                    <span style={{ color: 'var(--text-muted)' }}>{item}</span>
-                  </div>
+              <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 32 }}>
+                {[
+                  { label: 'Choose Expertise', icon: <Users size={18} /> },
+                  { label: 'Set Case Limit', icon: <Calendar size={18} /> },
+                  { label: 'Strict Privacy', icon: <Shield size={18} /> },
+                  { label: 'Background Check', icon: <ShieldCheck size={18} /> },
+                  { label: 'Support Newcomers', icon: <HandHeart size={18} /> },
+                  { label: 'Track Impact', icon: <FileText size={18} /> },
+                ].map((item, i) => (
+                  <Link href="/portal/auth" key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 12, background: 'rgba(0, 168, 107, 0.12)', border: '1px solid rgba(0, 168, 107, 0.22)', fontSize: '0.88rem', fontWeight: 600, color: 'var(--success-400)', textDecoration: 'none', transition: 'all 0.2s' }} className="hover:-translate-y-1 hover:shadow-md">
+                    <span style={{ display: 'flex', alignItems: 'center', color: 'var(--success-400)' }}>{item.icon}</span> {item.label}
+                  </Link>
                 ))}
               </div>
               <Link href="/portal/auth" className="btn btn-lg btn-success" style={{ padding: '16px 32px' }}>

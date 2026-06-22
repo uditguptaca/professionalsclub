@@ -46,14 +46,14 @@ export default function BusinessDirectoryPage() {
       {/* Hero */}
       <section className="biz-hero" style={{ padding: '120px 0 60px' }}>
         <div className="container">
-          <div className="biz-hero-content" style={{ margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 40, textAlign: 'left' }}>
+          <div className="biz-hero-content" style={{ margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 40, textAlign: 'left', maxWidth: '100%' }}>
           {/* Left Side */}
           <div style={{ flex: 1 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.12)', padding: '5px 14px', borderRadius: 99, marginBottom: 16, border: '1px solid rgba(255,255,255,0.15)', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.12)', padding: '5px 14px', borderRadius: 99, marginBottom: 16, border: '1px solid rgba(255,255,255,0.15)', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#ffffff' }}>
               <Building2 size={12} /> Business Directory
             </div>
-            <h1 style={{ fontSize: '2.4rem', marginBottom: 10 }}>Find Trusted Local<br />Businesses Near You</h1>
-            <p style={{ marginBottom: 20, maxWidth: 480, fontSize: '0.95rem' }}>{publicBusinesses.length}+ verified businesses — discover, connect, and grow in your community.</p>
+            <h1 style={{ fontSize: '2.4rem', marginBottom: 10, color: '#ffffff' }}>Find Trusted Local<br />Businesses Near You</h1>
+            <p style={{ marginBottom: 20, maxWidth: 480, fontSize: '0.95rem', color: 'rgba(255, 255, 255, 0.85)' }}>{publicBusinesses.length}+ verified businesses — discover, connect, and grow in your community.</p>
 
             {/* Search */}
             <div className="biz-hero-search" style={{ maxWidth: 480, margin: 0 }}>
