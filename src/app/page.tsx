@@ -98,7 +98,7 @@ export default function Home() {
       </section>
 
       {/* ─── HOW IT WORKS ─── */}
-      <section style={{ padding: '100px 0', background: 'var(--bg-secondary)' }}>
+      <section style={{ padding: '48px 0', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ maxWidth: '100%' }}>
           <div style={{ textAlign: 'center', marginBottom: 64 }}>
             <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--primary-600)', marginBottom: 12 }}>How It Works</div>
@@ -129,7 +129,7 @@ export default function Home() {
 
 
       {/* ─── SERVICES (Side-by-Side #1: Career Support) ─── */}
-      <section style={{ padding: '100px 0', background: 'var(--bg-secondary)' }}>
+      <section style={{ padding: '48px 0', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ maxWidth: 1280 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center' }}>
             <div style={{ borderRadius: 24, overflow: 'hidden', boxShadow: '0 25px 50px rgba(0,0,0,0.12)', position: 'relative', aspectRatio: '4/3' }}>
@@ -161,7 +161,7 @@ export default function Home() {
       </section>
 
       {/* ─── POPULAR JOB CATEGORIES ─── */}
-      <section style={{ padding: '100px 0', background: 'var(--bg-primary)' }}>
+      <section style={{ padding: '48px 0', background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 1280 }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 12 }}>Explore Popular Categories!</h2>
@@ -229,7 +229,7 @@ export default function Home() {
       </section>
 
       {/* ─── SERVICES (Side-by-Side #2: Settlement — Reversed) ─── */}
-      <section style={{ padding: '100px 0', background: 'var(--bg-primary)' }}>
+      <section style={{ padding: '48px 0', background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 1280 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center' }}>
             <div>
@@ -269,7 +269,7 @@ export default function Home() {
 
 
       {/* ─── EVENTS & COMMUNITY (Side-by-Side #3) ─── */}
-      <section style={{ padding: '100px 0', background: 'var(--bg-secondary)' }}>
+      <section style={{ padding: '48px 0', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ maxWidth: 1280 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center' }}>
             <div style={{ borderRadius: 24, overflow: 'hidden', boxShadow: '0 25px 50px rgba(0,0,0,0.12)', position: 'relative', aspectRatio: '4/3' }}>
@@ -315,7 +315,7 @@ export default function Home() {
       </section>
 
       {/* ─── VOLUNTEER CTA (Side-by-Side #4) ─── */}
-      <section style={{ padding: '100px 0', background: 'linear-gradient(135deg, var(--gray-900), var(--gray-800))' }}>
+      <section style={{ padding: '48px 0', background: 'linear-gradient(135deg, var(--gray-900), var(--gray-800))' }}>
         <div className="container" style={{ maxWidth: 1280 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center' }}>
             <div>
@@ -347,7 +347,7 @@ export default function Home() {
       </section>
 
       {/* ─── FOUNDER ─── */}
-      <section style={{ padding: '80px 0', background: 'var(--bg-primary)' }}>
+      <section style={{ padding: '40px 0', background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 900 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 24, alignItems: 'center' }}>
             <div style={{ width: 200, height: 200, borderRadius: '50%', overflow: 'hidden', position: 'relative', boxShadow: '0 20px 40px rgba(232,93,4,0.25)' }}>
@@ -386,7 +386,7 @@ export default function Home() {
       </section>
 
       {/* ─── WHATSAPP COMMUNITY HERO ─── */}
-      <section style={{ padding: '80px 0', background: 'var(--gray-950)', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ padding: '40px 0', background: 'var(--gray-950)', position: 'relative', overflow: 'hidden' }}>
         {/* Background Image & Overlay */}
         <div style={{ position: 'absolute', inset: 0 }}>
           <Image src="/whatsapp-community-bg.png" alt="Community networking" fill style={{ objectFit: 'cover', opacity: 0.15 }} />
@@ -459,7 +459,7 @@ export default function Home() {
       </section>
 
       {/* ─── FEATURED BUSINESSES ─── */}
-      <section style={{ padding: '80px 0', background: 'var(--bg-secondary)' }}>
+      <section style={{ padding: '40px 0', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ maxWidth: '100%' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 12 }}>Featured Businesses</h2>
@@ -508,7 +508,7 @@ export default function Home() {
       </section>
 
       {/* ─── FINAL CTA ─── */}
-      <section style={{ position: 'relative', padding: '100px 0', overflow: 'hidden' }}>
+      <section style={{ position: 'relative', padding: '48px 0', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
           <Image src="/toronto-skyline.png" alt="Toronto skyline" fill style={{ objectFit: 'cover', opacity: 0.2 }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, var(--gray-900) 0%, var(--gray-950) 100%)' }} />

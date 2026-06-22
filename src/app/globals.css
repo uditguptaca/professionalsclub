@@ -134,6 +134,14 @@ html {
   overflow-x: hidden;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+}
+
 body {
   font-family: var(--font-sans);
   background: var(--bg-primary);
@@ -2475,7 +2483,7 @@ tr:last-child td { border-bottom: none; }
 .biz-hero-search button {
   padding: 16px 28px;
   background: var(--accent-500);
-  color: #1a1a2e;
+  color: var(--text-primary);
   border: none;
   font-weight: 700;
   font-size: 0.9rem;
@@ -2625,7 +2633,7 @@ tr:last-child td { border-bottom: none; }
 }
 .biz-badge-featured {
   background: rgba(245,158,11,0.9);
-  color: #1a1a2e;
+  color: var(--text-primary);
 }
 .biz-badge-deal {
   background: rgba(225,29,72,0.9);
