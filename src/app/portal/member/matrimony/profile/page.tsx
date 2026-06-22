@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 
 const statusConfig: Record<string, { color: string; bg: string; label: string; icon: React.ElementType }> = {
-  draft: { color: '#64748b', bg: 'rgba(100,116,139,0.1)', label: 'Draft', icon: Clock },
+  draft: { color: 'var(--text-secondary)', bg: 'rgba(100,116,139,0.1)', label: 'Draft', icon: Clock },
   pending: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', label: 'Pending Admin Review', icon: Clock },
   approved: { color: '#00A86B', bg: 'rgba(0,168,107,0.1)', label: 'Approved & Live', icon: CheckCircle2 },
   rejected: { color: '#F04923', bg: 'rgba(240,73,35,0.1)', label: 'Rejected', icon: XCircle },

@@ -12,7 +12,7 @@ import {
 
 export default function AboutPage() {
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: 'var(--bg-secondary)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
 
       {/* 1. HERO SECTION */}
@@ -25,7 +25,7 @@ export default function AboutPage() {
             Build Connections. <br/>
             <span className="text-gradient">Find Support. Grow Together.</span>
           </h1>
-          <p style={{ fontSize: '0.8rem', color: '#cbd5e1', marginBottom: 6, lineHeight: 1.6, fontWeight: 400 }}>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 6, lineHeight: 1.6, fontWeight: 400 }}>
             A platform to connect, grow, and support.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -40,15 +40,15 @@ export default function AboutPage() {
       </section>
 
       {/* 2 & 3. WHO WE ARE & OUR MISSION */}
-      <section style={{ padding: '20px 0', background: 'white' }}>
+      <section style={{ padding: '20px 0', background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)', gap: 12, alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 8 }}>Who We Are</div>
-              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: '#0f172a', marginBottom: 6, lineHeight: 1.25 }}>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 6, lineHeight: 1.25 }}>
                 An ecosystem of mutual empowerment.
               </h2>
-              <p style={{ fontSize: '0.8rem', color: '#475569', lineHeight: 1.7, marginBottom: 6 }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 6 }}>
                 A platform to support individuals, newcomers, and businesses.
               </p>
             </div>
@@ -80,11 +80,11 @@ export default function AboutPage() {
       </section>
 
       {/* 4. WHO WE SERVE */}
-      <section style={{ padding: '20px 0', background: '#f8fafc' }}>
+      <section style={{ padding: '20px 0', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div style={{ textAlign: 'center', marginBottom: 8 }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#0f172a', fontFamily: 'var(--font-display)' }}>Who We Serve</h2>
-            <p style={{ fontSize: '0.8rem', color: '#64748b', maxWidth: 600, margin: '16px auto 0' }}>Delivering value to every participant.</p>
+            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>Who We Serve</h2>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', maxWidth: 600, margin: '16px auto 0' }}>Delivering value to every participant.</p>
           </div>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
             {[
@@ -118,15 +118,15 @@ export default function AboutPage() {
       </section>
 
       {/* 5. WHAT YOU CAN DO */}
-      <section style={{ padding: '20px 0', background: 'white' }}>
+      <section style={{ padding: '20px 0', background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'center', marginBottom: 6 }}>
             <div>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 8 }}>Platform Features</div>
-              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: '#0f172a', marginBottom: 6, lineHeight: 1.2 }}>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 6, lineHeight: 1.2 }}>
                 Everything you need to thrive, in one place.
               </h2>
-              <p style={{ fontSize: '0.8rem', color: '#64748b', lineHeight: 1.6, marginBottom: 8 }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 8 }}>
                 Hub for engagement and learning.
               </p>
               <Link href="/portal/auth" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: '#4f46e5', fontWeight: 700, fontSize: '0.8rem' }}>
@@ -151,7 +151,7 @@ export default function AboutPage() {
               'Access Exclusive Events',
               'Find Fresh Opportunities'
             ].map((feat, i) => (
-              <Link href="/portal/signup" key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0', textDecoration: 'none', transition: 'transform 0.2s' }}>
+              <Link href="/portal/signup" key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: 'var(--bg-secondary)', borderRadius: 12, border: '1px solid var(--border-color)', textDecoration: 'none', transition: 'transform 0.2s' }}>
                 <CheckCircle2 color="#059669" size={20} style={{ flexShrink: 0 }} />
                 <span style={{ fontWeight: 700, color: '#334155', fontSize: '0.8rem' }}>{feat}</span>
               </Link>
@@ -174,7 +174,7 @@ export default function AboutPage() {
                   <div style={{ fontSize: '2rem', fontWeight: 900, color: '#4f46e5', lineHeight: 1, fontFamily: 'var(--font-display)', opacity: 0.8 }}>{step.num}</div>
                   <div>
                     <h3 style={{ fontSize: '0.8rem', fontWeight: 800, marginBottom: 8, color: '#f8fafc' }}>{step.title}</h3>
-                    <p style={{ color: '#94a3b8', lineHeight: 1.5, fontSize: '0.8rem' }}>{step.desc}</p>
+                    <p style={{ color: 'var(--text-muted)', lineHeight: 1.5, fontSize: '0.8rem' }}>{step.desc}</p>
                   </div>
                 </Link>
               ))}
@@ -183,7 +183,7 @@ export default function AboutPage() {
       </section>
 
       {/* 7. WHY PEOPLE TRUST US & VALUES (Combined for compaction) */}
-      <section style={{ padding: '20px 0', background: '#f8fafc' }}>
+      <section style={{ padding: '20px 0', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'center' }}>
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', boxShadow: '0 25px 50px rgba(0,0,0,0.12)', aspectRatio: '16/9' }}>
@@ -194,7 +194,7 @@ export default function AboutPage() {
             </div>
             <div>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 8 }}>Why People Trust Us</div>
-              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#0f172a', fontFamily: 'var(--font-display)', marginBottom: 6, lineHeight: 1.2 }}>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', marginBottom: 6, lineHeight: 1.2 }}>
                 A managed ecosystem.
               </h2>
               <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
@@ -206,9 +206,9 @@ export default function AboutPage() {
                   { title: 'Curated Opportunities', icon: <Briefcase size={20} /> },
                   { title: 'Growing Ecosystem', icon: <Users size={20} /> }
                 ].map((trust, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', background: 'white', borderRadius: 12, boxShadow: '0 4px 10px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' }}>
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', background: 'var(--bg-primary)', borderRadius: 12, boxShadow: '0 4px 10px rgba(0,0,0,0.02)', border: '1px solid var(--border-color)' }}>
                     <div style={{ color: '#4f46e5', flexShrink: 0 }}>{trust.icon}</div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b' }}>{trust.title}</div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>{trust.title}</div>
                   </div>
                 ))}
               </div>
@@ -218,15 +218,15 @@ export default function AboutPage() {
       </section>
 
       {/* 8. BUSINESS & COMMUNITY SECTION */}
-      <section style={{ padding: '20px 0', background: 'white' }}>
+      <section style={{ padding: '20px 0', background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ea580c', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 8 }}>Business Directory</div>
-              <h2 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: '#0f172a', marginBottom: 6, lineHeight: 1.15 }}>
+              <h2 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 6, lineHeight: 1.15 }}>
                 Trusted Businesses, <br/>Stronger Community
               </h2>
-              <p style={{ fontSize: '0.8rem', color: '#475569', lineHeight: 1.7, marginBottom: 8 }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 8 }}>
                 Trusted business launchpad.
               </p>
               
@@ -242,7 +242,7 @@ export default function AboutPage() {
               </ul>
               
               <div style={{ marginTop: 40 }}>
-                <Link href="/businesses" className="btn btn-outline" style={{ padding: '14px 28px', fontSize: '0.85rem', borderRadius: 10, border: '2px solid #1e293b', color: '#1e293b', fontWeight: 700 }}>
+                <Link href="/businesses" className="btn btn-outline" style={{ padding: '14px 28px', fontSize: '0.85rem', borderRadius: 10, border: '2px solid #1e293b', color: 'var(--text-primary)', fontWeight: 700 }}>
                   Explore Directory
                 </Link>
               </div>
@@ -259,7 +259,7 @@ export default function AboutPage() {
       </section>
 
       {/* 9. EVENTS / NETWORKING / GROWTH SECTION */}
-      <section style={{ padding: '20px 0', background: '#f8fafc' }}>
+      <section style={{ padding: '20px 0', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'center' }}>
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', aspectRatio: '16/9', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
@@ -270,23 +270,23 @@ export default function AboutPage() {
             </div>
             <div>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 8 }}>Future Facing</div>
-              <h2 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: '#0f172a', marginBottom: 6, lineHeight: 1.15 }}>
+              <h2 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 6, lineHeight: 1.15 }}>
                 Meetups, Networking & Dynamic Growth
               </h2>
-              <p style={{ fontSize: '0.8rem', color: '#475569', lineHeight: 1.7, marginBottom: 8 }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 8 }}>
                 Growth happens via community events.
               </p>
               
               <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 40 }}>
-                <div style={{ background: 'white', padding: 12, borderRadius: 12, border: '1px solid #e2e8f0' }}>
+                <div style={{ background: 'var(--bg-primary)', padding: 12, borderRadius: 12, border: '1px solid var(--border-color)' }}>
                   <Calendar size={20} color="#4f46e5" style={{ marginBottom: 8 }} />
-                  <h4 style={{ fontWeight: 800, color: '#1e293b', marginBottom: 8 }}>In-Person Meetups</h4>
-                  <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Face-to-face networking events.</p>
+                  <h4 style={{ fontWeight: 800, color: 'var(--text-primary)', marginBottom: 8 }}>In-Person Meetups</h4>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Face-to-face networking events.</p>
                 </div>
-                <div style={{ background: 'white', padding: 12, borderRadius: 12, border: '1px solid #e2e8f0' }}>
+                <div style={{ background: 'var(--bg-primary)', padding: 12, borderRadius: 12, border: '1px solid var(--border-color)' }}>
                   <GraduationCap size={20} color="#059669" style={{ marginBottom: 8 }} />
-                  <h4 style={{ fontWeight: 800, color: '#1e293b', marginBottom: 8 }}>Learning Webinars</h4>
-                  <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Talks on jobs and settling.</p>
+                  <h4 style={{ fontWeight: 800, color: 'var(--text-primary)', marginBottom: 8 }}>Learning Webinars</h4>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Talks on jobs and settling.</p>
                 </div>
               </div>
             </div>
@@ -295,13 +295,13 @@ export default function AboutPage() {
       </section>
 
       {/* 10. OUR VALUES */}
-      <section style={{ padding: '20px 0', background: 'white' }}>
+      <section style={{ padding: '20px 0', background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 8 }}>Guiding Principles</div>
-              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#0f172a', fontFamily: 'var(--font-display)', marginBottom: 6, lineHeight: 1.2 }}>Our Core Values</h2>
-              <p style={{ fontSize: '0.8rem', color: '#475569', lineHeight: 1.6, marginBottom: 8 }}>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', marginBottom: 6, lineHeight: 1.2 }}>Our Core Values</h2>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 8 }}>
                 Accelerated settlement.
               </p>
               <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
@@ -313,11 +313,11 @@ export default function AboutPage() {
                   { title: 'Inclusion', desc: 'Diverse fields.', icon: <Globe size={20} color="#2563eb" /> },
                   { title: 'Integrity', desc: 'High standards.', icon: <Sparkles size={20} color="#7c3aed" /> },
                 ].map((val, i) => (
-                  <Link href="/portal/signup" key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0', textDecoration: 'none' }} className="hover:-translate-y-1 hover:shadow-md transition-all">
+                  <Link href="/portal/signup" key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', background: 'var(--bg-secondary)', borderRadius: 12, border: '1px solid var(--border-color)', textDecoration: 'none' }} className="hover:-translate-y-1 hover:shadow-md transition-all">
                     <div style={{ flexShrink: 0 }}>{val.icon}</div>
                     <div>
-                      <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1e293b', marginBottom: 2 }}>{val.title}</h3>
-                      <p style={{ color: '#64748b', fontSize: '0.8rem', margin: 0 }}>{val.desc}</p>
+                      <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 2 }}>{val.title}</h3>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: 0 }}>{val.desc}</p>
                     </div>
                   </Link>
                 ))}
@@ -340,7 +340,7 @@ export default function AboutPage() {
           <h2 style={{ fontSize: '3rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 6 }}>
             Ready to become part of the community?
           </h2>
-          <p style={{ fontSize: '1.2rem', color: '#94a3b8', marginBottom: 6, maxWidth: 600, margin: '0 auto 48px' }}>
+          <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', marginBottom: 6, maxWidth: 600, margin: '0 auto 48px' }}>
             Find help or list business.
           </p>
           

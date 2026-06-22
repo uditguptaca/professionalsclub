@@ -28,14 +28,14 @@ export default function ResourcesPage() {
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
             Learn. Succeed. <span style={{ background: 'linear-gradient(135deg, #a78bfa, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Thrive.</span>
           </h1>
-          <p style={{ fontSize: '1.15rem', color: '#94a3b8', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
+          <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
             Expert-led guides, templates, and video workshops to help you thrive in Canada.
           </p>
         </div>
       </section>
 
       {/* E-Books */}
-      <section style={{ padding: '40px 0', background: 'white' }}>
+      <section style={{ padding: '40px 0', background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #e2e8f0' }}>
             <BookOpen size={24} style={{ color: '#6366f1' }} />
@@ -57,7 +57,7 @@ export default function ResourcesPage() {
                     <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'white', padding: '4px 10px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)', borderRadius: 6 }}>{book.size}</span>
                   </div>
                   <h3 style={{ fontWeight: 800, fontSize: '1.2rem', marginBottom: 8, color: 'white', lineHeight: 1.3, fontFamily: 'var(--font-display)' }}>{book.title}</h3>
-                  <p style={{ fontSize: '0.8rem', color: '#cbd5e1', marginBottom: 20 }}>By {book.author}</p>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 20 }}>By {book.author}</p>
                   <button className="btn" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)', fontSize: '0.85rem', padding: '12px 0' }}>
                     <Download size={16} /> Download Guide
                   </button>
@@ -69,7 +69,7 @@ export default function ResourcesPage() {
       </section>
 
       {/* Video Workshops */}
-      <section style={{ padding: '40px 0', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+      <section style={{ padding: '40px 0', background: 'var(--bg-secondary)', borderTop: '1px solid #e2e8f0' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #e2e8f0' }}>
             <Video size={24} style={{ color: '#dc2626' }} />
@@ -91,7 +91,7 @@ export default function ResourcesPage() {
                   
                   <div>
                     <h3 style={{ fontWeight: 900, fontSize: '1.4rem', color: 'white', marginBottom: 12, fontFamily: 'var(--font-display)', maxWidth: '80%' }}>{video.title}</h3>
-                    <div style={{ display: 'flex', gap: 16, fontSize: '0.85rem', color: '#cbd5e1', marginBottom: 16 }}>
+                    <div style={{ display: 'flex', gap: 16, fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 16 }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Video size={14} /> {video.duration}</span>
                       <span>&#8226;</span>
                       <span>Recorded {video.recordedDate}</span>
@@ -108,7 +108,7 @@ export default function ResourcesPage() {
       </section>
 
       {/* Templates */}
-      <section style={{ padding: '40px 0', background: 'white', borderTop: '1px solid #e2e8f0' }}>
+      <section style={{ padding: '40px 0', background: 'var(--bg-primary)', borderTop: '1px solid #e2e8f0' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #e2e8f0' }}>
             <FileCheck size={24} style={{ color: '#059669' }} />
@@ -123,7 +123,7 @@ export default function ResourcesPage() {
                 <div style={{ position: 'absolute', inset: 0, padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
                   <span style={{ fontSize: '0.7rem', fontWeight: 800, padding: '4px 10px', borderRadius: 6, background: 'rgba(5,150,105,0.8)', color: 'white', marginBottom: 16, alignSelf: 'flex-start', backdropFilter: 'blur(4px)' }}>{temp.category}</span>
                   <h3 style={{ fontWeight: 800, fontSize: '1.15rem', marginBottom: 12, color: 'white', lineHeight: 1.3, fontFamily: 'var(--font-display)' }}>{temp.title}</h3>
-                  <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginBottom: 20 }}>{temp.fileType} &#8226; Free Access</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 20 }}>{temp.fileType} &#8226; Free Access</div>
                   <Link href={temp.accessUrl} style={{ fontWeight: 700, color: '#6ee7b7', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
                     Access Template <ArrowRight size={16} />
                   </Link>
@@ -139,7 +139,7 @@ export default function ResourcesPage() {
         <div className="container" style={{ maxWidth: 700 }}>
           <GraduationCap size={48} style={{ color: '#a78bfa', margin: '0 auto 24px' }} />
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Want to Contribute?</h2>
-          <p style={{ fontSize: '1.1rem', color: '#94a3b8', marginBottom: 20, lineHeight: 1.7 }}>
+          <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.7 }}>
             Are you a subject matter expert? We'd love to host your guides or workshop recordings.
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>

@@ -79,19 +79,19 @@ export default function AdminVolunteersPage() {
               </div>
 
               <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 12 }}>
-                <div style={{ padding: 10, borderRadius: 8, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
+                <div style={{ padding: 10, borderRadius: 8, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
                   <div style={{ fontSize: '0.65rem', color: '#9ca3af', textTransform: 'uppercase' }}>City</div>
                   <div style={{ fontSize: '0.82rem', fontWeight: 600, marginTop: 2 }}>{app.city}, {app.province}</div>
                 </div>
-                <div style={{ padding: 10, borderRadius: 8, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
+                <div style={{ padding: 10, borderRadius: 8, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
                   <div style={{ fontSize: '0.65rem', color: '#9ca3af', textTransform: 'uppercase' }}>Languages</div>
                   <div style={{ fontSize: '0.82rem', fontWeight: 600, marginTop: 2 }}>{app.languages.join(', ')}</div>
                 </div>
-                <div style={{ padding: 10, borderRadius: 8, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
+                <div style={{ padding: 10, borderRadius: 8, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
                   <div style={{ fontSize: '0.65rem', color: '#9ca3af', textTransform: 'uppercase' }}>Availability</div>
                   <div style={{ fontSize: '0.82rem', fontWeight: 600, marginTop: 2 }}>{app.availability}</div>
                 </div>
-                <div style={{ padding: 10, borderRadius: 8, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
+                <div style={{ padding: 10, borderRadius: 8, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
                   <div style={{ fontSize: '0.65rem', color: '#9ca3af', textTransform: 'uppercase' }}>Max Cases/Month</div>
                   <div style={{ fontSize: '0.82rem', fontWeight: 600, marginTop: 2 }}>{app.maxCasesPerMonth}</div>
                 </div>
@@ -106,7 +106,7 @@ export default function AdminVolunteersPage() {
                 </div>
               </div>
 
-              <div style={{ fontSize: '0.85rem', color: '#374151', lineHeight: 1.6 }}>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
                 <strong>Motivation:</strong> {app.motivation}
               </div>
             </div>

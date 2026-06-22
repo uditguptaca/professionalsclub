@@ -56,14 +56,14 @@ export default function NewsPage() {
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
             Stay <span style={{ background: 'linear-gradient(135deg, #818cf8, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Informed</span>
           </h1>
-          <p style={{ fontSize: '1.15rem', color: '#94a3b8', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
+          <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
             Community updates and career tips.
           </p>
         </div>
       </section>
 
       {/* Featured Articles */}
-      <section style={{ padding: '40px 0', background: 'white' }}>
+      <section style={{ padding: '40px 0', background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <h2 style={{ fontSize: '1.6rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 32 }}>Featured Stories</h2>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
@@ -82,13 +82,13 @@ export default function NewsPage() {
                   </div>
 
                   <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24 }}>
-                    <div style={{ display: 'flex', gap: 12, fontSize: '0.75rem', color: '#cbd5e1', marginBottom: 12, fontWeight: 600 }}>
+                    <div style={{ display: 'flex', gap: 12, fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 12, fontWeight: 600 }}>
                       <span>{new Date(article.publishedAt).toLocaleDateString()}</span>
                       <span>&#8226;</span>
                       <span>By {article.author}</span>
                     </div>
                     <h3 style={{ fontWeight: 900, fontSize: '1.3rem', color: 'white', marginBottom: 12, lineHeight: 1.3, fontFamily: 'var(--font-display)' }}>{article.title}</h3>
-                    <p style={{ fontSize: '0.9rem', color: '#94a3b8', lineHeight: 1.6 }}>{article.summary.length > 50 ? article.summary.substring(0, 47) + '...' : article.summary}</p>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>{article.summary.length > 50 ? article.summary.substring(0, 47) + '...' : article.summary}</p>
                   </div>
                 </div>
               );
@@ -99,14 +99,14 @@ export default function NewsPage() {
 
       {/* Latest Articles */}
       {rest.length > 0 && (
-        <section style={{ padding: '40px 0', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+        <section style={{ padding: '40px 0', background: 'var(--bg-secondary)', borderTop: '1px solid #e2e8f0' }}>
           <div className="container" style={{ maxWidth: 1200 }}>
             <h2 style={{ fontSize: '1.6rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 32 }}>Latest Articles</h2>
             <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
               {rest.map((article, idx) => {
                 const cat = categoryColors[article.category] || { bg: '#f8fafc', text: '#374151' };
                 return (
-                  <div key={article.id} style={{ display: 'flex', alignItems: 'center', gap: 24, padding: '20px 24px', borderRadius: 20, background: 'linear-gradient(135deg, rgba(15,23,42,0.02), rgba(15,23,42,0.05))', border: '1px solid #e2e8f0', cursor: 'pointer', transition: 'box-shadow 0.2s, transform 0.2s' }} className="hover:-translate-y-1 hover:shadow-lg">
+                  <div key={article.id} style={{ display: 'flex', alignItems: 'center', gap: 24, padding: '20px 24px', borderRadius: 20, background: 'linear-gradient(135deg, rgba(15,23,42,0.02), rgba(15,23,42,0.05))', border: '1px solid var(--border-color)', cursor: 'pointer', transition: 'box-shadow 0.2s, transform 0.2s' }} className="hover:-translate-y-1 hover:shadow-lg">
                     <div style={{ width: 80, height: 80, borderRadius: 16, overflow: 'hidden', position: 'relative', flexShrink: 0, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                       <Image src={article.image} alt={article.category} fill style={{ objectFit: 'cover' }} />
                       <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -118,10 +118,10 @@ export default function NewsPage() {
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                         <span style={{ fontSize: '0.65rem', fontWeight: 800, padding: '4px 10px', borderRadius: 6, background: cat.bg, color: cat.text }}>{article.category}</span>
-                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600 }}>By {article.author}</span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>By {article.author}</span>
                       </div>
-                      <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#1e293b', marginBottom: 6, lineHeight: 1.3 }}>{article.title}</div>
-                      <div style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: 1.5 }}>{article.summary.length > 50 ? article.summary.substring(0, 47) + '...' : article.summary}</div>
+                      <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)', marginBottom: 6, lineHeight: 1.3 }}>{article.title}</div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{article.summary.length > 50 ? article.summary.substring(0, 47) + '...' : article.summary}</div>
                     </div>
                   </div>
                 );

@@ -49,30 +49,30 @@ export default function CompaniesPage() {
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
             Companies in Our <span style={{ background: 'linear-gradient(135deg, #818cf8, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Network</span>
           </h1>
-          <p style={{ fontSize: '1.15rem', color: '#94a3b8', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
+          <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
             Request a referral.
           </p>
         </div>
       </section>
 
       {/* Search + Grid */}
-      <section style={{ padding: '40px 0', background: 'white' }}>
+      <section style={{ padding: '40px 0', background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           {/* Filters */}
           <div style={{ display: 'flex', gap: 16, marginBottom: 48, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 240, position: 'relative' }}>
-              <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input
                 placeholder="Search companies..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                style={{ width: '100%', padding: '14px 16px 14px 44px', borderRadius: 12, border: '1px solid #e2e8f0', fontSize: '0.92rem', outline: 'none', background: '#f8fafc' }}
+                style={{ width: '100%', padding: '14px 16px 14px 44px', borderRadius: 12, border: '1px solid var(--border-color)', fontSize: '0.92rem', outline: 'none', background: 'var(--bg-secondary)' }}
               />
             </div>
             <select
               value={industry}
               onChange={e => setIndustry(e.target.value)}
-              style={{ padding: '14px 20px', borderRadius: 12, border: '1px solid #e2e8f0', fontSize: '0.92rem', background: '#f8fafc', minWidth: 200 }}
+              style={{ padding: '14px 20px', borderRadius: 12, border: '1px solid var(--border-color)', fontSize: '0.92rem', background: 'var(--bg-secondary)', minWidth: 200 }}
             >
               {industries.map(i => <option key={i} value={i}>{i === 'all' ? 'All Industries' : i}</option>)}
             </select>
@@ -81,7 +81,7 @@ export default function CompaniesPage() {
           {/* Companies Grid */}
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
             {filtered.map(company => (
-              <div key={company.id} style={{ borderRadius: 16, border: '1px solid #e2e8f0', overflow: 'hidden', transition: 'box-shadow 0.2s, transform 0.2s', cursor: 'default', background: 'white' }}>
+              <div key={company.id} style={{ borderRadius: 16, border: '1px solid var(--border-color)', overflow: 'hidden', transition: 'box-shadow 0.2s, transform 0.2s', cursor: 'default', background: 'var(--bg-primary)' }}>
                 <div style={{ height: 8, background: company.color }} />
                 <div style={{ padding: '24px 22px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
@@ -89,12 +89,12 @@ export default function CompaniesPage() {
                       {company.logo}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#1e293b' }}>{company.name}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{company.industry} &#8226; {company.size}</div>
+                      <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>{company.name}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{company.industry} &#8226; {company.size}</div>
                     </div>
                   </div>
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 14, lineHeight: 1.5 }}>{company.description}</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', color: '#94a3b8' }}>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 14, lineHeight: 1.5 }}>{company.description}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                     <MapPin size={14} /> {company.location}
                   </div>
                 </div>
@@ -103,7 +103,7 @@ export default function CompaniesPage() {
           </div>
 
           {filtered.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '60px 0', color: '#94a3b8' }}>
+            <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
               <Building2 size={48} style={{ margin: '0 auto 16px', opacity: 0.3 }} />
               <p>No companies found matching your search.</p>
             </div>
@@ -119,7 +119,7 @@ export default function CompaniesPage() {
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 600 }}>
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Want a Referral?</h2>
-          <p style={{ fontSize: '1.1rem', color: '#cbd5e1', marginBottom: 32 }}>Submit a help request on our portal.</p>
+          <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: 32 }}>Submit a help request on our portal.</p>
           <Link href="/portal/auth" className="btn btn-primary btn-lg" style={{ padding: '16px 36px', boxShadow: '0 8px 24px rgba(99,102,241,0.4)', background: '#4f46e5', color: 'white', border: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             Request a Referral <ArrowRight size={18} />
           </Link>

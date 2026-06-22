@@ -63,7 +63,7 @@ export default function Footer() {
         </div>
         <div className="footer-bottom">
           <p>&copy; {new Date().getFullYear()} Professionals Club. All rights reserved. Built in Canada.</p>
-          <p style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>Made with <Heart size={14} style={{ color: '#e11d48' }} /> for the Canadian professional community</p>
+          <p style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>Made with <Heart size={14} style={{ color: 'var(--primary-600)' }} /> for the Canadian professional community</p>
         </div>
       </div>
     </footer>

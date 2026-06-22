@@ -30,22 +30,22 @@ export default function SupportPage() {
   ];
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f8fafc' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-secondary)' }}>
       <Navbar />
 
       <main style={{ flex: 1, padding: '120px 0 100px 0' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <h1 style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: '#0f172a' }}>Support our Projects</h1>
-            <p style={{ fontSize: '1.1rem', color: '#64748b', maxWidth: 600, margin: '16px auto 0' }}>
+            <h1 style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>Support our Projects</h1>
+            <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', maxWidth: 600, margin: '16px auto 0' }}>
               Your contributions help us deliver critical resources and education for newcomers.
             </p>
           </div>
 
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
             {projects.map((project, idx) => (
-              <div key={idx} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
+              <div key={idx} style={{ background: 'var(--bg-primary)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ position: 'relative', height: 220, width: '100%' }}>
                   <Image src={project.image} alt={project.title} fill style={{ objectFit: 'cover' }} sizes="(max-width: 768px) 100vw, 33vw" />
                 </div>
@@ -54,8 +54,8 @@ export default function SupportPage() {
                   {/* Progress Stats */}
                   <div style={{ marginBottom: 16 }}>
                     <div style={{ fontSize: '1.4rem', fontWeight: 400, color: '#334155', marginBottom: 8, display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                      <span style={{ fontSize: '1.8rem', fontWeight: 600, color: '#0f172a' }}>${project.raised.toLocaleString()}</span> 
-                      <span style={{ fontSize: '0.9rem', color: '#64748b' }}>of ${project.goal.toLocaleString()} raised</span>
+                      <span style={{ fontSize: '1.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>${project.raised.toLocaleString()}</span> 
+                      <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>of ${project.goal.toLocaleString()} raised</span>
                     </div>
                     {/* Progress Bar Container */}
                     <div style={{ width: '100%', height: 8, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
@@ -63,10 +63,10 @@ export default function SupportPage() {
                     </div>
                   </div>
 
-                  <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#1e293b', marginBottom: 12, lineHeight: 1.3 }}>
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 12, lineHeight: 1.3 }}>
                     {project.title}
                   </h3>
-                  <p style={{ fontSize: '0.95rem', color: '#64748b', lineHeight: 1.6, marginBottom: 24, flex: 1 }}>
+                  <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 24, flex: 1 }}>
                     {project.desc}
                   </p>
 

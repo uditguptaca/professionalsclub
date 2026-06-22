@@ -38,7 +38,7 @@ export default function AdminBusinesses() {
       {/* Stats */}
       <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
         {[
-          { label: 'Total Businesses', value: businesses.length, icon: <Building2 size={22} />, color: '#374151', bg: '#f3f4f6' },
+          { label: 'Total Businesses', value: businesses.length, icon: <Building2 size={22} />, color: 'var(--text-primary)', bg: '#f3f4f6' },
           { label: 'Verified', value: verified, icon: <ShieldCheck size={22} />, color: '#059669', bg: 'rgba(5,150,105,0.1)' },
           { label: 'Featured', value: featured, icon: <Star size={22} />, color: '#d97706', bg: 'rgba(245,158,11,0.1)' },
           { label: 'Pending Review', value: pending, icon: <Clock size={22} />, color: '#6366f1', bg: 'rgba(99,102,241,0.1)' },

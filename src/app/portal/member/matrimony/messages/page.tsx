@@ -371,7 +371,7 @@ export default function MessagesPage() {
               {/* Message Input Box */}
               <form onSubmit={handleSendMessage} style={{
                 padding: 16, borderTop: '1px solid var(--border-color)',
-                display: 'flex', gap: 12, background: 'white'
+                display: 'flex', gap: 12, background: 'var(--bg-primary)'
               }}>
                 <input
                   type="text"

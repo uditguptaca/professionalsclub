@@ -19,7 +19,7 @@ import type {
 
 // ========== HELPERS ==========
 const STATUS_COLORS: Record<MatrimonyProfileStatus, { bg: string; color: string; label: string }> = {
-  draft: { bg: 'rgba(71,85,105,0.12)', color: '#64748b', label: 'Draft' },
+  draft: { bg: 'rgba(71,85,105,0.12)', color: 'var(--text-secondary)', label: 'Draft' },
   pending: { bg: 'rgba(245,158,11,0.14)', color: '#d97706', label: 'Pending' },
   approved: { bg: 'rgba(0,168,107,0.14)', color: '#059669', label: 'Approved' },
   rejected: { bg: 'rgba(240,73,35,0.14)', color: '#dc2626', label: 'Rejected' },
@@ -218,7 +218,7 @@ export default function AdminMatrimonyPage() {
     { label: 'Pending', value: stats.pending, color: '#d97706' },
     { label: 'Rejected', value: stats.rejected, color: '#dc2626' },
     { label: 'Suspended', value: stats.suspended, color: '#334155' },
-    { label: 'Draft', value: profiles.filter(p => p.status === 'draft').length, color: '#94a3b8' },
+    { label: 'Draft', value: profiles.filter(p => p.status === 'draft').length, color: 'var(--text-muted)' },
     { label: 'Changes Req.', value: profiles.filter(p => p.status === 'changes_requested').length, color: '#ea580c' },
   ], [profiles, stats]);
 

@@ -193,23 +193,23 @@ export default function RequestHelpPage() {
             <h2 className="text-xl font-bold">Review & Submit</h2>
 
             <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div style={{ padding: 16, borderRadius: 10, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
+              <div style={{ padding: 16, borderRadius: 10, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
                 <div style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Name</div>
                 <div style={{ fontWeight: 600 }}>{firstName} {lastName}</div>
               </div>
-              <div style={{ padding: 16, borderRadius: 10, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
+              <div style={{ padding: 16, borderRadius: 10, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
                 <div style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Category</div>
                 <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{category}</div>
               </div>
-              <div style={{ padding: 16, borderRadius: 10, background: '#f9fafb', border: '1px solid #e5e7eb', gridColumn: '1 / -1' }}>
+              <div style={{ padding: 16, borderRadius: 10, background: '#f9fafb', border: '1px solid var(--border-color)', gridColumn: '1 / -1' }}>
                 <div style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Request Title</div>
                 <div style={{ fontWeight: 600 }}>{title}</div>
               </div>
-              <div style={{ padding: 16, borderRadius: 10, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
+              <div style={{ padding: 16, borderRadius: 10, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
                 <div style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Urgency</div>
                 <div style={{ fontWeight: 600, textTransform: 'capitalize' }}>{urgency}</div>
               </div>
-              <div style={{ padding: 16, borderRadius: 10, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
+              <div style={{ padding: 16, borderRadius: 10, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
                 <div style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Support Type</div>
                 <div style={{ fontWeight: 600 }}>{supportType === 'one_time' ? 'One-time' : 'Ongoing Mentorship'}</div>
               </div>
@@ -224,7 +224,7 @@ export default function RequestHelpPage() {
             </div>
 
             {/* Consent */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 16px', borderRadius: 10, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 16px', borderRadius: 10, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
               <input type="checkbox" id="consent" checked={consent} onChange={() => setConsent(!consent)} style={{ marginTop: 3 }} />
               <label htmlFor="consent" style={{ fontSize: '0.8rem', cursor: 'pointer', lineHeight: 1.5 }}>
                 I agree to the platform terms and conditions. I understand that all support is community-based, securely routed, and does not constitute professional advice. I consent to the platform reviewing my request and assigning a volunteer if appropriate.

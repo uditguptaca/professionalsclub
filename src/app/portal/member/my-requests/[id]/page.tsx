@@ -60,20 +60,20 @@ export default function RequestDetailPage() {
           </span>
         </div>
         <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
-          <div style={{ padding: 12, borderRadius: 8, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
+          <div style={{ padding: 12, borderRadius: 8, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
             <div style={{ fontSize: '0.65rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Category</div>
             <div style={{ fontSize: '0.85rem', fontWeight: 600, marginTop: 2 }}>{request.category}</div>
           </div>
-          <div style={{ padding: 12, borderRadius: 8, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
+          <div style={{ padding: 12, borderRadius: 8, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
             <div style={{ fontSize: '0.65rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Urgency</div>
             <div style={{ fontSize: '0.85rem', fontWeight: 600, marginTop: 2, textTransform: 'capitalize' }}>{request.urgency}</div>
           </div>
-          <div style={{ padding: 12, borderRadius: 8, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
+          <div style={{ padding: 12, borderRadius: 8, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
             <div style={{ fontSize: '0.65rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Submitted</div>
             <div style={{ fontSize: '0.85rem', fontWeight: 600, marginTop: 2 }}>{new Date(request.createdAt).toLocaleDateString()}</div>
           </div>
         </div>
-        <div style={{ fontSize: '0.9rem', lineHeight: 1.7, color: '#374151' }}>{request.description}</div>
+        <div style={{ fontSize: '0.9rem', lineHeight: 1.7, color: 'var(--text-primary)' }}>{request.description}</div>
         {request.documents.length > 0 && (
           <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
             {request.documents.map((doc, i) => (

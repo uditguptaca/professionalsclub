@@ -201,7 +201,7 @@ export default function BusinessSignupPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f8fafc, #eef2ff)' }}>
       {/* Header */}
-      <div style={{ background: 'white', borderBottom: '1px solid var(--border-color)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 20 }}>
+      <div style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-color)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 20 }}>
         <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'var(--text-primary)' }}>
             <img src="/professionals-club-logo.png" alt="PC" style={{ width: 32, height: 32, objectFit: 'contain', mixBlendMode: 'multiply' }} />
@@ -246,7 +246,7 @@ export default function BusinessSignupPage() {
         </div>
 
         {/* Form Card */}
-        <div style={{ background: 'white', borderRadius: 20, border: '1px solid var(--border-color)', padding: '36px 40px', boxShadow: '0 4px 24px rgba(0,0,0,0.04)' }}>
+        <div style={{ background: 'var(--bg-primary)', borderRadius: 20, border: '1px solid var(--border-color)', padding: '36px 40px', boxShadow: '0 4px 24px rgba(0,0,0,0.04)' }}>
 
           {/* ═══ STEP 1: Business Profile ═══ */}
           {step === 1 && (
@@ -816,7 +816,7 @@ const labelStyle: React.CSSProperties = {
 const reqStyle: React.CSSProperties = { color: '#ef4444', fontWeight: 700 };
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid var(--gray-200)',
-  fontSize: '0.85rem', outline: 'none', fontFamily: 'var(--font-sans)', background: 'white',
+  fontSize: '0.85rem', outline: 'none', fontFamily: 'var(--font-sans)', background: 'var(--bg-primary)',
   transition: 'border-color 0.2s',
 };
 const hintStyle: React.CSSProperties = {
@@ -824,7 +824,7 @@ const hintStyle: React.CSSProperties = {
 };
 const checkboxRowStyle: React.CSSProperties = {
   display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 16px', borderRadius: 12,
-  border: '1.5px solid var(--gray-200)', cursor: 'pointer', background: 'white', transition: 'all 0.15s',
+  border: '1.5px solid var(--gray-200)', cursor: 'pointer', background: 'var(--bg-primary)', transition: 'all 0.15s',
 };
 const checkboxStyle: React.CSSProperties = {
   marginTop: 2, accentColor: 'var(--primary-600)', width: 18, height: 18, flexShrink: 0,

@@ -56,7 +56,7 @@ export default function TeamManagementPage() {
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15,23,42,0.9), transparent)' }} />
               <div style={{ position: 'absolute', bottom: 16, left: 16, zIndex: 5 }}>
                 <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'white' }}>{member.name}</div>
-                <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{member.role}</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{member.role}</div>
               </div>
               <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 4, zIndex: 5 }}>
                 <button onClick={() => openEdit(member)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: 6, cursor: 'pointer', backdropFilter: 'blur(4px)' }}><Pencil size={14} color="white" /></button>

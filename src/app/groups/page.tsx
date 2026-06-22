@@ -124,7 +124,7 @@ const COMMUNITIES: CommunitySection[] = [
     participants: '900+',
     communityLink: 'https://chat.whatsapp.com/KIjJ7ybzkhtHSVF6BGlXYK',
     description: 'For people from the same state or city in India now living in Canada.',
-    color: '#e11d48',
+    color: 'var(--primary-600)',
     colorLight: '#ffe4e6',
     groups: [
       { icon: <Plane size={20} />, name: 'Travel, Food & Leisure', link: 'https://bit.ly/ICPTravel' },
@@ -186,7 +186,7 @@ export default function GroupsPage() {
               <h1 style={{ fontSize: '3.6rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16, lineHeight: 1.1 }}>
                 Canada&apos;s Biggest <br /><span style={{ background: 'linear-gradient(135deg, #25D366, #128C7E)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Professional</span> Community
               </h1>
-              <p style={{ fontSize: '1.15rem', color: '#94a3b8', lineHeight: 1.7, maxWidth: 680, margin: '0 0 40px 0' }}>
+              <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 680, margin: '0 0 40px 0' }}>
                 Join Canada&apos;s largest professional networking platform.
               </p>
 
@@ -198,7 +198,7 @@ export default function GroupsPage() {
                 ].map((s, i) => (
                   <div key={i}>
                     <div style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>{s.val}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</div>
                   </div>
                 ))}
               </div>
@@ -211,7 +211,7 @@ export default function GroupsPage() {
                   <MessageCircle size={32} />
                 </div>
                 <div style={{ fontWeight: 900, fontSize: '1.3rem', color: 'white', marginBottom: 8, fontFamily: 'var(--font-display)', textAlign: 'center' }}>Main Community Channel</div>
-                <div style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: 24, textAlign: 'center' }}>{MAIN_COMMUNITY.members} participants • All groups in one place</div>
+                <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: 24, textAlign: 'center' }}>{MAIN_COMMUNITY.members} participants • All groups in one place</div>
                 <a href={MAIN_COMMUNITY.link} target="_blank" rel="noopener noreferrer" style={{
                   background: 'linear-gradient(135deg, #25D366, #128C7E)',
                   color: 'white',
@@ -239,7 +239,7 @@ export default function GroupsPage() {
       </section>
 
       {/* ─── QUICK NAV ─── */}
-      <section style={{ padding: '40px 0', background: 'white', borderBottom: '1px solid #e2e8f0', position: 'sticky', top: 0, zIndex: 40, backdropFilter: 'blur(12px)', backgroundColor: 'rgba(255,255,255,0.95)' }}>
+      <section style={{ padding: '40px 0', background: 'var(--bg-primary)', borderBottom: '1px solid #e2e8f0', position: 'sticky', top: 0, zIndex: 40, backdropFilter: 'blur(12px)', backgroundColor: 'rgba(255,255,255,0.95)' }}>
         <div className="container" style={{ maxWidth: '100%' }}>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             {COMMUNITIES.map((c) => (
@@ -305,10 +305,10 @@ export default function GroupsPage() {
                     <Users size={13} /> {community.participants} participants
                   </span>
                 </div>
-                <h2 style={{ fontSize: '1.6rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: '#0f172a', marginBottom: 6 }}>
+                <h2 style={{ fontSize: '1.6rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 6 }}>
                   {community.title}
                 </h2>
-                <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: 12 }}>{community.description}</p>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: 12 }}>{community.description}</p>
                 <a
                   href={community.communityLink}
                   target="_blank"
@@ -350,8 +350,8 @@ export default function GroupsPage() {
                     gap: 14,
                     padding: '16px 18px',
                     borderRadius: 12,
-                    background: 'white',
-                    border: '1px solid #e5e7eb',
+                    background: 'var(--bg-primary)',
+                    border: '1px solid var(--border-color)',
                     textDecoration: 'none',
                     transition: 'all 0.2s',
                     cursor: 'pointer',
@@ -361,9 +361,9 @@ export default function GroupsPage() {
                 >
                   <span style={{ display: 'flex', alignItems: 'center', color: community.color, flexShrink: 0 }}>{group.icon}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#0f172a', lineHeight: 1.3 }}>{group.name}</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: 1.3 }}>{group.name}</div>
                   </div>
-                  <ExternalLink size={14} style={{ color: '#94a3b8', flexShrink: 0 }} />
+                  <ExternalLink size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                 </a>
               ))}
             </div>
@@ -383,7 +383,7 @@ export default function GroupsPage() {
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16, lineHeight: 1.15 }}>
             Register as a Member
           </h2>
-          <p style={{ fontSize: '1.1rem', color: '#94a3b8', marginBottom: 12, lineHeight: 1.7 }}>
+          <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: 12, lineHeight: 1.7 }}>
             Register to receive exclusive group links directly.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 32, fontSize: '0.85rem', color: '#fbbf24' }}>

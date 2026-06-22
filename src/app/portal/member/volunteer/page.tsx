@@ -188,7 +188,7 @@ export default function VolunteerApplicationPage() {
             <div style={{ padding: 16, borderRadius: 10, background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.15)' }}>
               <Shield size={18} style={{ display: 'inline', verticalAlign: '-3px', marginRight: 6, color: 'var(--primary-600)' }} />
               <span style={{ fontSize: '0.8rem', color: '#4338ca', fontWeight: 600 }}>Platform Rules for Volunteers</span>
-              <ul style={{ fontSize: '0.8rem', color: '#374151', marginTop: 12, paddingLeft: 16, lineHeight: 1.8 }}>
+              <ul style={{ fontSize: '0.8rem', color: 'var(--text-primary)', marginTop: 12, paddingLeft: 16, lineHeight: 1.8 }}>
                 <li>All support must go through the platform — you cannot contact members directly.</li>
                 <li>Personal contact details (phone, email) are never shared between members.</li>
                 <li>The platform will assign cases to you and securely relay all communication.</li>
@@ -204,7 +204,7 @@ export default function VolunteerApplicationPage() {
                 { id: 'admin', label: 'I understand all support goes through the platform', checked: agreedAdmin, set: setAgreedAdmin },
                 { id: 'screen', label: 'I consent to the platform screening my application', checked: consentScreen, set: setConsentScreen },
               ].map(item => (
-                <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, background: '#f9fafb', border: '1px solid #e5e7eb' }}>
+                <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
                   <input type="checkbox" id={item.id} checked={item.checked} onChange={() => item.set(!item.checked)} />
                   <label htmlFor={item.id} style={{ fontSize: '0.83rem', cursor: 'pointer', fontWeight: 500 }}>{item.label}</label>
                 </div>

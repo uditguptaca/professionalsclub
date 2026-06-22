@@ -69,7 +69,7 @@ export default function ImpLinksPage() {
     <>
       <Navbar />
 
-      <main style={{ paddingTop: 120, paddingBottom: 80, minHeight: '100vh', background: '#f8fafc' }}>
+      <main style={{ paddingTop: 120, paddingBottom: 80, minHeight: '100vh', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ maxWidth: 1000 }}>
           
           <div style={{ textAlign: 'center', marginBottom: 60 }}>
@@ -86,9 +86,9 @@ export default function ImpLinksPage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
             {linkCategories.map((cat, idx) => (
-              <div key={idx} style={{ background: 'white', borderRadius: 24, overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)', border: '1px solid var(--border-color)' }}>
-                <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: 16, background: '#f8fafc' }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 12, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+              <div key={idx} style={{ background: 'var(--bg-primary)', borderRadius: 24, overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)', border: '1px solid var(--border-color)' }}>
+                <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: 16, background: 'var(--bg-secondary)' }}>
+                  <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                     {cat.icon}
                   </div>
                   <h2 style={{ fontSize: '1.5rem', fontWeight: 800, fontFamily: 'var(--font-display)', margin: 0 }}>
@@ -109,7 +109,7 @@ export default function ImpLinksPage() {
                             alignItems: 'flex-start',
                             gap: 12,
                             padding: '16px 20px',
-                            background: '#f8fafc',
+                            background: 'var(--bg-secondary)',
                             borderRadius: 12,
                             textDecoration: 'none',
                             color: 'var(--text-primary)',
@@ -134,7 +134,7 @@ export default function ImpLinksPage() {
                             if (icon) icon.style.color = '#94a3b8';
                           }}
                         >
-                          <ExternalLink className="link-icon" size={18} style={{ color: '#94a3b8', marginTop: 2, transition: 'color 0.2s', flexShrink: 0 }} />
+                          <ExternalLink className="link-icon" size={18} style={{ color: 'var(--text-muted)', marginTop: 2, transition: 'color 0.2s', flexShrink: 0 }} />
                           <span style={{ fontSize: '1rem', fontWeight: 600, lineHeight: 1.4 }}>{link.name}</span>
                         </a>
                       </li>

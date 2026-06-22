@@ -180,7 +180,7 @@ export default function JobsManagementPage() {
         {[
           { label: 'Active Jobs', value: activeJobs.length, color: '#059669', bg: '#d1fae5' },
           { label: 'Featured', value: jobPostings.filter(j => j.isFeatured).length, color: '#d97706', bg: '#fef3c7' },
-          { label: 'Inactive', value: inactiveJobs.length, color: '#94a3b8', bg: '#f1f5f9' },
+          { label: 'Inactive', value: inactiveJobs.length, color: 'var(--text-muted)', bg: '#f1f5f9' },
           { label: 'Total', value: jobPostings.length, color: '#0891b2', bg: '#ecfeff' },
         ].map((stat, i) => (
           <div key={i} style={{ padding: '20px 24px', borderRadius: 12, background: stat.bg, border: `1px solid ${stat.color}20` }}>

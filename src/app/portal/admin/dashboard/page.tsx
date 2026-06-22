@@ -25,7 +25,7 @@ export default function AdminDashboard() {
           { label: 'Open Requests', value: stats.openRequests, icon: <FileText size={22} />, color: '#6366f1', bg: 'rgba(99,102,241,0.1)', href: '/portal/admin/requests' },
           { label: 'Pending Volunteers', value: pendingApps.length, icon: <HandHeart size={22} />, color: '#059669', bg: 'rgba(5,150,105,0.1)', href: '/portal/admin/volunteers' },
           { label: 'Active Assignments', value: activeAssignments.length, icon: <FolderKanban size={22} />, color: '#d97706', bg: 'rgba(245,158,11,0.1)', href: '/portal/admin/assignments' },
-          { label: 'Total Members', value: stats.totalMembers, icon: <Users size={22} />, color: '#374151', bg: '#f3f4f6', href: '/portal/admin/members' },
+          { label: 'Total Members', value: stats.totalMembers, icon: <Users size={22} />, color: 'var(--text-primary)', bg: '#f3f4f6', href: '/portal/admin/members' },
           { label: 'Businesses', value: businesses.filter(b => b.verificationStatus === 'verified').length, icon: <Building2 size={22} />, color: '#0067a5', bg: 'rgba(0,103,165,0.1)', href: '/portal/admin/businesses' },
         ].map((item, i) => (
           <Link key={i} href={item.href} style={{ textDecoration: 'none' }}>
@@ -107,7 +107,7 @@ export default function AdminDashboard() {
             { label: 'Avg Resolution', value: `${stats.avgResolutionDays} days` },
             { label: 'Approved Volunteers', value: stats.approvedVolunteers },
           ].map((m, i) => (
-            <div key={i} style={{ padding: 16, borderRadius: 10, background: '#f9fafb', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+            <div key={i} style={{ padding: 16, borderRadius: 10, background: '#f9fafb', border: '1px solid var(--border-color)', textAlign: 'center' }}>
               <div style={{ fontSize: '1.4rem', fontWeight: 800 }}>{m.value}</div>
               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 4 }}>{m.label}</div>
             </div>

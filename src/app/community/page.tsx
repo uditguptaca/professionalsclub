@@ -23,14 +23,14 @@ export default function CommunityPage() {
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
             Community & <span style={{ background: 'linear-gradient(135deg, #f87171, #fb923c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Media</span>
           </h1>
-          <p style={{ fontSize: '1.15rem', color: '#94a3b8', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
+          <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
             Community-driven content designed to help you settle smoothly in Canada.
           </p>
         </div>
       </section>
 
       {/* YouTube Section — Side-by-Side */}
-      <section style={{ padding: '40px 0', background: 'white' }}>
+      <section style={{ padding: '40px 0', background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center' }}>
             <div>
@@ -39,14 +39,14 @@ export default function CommunityPage() {
                 <span style={{ color: '#dc2626', fontWeight: 700, fontSize: '0.78rem' }}>Official Channel</span>
               </div>
               <h2 style={{ fontSize: '2.4rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>Professionals Club on YouTube</h2>
-              <p style={{ fontSize: '1rem', color: '#64748b', lineHeight: 1.8, marginBottom: 28 }}>
+              <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: 28 }}>
                 Watch our past workshops, tutorials, and settlement guidance sessions on our official YouTube channel.
               </p>
               <div style={{ display: 'flex', gap: 12 }}>
                 <button className="btn" style={{ background: '#dc2626', color: 'white', border: 'none', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <PlayCircle size={18} /> Subscribe on YouTube
                 </button>
-                <button className="btn btn-outline" style={{ background: 'white', padding: '14px 24px' }}>Browse Videos</button>
+                <button className="btn btn-outline" style={{ background: 'var(--bg-primary)', padding: '14px 24px' }}>Browse Videos</button>
               </div>
             </div>
 
@@ -59,7 +59,7 @@ export default function CommunityPage() {
               </div>
               <div style={{ position: 'absolute', bottom: 20, left: 24, right: 24, zIndex: 2 }}>
                 <div style={{ color: 'white', fontWeight: 800, fontSize: '1.1rem' }}>Financial Literacy for Newcomers: Taxes 101</div>
-                <div style={{ color: '#94a3b8', fontSize: '0.82rem', marginTop: 4 }}>Educational Workshop &#8226; 45 Mins</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: 4 }}>Educational Workshop &#8226; 45 Mins</div>
               </div>
             </div>
           </div>
@@ -67,11 +67,11 @@ export default function CommunityPage() {
       </section>
 
       {/* Additional Resources */}
-      <section style={{ padding: '40px 0', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+      <section style={{ padding: '40px 0', background: 'var(--bg-secondary)', borderTop: '1px solid #e2e8f0' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
             <h2 style={{ fontSize: '2.2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 12 }}>More Community Resources</h2>
-            <p style={{ fontSize: '1rem', color: '#64748b' }}>Explore professional content.</p>
+            <p style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>Explore professional content.</p>
           </div>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {[
@@ -79,12 +79,12 @@ export default function CommunityPage() {
               { icon: <HandHeart size={28} />, title: 'Cultural Adaptation Forums', desc: 'Engage with fellow newcomers and ask questions about daily life.', color: '#059669', link: '/portal/auth' },
               { icon: <BookOpen size={28} />, title: 'Professional E-Books', desc: 'Download settlement checklists and e-books authored by mentors.', color: '#d97706', link: '/resources' },
             ].map((item, i) => (
-              <div key={i} style={{ borderRadius: 20, padding: '36px 28px', background: 'white', border: '1px solid #e2e8f0', transition: 'box-shadow 0.2s' }}>
+              <div key={i} style={{ borderRadius: 20, padding: '36px 28px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', transition: 'box-shadow 0.2s' }}>
                 <div style={{ width: 52, height: 52, borderRadius: 14, background: `${item.color}10`, border: `1px solid ${item.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, marginBottom: 20 }}>
                   {item.icon}
                 </div>
                 <h3 style={{ fontWeight: 800, fontSize: '1.15rem', marginBottom: 10, fontFamily: 'var(--font-display)' }}>{item.title}</h3>
-                <p style={{ fontSize: '0.88rem', color: '#64748b', lineHeight: 1.6, marginBottom: 20 }}>{item.desc}</p>
+                <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 20 }}>{item.desc}</p>
                 <Link href={item.link} style={{ fontWeight: 700, color: item.color, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
                   Explore <ArrowRight size={14} />
                 </Link>
@@ -99,7 +99,7 @@ export default function CommunityPage() {
         <div className="container" style={{ maxWidth: 700 }}>
           <MessageSquare size={40} style={{ color: '#818cf8', margin: '0 auto 20px' }} />
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Have Questions About Settling In?</h2>
-          <p style={{ fontSize: '1.1rem', color: '#94a3b8', marginBottom: 20, lineHeight: 1.7 }}>
+          <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.7 }}>
             Submit a request for personalized guidance tailored to your background.
           </p>
           <Link href="/portal/auth" className="btn btn-primary btn-lg" style={{ padding: '16px 36px', boxShadow: '0 8px 24px rgba(99,102,241,0.4)' }}>

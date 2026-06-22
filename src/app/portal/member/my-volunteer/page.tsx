@@ -98,7 +98,7 @@ export default function MyVolunteerPage() {
                     </span>
                   </div>
 
-                  <div style={{ padding: 14, borderRadius: 8, background: '#f9fafb', border: '1px solid #e5e7eb', marginBottom: 12 }}>
+                  <div style={{ padding: 14, borderRadius: 8, background: '#f9fafb', border: '1px solid var(--border-color)', marginBottom: 12 }}>
                     <div style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Admin Instructions</div>
                     <div style={{ fontSize: '0.85rem', lineHeight: 1.6 }}>{asg.instructions}</div>
                   </div>

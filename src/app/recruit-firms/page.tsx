@@ -34,7 +34,7 @@ export default function RecruitFirmsPage() {
     <>
       <Navbar />
 
-      <main style={{ paddingTop: 120, paddingBottom: 80, minHeight: '100vh', background: '#f8fafc' }}>
+      <main style={{ paddingTop: 120, paddingBottom: 80, minHeight: '100vh', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           
           <div style={{ textAlign: 'center', marginBottom: 60 }}>
@@ -49,7 +49,7 @@ export default function RecruitFirmsPage() {
             </p>
 
             <div style={{ position: 'relative', maxWidth: 500, margin: '0 auto' }}>
-              <Search style={{ position: 'absolute', top: 14, left: 16, color: '#94a3b8' }} size={20} />
+              <Search style={{ position: 'absolute', top: 14, left: 16, color: 'var(--text-muted)' }} size={20} />
               <input 
                 type="text" 
                 placeholder="Search recruitment firms..." 
@@ -60,7 +60,7 @@ export default function RecruitFirmsPage() {
                   padding: '14px 16px 14px 44px',
                   borderRadius: 99,
                   border: '1px solid var(--border-color)',
-                  background: 'white',
+                  background: 'var(--bg-primary)',
                   fontSize: '1rem',
                   outline: 'none',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
@@ -72,7 +72,7 @@ export default function RecruitFirmsPage() {
           <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
             {filteredFirms.map((firm, idx) => (
               <div key={idx} style={{ 
-                background: 'white', 
+                background: 'var(--bg-primary)', 
                 borderRadius: 16, 
                 padding: 24, 
                 border: '1px solid var(--border-color)',
@@ -82,7 +82,7 @@ export default function RecruitFirmsPage() {
                 textAlign: 'center',
                 transition: 'transform 0.15s, box-shadow 0.15s'
               }} className="hover:-translate-y-1 hover:shadow-lg">
-                <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--gray-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, color: '#cbd5e1' }}>
+                <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--gray-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, color: 'var(--text-muted)' }}>
                   <Briefcase size={24} />
                 </div>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 16, lineHeight: 1.3 }}>

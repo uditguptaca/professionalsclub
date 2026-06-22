@@ -81,7 +81,7 @@ export default function MatrimonyLandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: 'var(--bg-secondary)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
 
       {/* ═══════ HERO ═══════ */}
@@ -159,7 +159,7 @@ export default function MatrimonyLandingPage() {
             {/* CTA buttons */}
             <div className="animate-fade-in-up" style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
               <Link href="/portal/member/matrimony/create" className="btn btn-lg" style={{
-                background: 'linear-gradient(135deg, #FFBF00, #ffc424)', color: '#0f172a',
+                background: 'linear-gradient(135deg, #FFBF00, #ffc424)', color: 'var(--text-primary)',
                 fontWeight: 700, padding: '16px 36px', fontSize: '1rem', borderRadius: 14,
                 boxShadow: '0 8px 30px rgba(255,191,0,0.35)', border: 'none',
                 textDecoration: 'none',
@@ -197,7 +197,7 @@ export default function MatrimonyLandingPage() {
       </section>
 
       {/* ═══════ HOW IT WORKS ═══════ */}
-      <section id="how-it-works" style={{ padding: '100px 0 80px', background: 'white' }}>
+      <section id="how-it-works" style={{ padding: '100px 0 80px', background: 'var(--bg-primary)' }}>
         <div className="container">
           <div className="section-header">
             <div className="overline">Simple & Secure Process</div>
@@ -290,7 +290,7 @@ export default function MatrimonyLandingPage() {
       </section>
 
       {/* ═══════ FEATURES HIGHLIGHT ═══════ */}
-      <section style={{ padding: '80px 0', background: 'white' }}>
+      <section style={{ padding: '80px 0', background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 1100 }}>
           <div className="section-header">
             <div className="overline">Why Choose Us</div>
@@ -373,7 +373,7 @@ export default function MatrimonyLandingPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {faqs.map((faq, i) => (
               <div key={i} style={{
-                background: 'white', borderRadius: 16,
+                background: 'var(--bg-primary)', borderRadius: 16,
                 border: '1px solid var(--border-color)',
                 overflow: 'hidden', transition: 'all 0.2s',
               }}>
@@ -438,7 +438,7 @@ export default function MatrimonyLandingPage() {
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/portal/member/matrimony/create" className="btn btn-lg" style={{
-              background: 'linear-gradient(135deg, #FFBF00, #ffc424)', color: '#0f172a',
+              background: 'linear-gradient(135deg, #FFBF00, #ffc424)', color: 'var(--text-primary)',
               fontWeight: 700, padding: '16px 36px', fontSize: '1rem', borderRadius: 14,
               boxShadow: '0 8px 30px rgba(255,191,0,0.3)', border: 'none', textDecoration: 'none',
             }}>

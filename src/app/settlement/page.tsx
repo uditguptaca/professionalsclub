@@ -24,14 +24,14 @@ export default function SettlementPage() {
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
             Welcome to <span style={{ background: 'linear-gradient(135deg, #34d399, #6ee7b7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Canada</span>
           </h1>
-          <p style={{ fontSize: '1.15rem', color: '#94a3b8', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
+          <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
             Your comprehensive guide to settling smoothly in your first months in Canada.
           </p>
         </div>
       </section>
 
       {/* Settlement Categories — 2-Column Cards */}
-      <section style={{ padding: '40px 0', background: 'white' }}>
+      <section style={{ padding: '40px 0', background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 1280 }}>
           {[
             {
@@ -80,13 +80,13 @@ export default function SettlementPage() {
                 <div style={{ width: 56, height: 56, borderRadius: 16, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, border: `1px solid ${cat.border}` }}>
                   {cat.icon}
                 </div>
-                <h2 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 12, color: '#1e293b' }}>{cat.title}</h2>
-                <p style={{ fontSize: '1rem', color: '#64748b', lineHeight: 1.7, marginBottom: 24 }}>{cat.desc}</p>
+                <h2 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 12, color: 'var(--text-primary)' }}>{cat.title}</h2>
+                <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 24 }}>{cat.desc}</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
                   {cat.items.map((item, i) => (
                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.9rem' }}>
                        <CheckCircle size={16} style={{ color: cat.color, flexShrink: 0 }} />
-                       <span style={{ color: '#374151' }}>{item}</span>
+                       <span style={{ color: 'var(--text-primary)' }}>{item}</span>
                      </div>
                   ))}
                 </div>
@@ -105,7 +105,7 @@ export default function SettlementPage() {
                     </div>
                   </div>
                   <div style={{ fontWeight: 800, fontSize: '1.6rem', color: 'white', marginBottom: 16, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>{cat.title}</div>
-                  <p style={{ fontSize: '0.95rem', color: '#cbd5e1', maxWidth: 300, lineHeight: 1.6 }}>Get personalized guidance.</p>
+                  <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', maxWidth: 300, lineHeight: 1.6 }}>Get personalized guidance.</p>
                   <Link href="/portal/auth" className="btn btn-outline" style={{ marginTop: 32, borderColor: 'rgba(255,255,255,0.3)', color: 'white' }}>Contact a Volunteer</Link>
                 </div>
               </div>
@@ -125,7 +125,7 @@ export default function SettlementPage() {
             <div>
               <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#a5b4fc', marginBottom: 16 }}>Free Download</div>
               <h2 style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 24, lineHeight: 1.15, color: 'white' }}>The Ultimate Newcomer Checklist</h2>
-              <p style={{ fontSize: '1.1rem', color: '#cbd5e1', lineHeight: 1.8, marginBottom: 40 }}>
+              <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', lineHeight: 1.8, marginBottom: 40 }}>
                 Download our comprehensive PDF checklist covering your first 30 days in Canada.
               </p>
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
@@ -135,8 +135,8 @@ export default function SettlementPage() {
                 <Link href="/resources" className="btn" style={{ padding: '16px 32px', fontSize: '1rem', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}>View All Resources</Link>
               </div>
             </div>
-            <div style={{ background: '#ffffff', borderRadius: 8, padding: 40, border: '1px solid #e2e8f0', transform: 'rotate(2deg)', boxShadow: '0 25px 50px rgba(0,0,0,0.4), 0 0 0 12px rgba(255,255,255,0.05)' }}>
-              <h4 style={{ fontWeight: 800, fontSize: '1.3rem', marginBottom: 24, paddingBottom: 16, borderBottom: '2px dashed #e2e8f0', color: '#1e293b', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ background: 'var(--bg-card)', borderRadius: 8, padding: 40, border: '1px solid var(--border-color)', transform: 'rotate(2deg)', boxShadow: '0 25px 50px rgba(0,0,0,0.4), 0 0 0 12px rgba(255,255,255,0.05)' }}>
+              <h4 style={{ fontWeight: 800, fontSize: '1.3rem', marginBottom: 24, paddingBottom: 16, borderBottom: '2px dashed #e2e8f0', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 12 }}>
                 <FileText size={24} style={{ color: '#6366f1' }} />
                 First 7 Days Checklist
               </h4>
@@ -161,7 +161,7 @@ export default function SettlementPage() {
         <div className="container" style={{ maxWidth: 700 }}>
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Need Personalized Help?</h2>
           <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.85)', marginBottom: 32 }}>A trained volunteer will guide you through your specific settlement needs.</p>
-          <Link href="/portal/auth" className="btn btn-lg" style={{ background: 'white', color: '#059669', fontWeight: 700, padding: '16px 36px', border: 'none' }}>
+          <Link href="/portal/auth" className="btn btn-lg" style={{ background: 'var(--bg-primary)', color: '#059669', fontWeight: 700, padding: '16px 36px', border: 'none' }}>
             Request Settlement Help <ArrowRight size={18} />
           </Link>
         </div>

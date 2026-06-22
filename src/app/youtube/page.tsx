@@ -39,7 +39,7 @@ const CATEGORY_CONFIG: Record<string, { icon: React.ReactNode; color: string; bg
 
 const DEFAULT_CONFIG = {
   icon: <PlayCircle size={22} />,
-  color: '#64748b',
+  color: 'var(--text-secondary)',
   bgColor: '#f8fafc',
   borderColor: '#e2e8f0',
   description: 'Watch our latest videos in this category.',
@@ -112,22 +112,22 @@ export default function YouTubePage() {
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
             Learn, Watch & <span style={{ background: 'linear-gradient(135deg, #f87171, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Grow</span>
           </h1>
-          <p style={{ fontSize: '1.15rem', color: '#94a3b8', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
+          <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
             Browse our curated video library organized by topic. Find expert sessions, tutorials, and community recordings.
           </p>
         </div>
       </section>
 
       {/* Category Sections */}
-      <section style={{ padding: '48px 0 60px', background: '#f8fafc' }}>
+      <section style={{ padding: '48px 0 60px', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ maxWidth: 900 }}>
 
           {loading && (
-            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b', fontWeight: 600 }}>Loading videos...</div>
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-secondary)', fontWeight: 600 }}>Loading videos...</div>
           )}
 
           {!loading && orderedCategories.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#94a3b8', fontWeight: 600 }}>
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)', fontWeight: 600 }}>
               No videos found. Add videos in your Supabase dashboard!
             </div>
           )}
@@ -144,7 +144,7 @@ export default function YouTubePage() {
                   style={{
                     borderRadius: 16,
                     border: '1px solid ' + (isExpanded ? config.borderColor : '#e2e8f0'),
-                    background: 'white',
+                    background: 'var(--bg-primary)',
                     overflow: 'hidden',
                     transition: 'all 0.25s ease',
                     boxShadow: isExpanded ? '0 4px 20px rgba(0,0,0,0.06)' : 'none',
@@ -178,10 +178,10 @@ export default function YouTubePage() {
                         {config.icon}
                       </div>
                       <div>
-                        <h3 style={{ fontWeight: 800, fontSize: '1.1rem', fontFamily: 'var(--font-display)', margin: 0, color: '#0f172a' }}>
+                        <h3 style={{ fontWeight: 800, fontSize: '1.1rem', fontFamily: 'var(--font-display)', margin: 0, color: 'var(--text-primary)' }}>
                           {category}
                         </h3>
-                        <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 500 }}>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                           {categoryVideos.length} video{categoryVideos.length !== 1 ? 's' : ''}
                         </span>
                       </div>
@@ -193,7 +193,7 @@ export default function YouTubePage() {
 
                   {isExpanded && (
                     <div style={{ padding: '0 28px 28px', borderTop: '1px solid ' + (config.borderColor) }}>
-                      <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.7, marginTop: 20, marginBottom: 24 }}>
+                      <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginTop: 20, marginBottom: 24 }}>
                         {config.description}
                       </p>
 
@@ -210,8 +210,8 @@ export default function YouTubePage() {
                               gap: 14,
                               padding: '14px 18px',
                               borderRadius: 12,
-                              background: '#f8fafc',
-                              border: '1px solid #e2e8f0',
+                              background: 'var(--bg-secondary)',
+                              border: '1px solid var(--border-color)',
                               textDecoration: 'none',
                               transition: 'all 0.2s ease',
                               cursor: 'pointer',
@@ -232,17 +232,17 @@ export default function YouTubePage() {
                             </div>
 
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1e293b', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {video.title}
                               </div>
-                              <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                                 {video.duration && <span>{video.duration}</span>}
                                 {video.duration && video.recorded_date && <span> · </span>}
                                 {video.recorded_date && <span>{video.recorded_date}</span>}
                               </div>
                             </div>
 
-                            <ExternalLink size={16} style={{ color: '#94a3b8', flexShrink: 0 }} />
+                            <ExternalLink size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                           </a>
                         ))}
                       </div>
@@ -254,12 +254,12 @@ export default function YouTubePage() {
           </div>
 
           {!loading && orderedCategories.length > 0 && (
-            <div style={{ marginTop: 48, textAlign: 'center', padding: '40px 32px', borderRadius: 16, background: 'white', border: '1px solid #e2e8f0' }}>
+            <div style={{ marginTop: 48, textAlign: 'center', padding: '40px 32px', borderRadius: 16, background: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
               <PlayCircle size={36} style={{ color: '#dc2626', margin: '0 auto 16px' }} />
-              <h3 style={{ fontWeight: 800, fontSize: '1.3rem', color: '#0f172a', marginBottom: 8, fontFamily: 'var(--font-display)' }}>
+              <h3 style={{ fontWeight: 800, fontSize: '1.3rem', color: 'var(--text-primary)', marginBottom: 8, fontFamily: 'var(--font-display)' }}>
                 Want more content?
               </h3>
-              <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: 24, maxWidth: 400, margin: '0 auto 24px' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 24, maxWidth: 400, margin: '0 auto 24px' }}>
                 Subscribe to our YouTube channel for new sessions, workshops, and expert interviews every week.
               </p>
               <a

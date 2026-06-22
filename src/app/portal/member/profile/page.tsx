@@ -44,7 +44,7 @@ export default function MemberProfilePage() {
   return (
     <div style={{ maxWidth: 800, margin: '0 auto' }} className="animate-fade-in">
       <div style={{ marginBottom: 32, display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#f1f5f9', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--bg-secondary)', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <UserCircle size={40} />
         </div>
         <div>

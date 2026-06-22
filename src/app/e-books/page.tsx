@@ -10,18 +10,18 @@ const DigitalCover = ({ title, chapter, color }: { title: string; chapter: strin
     <div style={{
       width: '100%',
       height: '100%',
-      background: '#ffffff',
+      background: 'var(--bg-card)',
       display: 'flex',
       flexDirection: 'column',
       padding: '12px',
       position: 'relative',
-      border: '1px solid #e2e8f0',
+      border: '1px solid var(--border-color)',
       boxSizing: 'border-box',
     }}>
       {/* Header Mimic */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '10px' }}>
-        <span style={{ color: '#e11d48', fontWeight: 900, fontSize: '0.6rem', letterSpacing: '0.5px' }}>INDOCANADA</span>
-        <span style={{ color: '#0f172a', fontWeight: 900, fontSize: '0.6rem', letterSpacing: '0.5px' }}>PROFESSIONALS</span>
+        <span style={{ color: 'var(--primary-600)', fontWeight: 900, fontSize: '0.6rem', letterSpacing: '0.5px' }}>INDOCANADA</span>
+        <span style={{ color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.6rem', letterSpacing: '0.5px' }}>PROFESSIONALS</span>
       </div>
 
       {/* Main Body Area */}
@@ -37,22 +37,22 @@ const DigitalCover = ({ title, chapter, color }: { title: string; chapter: strin
           transform: 'rotate(180deg)',
           fontSize: '0.55rem',
           fontWeight: 800,
-          color: '#1e293b',
+          color: 'var(--text-primary)',
           borderLeft: `2px solid ${color}`,
           padding: '4px 0'
         }}>
-          NEWCOMER&apos;S GUIDE <span style={{ color: '#e11d48', marginLeft: '4px' }}>CHAPTER {chapter}</span>
+          NEWCOMER&apos;S GUIDE <span style={{ color: 'var(--primary-600)', marginLeft: '4px' }}>CHAPTER {chapter}</span>
         </div>
 
         {/* Center Image Placeholder Mimic */}
         <div style={{ 
           flex: 1, 
-          background: '#f8fafc', 
+          background: 'var(--bg-secondary)', 
           borderRadius: '4px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          border: '1px solid #f1f5f9',
+          border: '1px solid var(--border-color)',
           position: 'relative',
           overflow: 'hidden'
         }}>
@@ -74,11 +74,11 @@ const DigitalCover = ({ title, chapter, color }: { title: string; chapter: strin
       <div style={{ 
         marginTop: '10px', 
         padding: '6px 8px', 
-        background: '#f1f5f9', 
+        background: 'var(--bg-secondary)', 
         borderRadius: '4px',
         fontSize: '0.5rem',
         fontWeight: 800,
-        color: '#e11d48',
+        color: 'var(--primary-600)',
         textAlign: 'center',
         textTransform: 'uppercase'
       }}>
@@ -137,9 +137,9 @@ const BookCard = ({ file, categoryColor }: { file: any; categoryColor: string })
   
   return (
     <div style={{
-      background: 'white',
+      background: 'var(--bg-primary)',
       borderRadius: '20px',
-      border: '1px solid #e2e8f0',
+      border: '1px solid var(--border-color)',
       overflow: 'hidden',
       transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
       display: 'flex',
@@ -154,7 +154,7 @@ const BookCard = ({ file, categoryColor }: { file: any; categoryColor: string })
         position: 'relative', 
         paddingTop: '135%', // Classic Book Aspect Ratio
         overflow: 'hidden',
-        background: '#f8fafc',
+        background: 'var(--bg-secondary)',
         padding: '15px',
         boxSizing: 'border-box'
       }}>
@@ -174,7 +174,7 @@ const BookCard = ({ file, categoryColor }: { file: any; categoryColor: string })
         <h3 style={{
           fontSize: '1rem',
           fontWeight: 800,
-          color: '#0f172a',
+          color: 'var(--text-primary)',
           lineHeight: 1.4,
           margin: 0,
           flex: 1,
@@ -212,7 +212,7 @@ const BookCard = ({ file, categoryColor }: { file: any; categoryColor: string })
             justifyContent: 'space-between', 
             alignItems: 'center',
             fontSize: '0.8rem',
-            color: '#64748b',
+            color: 'var(--text-secondary)',
             fontWeight: 600
           }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -228,7 +228,7 @@ const BookCard = ({ file, categoryColor }: { file: any; categoryColor: string })
 
 export default function EBooksPage() {
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100vh' }}>
+    <div style={{ background: 'var(--bg-secondary)', minHeight: '100vh' }}>
       <Navbar />
 
       {/* Hero Section - Clean & High Impact */}
@@ -273,7 +273,7 @@ export default function EBooksPage() {
           }}>
             E-Books <span style={{ color: '#3b82f6' }}>Library</span>
           </h1>
-          <p style={{ fontSize: '1.25rem', color: '#94a3b8', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
+          <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
             Premium guides curated by experts to simplify your Canadian settlement journey.
           </p>
         </div>
@@ -300,7 +300,7 @@ export default function EBooksPage() {
                 }}>
                    <div style={{ 
                      padding: '12px', 
-                     background: 'white', 
+                     background: 'var(--bg-primary)', 
                      borderRadius: '16px', 
                      color: category.color,
                      boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
@@ -310,14 +310,14 @@ export default function EBooksPage() {
                    <h2 style={{ 
                      fontSize: '2.25rem', 
                      fontWeight: 900, 
-                     color: '#0f172a', 
+                     color: 'var(--text-primary)', 
                      margin: 0,
                      fontFamily: 'var(--font-display)' 
                    }}>
                     {category.title} <span style={{ color: category.color }}>{category.highlight}</span>
                   </h2>
                 </div>
-                <p style={{ color: '#64748b', fontSize: '1.1rem', maxWidth: '600px', margin: 0 }}>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '600px', margin: 0 }}>
                   {category.description}
                 </p>
               </div>
@@ -358,7 +358,7 @@ export default function EBooksPage() {
             <h3 style={{ fontWeight: 900, fontSize: '2rem', marginBottom: '16px', fontFamily: 'var(--font-display)' }}>
               Looking for something specific?
             </h3>
-            <p style={{ color: '#94a3b8', fontSize: '1.1rem', marginBottom: '40px', maxWidth: '500px', margin: '0 auto 40px' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginBottom: '40px', maxWidth: '500px', margin: '0 auto 40px' }}>
               We update our library weekly. Let us know if there&apos;s a resource you&apos;d like to see added.
             </p>
             <a
@@ -368,8 +368,8 @@ export default function EBooksPage() {
                 alignItems: 'center', 
                 gap: '12px', 
                 padding: '18px 48px', 
-                background: 'white', 
-                color: '#0f172a', 
+                background: 'var(--bg-primary)', 
+                color: 'var(--text-primary)', 
                 borderRadius: '16px', 
                 fontWeight: 800, 
                 textDecoration: 'none',

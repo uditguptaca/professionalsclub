@@ -178,7 +178,7 @@ export default function AdminRequestDetailPage() {
                 <p className="text-secondary text-sm mb-3">No volunteer assigned yet. Approved volunteers:</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {approvedVolunteers.slice(0, 3).map(v => (
-                    <div key={v.id} style={{ padding: '8px 12px', borderRadius: 6, background: '#f9fafb', border: '1px solid #e5e7eb', fontSize: '0.82rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div key={v.id} style={{ padding: '8px 12px', borderRadius: 6, background: '#f9fafb', border: '1px solid var(--border-color)', fontSize: '0.82rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div><strong>{v.memberName}</strong><div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>{v.currentProfession}</div></div>
                       <button className="btn btn-outline btn-sm" style={{ fontSize: '0.68rem' }}>Assign</button>
                     </div>

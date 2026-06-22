@@ -25,7 +25,7 @@ const navTabs: { key: DashboardTab; label: string; icon: React.ElementType }[] =
 ];
 
 const statusConfig: Record<string, { color: string; bg: string; icon: React.ElementType; label: string }> = {
-  draft: { color: '#64748b', bg: 'rgba(100,116,139,0.1)', icon: FileEdit, label: 'Draft' },
+  draft: { color: 'var(--text-secondary)', bg: 'rgba(100,116,139,0.1)', icon: FileEdit, label: 'Draft' },
   pending: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', icon: Clock, label: 'Pending Review' },
   approved: { color: '#00A86B', bg: 'rgba(0,168,107,0.1)', icon: CheckCircle2, label: 'Approved & Live' },
   rejected: { color: '#F04923', bg: 'rgba(240,73,35,0.1)', icon: XCircle, label: 'Rejected' },
@@ -227,7 +227,7 @@ export default function MemberMatrimonyDashboard() {
             </p>
             <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
               <Link href="/portal/member/matrimony/create" className="btn btn-lg" style={{
-                background: 'linear-gradient(135deg, #FFBF00, #ffc424)', color: '#0f172a',
+                background: 'linear-gradient(135deg, #FFBF00, #ffc424)', color: 'var(--text-primary)',
                 fontWeight: 700, padding: '14px 32px', borderRadius: 14,
                 boxShadow: '0 8px 30px rgba(255,191,0,0.3)', border: 'none', textDecoration: 'none',
               }}>
