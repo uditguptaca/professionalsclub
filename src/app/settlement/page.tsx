@@ -3,9 +3,122 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
-import { Home, Banknote, HeartPulse, Car, ShieldCheck, ArrowRight, CheckCircle, Download, MapPin, FileText } from 'lucide-react';
+import { 
+  ArrowRight, 
+  Download, 
+  MapPin, 
+  FileText, 
+  CheckCircle, 
+  Home as HomeIcon, 
+  Landmark, 
+  ShieldCheck, 
+  Globe, 
+  TrendingUp, 
+  DollarSign, 
+  Wallet, 
+  Send, 
+  CreditCard, 
+  Hospital, 
+  User, 
+  HeartPulse, 
+  Shield, 
+  ClipboardList, 
+  Bus, 
+  Car, 
+  Users, 
+  Briefcase, 
+  FileCheck 
+} from 'lucide-react';
 
 export default function SettlementPage() {
+  const categories = [
+    {
+      badge: 'Housing Support',
+      title: 'Housing & Rentals',
+      desc: 'Finding your first home in Canada. Understanding leases, credit scores for rentals, and popular neighborhoods for newcomers.',
+      items: [
+        { label: 'Rental Market Guide', icon: <MapPin size={18} /> },
+        { label: 'Credit Score Rules', icon: <Landmark size={18} /> },
+        { label: 'Tenant Rights', icon: <ShieldCheck size={18} /> },
+        { label: 'Housing Options', icon: <HomeIcon size={18} /> },
+        { label: 'Lease Guarantors', icon: <FileText size={18} /> },
+        { label: 'Utility & WiFi Setup', icon: <Globe size={18} /> },
+      ],
+      buttonText: 'Request Housing Help',
+      imgSide: 'right',
+      image: '/housing_bg.png',
+      imgOverlayText: 'Newcomer Housing Support'
+    },
+    {
+      badge: 'Financial Literacy',
+      title: 'Financial Literacy & Banking',
+      desc: 'Setting up your Canadian financial life. Open accounts, build credit, and understand the tax system from day one.',
+      items: [
+        { label: 'Opening Bank Accounts', icon: <Landmark size={18} /> },
+        { label: 'Building Credit Score', icon: <TrendingUp size={18} /> },
+        { label: 'Income Tax & GST', icon: <DollarSign size={18} /> },
+        { label: 'RRSP & TFSA Savings', icon: <Wallet size={18} /> },
+        { label: 'Money Transfers', icon: <Send size={18} /> },
+        { label: 'Credit Card Choice', icon: <CreditCard size={18} /> },
+      ],
+      buttonText: 'Request Financial Help',
+      imgSide: 'left',
+      image: '/finance_bg.png',
+      imgOverlayText: 'Newcomer Financial Services'
+    },
+    {
+      badge: 'Healthcare Setup',
+      title: 'Healthcare Access',
+      desc: 'Navigating the universal healthcare system. Getting your provincial health card and finding doctors.',
+      items: [
+        { label: 'Provincial Health Cards', icon: <Hospital size={18} /> },
+        { label: 'Find Family Doctors', icon: <User size={18} /> },
+        { label: 'Walk-in Clinics', icon: <MapPin size={18} /> },
+        { label: 'Emergency vs Urgent', icon: <HeartPulse size={18} /> },
+        { label: 'Dental & Vision Cover', icon: <Shield size={18} /> },
+        { label: 'Prescription Services', icon: <ClipboardList size={18} /> },
+      ],
+      buttonText: 'Request Healthcare Help',
+      imgSide: 'right',
+      image: '/healthcare_bg.png',
+      imgOverlayText: 'Newcomer Healthcare Assistance'
+    },
+    {
+      badge: 'Transit & Driving',
+      title: 'Transportation & Driving',
+      desc: 'Getting around your new city. Public transit, driver license exchange, and buying your first car.',
+      items: [
+        { label: 'License Exchange', icon: <ClipboardList size={18} /> },
+        { label: 'Public Transit Guide', icon: <Bus size={18} /> },
+        { label: 'Car Insurance Setup', icon: <ShieldCheck size={18} /> },
+        { label: 'Winter Driving Tips', icon: <Car size={18} /> },
+        { label: 'Buying & Leasing Cars', icon: <Car size={18} /> },
+        { label: 'Rideshare & Carpool', icon: <Users size={18} /> },
+      ],
+      buttonText: 'Request Transit Help',
+      imgSide: 'left',
+      image: '/toronto-skyline.png',
+      imgOverlayText: 'Newcomer Transportation Support'
+    },
+    {
+      badge: 'Legal & Documentation',
+      title: 'Legal Documentation & SIN',
+      desc: 'Essential documentation and legal requirements for living and working in Canada.',
+      items: [
+        { label: 'SIN Application', icon: <FileText size={18} /> },
+        { label: 'Work Permit Guides', icon: <Briefcase size={18} /> },
+        { label: 'PR Card Obligations', icon: <ShieldCheck size={18} /> },
+        { label: 'Legal Aid Services', icon: <Shield size={18} /> },
+        { label: 'Notary Public Setup', icon: <FileCheck size={18} /> },
+        { label: 'Travel & Passports', icon: <Globe size={18} /> },
+      ],
+      buttonText: 'Request Legal Document Help',
+      imgSide: 'right',
+      image: '/hero-community.png',
+      imgOverlayText: 'Newcomer Legal Support'
+    }
+  ];
+
   return (
     <>
       <Navbar />
@@ -33,80 +146,33 @@ export default function SettlementPage() {
       {/* Settlement Categories — 2-Column Cards */}
       <section className="section" style={{ background: 'var(--bg-primary)' }}>
         <div className="container">
-          {[
-            {
-              icon: <Home size={32} style={{ color: '#e85d04' }} />,
-              title: 'Housing & Rentals',
-              desc: 'Finding your first home in Canada. Understanding leases, credit scores for rentals, and popular neighborhoods for newcomers.',
-              items: ['Rental Market Overview & Average Costs', 'Credit Score Requirements for Newcomers', 'Tenant Rights & Responsibilities in Ontario', 'Temporary vs Long-term Housing Options'],
-              color: '#e85d04', bg: '#fff7ed', border: 'rgba(232, 93, 4, 0.2)',
-              imgSide: 'right', image: '/housing_bg.png'
-            },
-            {
-              icon: <Banknote size={32} style={{ color: '#e85d04' }} />,
-              title: 'Financial Literacy & Banking',
-              desc: 'Setting up your Canadian financial life. Open accounts, build credit, and understand the tax system from day one.',
-              items: ['Opening a Bank Account (RBC, TD, Scotiabank)', 'Building Credit History as a Newcomer', 'GST/HST & Income Tax 101', 'RRSP, TFSA & Registered Savings Accounts'],
-              color: '#e85d04', bg: '#fff7ed', border: 'rgba(232, 93, 4, 0.2)',
-              imgSide: 'left', image: '/finance_bg.png'
-            },
-            {
-              icon: <HeartPulse size={32} style={{ color: '#e85d04' }} />,
-              title: 'Healthcare Access',
-              desc: 'Navigating the universal healthcare system. Getting your provincial health card and finding doctors.',
-              items: ['Applying for Health Cards (OHIP, MSP, etc.)', 'Finding a Family Doctor or Walk-in Clinic', 'Emergency Room vs Urgent Care', 'Dental & Vision Coverage Options'],
-              color: '#e85d04', bg: '#fff7ed', border: 'rgba(232, 93, 4, 0.2)',
-              imgSide: 'right', image: '/healthcare_bg.png'
-            },
-            {
-              icon: <Car size={32} style={{ color: '#e85d04' }} />,
-              title: 'Transportation & Driving',
-              desc: 'Getting around your new city. Public transit, driver license exchange, and buying your first car.',
-              items: ['Foreign Driver License Exchange Process', 'Public Transit (PRESTO, Compass Card)', 'Car Insurance Basics in Canada', 'Winter Driving Safety Tips'],
-              color: '#e85d04', bg: '#fff7ed', border: 'rgba(232, 93, 4, 0.2)',
-              imgSide: 'left', image: '/toronto-skyline.png'
-            },
-            {
-              icon: <ShieldCheck size={32} style={{ color: '#e85d04' }} />,
-              title: 'Legal Documentation & SIN',
-              desc: 'Essential documentation and legal requirements for living and working in Canada.',
-              items: ['Social Insurance Number (SIN) Application', 'Work Permits & Authorization', 'PR Card & Residency Obligations', 'Free Legal Aid Resources'],
-              color: '#e85d04', bg: '#fff7ed', border: 'rgba(232, 93, 4, 0.2)',
-              imgSide: 'right', image: '/hero-community.png'
-            },
-          ].map((cat, idx) => (
-            <div key={idx} className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)', gap: 56, alignItems: 'center', marginBottom: idx < 4 ? 80 : 0, direction: cat.imgSide === 'left' ? 'rtl' : 'ltr' }}>
+          {categories.map((cat, idx) => (
+            <div key={idx} className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)', gap: 56, alignItems: 'center', marginBottom: idx < categories.length - 1 ? 96 : 0, direction: cat.imgSide === 'left' ? 'rtl' : 'ltr' }}>
+              {/* Text Side */}
               <div style={{ direction: 'ltr' }}>
-                <div style={{ width: 56, height: 56, borderRadius: 16, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, border: `1px solid ${cat.border}` }}>
-                  {cat.icon}
-                </div>
-                <h2 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 12, color: 'var(--text-primary)' }}>{cat.title}</h2>
-                <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 24 }}>{cat.desc}</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--primary-600)', marginBottom: 12 }}>{cat.badge}</div>
+                <h2 style={{ fontSize: '2.4rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15, color: 'var(--text-primary)' }}>{cat.title}</h2>
+                <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: 28 }}>{cat.desc}</p>
+                
+                {/* 2x3 Grid of boxes */}
+                <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 32 }}>
                   {cat.items.map((item, i) => (
-                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.9rem' }}>
-                       <CheckCircle size={16} style={{ color: cat.color, flexShrink: 0 }} />
-                       <span style={{ color: 'var(--text-primary)' }}>{item}</span>
-                     </div>
+                    <Link href="/portal/auth" key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 12, background: 'rgba(232, 93, 4, 0.08)', border: '1px solid rgba(232, 93, 4, 0.15)', fontSize: '0.88rem', fontWeight: 600, color: 'var(--primary-700)', textDecoration: 'none', transition: 'all 0.2s' }} className="hover:-translate-y-1 hover:shadow-md">
+                      <span style={{ display: 'flex', alignItems: 'center' }}>{item.icon}</span> {item.label}
+                    </Link>
                   ))}
                 </div>
-                <Link href="/portal/auth" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: '0.9rem', color: cat.color, textDecoration: 'none' }}>
-                  Get Help With This <ArrowRight size={16} />
+
+                <Link href="/portal/auth" className="btn btn-primary" style={{ padding: '14px 28px' }}>
+                  {cat.buttonText} <ArrowRight size={18} />
                 </Link>
               </div>
-              <div style={{ direction: 'ltr', position: 'relative', borderRadius: 24, overflow: 'hidden', minHeight: 400, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
+
+              {/* Image Side */}
+              <div style={{ direction: 'ltr', borderRadius: 24, overflow: 'hidden', boxShadow: '0 25px 50px rgba(0,0,0,0.12)', position: 'relative', aspectRatio: '4/3', width: '100%' }}>
                 <Image src={cat.image} alt={cat.title} fill style={{ objectFit: 'cover' }} />
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.85), rgba(12,12,14,0.65))' }} />
-                
-                <div style={{ position: 'relative', zIndex: 10, padding: 32, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <div style={{ marginBottom: 20 }}>
-                    <div style={{ width: 72, height: 72, borderRadius: 20, background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-                      {React.cloneElement(cat.icon as React.ReactElement<any>, { size: 36, style: { color: 'white' } })}
-                    </div>
-                  </div>
-                  <div style={{ fontWeight: 800, fontSize: '1.6rem', color: 'white', marginBottom: 16, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>{cat.title}</div>
-                  <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', maxWidth: 300, lineHeight: 1.6 }}>Get personalized guidance.</p>
-                  <Link href="/portal/auth" className="btn btn-outline" style={{ marginTop: 32, borderColor: 'rgba(255,255,255,0.3)', color: 'white' }}>Contact a Volunteer</Link>
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '24px 28px', background: 'linear-gradient(transparent, rgba(12,12,14,0.7))' }}>
+                  <span style={{ color: 'white', fontWeight: 700, fontSize: '0.85rem' }}>{cat.imgOverlayText}</span>
                 </div>
               </div>
             </div>
