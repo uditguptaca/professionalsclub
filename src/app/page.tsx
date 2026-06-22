@@ -11,10 +11,12 @@ export default function Home() {
       
       {/* ─── HERO ─── */}
       <section style={{ position: 'relative', padding: '120px 0', display: 'flex', alignItems: 'center', overflow: 'hidden', background: '#0c0c0e' }}>
-        {/* Background Image */}
-        <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/hero-community.png" alt="Professionals networking" fill style={{ objectFit: 'cover', objectPosition: 'center', opacity: 0.25 }} priority />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(8, 8, 12, 0.5) 0%, rgba(8, 8, 12, 0.98) 100%), linear-gradient(135deg, rgba(8, 8, 12, 0.9) 0%, rgba(232, 93, 4, 0.18) 100%)' }} />
+        {/* Background Video */}
+        <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
+          <video autoPlay loop muted playsInline style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.25 }}>
+            <source src="/videos/canada.mp4" type="video/mp4" />
+          </video>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(8, 8, 12, 0.4) 0%, rgba(8, 8, 12, 0.98) 100%), linear-gradient(135deg, rgba(8, 8, 12, 0.8) 0%, rgba(232, 93, 4, 0.15) 100%)' }} />
         </div>
 
         <div className="container mobile-stack" style={{ position: 'relative', zIndex: 10, display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 40, alignItems: 'center', paddingTop: 40 }}>

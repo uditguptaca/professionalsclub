@@ -44,9 +44,17 @@ export default function BusinessDirectoryPage() {
       <Navbar />
 
       {/* Hero */}
-      <section className="biz-hero" style={{ padding: '120px 0 60px' }}>
-        <div className="container">
-          <div className="biz-hero-content" style={{ margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 40, textAlign: 'left', maxWidth: '100%' }}>
+      <section className="biz-hero" style={{ position: 'relative', padding: '120px 0 60px', overflow: 'hidden' }}>
+        {/* Background Video */}
+        <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
+          <video autoPlay loop muted playsInline style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.12 }}>
+            <source src="/videos/canada.mp4" type="video/mp4" />
+          </video>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(12, 12, 14, 0.4) 0%, rgba(12, 12, 14, 0.95) 100%), linear-gradient(135deg, rgba(12, 12, 14, 0.8) 0%, rgba(232, 93, 4, 0.12) 100%)' }} />
+        </div>
+
+        <div className="container" style={{ position: 'relative', zIndex: 10 }}>
+          <div className="biz-hero-content" style={{ margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 40, textAlign: 'left', maxWidth: '100%', position: 'relative', zIndex: 10 }}>
           {/* Left Side */}
           <div style={{ flex: 1 }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.12)', padding: '5px 14px', borderRadius: 99, marginBottom: 16, border: '1px solid rgba(255,255,255,0.15)', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#ffffff' }}>

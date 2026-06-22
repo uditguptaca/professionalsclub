@@ -2496,6 +2496,7 @@ tr:last-child td { border-bottom: none; }
   inset: 0;
   background: url('/toronto-skyline.png') center/cover no-repeat;
   opacity: 0.08;
+  z-index: 0;
 }
 .biz-hero-content {
   position: relative;

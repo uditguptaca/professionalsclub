@@ -93,28 +93,13 @@ export default function MatrimonyLandingPage() {
         paddingBottom: 60,
         background: '#0c0c0e',
       }}>
-        {/* Animated orbs */}
-        <div style={{
-          position: 'absolute', top: '-20%', right: '-10%', width: 600, height: 600,
-          borderRadius: '50%', background: 'radial-gradient(circle, rgba(232,93,4,0.15), transparent 70%)',
-          animation: 'float 8s ease-in-out infinite',
-        }} />
-        <div style={{
-          position: 'absolute', bottom: '-15%', left: '-5%', width: 500, height: 500,
-          borderRadius: '50%', background: 'radial-gradient(circle, rgba(232,93,4,0.08), transparent 70%)',
-          animation: 'float 10s ease-in-out infinite reverse',
-        }} />
-        <div style={{
-          position: 'absolute', top: '30%', left: '50%', width: 300, height: 300,
-          borderRadius: '50%', background: 'radial-gradient(circle, rgba(232,93,4,0.06), transparent 70%)',
-          animation: 'float 6s ease-in-out infinite',
-        }} />
-
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: 'linear-gradient(rgba(12,12,14,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(12,12,14,0.03) 1px, transparent 1px)',
-          backgroundSize: '60px 60px',
-        }} />
+        {/* Background Video */}
+        <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
+          <video autoPlay loop muted playsInline style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.15 }}>
+            <source src="/videos/couple.mp4" type="video/mp4" />
+          </video>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(8, 8, 12, 0.4) 0%, rgba(8, 8, 12, 0.98) 100%), linear-gradient(135deg, rgba(8, 8, 12, 0.8) 0%, rgba(232, 93, 4, 0.12) 100%)' }} />
+        </div>
 
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 1280 }}>
           <div style={{ maxWidth: 780, margin: '0 auto', textAlign: 'center' }}>

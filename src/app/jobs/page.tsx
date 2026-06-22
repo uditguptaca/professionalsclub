@@ -136,9 +136,12 @@ export default function JobsPage() {
 
       {/* ─── HERO ─── */}
       <section style={{ position: 'relative', minHeight: '520px', display: 'flex', alignItems: 'center', overflow: 'hidden', background: '#0c0c0e' }}>
-        <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/career-mentorship.png" alt="Career growth" fill style={{ objectFit: 'cover', objectPosition: 'center', opacity: 0.25 }} priority />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.95) 0%, rgba(12,12,14,0.85) 50%, rgba(232,93,4,0.15) 100%)' }} />
+        {/* Background Video */}
+        <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
+          <video autoPlay loop muted playsInline style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.2 }}>
+            <source src="/videos/work.mp4" type="video/mp4" />
+          </video>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.92) 0%, rgba(12,12,14,0.85) 50%, rgba(232,93,4,0.12) 100%)' }} />
         </div>
 
         <div className="container mobile-stack" style={{ position: 'relative', zIndex: 10, maxWidth: 1200, display: 'grid', gridTemplateColumns: '1fr 420px', gap: 24, alignItems: 'center', padding: '60px 24px 40px' }}>
