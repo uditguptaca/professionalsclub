@@ -9,14 +9,14 @@ export default function Navbar() {
   return (
     <nav className="navbar">
       <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <img src="/professionals-club-logo.png" alt="Professionals Club Logo" style={{ width: '40px', height: '40px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
-          <span style={{ fontSize: '1.25rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em', color: '#ffffff' }}>
+        <Link href="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+          <img src="/professionals-club-logo.png" alt="Professionals Club Logo" style={{ width: '40px', height: '40px', objectFit: 'contain', filter: 'brightness(0) invert(1)', flexShrink: 0 }} />
+          <span style={{ fontSize: '1.25rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em', color: '#ffffff', whiteSpace: 'nowrap' }}>
             Professionals <span style={{ color: 'var(--primary-600)', fontWeight: 500 }}>Club</span>
           </span>
         </Link>
 
-        <ul className="navbar-links" style={mobileOpen ? { display: 'flex', position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg-secondary)', flexDirection: 'column', padding: 'var(--space-4)', borderBottom: '1px solid var(--border-color)' } : {}}>
+        <ul className="navbar-links" style={mobileOpen ? { display: 'flex', position: 'absolute', top: '100%', left: 0, right: 0, background: 'rgba(12, 12, 14, 0.98)', flexDirection: 'column', gap: '16px', padding: 'var(--space-6)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', alignItems: 'stretch' } : {}}>
           <li><Link href="/">Home</Link></li>
           <li className="nav-dropdown-container">
             <Link href="/jobs" style={{ color: 'var(--primary-600)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>

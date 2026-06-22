@@ -74,7 +74,7 @@ export default function BusinessDirectoryPage() {
                 List Your Business <ArrowRight size={18} />
               </div>
             </Link>
-            <p style={{ fontSize: '0.75rem', opacity: 0.6, maxWidth: 200, lineHeight: 1.4 }}>
+            <p style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)', maxWidth: 200, lineHeight: 1.4 }}>
               Register your business as a member and get verified to appear in our directory.
             </p>
           </div>
