@@ -40,8 +40,8 @@ export default function AboutPage() {
       </section>
 
       {/* 2 & 3. WHO WE ARE & OUR MISSION */}
-      <section style={{ padding: '80px 0', background: 'var(--bg-primary)' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
+      <section className="section" style={{ background: 'var(--bg-primary)' }}>
+        <div className="container">
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)', gap: 40, alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Who We Are</div>
@@ -80,8 +80,8 @@ export default function AboutPage() {
       </section>
 
       {/* 4. WHO WE SERVE */}
-      <section style={{ padding: '80px 0', background: 'var(--bg-secondary)' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
+      <section className="section" style={{ background: 'var(--bg-secondary)' }}>
+        <div className="container">
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <h2 style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>Who We Serve</h2>
             <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', maxWidth: 600, margin: '16px auto 0' }}>Delivering value to every participant.</p>
@@ -118,8 +118,8 @@ export default function AboutPage() {
       </section>
 
       {/* 5. WHAT YOU CAN DO */}
-      <section style={{ padding: '80px 0', background: 'var(--bg-primary)' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
+      <section className="section" style={{ background: 'var(--bg-primary)' }}>
+        <div className="container">
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center', marginBottom: 40 }}>
             <div>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Platform Features</div>
@@ -161,8 +161,8 @@ export default function AboutPage() {
       </section>
 
       {/* 6. HOW THE PLATFORM WORKS */}
-      <section style={{ padding: '80px 0', background: '#0c0c0e', color: 'white' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
+      <section className="section" style={{ background: '#0c0c0e', color: 'white' }}>
+        <div className="container">
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <h2 style={{ fontSize: '2.5rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-display)' }}>How It Works</h2>
           </div>
@@ -186,8 +186,8 @@ export default function AboutPage() {
       </section>
 
       {/* 7. WHY PEOPLE TRUST US & VALUES (Combined for compaction) */}
-      <section style={{ padding: '80px 0', background: 'var(--bg-secondary)' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
+      <section className="section" style={{ background: 'var(--bg-secondary)' }}>
+        <div className="container">
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center' }}>
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', boxShadow: 'var(--shadow-lg)', aspectRatio: '16/9' }}>
               <Image src="/volunteer-help.png" alt="Community Trust" fill style={{ objectFit: 'cover' }} />
@@ -221,8 +221,8 @@ export default function AboutPage() {
       </section>
 
       {/* 8. BUSINESS & COMMUNITY SECTION */}
-      <section style={{ padding: '80px 0', background: 'var(--bg-primary)' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
+      <section className="section" style={{ background: 'var(--bg-primary)' }}>
+        <div className="container">
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Business Directory</div>
@@ -262,8 +262,8 @@ export default function AboutPage() {
       </section>
 
       {/* 9. EVENTS / NETWORKING / GROWTH SECTION */}
-      <section style={{ padding: '80px 0', background: 'var(--bg-secondary)' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
+      <section className="section" style={{ background: 'var(--bg-secondary)' }}>
+        <div className="container">
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center' }}>
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', aspectRatio: '16/9', boxShadow: 'var(--shadow-lg)' }}>
               <Image src="/events-meetup.png" alt="Community events and networking" fill style={{ objectFit: 'cover' }} />
@@ -298,8 +298,8 @@ export default function AboutPage() {
       </section>
 
       {/* 10. OUR VALUES */}
-      <section style={{ padding: '80px 0', background: 'var(--bg-primary)' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
+      <section className="section" style={{ background: 'var(--bg-primary)' }}>
+        <div className="container">
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Guiding Principles</div>
@@ -338,7 +338,7 @@ export default function AboutPage() {
       </section>
 
       {/* 11. CALL TO ACTION SECTION */}
-      <section style={{ padding: '80px 0', background: '#0c0c0e' }}>
+      <section className="section" style={{ background: '#0c0c0e' }}>
         <div className="container" style={{ maxWidth: 1000, textAlign: 'center' }}>
           <h2 style={{ fontSize: '3rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>
             Ready to become part of the community?

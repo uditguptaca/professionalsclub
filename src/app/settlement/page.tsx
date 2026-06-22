@@ -31,8 +31,8 @@ export default function SettlementPage() {
       </section>
 
       {/* Settlement Categories — 2-Column Cards */}
-      <section style={{ padding: '40px 0', background: 'var(--bg-primary)' }}>
-        <div className="container" style={{ maxWidth: 1280 }}>
+      <section className="section" style={{ background: 'var(--bg-primary)' }}>
+        <div className="container">
           {[
             {
               icon: <Home size={32} style={{ color: '#e85d04' }} />,
@@ -115,12 +115,12 @@ export default function SettlementPage() {
       </section>
 
       {/* Newcomer Checklist — Side-by-Side */}
-      <section style={{ position: 'relative', padding: '40px 0', overflow: 'hidden' }}>
+      <section className="section" style={{ position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
           <Image src="/study-bg.png" alt="Newcomer Studying Checklist" fill style={{ objectFit: 'cover' }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.95), rgba(12,12,14,0.85))' }} />
         </div>
-        <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: '100%' }}>
+        <div className="container" style={{ position: 'relative', zIndex: 10 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24, alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--primary-600)', marginBottom: 16 }}>Free Download</div>
@@ -157,7 +157,7 @@ export default function SettlementPage() {
       </section>
 
       {/* CTA */}
-      <section style={{ padding: '40px 0', background: 'var(--primary-600)', textAlign: 'center' }}>
+      <section className="section-sm" style={{ background: 'var(--primary-600)', textAlign: 'center' }}>
         <div className="container" style={{ maxWidth: 700 }}>
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Need Personalized Help?</h2>
           <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.85)', marginBottom: 32 }}>A trained volunteer will guide you through your specific settlement needs.</p>

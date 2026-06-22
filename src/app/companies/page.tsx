@@ -56,8 +56,8 @@ export default function CompaniesPage() {
       </section>
 
       {/* Search + Grid */}
-      <section style={{ padding: '40px 0', background: 'var(--bg-primary)' }}>
-        <div className="container" style={{ maxWidth: 1200 }}>
+      <section className="section" style={{ background: 'var(--bg-primary)' }}>
+        <div className="container">
           {/* Filters */}
           <div style={{ display: 'flex', gap: 16, marginBottom: 48, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 240, position: 'relative' }}>
@@ -112,7 +112,7 @@ export default function CompaniesPage() {
       </section>
 
       {/* CTA */}
-      <section style={{ position: 'relative', padding: '40px 0', textAlign: 'center', overflow: 'hidden' }}>
+      <section className="section-sm" style={{ position: 'relative', textAlign: 'center', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
           <Image src="/event_bg.png" alt="Company Referrals" fill style={{ objectFit: 'cover' }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.92), rgba(12,12,14,0.85))' }} />
