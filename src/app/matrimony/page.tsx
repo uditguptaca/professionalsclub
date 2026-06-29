@@ -292,7 +292,7 @@ export default function MatrimonyLandingPage() {
             }}>
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary-600)', animation: 'pulse 2s infinite' }} />
               <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
-                Trusted by Diverse Professionals
+                Trusted by professionals across Canada
               </span>
             </div>
 
@@ -314,8 +314,7 @@ export default function MatrimonyLandingPage() {
               fontSize: 'clamp(1rem, 2.5vw, 1.25rem)', color: 'var(--gray-400)',
               lineHeight: 1.7, maxWidth: 620, margin: '0 auto 40px',
             }}>
-              Admin-verified profiles. Complete privacy. Built exclusively for our professional community.
-              A safe, trusted space to find meaningful connections.
+              Admin-verified profiles, full privacy, built for our community in Canada — a safe space for meaningful connections.
             </p>
 
             {/* CTA buttons */}
@@ -802,7 +801,7 @@ export default function MatrimonyLandingPage() {
                   100% Free Platform
                 </h4>
                 <p style={{ fontSize: '0.82rem', color: 'rgba(255, 255, 255, 0.75)', lineHeight: 1.6, marginBottom: 20 }}>
-                  This portal is completely free to use. There are no premium tiers, registration fees, or hidden charges. We are a community initiative dedicated to helping professionals connect.
+                  Completely free — no premium tiers, no fees, no hidden charges. A genuine community service.
                 </p>
                 <Link 
                   href="/portal/member/matrimony/create" 

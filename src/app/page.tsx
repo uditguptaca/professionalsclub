@@ -64,7 +64,7 @@ export default function Home() {
             gap: 12
           }}>
             {[
-              { icon: <Briefcase size={20} />, title: 'Job Referrals & Placement', desc: 'Connect for career referrals', color: 'var(--primary-500)', href: '/portal/signup' },
+              { icon: <Briefcase size={20} />, title: 'Job Referrals & Placement', desc: 'Find someone to refer you', color: 'var(--primary-500)', href: '/portal/signup' },
               { icon: <Briefcase size={20} />, title: 'Search for Latest Jobs', desc: 'Browse latest jobs', color: 'var(--primary-600)', href: '/jobs' },
               { icon: <GraduationCap size={20} />, title: 'Career Mentorship & Resume Review', desc: 'Long-term mentorship', color: 'var(--primary-600)', href: '/portal/signup' },
               { icon: <MapPin size={20} />, title: 'Newcomer Settlement & Tax Support', desc: 'Housing, banking, etc', color: 'var(--accent-600)', href: '/settlement' },

@@ -274,7 +274,7 @@ export default function EBooksPage() {
             E-Books <span style={{ color: 'var(--primary-600)' }}>Library</span>
           </h1>
           <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
-            Comprehensive guides curated by experts to simplify your Canadian settlement journey.
+            Step-by-step guides to make settling in Canada simpler — free to download.
           </p>
         </div>
       </section>
@@ -359,7 +359,7 @@ export default function EBooksPage() {
               Looking for something specific?
             </h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginBottom: '40px', maxWidth: '500px', margin: '0 auto 40px' }}>
-              We update our library weekly. Let us know if there&apos;s a resource you&apos;d like to see added.
+              We add new guides every week. Tell us what would help and we'll create it.
             </p>
             <a
               href="mailto:info@professionalsclub.ca"

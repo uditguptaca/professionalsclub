@@ -29,11 +29,11 @@ export default function AboutPage() {
         </div>
         <div className="container" style={{ maxWidth: 850, position: 'relative', zIndex: 10 }}>
           <h1 style={{ fontSize: '3.6rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15, color: '#ffffff' }}>
-            Build Connections. <br/>
-            <span style={{ color: 'var(--primary-600)' }}>Find Support. Grow Together.</span>
+            Build connections. <br/>
+            <span style={{ color: 'var(--primary-600)' }}>Find support. Grow together.</span>
           </h1>
           <p style={{ fontSize: '1.25rem', color: 'var(--gray-400)', marginBottom: 36, lineHeight: 1.6, fontWeight: 400 }}>
-            A platform to connect, grow, and support.
+            A community helping newcomers and professionals build their future in Canada.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/portal/signup" className="btn btn-primary btn-lg" style={{ padding: '14px 28px', background: 'var(--primary-600)', boxShadow: '0 8px 24px rgba(232, 93, 4, 0.25)' }}>
@@ -53,10 +53,10 @@ export default function AboutPage() {
             <div>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Who We Are</div>
               <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 16, lineHeight: 1.25 }}>
-                An ecosystem of mutual empowerment.
+                An ecosystem built on people helping people.
               </h2>
               <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 0 }}>
-                A platform to support individuals, newcomers, and businesses.
+                We support individuals, newcomers, and local businesses — all in one trusted place.
               </p>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -64,21 +64,21 @@ export default function AboutPage() {
               <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 16, padding: '24px', textAlign: 'center', boxShadow: 'var(--shadow-md)' }}>
                 <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Our Mission</h3>
                 <p style={{ fontSize: '1.1rem', color: 'var(--text-primary)', lineHeight: 1.5, fontWeight: 700 }}>
-                  "Drive personal and professional growth in Canada."
+                  "Help newcomers and professionals grow their careers and lives in Canada."
                 </p>
               </div>
               {/* Vision */}
               <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 16, padding: '24px', textAlign: 'center', boxShadow: 'var(--shadow-md)' }}>
                 <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Our Vision</h3>
                 <p style={{ fontSize: '1.1rem', color: 'var(--text-primary)', lineHeight: 1.5, fontWeight: 700 }}>
-                  "Seamless integration and thriving support platform."
+                  "A Canada where no newcomer has to figure it out alone."
                 </p>
               </div>
               {/* Goals */}
               <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 16, padding: '24px', textAlign: 'center', boxShadow: 'var(--shadow-md)' }}>
                 <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Our Goals</h3>
                 <p style={{ fontSize: '1.1rem', color: 'var(--text-primary)', lineHeight: 1.5, fontWeight: 700 }}>
-                  "Empower professionals and local businesses."
+                  "Open doors to jobs, settlement, and community for every member."
                 </p>
               </div>
             </div>
@@ -91,7 +91,7 @@ export default function AboutPage() {
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <h2 style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>Who We Serve</h2>
-            <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', maxWidth: 600, margin: '16px auto 0' }}>Delivering value to every participant.</p>
+            <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', maxWidth: 600, margin: '16px auto 0' }}>Real help for every person who walks through our doors.</p>
           </div>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
             {[
@@ -348,7 +348,7 @@ export default function AboutPage() {
       <section className="section" style={{ background: '#0c0c0e' }}>
         <div className="container" style={{ maxWidth: 1000, textAlign: 'center' }}>
           <h2 style={{ fontSize: '3rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>
-            Ready to become part of the community?
+            Ready to build your future with us?
           </h2>
           <p style={{ fontSize: '1.25rem', color: 'var(--gray-400)', marginBottom: 40, maxWidth: 600, margin: '0 auto 40px' }}>
             Find help or list business.

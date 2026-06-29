@@ -13,13 +13,13 @@ export default function BuildResumePage() {
           
           <div style={{ marginBottom: 40 }}>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: 1.8, marginBottom: 20 }}>
-              Professionals Club, in collaboration with WriteCV.io, is thrilled to present the most advanced and efficient way of crafting your resume. Whether you're an IT professional looking to break into the Canadian job market or a seasoned expert aiming to elevate your career, this partnership introduces cutting-edge tools and techniques to make your resume stand out.
+              We've teamed up with WriteCV.io to make building a Canadian-style resume simple — whether you're landing your first role here or leveling up an established career.
             </p>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: 1.8, marginBottom: 20 }}>
-              With a focus on precision, modern design, and industry relevance, WriteCV.io provides personalized templates and actionable insights tailored to highlight your skills and achievements. Together, we aim to empower job seekers by bridging the gap between their potential and the expectations of hiring managers.
+              You get modern templates and clear, practical guidance to highlight your skills the way Canadian hiring managers expect.
             </p>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: 1.8, fontWeight: 500 }}>
-              Ready to impress? Build your future with confidence and let your resume work for you!
+              Ready to stand out? Build your resume and let it work for you.
             </p>
           </div>
 

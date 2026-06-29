@@ -24,7 +24,7 @@ export default function CommunityPage() {
             Community & <span style={{ color: 'var(--primary-600)' }}>Media</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
-            Community-driven content designed to help you settle smoothly in Canada.
+            Free content to help you settle in and build your future in Canada.
           </p>
         </div>
       </section>
@@ -100,7 +100,7 @@ export default function CommunityPage() {
           <MessageSquare size={40} style={{ color: 'var(--primary-600)', margin: '0 auto 20px' }} />
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Have Questions About Settling In?</h2>
           <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.7 }}>
-            Submit a request for personalized guidance tailored to your background.
+            Ask for personalized guidance tailored to your background — a real person will help.
           </p>
           <Link href="/portal/auth" className="btn btn-primary btn-lg" style={{ padding: '16px 36px', background: 'var(--primary-600)', border: 'none', boxShadow: '0 8px 24px rgba(232,93,4,0.3)' }}>
             Request Guidance <ArrowRight size={18} />

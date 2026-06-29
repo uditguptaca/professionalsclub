@@ -23,10 +23,10 @@ export default function TeamPage() {
           <div style={{ textAlign: 'center', marginBottom: 40 }}>
             <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 12 }}>Our team</div>
             <h1 style={{ fontSize: '3rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 20 }}>
-              Leadership team
+              The people behind the help
             </h1>
             <p style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', maxWidth: 600, margin: '0 auto' }}>
-              Building the future of community support.
+              A small team building a place where newcomers and professionals support each other.
             </p>
           </div>
 

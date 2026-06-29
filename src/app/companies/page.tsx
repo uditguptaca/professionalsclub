@@ -50,7 +50,7 @@ export default function CompaniesPage() {
             Companies in Our <span style={{ color: 'var(--primary-600)' }}>Network</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
-            Request a referral.
+            Request a referral to top Canadian employers — through a real member who works there.
           </p>
         </div>
       </section>
@@ -119,7 +119,7 @@ export default function CompaniesPage() {
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 600 }}>
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Want a Referral?</h2>
-          <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: 32 }}>Submit a help request on our portal.</p>
+          <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: 32 }}>Submit one request and we'll match you with someone who can refer you.</p>
           <Link href="/portal/auth" className="btn btn-primary btn-lg" style={{ padding: '16px 36px', boxShadow: '0 8px 24px rgba(232,93,4,0.3)', background: 'var(--primary-600)', color: 'white', border: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             Request a Referral <ArrowRight size={18} />
           </Link>

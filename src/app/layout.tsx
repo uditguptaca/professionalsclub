@@ -5,9 +5,9 @@ import { PortalProvider } from "@/context/portal-context";
 import { MatrimonyProvider } from "@/context/matrimony-context";
 
 export const metadata: Metadata = {
-  title: "Professionals Club — Professional Referral & Career Community",
-  description: "The premier portal for Canadian professionals to refer job seekers, share resources, and provide mentorship.",
-  keywords: "Canada jobs, referral, professional network, career community, job referral platform, Professionals Club",
+  title: "Professionals Club — Careers, Settlement & Community for Newcomers in Canada",
+  description: "Helping newcomers and professionals build their future in Canada — job referrals, settlement guidance, mentorship, and a trusted community. Free, human help from people who've been there.",
+  keywords: "Canada newcomers, settlement support, job referrals, career mentorship, professional community, newcomer jobs Canada",
 };
 
 export default function RootLayout({

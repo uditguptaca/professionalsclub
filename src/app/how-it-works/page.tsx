@@ -21,7 +21,7 @@ export default function HowItWorksPage() {
             How the Help Desk <span style={{ color: 'var(--primary-600)' }}>Works</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
-            A secure process to protect your privacy and safety.
+            A secure, private process — built to protect you at every step.
           </p>
         </div>
       </section>
@@ -32,7 +32,7 @@ export default function HowItWorksPage() {
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
             <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--primary-50)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', color: 'var(--primary-600)' }}><Target size={28} /></div>
             <h2 style={{ fontSize: '2.2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 8, marginTop: 12 }}>For Members Seeking Help</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>Submit a request and let our platform handle the matching.</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>Tell us what you need, and we'll match you with the right person.</p>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -67,7 +67,7 @@ export default function HowItWorksPage() {
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--primary-50)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', color: 'var(--primary-600)' }}><HandHeart size={28} /></div>
             <h2 style={{ fontSize: '2.2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 8, marginTop: 12 }}>For Volunteers & Mentors</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>Share your expertise. Help fellow community members.</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>Share your expertise and help a fellow community member build their future.</p>
           </div>
 
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
@@ -92,8 +92,8 @@ export default function HowItWorksPage() {
       {/* CTA */}
       <section style={{ padding: '40px 0', background: '#0c0c0e', textAlign: 'center' }}>
         <div className="container" style={{ maxWidth: 600 }}>
-          <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Ready to Get Started?</h2>
-          <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: 20 }}>Request help today.</p>
+          <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Ready to get started?</h2>
+          <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: 20 }}>Ask for help today — a real person will get back to you.</p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
             <Link href="/portal/auth" className="btn btn-primary btn-lg" style={{ padding: '16px 36px', background: 'var(--primary-600)', border: 'none', boxShadow: '0 8px 24px rgba(232,93,4,0.3)' }}>Request Help <ArrowRight size={18} /></Link>
             <Link href="/portal/auth" className="btn btn-lg" style={{ background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.15)', padding: '16px 36px' }}>Volunteer</Link>

@@ -193,7 +193,7 @@ export default function GroupsPage() {
                 Canada&apos;s Biggest <br /><span style={{ color: 'var(--primary-600)' }}>Professional</span> Community
               </h1>
               <p style={{ fontSize: '1.15rem', color: 'var(--gray-400)', lineHeight: 1.7, maxWidth: 680, margin: '0 0 40px 0' }}>
-                Join Canada&apos;s largest professional networking platform.
+                Join thousands of newcomers and professionals helping each other settle, find jobs, and grow.
               </p>
 
               <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 40, marginTop: 24 }}>
@@ -398,7 +398,7 @@ export default function GroupsPage() {
             Register as a Member
           </h2>
           <p style={{ fontSize: '1.1rem', color: 'var(--gray-400)', marginBottom: 12, lineHeight: 1.7 }}>
-            Register to receive exclusive group links directly.
+            Register to get your group links — every group is admin-managed for safety and quality.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 32, fontSize: '0.85rem', color: 'var(--primary-300)' }}>
             <Shield size={16} /> All group access is managed by admin for safety and quality

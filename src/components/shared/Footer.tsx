@@ -55,19 +55,19 @@ export default function Footer() {
           <div className="footer-col">
             <h4>Resources</h4>
             <ul>
-              <li><Link href="/faq">FAQ</Link></li>
-              <li><Link href="/faq">Help Center</Link></li>
+              <li><Link href="/faq#general">FAQ</Link></li>
+              <li><Link href="/faq#general">Help Center</Link></li>
               <li><Link href="/news">Blog</Link></li>
-              <li><Link href="/faq">API Docs</Link></li>
+              <li><Link href="/faq#general">API Docs</Link></li>
             </ul>
           </div>
           <div className="footer-col">
             <h4>Legal</h4>
             <ul>
-              <li><Link href="/faq">Terms of Service</Link></li>
-              <li><Link href="/faq">Privacy Policy</Link></li>
-              <li><Link href="/faq">Cookie Policy</Link></li>
-              <li><Link href="/faq">Refund Policy</Link></li>
+              <li><Link href="/faq#terms">Terms of Service</Link></li>
+              <li><Link href="/faq#privacy">Privacy Policy</Link></li>
+              <li><Link href="/faq#cookie">Cookie Policy</Link></li>
+              <li><Link href="/faq#refund">Refund Policy</Link></li>
             </ul>
           </div>
         </div>

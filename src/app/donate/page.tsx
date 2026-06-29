@@ -22,10 +22,10 @@ export default function DonatePage() {
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center' }}>
             <div style={{ maxWidth: 640 }}>
               <h1 style={{ fontSize: 'clamp(2rem, 6vw, 3rem)', fontWeight: 900, lineHeight: 1.15, fontFamily: 'var(--font-display)', marginBottom: 20, color: 'white' }}>
-                Supporting professionals in Canada.
+                Supporting professionals and newcomers in Canada.
               </h1>
               <p style={{ fontSize: '1.05rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.6, marginBottom: 32 }}>
-                Aiding individuals from diverse fields in navigating their careers in Canada.
+                Helping people from every field find their footing and build a future here.
               </p>
               <button className="btn" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '12px 28px', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                 Read More
@@ -34,16 +34,16 @@ export default function DonatePage() {
 
             <div className="mobile-wrap" style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap' }}>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 300, lineHeight: 1 }}>2,000+</div>
+                <div style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 300, lineHeight: 1 }}>5,000+</div>
                 <div style={{ fontSize: '0.85rem', fontWeight: 700, marginTop: 8 }}>Members</div>
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 300, lineHeight: 1 }}>100+</div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 700, marginTop: 8 }}>Volunteers</div>
+                <div style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 300, lineHeight: 1 }}>18</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, marginTop: 8 }}>Active Volunteers</div>
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 300, lineHeight: 1 }}>40+</div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 700, marginTop: 8 }}>Yearly Events</div>
+                <div style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 300, lineHeight: 1 }}>50+</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, marginTop: 8 }}>WhatsApp Groups</div>
               </div>
             </div>
           </div>
@@ -58,7 +58,7 @@ export default function DonatePage() {
             <div style={{ background: 'var(--bg-primary)', padding: 24, borderRadius: 24, boxShadow: '0 20px 40px rgba(0,0,0,0.06)' }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-muted)', marginBottom: 16 }}>Matter of issues of sustainability</div>
               <h2 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 24, lineHeight: 1.15 }}>
-                You&apos;re in the right place to make things right!
+                You&apos;re in the right place to help.
               </h2>
 
               {activeCampaign && (

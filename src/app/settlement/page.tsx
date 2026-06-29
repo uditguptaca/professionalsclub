@@ -144,7 +144,7 @@ export default function SettlementPage() {
             Welcome to <span style={{ color: 'var(--primary-600)' }}>Canada</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
-            Your comprehensive guide to settling smoothly in your first months in Canada.
+            Your step-by-step guide to settling in — and building a future here — from day one.
           </p>
         </div>
       </section>
@@ -198,7 +198,7 @@ export default function SettlementPage() {
               <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--primary-600)', marginBottom: 16 }}>Free Download</div>
               <h2 style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 24, lineHeight: 1.15, color: 'white' }}>The Ultimate Newcomer Checklist</h2>
               <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', lineHeight: 1.8, marginBottom: 40 }}>
-                Download our comprehensive PDF checklist covering your first 30 days in Canada.
+                Download our free checklist for your first 30 days in Canada.
               </p>
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                 <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 32px', fontSize: '1rem', background: 'var(--primary-600)', border: 'none', boxShadow: '0 8px 24px rgba(232,93,4,0.3)' }}>
@@ -232,7 +232,7 @@ export default function SettlementPage() {
       <section className="section-sm" style={{ background: 'var(--primary-600)', textAlign: 'center' }}>
         <div className="container" style={{ maxWidth: 700 }}>
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Need Personalized Help?</h2>
-          <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.85)', marginBottom: 32 }}>A trained volunteer will guide you through your specific settlement needs.</p>
+          <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.85)', marginBottom: 32 }}>A trained volunteer will walk you through your specific settlement needs, one step at a time.</p>
           <Link href="/portal/auth" className="btn btn-lg" style={{ background: 'var(--bg-primary)', color: 'var(--primary-600)', fontWeight: 700, padding: '16px 36px', border: 'none' }}>
             Request Settlement Help <ArrowRight size={18} />
           </Link>

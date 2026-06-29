@@ -57,7 +57,7 @@ export default function NewsPage() {
             Stay <span style={{ color: 'var(--primary-600)' }}>Informed</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
-            Community updates and career tips.
+            Community updates, career tips, and settlement news for building your future here.
           </p>
         </div>
       </section>

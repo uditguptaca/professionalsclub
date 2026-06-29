@@ -280,7 +280,7 @@ export default function VolunteerDirectoryPage() {
             Volunteer & Mentor <span style={{ color: 'var(--primary-600)' }}>Directory</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
-            Find and connect with verified professional volunteers who can guide you on your Canadian journey.
+            Verified professionals ready to guide you as you build your future in Canada.
           </p>
         </div>
       </section>

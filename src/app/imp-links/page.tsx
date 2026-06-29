@@ -80,7 +80,7 @@ export default function ImpLinksPage() {
               Important Links Directory
             </h1>
             <p style={{ fontSize: '1.15rem', color: 'var(--text-secondary)', maxWidth: 700, margin: '0 auto' }}>
-              A curated collection of official Canadian government portals, essential tax calculators, and newcomer settlement resources.
+              Official government, tax, and settlement links every newcomer needs — in one place.
             </p>
           </div>
 

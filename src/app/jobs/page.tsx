@@ -148,13 +148,13 @@ export default function JobsPage() {
           {/* Left */}
           <div>
             <h1 style={{ fontSize: '3.2rem', fontWeight: 900, color: 'white', lineHeight: 1.1, marginBottom: 20, fontFamily: 'var(--font-display)' }}>
-              Best Place To <span style={{ color: 'var(--primary-600)' }}>Grow</span><br />Your Career
+              Find Your Next <span style={{ color: 'var(--primary-600)' }}>Role</span><br />in Canada
             </h1>
             <p style={{ fontSize: '1.1rem', color: 'var(--primary-600)', fontWeight: 600, marginBottom: 16 }}>
-              Find Jobs, Employment & Career Opportunities
+              Jobs, referrals, and real help building your career here.
             </p>
             <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 32, maxWidth: 480 }}>
-              Browse {activeJobs.length}+ jobs.
+              Browse open roles and get referred.
             </p>
             <Link href="/portal/auth" className="btn btn-lg" style={{ background: 'var(--primary-600)', color: 'white', border: 'none', padding: '14px 28px', fontSize: '0.95rem', boxShadow: '0 8px 24px rgba(232,93,4,0.3)' }}>
               Get Started <ArrowRight size={18} />
@@ -501,7 +501,7 @@ export default function JobsPage() {
                 Want a <span style={{ color: 'var(--primary-600)' }}>Referral?</span> 
               </h2>
               <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 32 }}>
-                Admin matches you with volunteers.
+                We match you with a professional who can refer you directly.
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 40 }}>
@@ -547,7 +547,7 @@ export default function JobsPage() {
             <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--text-primary)', marginBottom: 6, fontFamily: 'var(--font-display)' }}>I&apos;M AN EMPLOYER</h3>
             <div style={{ width: 30, height: 2, background: 'var(--primary-600)', margin: '0 auto 12px' }} />
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: 320, marginBottom: 16 }}>
-              Post openings and connect.
+              Post a role and reach our community.
             </p>
             <Link href="/portal/auth" className="btn" style={{
               background: 'var(--primary-600)',
@@ -574,7 +574,7 @@ export default function JobsPage() {
               <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: 'white', marginBottom: 6, fontFamily: 'var(--font-display)' }}>I&apos;M A CANDIDATE</h3>
               <div style={{ width: 30, height: 2, background: 'var(--primary-600)', margin: '0 auto 12px' }} />
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: 320, marginBottom: 16 }}>
-                Create a profile and apply.
+                Create a profile and start applying.
               </p>
               <Link href="/portal/auth" className="btn" style={{
                 background: 'var(--primary-600)',

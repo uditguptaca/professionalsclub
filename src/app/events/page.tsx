@@ -151,7 +151,7 @@ export default function EventsPage() {
             Connect, Learn & <span style={{ color: 'var(--primary-600)' }}>Grow Together</span>
           </h1>
           <p style={{ fontSize: '1.25rem', color: 'rgba(255, 255, 255, 0.95)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto', textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)' }}>
-            Meetups, workshops, and livestreams to help you thrive in Canada.
+            Meetups, workshops, and livestreams to help you build your future in Canada.
           </p>
         </div>
       </section>
@@ -226,7 +226,7 @@ export default function EventsPage() {
               </div>
               <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 20 }}>Book a Virtual Slot</h2>
               <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: 24 }}>
-                Can't make it to local mixers? Register a virtual booking for our weekly workshops. Select a topic and pick your preferred time slot to receive a secure link.
+                Can't make it in person? Reserve a free virtual seat for our weekly workshops.
               </p>
 
               {/* Database Events Display */}
@@ -236,7 +236,7 @@ export default function EventsPage() {
                 </h4>
                 {supabaseEvents.length === 0 ? (
                   <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontStyle: 'italic', background: 'var(--bg-secondary)', padding: '12px', borderRadius: 8, border: '1px solid var(--border-color)' }}>
-                    No events stored in Supabase currently. Create new events in the admin dashboard!
+                    No upcoming workshops scheduled at the moment. Check back soon!
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

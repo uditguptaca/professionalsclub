@@ -21,7 +21,7 @@ export default function BlogsPage() {
               Community Blogs
             </h1>
             <p style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>
-              Read the latest stories, guides, and insights from our members and experts.
+              Stories, guides, and insights from members and mentors who've built a future in Canada.
             </p>
           </div>
 

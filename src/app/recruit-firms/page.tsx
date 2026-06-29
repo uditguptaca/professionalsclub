@@ -45,7 +45,7 @@ export default function RecruitFirmsPage() {
               Recruitment Firms in Canada
             </h1>
             <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', maxWidth: 700, margin: '0 auto', marginBottom: 32 }}>
-              Browse our comprehensive directory of IT recruitment and staffing agencies operating across Canada to accelerate your job search.
+              A curated directory of staffing and recruitment agencies to speed up your job search.
             </p>
 
             <div style={{ position: 'relative', maxWidth: 500, margin: '0 auto' }}>

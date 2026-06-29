@@ -37,9 +37,9 @@ export default function SupportPage() {
         <div className="container" style={{ maxWidth: 1200 }}>
           
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <h1 style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>Support our Projects</h1>
+            <h1 style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>Support our projects</h1>
             <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', maxWidth: 600, margin: '16px auto 0' }}>
-              Your contributions help us deliver critical resources and education for newcomers.
+              Your contribution helps us deliver free workshops, guides, and settlement support for newcomers.
             </p>
           </div>
 

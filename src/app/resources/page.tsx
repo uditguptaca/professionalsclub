@@ -32,10 +32,10 @@ export default function ResourcesPage() {
             <span style={{ color: 'var(--primary-200)', fontWeight: 700, fontSize: '0.82rem' }}>Resource Center</span>
           </div>
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
-            Learn. Succeed. <span style={{ background: 'linear-gradient(135deg, var(--primary-600), var(--primary-400))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Thrive.</span>
+            Learn. Settle. <span style={{ background: 'linear-gradient(135deg, var(--primary-600), var(--primary-400))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Succeed.</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: 'var(--gray-400)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
-            Expert-led guides, templates, and video workshops to help you thrive in Canada.
+            Free guides, templates, and video workshops to help you build your future in Canada.
           </p>
         </div>
       </section>
@@ -149,7 +149,7 @@ export default function ResourcesPage() {
           <GraduationCap size={48} style={{ color: 'var(--primary-600)', margin: '0 auto 24px' }} />
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Want to Contribute?</h2>
           <p style={{ fontSize: '1.1rem', color: 'var(--gray-400)', marginBottom: 28, lineHeight: 1.7 }}>
-            Are you a subject matter expert? We'd love to host your guides or workshop recordings.
+            Are you an expert? Share a guide or workshop and help someone just starting out.
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
             <Link href="/portal/auth" className="btn btn-lg" style={{ background: 'linear-gradient(135deg, var(--primary-600), var(--primary-500))', color: 'white', border: 'none', padding: '16px 32px', boxShadow: '0 8px 24px rgba(232,93,4,0.3)' }}>Become a Contributor</Link>
