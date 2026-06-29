@@ -10,16 +10,16 @@ interface Meetup {
 }
 
 const MEETUPS: Meetup[] = [
-  { src: '/images/meetup_ontario.png', name: 'Ontario Meetup (Toronto)', location: 'CN Tower visible from restaurant window' },
-  { src: '/images/meetup_quebec.png', name: 'Quebec Meetup (Quebec City)', location: 'Château Frontenac visible from historic dining hall' },
-  { src: '/images/meetup_bc.png', name: 'British Columbia Meetup (Vancouver)', location: 'Vancouver Harbour visible from waterfront lounge' },
-  { src: '/images/meetup_alberta.png', name: 'Alberta Meetup (Calgary)', location: 'Calgary Tower visible from downtown hall' },
-  { src: '/images/meetup_manitoba.png', name: 'Manitoba Meetup (Winnipeg)', location: 'Museum for Human Rights visible from cafe window' },
-  { src: '/images/meetup_saskatchewan.png', name: 'Saskatchewan Meetup (Regina)', location: 'Legislative Building visible across Wascana Lake' },
-  { src: '/images/meetup_novascotia.png', name: 'Nova Scotia Meetup (Halifax)', location: 'Citadel Hill & Town Clock visible from bistro window' },
-  { src: '/images/meetup_newbrunswick.png', name: 'New Brunswick Meetup (Fredericton)', location: 'Legislative Assembly visible from cafe window' },
-  { src: '/images/meetup_pei.png', name: 'Prince Edward Island Meetup (Charlottetown)', location: 'Province House visible from restaurant window' },
-  { src: '/images/meetup_newfoundland.png', name: 'Newfoundland & Labrador Meetup (St. John\'s)', location: 'Signal Hill & Cabot Tower visible from harbour bistro' }
+  { src: '/images/meetup_ontario.png', name: 'Ontario (Toronto)', location: 'CN Tower visible from restaurant window' },
+  { src: '/images/meetup_quebec.png', name: 'Quebec (Quebec City)', location: 'Château Frontenac visible from historic dining hall' },
+  { src: '/images/meetup_bc.png', name: 'British Columbia (Vancouver)', location: 'Vancouver Harbour visible from waterfront lounge' },
+  { src: '/images/meetup_alberta.png', name: 'Alberta (Calgary)', location: 'Calgary Tower visible from downtown hall' },
+  { src: '/images/meetup_manitoba.png', name: 'Manitoba (Winnipeg)', location: 'Museum for Human Rights visible from cafe window' },
+  { src: '/images/meetup_saskatchewan.png', name: 'Saskatchewan (Regina)', location: 'Legislative Building visible across Wascana Lake' },
+  { src: '/images/meetup_novascotia.png', name: 'Nova Scotia (Halifax)', location: 'Citadel Hill & Town Clock visible from bistro window' },
+  { src: '/images/meetup_newbrunswick.png', name: 'New Brunswick (Fredericton)', location: 'Legislative Assembly visible from cafe window' },
+  { src: '/images/meetup_pei.png', name: 'Prince Edward Island (Charlottetown)', location: 'Province House visible from restaurant window' },
+  { src: '/images/meetup_newfoundland.png', name: 'Newfoundland & Labrador (St. John\'s)', location: 'Signal Hill & Cabot Tower visible from harbour bistro' }
 ];
 
 export default function CanadaTimeLapseVideo() {
@@ -95,14 +95,11 @@ export default function CanadaTimeLapseVideo() {
           {/* Bottom Left / Top Right (Mobile): Meetup HUD */}
           <div className="landmark-hud">
             <div className="landmark-hud-count">
-              Local Meetup {activeIndex + 1}/{MEETUPS.length}
+              Meetup {activeIndex + 1}/{MEETUPS.length}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div className="landmark-hud-title">
                 {MEETUPS[activeIndex].name}
-              </div>
-              <div className="landmark-hud-subtitle">
-                {MEETUPS[activeIndex].location}
               </div>
             </div>
           </div>
