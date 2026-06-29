@@ -86,7 +86,7 @@ export default function BusinessDirectoryPage() {
               </div>
             </Link>
             <p style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)', maxWidth: 200, lineHeight: 1.4 }}>
-              Register your business as a member and get verified to appear in our directory.
+              For businesses — reach professionals and newcomers across Canada. Get verified and featured.
             </p>
           </div>
         </div>

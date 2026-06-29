@@ -20,12 +20,12 @@ export default function Home() {
           {/* Left */}
           <div>
             <h1>
-              Your Canadian Journey,<br />
-              <span style={{ color: 'var(--primary-600)' }}>Fully Supported.</span>
+              Build Your Future<br />
+              <span style={{ color: 'var(--primary-600)' }}>in Canada.</span>
             </h1>
 
             <p style={{ fontSize: '1.25rem', color: 'rgba(255, 255, 255, 0.95)', lineHeight: 1.7, marginBottom: 36, maxWidth: 520, textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)' }}>
-              Expert volunteers. Secure support.
+              For newcomers and professionals building their future in Canada — supported every step.
             </p>
 
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 48 }}>
@@ -64,7 +64,7 @@ export default function Home() {
             gap: 12
           }}>
             {[
-              { icon: <Briefcase size={20} />, title: 'Job Referrals & Placement', desc: 'Get matched for referrals', color: 'var(--primary-500)', href: '/portal/signup' },
+              { icon: <Briefcase size={20} />, title: 'Job Referrals & Placement', desc: 'Connect for career referrals', color: 'var(--primary-500)', href: '/portal/signup' },
               { icon: <Briefcase size={20} />, title: 'Search for Latest Jobs', desc: 'Browse latest jobs', color: 'var(--primary-600)', href: '/jobs' },
               { icon: <GraduationCap size={20} />, title: 'Career Mentorship & Resume Review', desc: 'Long-term mentorship', color: 'var(--primary-600)', href: '/portal/signup' },
               { icon: <MapPin size={20} />, title: 'Newcomer Settlement & Tax Support', desc: 'Housing, banking, etc', color: 'var(--accent-600)', href: '/settlement' },
@@ -104,7 +104,7 @@ export default function Home() {
               <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--primary-600)', marginBottom: 12 }}>Career Support</div>
               <h2 style={{ fontSize: '2.4rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>Career Support</h2>
               <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: 28 }}>
-                Match with professionals for referrals.
+                Match with real professionals who've been where you are — for referrals, resume reviews, mock interviews, and mentorship.
               </p>
               <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 32 }}>
                 {[
@@ -204,7 +204,7 @@ export default function Home() {
               <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--primary-600)', marginBottom: 12 }}>Settlement Support</div>
               <h2 style={{ fontSize: '2.4rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>Settle Smoothly</h2>
               <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: 28 }}>
-                Volunteers guide you to feel at home.
+                Volunteers help you handle housing, banking, health cards, taxes, and the rest of arriving in Canada.
               </p>
               <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 32 }}>
                 {[
@@ -250,7 +250,7 @@ export default function Home() {
               <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--primary-600)', marginBottom: 12 }}>Events & Community</div>
               <h2 style={{ fontSize: '2.4rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>Monthly Meetups, Workshops & Webinars</h2>
               <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: 28 }}>
-                Join meetups and workshops.
+                Meet people in person and online — monthly meetups, workshops, and live webinars.
               </p>
 
               {/* Upcoming Events Mini */}
@@ -290,7 +290,7 @@ export default function Home() {
               <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--primary-400)', marginBottom: 12 }}>Give Back</div>
               <h2 style={{ fontSize: '2.4rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15, color: 'white' }}>Become a Volunteer or Mentor</h2>
               <p style={{ fontSize: '1rem', color: 'var(--gray-400)', lineHeight: 1.8, marginBottom: 28 }}>
-                Share expertise. Receive case assignments.
+                Share what you know. Help someone build their future here. Set your own case limit.
               </p>
               <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 32 }}>
                 {[
@@ -387,7 +387,7 @@ export default function Home() {
                 <span style={{ color: 'var(--primary-600)' }}>Professional Community</span>
               </h2>
               <p style={{ color: 'var(--gray-400)', fontSize: '1.15rem', lineHeight: 1.7, marginBottom: 36, maxWidth: 500 }}>
-                Join a thriving network.
+                Join a growing network of professionals and newcomers helping each other settle and succeed.
               </p>
               
               <Link href="/portal/auth" style={{
@@ -419,7 +419,7 @@ export default function Home() {
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 12 }}>Featured Businesses</h2>
             <p style={{ fontSize: '1.05rem', color: 'var(--text-muted)', maxWidth: 600, margin: '0 auto' }}>
-              Trusted verified businesses.
+              Trusted, verified businesses our community recommends.
             </p>
           </div>
 

@@ -175,10 +175,10 @@ export default function AboutPage() {
           </div>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
               {[
-                { num: '01', title: 'Sign Up', desc: 'Join portal securely.' },
+                { num: '01', title: 'Sign Up', desc: 'Create your secure account.' },
                 { num: '02', title: 'Create Profile', desc: 'Tell us your background.' },
                 { num: '03', title: 'Explore Resources', desc: 'Browse resources and events.' },
-                { num: '04', title: 'Request/Give Help', desc: 'Submit ticket for help.' }
+                { num: '04', title: 'Request/Give Help', desc: 'Ask for support or mentor others.' }
               ].map((step, i) => (
                 <Link href="/portal/signup" key={i} style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '24px', background: 'rgba(255,255,255,0.03)', borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)', textDecoration: 'none', transition: 'background 0.2s' }}>
                   <div style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--primary-600)', lineHeight: 1, fontFamily: 'var(--font-display)' }}>{step.num}</div>
