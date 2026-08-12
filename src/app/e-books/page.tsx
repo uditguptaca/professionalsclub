@@ -99,7 +99,7 @@ const CATEGORIES = [
     title: 'Before Moving To',
     highlight: 'Canada',
     icon: <Plane size={24} />,
-    color: '#e85d04',
+    color: 'var(--primary-600)',
     description: 'Essential guides to help you prepare for your move - visa checklists, document requirements, and pre-arrival planning.',
     files: [
       { name: 'Before Moving to Canada Guide', chapter: '1', url: 'Before-moving-to-Canada.pdf' },
@@ -111,7 +111,7 @@ const CATEGORIES = [
     title: 'After Moving To',
     highlight: 'Canada',
     icon: <MapPin size={24} />,
-    color: '#0c0c0e',
+    color: 'var(--text-primary)',
     description: 'Settle into your new life with confidence - housing, banking, SIN, taxes, and healthcare resources.',
     files: [
       { name: 'After You Arrive in Canada', chapter: '3', url: 'After you arrive in Canada as a newcomer.pdf' },
@@ -235,7 +235,7 @@ export default function EBooksPage() {
       <section style={{ 
         paddingTop: '160px', 
         paddingBottom: '80px', 
-        background: '#0c0c0e', 
+        background: 'var(--text-primary)', 
         textAlign: 'center',
         position: 'relative',
         overflow: 'hidden'
@@ -341,7 +341,7 @@ export default function EBooksPage() {
             textAlign: 'center', 
             padding: '80px 40px', 
             borderRadius: '32px', 
-            background: '#0c0c0e', 
+            background: 'var(--text-primary)', 
             color: 'white',
             position: 'relative',
             overflow: 'hidden'

@@ -55,7 +55,7 @@ const mockVolunteers: Volunteer[] = [
     websiteUrl: 'https://designcraft.ca',
     phone: '+1-604-555-5679',
     expertise: ['UX Design', 'User Research', 'Figma', 'Product Strategy', 'Creative Portfolio'],
-    bannerGradient: 'linear-gradient(135deg, #1e1e24 0%, #e85d04 100%)',
+    bannerGradient: 'linear-gradient(135deg, #1e1e24 0%, var(--primary-600) 100%)',
     verified: true
   },
   {
@@ -72,7 +72,7 @@ const mockVolunteers: Volunteer[] = [
     websiteUrl: 'https://techflow.ca',
     phone: '+1-403-555-0199',
     expertise: ['Cloud Infrastructure', 'System Architecture', 'AWS/Azure', 'DevOps', 'Tech Careers'],
-    bannerGradient: 'linear-gradient(135deg, #0f172a 0%, #3b82f6 100%)',
+    bannerGradient: 'linear-gradient(135deg, var(--gray-900) 0%, var(--primary-500) 100%)',
     verified: true
   },
   {
@@ -89,7 +89,7 @@ const mockVolunteers: Volunteer[] = [
     websiteUrl: 'https://carefirsthealth.ca',
     phone: '+1-613-555-0811',
     expertise: ['Nursing Licensing', 'Credential Evaluation', 'Healthcare Navigation', 'Patient Care', 'Residency Prep'],
-    bannerGradient: 'linear-gradient(135deg, #111827 0%, #10b981 100%)',
+    bannerGradient: 'linear-gradient(135deg, var(--gray-700) 0%, var(--success-400) 100%)',
     verified: true
   },
   {
@@ -106,7 +106,7 @@ const mockVolunteers: Volunteer[] = [
     websiteUrl: 'https://apexlegal.ca',
     phone: '+1-514-555-0123',
     expertise: ['Corporate Governance', 'Contract Negotiation', 'Business Law', 'Regulatory Compliance', 'Legal Advising'],
-    bannerGradient: 'linear-gradient(135deg, #180828 0%, #8b5cf6 100%)',
+    bannerGradient: 'linear-gradient(135deg, #180828 0%, var(--primary-600) 100%)',
     verified: true
   },
   {
@@ -123,7 +123,7 @@ const mockVolunteers: Volunteer[] = [
     websiteUrl: 'https://maplewealth.ca',
     phone: '+1-604-555-0922',
     expertise: ['CFA Pathways', 'Investment Planning', 'Wealth Management', 'Personal Finance', 'Tax Optimization'],
-    bannerGradient: 'linear-gradient(135deg, #3b0764 0%, #f43f5e 100%)',
+    bannerGradient: 'linear-gradient(135deg, var(--text-primary) 0%, var(--primary-700) 100%)',
     verified: true
   },
   {
@@ -174,7 +174,7 @@ const mockVolunteers: Volunteer[] = [
     websiteUrl: 'https://cloudscale.ca',
     phone: '+1-604-555-0723',
     expertise: ['Kubernetes', 'CI/CD Pipelines', 'Docker', 'Automation', 'Infrastructure as Code'],
-    bannerGradient: 'linear-gradient(135deg, #4c0519 0%, #db2777 100%)',
+    bannerGradient: 'linear-gradient(135deg, #4c0519 0%, var(--accent-600) 100%)',
     verified: true
   },
   {
@@ -208,7 +208,7 @@ const mockVolunteers: Volunteer[] = [
     websiteUrl: 'https://globallogistics.ca',
     phone: '+1-204-555-0505',
     expertise: ['Supply Chain Management', 'Logistics Operations', 'Freight Management', 'Inventory Control', 'Process Optimization'],
-    bannerGradient: 'linear-gradient(135deg, #111827 0%, #4b5563 100%)',
+    bannerGradient: 'linear-gradient(135deg, var(--gray-700) 0%, #4b5563 100%)',
     verified: true
   }
 ];
@@ -260,7 +260,7 @@ export default function VolunteerDirectoryPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="volunteers-hero-section" style={{ position: 'relative', paddingTop: 160, paddingBottom: 80, background: '#0c0c0e', overflow: 'hidden' }}>
+      <section className="volunteers-hero-section" style={{ position: 'relative', paddingTop: 160, paddingBottom: 80, background: 'var(--text-primary)', overflow: 'hidden' }}>
         {/* Background Animation (Volunteers) */}
         <div className="cinematic-bg-container">
           <img 

@@ -16,7 +16,7 @@ export default function AboutPage() {
       <Navbar />
 
       {/* 1. HERO SECTION */}
-      <section className="about-hero-section" style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: '#0c0c0e', color: 'white', textAlign: 'center' }}>
+      <section className="about-hero-section" style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: 'var(--text-primary)', color: 'white', textAlign: 'center' }}>
         {/* Background Animation (Toronto Skyline CN Tower) */}
         <div className="cinematic-bg-container">
           <img 
@@ -28,7 +28,7 @@ export default function AboutPage() {
           <div className="cinematic-overlay" />
         </div>
         <div className="container" style={{ maxWidth: 850, position: 'relative', zIndex: 10 }}>
-          <h1 style={{ fontSize: '3.6rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15, color: '#ffffff' }}>
+          <h1 style={{ fontSize: '3.6rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15, color: 'var(--bg-primary)' }}>
             Build connections. <br/>
             <span style={{ color: 'var(--primary-600)' }}>Find support. Grow together.</span>
           </h1>
@@ -142,7 +142,7 @@ export default function AboutPage() {
             </div>
             
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', boxShadow: 'var(--shadow-lg)', aspectRatio: '16/9' }}>
-              <Image src="/meetup_bg.png" alt="Platform Features" fill style={{ objectFit: 'cover' }} />
+              <Image src="/meetup_bg.png" alt="Platform Features" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
               <div style={{ position: 'absolute', top: 20, right: 20, background: 'var(--primary-600)', color: 'white', padding: '6px 14px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700 }}>
                 Engagement Hub
               </div>
@@ -168,10 +168,10 @@ export default function AboutPage() {
       </section>
 
       {/* 6. HOW THE PLATFORM WORKS */}
-      <section className="section" style={{ background: '#0c0c0e', color: 'white' }}>
+      <section className="section" style={{ background: 'var(--text-primary)', color: 'white' }}>
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <h2 style={{ fontSize: '2.5rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-display)' }}>How It Works</h2>
+            <h2 style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--bg-primary)', fontFamily: 'var(--font-display)' }}>How It Works</h2>
           </div>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
               {[
@@ -183,7 +183,7 @@ export default function AboutPage() {
                 <Link href="/portal/signup" key={i} style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '24px', background: 'rgba(255,255,255,0.03)', borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)', textDecoration: 'none', transition: 'background 0.2s' }}>
                   <div style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--primary-600)', lineHeight: 1, fontFamily: 'var(--font-display)' }}>{step.num}</div>
                   <div>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: 8, color: '#ffffff' }}>{step.title}</h3>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: 8, color: 'var(--bg-primary)' }}>{step.title}</h3>
                     <p style={{ color: 'var(--gray-400)', lineHeight: 1.5, fontSize: '0.88rem' }}>{step.desc}</p>
                   </div>
                 </Link>
@@ -197,7 +197,7 @@ export default function AboutPage() {
         <div className="container">
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center' }}>
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', boxShadow: 'var(--shadow-lg)', aspectRatio: '16/9' }}>
-              <Image src="/volunteer-help.png" alt="Community Trust" fill style={{ objectFit: 'cover' }} />
+              <Image src="/volunteer-help.png" alt="Community Trust" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
               <div style={{ position: 'absolute', top: 20, left: 20, background: 'var(--primary-600)', color: 'white', padding: '6px 14px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700 }}>
                 Safety & Trust
               </div>
@@ -259,7 +259,7 @@ export default function AboutPage() {
             </div>
 
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', aspectRatio: '16/9', boxShadow: 'var(--shadow-lg)' }}>
-              <Image src="/event_bg.png" alt="Trusted local businesses" fill style={{ objectFit: 'cover' }} />
+              <Image src="/event_bg.png" alt="Trusted local businesses" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
               <div style={{ position: 'absolute', top: 20, left: 20, background: 'var(--primary-600)', color: 'white', padding: '6px 14px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700 }}>
                 Verified Directory
               </div>
@@ -273,7 +273,7 @@ export default function AboutPage() {
         <div className="container">
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center' }}>
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', aspectRatio: '16/9', boxShadow: 'var(--shadow-lg)' }}>
-              <Image src="/events-meetup.png" alt="Community events and networking" fill style={{ objectFit: 'cover' }} />
+              <Image src="/events-meetup.png" alt="Community events and networking" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
               <div style={{ position: 'absolute', top: 20, right: 20, background: 'var(--primary-600)', color: 'white', padding: '6px 14px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700 }}>
                 Networking & Growth
               </div>
@@ -335,7 +335,7 @@ export default function AboutPage() {
             </div>
             
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', boxShadow: 'var(--shadow-lg)', aspectRatio: '16/9' }}>
-              <Image src="/hero-community.png" alt="Community values" fill style={{ objectFit: 'cover' }} />
+              <Image src="/hero-community.png" alt="Community values" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '16px', background: 'linear-gradient(transparent, rgba(12,12,14,0.8))' }}>
                 <span style={{ color: 'white', fontWeight: 700, fontSize: '0.9rem' }}>Empowering Canadian Professionals</span>
               </div>
@@ -345,7 +345,7 @@ export default function AboutPage() {
       </section>
 
       {/* 11. CALL TO ACTION SECTION */}
-      <section className="section" style={{ background: '#0c0c0e' }}>
+      <section className="section" style={{ background: 'var(--text-primary)' }}>
         <div className="container" style={{ maxWidth: 1000, textAlign: 'center' }}>
           <h2 style={{ fontSize: '3rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>
             Ready to build your future with us?

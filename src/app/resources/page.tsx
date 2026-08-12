@@ -15,7 +15,7 @@ export default function ResourcesPage() {
       <Navbar />
 
       {/* Hero */}
-      <section className="resources-hero-section" style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: '#0c0c0e' }}>
+      <section className="resources-hero-section" style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: 'var(--text-primary)' }}>
         {/* Background Animation (Resources) */}
         <div className="cinematic-bg-container">
           <img 
@@ -50,7 +50,7 @@ export default function ResourcesPage() {
           <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
             {ebooks.map((book, idx) => (
               <div key={book.id} style={{ position: 'relative', height: 320, borderRadius: 24, overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} className="hover:-translate-y-1 hover:shadow-xl">
-                <Image src={book.image} alt={book.title} fill style={{ objectFit: 'cover' }} />
+                <Image src={book.image} alt={book.title} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(12,12,14,0.95) 0%, rgba(12,12,14,0.6) 50%, rgba(12,12,14,0.3) 100%)' }} />
                 
                 <div style={{ position: 'absolute', top: 20, right: 20, width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -84,7 +84,7 @@ export default function ResourcesPage() {
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 24 }}>
             {workshops.map((video, idx) => (
               <div key={video.id} style={{ position: 'relative', height: 260, borderRadius: 24, overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} className="hover:-translate-y-1 hover:shadow-xl">
-                <Image src={video.thumbnailImage} alt={video.title} fill style={{ objectFit: 'cover' }} />
+                <Image src={video.thumbnailImage} alt={video.title} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(12,12,14,0.95) 0%, rgba(12,12,14,0.7) 60%, rgba(12,12,14,0.3) 100%)' }} />
                 
                 <div style={{ position: 'absolute', inset: 0, padding: 32, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
@@ -123,7 +123,7 @@ export default function ResourcesPage() {
           <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
             {templates.map((temp, idx) => (
               <div key={temp.id} style={{ position: 'relative', height: 280, borderRadius: 24, overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} className="hover:-translate-y-1 hover:shadow-xl">
-                <Image src={temp.image} alt={temp.title} fill style={{ objectFit: 'cover' }} />
+                <Image src={temp.image} alt={temp.title} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(12,12,14,0.95) 0%, rgba(12,12,14,0.7) 40%, rgba(12,12,14,0.4) 100%)' }} />
                 
                 <div style={{ position: 'absolute', inset: 0, padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
@@ -141,9 +141,9 @@ export default function ResourcesPage() {
       </section>
 
       {/* Contribute CTA */}
-      <section style={{ padding: '80px 0', background: '#0c0c0e', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ padding: '80px 0', background: 'var(--text-primary)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/toronto-skyline.png" alt="Toronto" fill style={{ objectFit: 'cover', opacity: 0.1 }} />
+          <Image src="/toronto-skyline.png" alt="Toronto" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.1 }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 700 }}>
           <GraduationCap size={48} style={{ color: 'var(--primary-600)', margin: '0 auto 24px' }} />

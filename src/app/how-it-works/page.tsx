@@ -11,9 +11,9 @@ export default function HowItWorksPage() {
       <Navbar />
 
       {/* Hero */}
-      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: '#0c0c0e', overflow: 'hidden' }}>
+      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: 'var(--text-primary)', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/volunteer-help.png" alt="How it works" fill style={{ objectFit: 'cover', opacity: 0.2 }} />
+          <Image src="/volunteer-help.png" alt="How it works" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.2 }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.95), rgba(232,93,4,0.15))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
@@ -37,9 +37,9 @@ export default function HowItWorksPage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {[
-              { step: 1, icon: <HelpCircle size={28} />, title: 'Submit a Help Request', desc: 'Describe your need across 10 support categories.', details: ['Full request form with category selection', 'Priority level (low, medium, high)', 'Consent to our secure process', 'Anonymous to volunteers until matched'], color: '#e85d04' },
-              { step: 2, icon: <Shield size={28} />, title: 'Platform Matches You', desc: 'The platform securely matches you with the right volunteer.', details: ['Request validated for completeness', 'Matched against volunteer expertise areas', 'We may ask clarifying questions', 'No direct contact — all verified through the platform'], color: '#0c0c0e' },
-              { step: 3, icon: <HandHeart size={28} />, title: 'Volunteer Assigned', desc: 'An assigned volunteer receives anonymized details. All communication is routed through our secure relay.', details: ['Volunteer sees only relevant case details', 'Volunteer responds securely', 'Platform relays volunteer response to you', 'Your contact info is never shared'], color: '#e85d04' },
+              { step: 1, icon: <HelpCircle size={28} />, title: 'Submit a Help Request', desc: 'Describe your need across 10 support categories.', details: ['Full request form with category selection', 'Priority level (low, medium, high)', 'Consent to our secure process', 'Anonymous to volunteers until matched'], color: 'var(--primary-600)' },
+              { step: 2, icon: <Shield size={28} />, title: 'Platform Matches You', desc: 'The platform securely matches you with the right volunteer.', details: ['Request validated for completeness', 'Matched against volunteer expertise areas', 'We may ask clarifying questions', 'No direct contact — all verified through the platform'], color: 'var(--text-primary)' },
+              { step: 3, icon: <HandHeart size={28} />, title: 'Volunteer Assigned', desc: 'An assigned volunteer receives anonymized details. All communication is routed through our secure relay.', details: ['Volunteer sees only relevant case details', 'Volunteer responds securely', 'Platform relays volunteer response to you', 'Your contact info is never shared'], color: 'var(--primary-600)' },
             ].map(item => (
               <div key={item.step} className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 24, alignItems: 'start' }}>
                 <div style={{ width: 72, height: 72, borderRadius: '50%', background: `${item.color}12`, border: `2px solid ${item.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, position: 'relative' }}>
@@ -72,9 +72,9 @@ export default function HowItWorksPage() {
 
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {[
-              { step: 1, icon: <ClipboardList size={32} />, title: 'Apply & Get Verified', desc: 'Submit your background and expertise for verification.', color: '#e85d04' },
-              { step: 2, icon: <MessageSquare size={32} />, title: 'Receive Case Assignments', desc: 'Receive anonymized case details matched to your expertise.', color: '#0c0c0e' },
-              { step: 3, icon: <CheckCircle size={32} />, title: 'Provide Guidance', desc: 'Respond securely through the platform. Your contact info is never shared.', color: '#e85d04' },
+              { step: 1, icon: <ClipboardList size={32} />, title: 'Apply & Get Verified', desc: 'Submit your background and expertise for verification.', color: 'var(--primary-600)' },
+              { step: 2, icon: <MessageSquare size={32} />, title: 'Receive Case Assignments', desc: 'Receive anonymized case details matched to your expertise.', color: 'var(--text-primary)' },
+              { step: 3, icon: <CheckCircle size={32} />, title: 'Provide Guidance', desc: 'Respond securely through the platform. Your contact info is never shared.', color: 'var(--primary-600)' },
             ].map(item => (
               <div key={item.step} style={{ textAlign: 'center', padding: '40px 28px', borderRadius: 20, background: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
                 <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(232, 93, 4, 0.08)', border: '1px solid rgba(232, 93, 4, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, margin: '0 auto 20px' }}>
@@ -90,7 +90,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* CTA */}
-      <section style={{ padding: '40px 0', background: '#0c0c0e', textAlign: 'center' }}>
+      <section style={{ padding: '40px 0', background: 'var(--text-primary)', textAlign: 'center' }}>
         <div className="container" style={{ maxWidth: 600 }}>
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Ready to get started?</h2>
           <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: 20 }}>Ask for help today — a real person will get back to you.</p>

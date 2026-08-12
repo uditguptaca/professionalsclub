@@ -28,11 +28,11 @@ const JOB_TYPE_LABELS: Record<JobType, string> = {
 };
 
 const JOB_TYPE_COLORS: Record<JobType, { bg: string; color: string }> = {
-  full_time: { bg: '#fff7ed', color: '#e85d04' },
-  part_time: { bg: '#fff7ed', color: '#e85d04' },
-  contract: { bg: 'rgba(12, 12, 14, 0.05)', color: '#0c0c0e' },
-  freelance: { bg: 'rgba(12, 12, 14, 0.05)', color: '#0c0c0e' },
-  internship: { bg: 'rgba(232, 93, 4, 0.08)', color: '#e85d04' },
+  full_time: { bg: 'var(--bg-secondary)', color: 'var(--primary-600)' },
+  part_time: { bg: 'var(--bg-secondary)', color: 'var(--primary-600)' },
+  contract: { bg: 'rgba(12, 12, 14, 0.05)', color: 'var(--text-primary)' },
+  freelance: { bg: 'rgba(12, 12, 14, 0.05)', color: 'var(--text-primary)' },
+  internship: { bg: 'rgba(232, 93, 4, 0.08)', color: 'var(--primary-600)' },
 };
 
 function formatSalary(min: number, max: number, period: string) {
@@ -135,7 +135,7 @@ export default function JobsPage() {
       <Navbar />
 
       {/* ─── HERO ─── */}
-      <section style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: '#0c0c0e' }}>
+      <section style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: 'var(--text-primary)' }}>
         {/* Background Video */}
         <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
           <video autoPlay loop muted playsInline style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.55 }}>
@@ -302,7 +302,7 @@ export default function JobsPage() {
       </section>
 
       {/* ─── TOP JOB CITIES ─── */}
-      <section style={{ padding: '40px 0', background: '#fff7ed' }}>
+      <section style={{ padding: '40px 0', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
             <h2 style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 12 }}>Explore Top Job Cities!</h2>
@@ -318,7 +318,7 @@ export default function JobsPage() {
             ].map((city, i) => (
               <div key={i} style={{ cursor: 'pointer', transition: 'transform 0.2s' }} onMouseOver={e=>e.currentTarget.style.transform='translateY(-4px)'} onMouseOut={e=>e.currentTarget.style.transform='none'}>
                 <div style={{ borderRadius: 20, overflow: 'hidden', position: 'relative', height: 260, marginBottom: 16 }}>
-                  <Image src={city.img} alt={city.name} fill style={{ objectFit: 'cover' }} unoptimized={city.img.startsWith('http')} />
+                  <Image src={city.img} alt={city.name} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} unoptimized={city.img.startsWith('http')} />
                 </div>
                 <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: 4 }}>{city.name}</div>
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{city.jobs} Jobs Available</div>
@@ -358,7 +358,7 @@ export default function JobsPage() {
                     border: 'none',
                     cursor: 'pointer',
                     background: activeTab === tab.key ? 'var(--primary-600)' : 'white',
-                    color: activeTab === tab.key ? 'white' : '#374151',
+                    color: activeTab === tab.key ? 'white' : 'var(--gray-600)',
                     transition: 'all 0.2s',
                     borderRight: '1px solid var(--border-color)',
                   }}
@@ -402,7 +402,7 @@ export default function JobsPage() {
                     <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                       {/* Company Logo */}
                       <div style={{ width: 56, height: 56, borderRadius: 12, overflow: 'hidden', position: 'relative', flexShrink: 0, border: '1px solid var(--border-color)' }}>
-                        <Image src={job.companyLogo} alt={job.company} fill style={{ objectFit: 'cover' }} />
+                        <Image src={job.companyLogo} alt={job.company} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
                       </div>
 
                       {/* Job Info */}
@@ -485,10 +485,10 @@ export default function JobsPage() {
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center' }}>
             {/* Left Box (Image Component) */}
             <div style={{ position: 'relative', borderRadius: 24, overflow: 'hidden', height: 480 }}>
-              <Image src="/volunteer-help.png" alt="Referral" fill style={{ objectFit: 'cover' }} />
+              <Image src="/volunteer-help.png" alt="Referral" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
               {/* Floating Badge */}
               <div style={{ position: 'absolute', bottom: 24, left: 24, background: 'var(--bg-primary)', padding: '12px 24px', borderRadius: 99, display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 8px 30px rgba(0,0,0,0.1)' }}>
-                <div style={{ background: '#0c0c0e', width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-600)' }}>
+                <div style={{ background: 'var(--text-primary)', width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-600)' }}>
                   <Briefcase size={20} />
                 </div>
                 <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>Get Referred Now!</span>
@@ -564,7 +564,7 @@ export default function JobsPage() {
           {/* Candidate */}
           <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 20px', textAlign: 'center', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', inset: 0 }}>
-              <Image src="/hero-community.png" alt="Career" fill style={{ objectFit: 'cover', opacity: 0.2 }} />
+              <Image src="/hero-community.png" alt="Career" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.2 }} />
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.92), rgba(12,12,14,0.85))' }} />
             </div>
             <div style={{ position: 'relative', zIndex: 10 }}>

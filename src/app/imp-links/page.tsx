@@ -7,8 +7,8 @@ import { ExternalLink, Link as LinkIcon, Landmark, Briefcase, FileSignature, Use
 const linkCategories = [
   {
     title: 'Canada Revenue Agency (CRA) & Taxes',
-    icon: <Landmark size={24} style={{ color: '#e85d04' }} />,
-    color: '#e85d04',
+    icon: <Landmark size={24} style={{ color: 'var(--primary-600)' }} />,
+    color: 'var(--primary-600)',
     links: [
       { name: 'CRA Home Page', url: 'https://www.canada.ca/en/revenue-agency.html' },
       { name: 'Income Tax in Canada', url: 'https://www.canada.ca/en/services/taxes/income-tax.html' },
@@ -20,8 +20,8 @@ const linkCategories = [
   },
   {
     title: 'Incorporation & Contracting',
-    icon: <Briefcase size={24} style={{ color: '#e85d04' }} />,
-    color: '#e85d04',
+    icon: <Briefcase size={24} style={{ color: 'var(--primary-600)' }} />,
+    color: 'var(--primary-600)',
     links: [
       { name: 'What is Incorporation in Canada?', url: 'https://ised-isde.canada.ca/site/corporations-canada/en/business-corporations/what-are-business-corporations' },
       { name: 'How do I incorporate in Canada?', url: 'https://ised-isde.canada.ca/site/corporations-canada/en/business-corporations/how-incorporate-business' },
@@ -32,8 +32,8 @@ const linkCategories = [
   },
   {
     title: 'Employment Insurance (EI)',
-    icon: <FileSignature size={24} style={{ color: '#e85d04' }} />,
-    color: '#e85d04',
+    icon: <FileSignature size={24} style={{ color: 'var(--primary-600)' }} />,
+    color: 'var(--primary-600)',
     links: [
       { name: 'Employment Insurance benefits Overview', url: 'https://www.canada.ca/en/services/benefits/ei.html' },
       { name: 'EI benefits for self-employed persons', url: 'https://www.canada.ca/en/services/benefits/ei/ei-self-employed-workers.html' },
@@ -42,8 +42,8 @@ const linkCategories = [
   },
   {
     title: 'Immigration & Citizenship (IRCC)',
-    icon: <Users size={24} style={{ color: '#e85d04' }} />,
-    color: '#e85d04',
+    icon: <Users size={24} style={{ color: 'var(--primary-600)' }} />,
+    color: 'var(--primary-600)',
     links: [
       { name: 'IRCC Official Home Page', url: 'https://www.canada.ca/en/immigration-refugees-citizenship.html' },
       { name: 'Express Entry System', url: 'https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry.html' },
@@ -53,8 +53,8 @@ const linkCategories = [
   },
   {
     title: 'Settlement & Daily Essentials',
-    icon: <HeartPulse size={24} style={{ color: '#e85d04' }} />,
-    color: '#e85d04',
+    icon: <HeartPulse size={24} style={{ color: 'var(--primary-600)' }} />,
+    color: 'var(--primary-600)',
     links: [
       { name: 'Apply for a Social Insurance Number (SIN)', url: 'https://www.canada.ca/en/employment-social-development/services/sin.html' },
       { name: 'Service Canada Portal', url: 'https://www.canada.ca/en/employment-social-development/corporate/portfolio/service-canada.html' },
@@ -131,7 +131,7 @@ export default function ImpLinksPage() {
                             e.currentTarget.style.boxShadow = 'none';
                             e.currentTarget.style.transform = 'translateY(0)';
                             const icon = e.currentTarget.querySelector('.link-icon') as HTMLElement;
-                            if (icon) icon.style.color = '#94a3b8';
+                            if (icon) icon.style.color = 'var(--text-muted)';
                           }}
                         >
                           <ExternalLink className="link-icon" size={18} style={{ color: 'var(--text-muted)', marginTop: 2, transition: 'color 0.2s', flexShrink: 0 }} />

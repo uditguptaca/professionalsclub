@@ -15,7 +15,7 @@ export default function DonatePage() {
 
       {/* Hero Section */}
       <section style={{ position: 'relative', padding: '120px 0 80px', color: 'white', overflow: 'hidden' }}>
-        <Image src="/hero-community.png" alt="Community Support" fill style={{ objectFit: 'cover' }} priority />
+        <Image src="/hero-community.png" alt="Community Support" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} priority />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.9), rgba(12,12,14,0.6))' }} />
         
         <div className="container" style={{ position: 'relative', zIndex: 10 }}>
@@ -139,7 +139,7 @@ export default function DonatePage() {
               
               <div className="mobile-wrap" style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
                 <div style={{ position: 'relative', width: 72, height: 72, borderRadius: '50%', overflow: 'hidden', border: '3px solid white', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', flexShrink: 0 }}>
-                  <Image src="/founder.png" alt="Udit Gupta" fill style={{ objectFit: 'cover' }} />
+                  <Image src="/founder.png" alt="Udit Gupta" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
                 </div>
                 <div>
                   <div style={{ fontSize: '2.2rem', fontFamily: 'Georgia, serif', fontStyle: 'italic', color: 'var(--text-primary)', lineHeight: 1, marginBottom: 8 }}>Udit Gupta</div>

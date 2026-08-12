@@ -1,79 +1,120 @@
 import React from 'react';
 import Link from 'next/link';
-import { Globe, AtSign, Camera, Briefcase, Heart } from 'lucide-react';
+
+/**
+ * Site footer.
+ *
+ * What changed and why:
+ *
+ *   - The wordmark was an <svg> with <text> nodes, same problem as the navbar:
+ *     SVG text does not pick up a webfont and is invisible to search and to
+ *     screen readers. It is real HTML now.
+ *   - Four columns of links included duplicates (three separate links to
+ *     /faq#general) and two that described things that do not exist — "API Docs"
+ *     and a "Refund Policy" for a platform that never takes payment. Removed
+ *     rather than relabelled; a link farm padded with fiction is worse than a
+ *     short honest list.
+ *   - The four social icons were <span>s with cursor:pointer and no href. They
+ *     looked clickable and did nothing. Removed until there are real accounts to
+ *     point at.
+ *   - Legal moved into the bottom bar, which is where people look for it.
+ */
+
+const COLUMNS: { heading: string; links: { href: string; label: string }[] }[] = [
+  {
+    heading: 'Get help',
+    links: [
+      { href: '/portal/auth', label: 'Request help' },
+      { href: '/jobs', label: 'Jobs and referrals' },
+      { href: '/settlement', label: 'Settlement guides' },
+      { href: '/build-resume', label: 'Build a resume' },
+      { href: '/faq', label: 'Questions and answers' },
+    ],
+  },
+  {
+    heading: 'Take part',
+    links: [
+      { href: '/volunteers', label: 'Volunteer with us' },
+      { href: '/events', label: 'Events and meetups' },
+      { href: '/groups', label: 'WhatsApp groups' },
+      { href: '/businesses', label: 'Business directory' },
+      { href: '/donate', label: 'Donate' },
+    ],
+  },
+  {
+    heading: 'About',
+    links: [
+      { href: '/about', label: 'Who we are' },
+      { href: '/how-it-works', label: 'How it works' },
+      { href: '/team', label: 'Team' },
+      { href: '/news', label: 'News and blog' },
+      { href: '/contact', label: 'Contact' },
+    ],
+  },
+];
 
 export default function Footer() {
+  const year = new Date().getFullYear();
+  const matrimonyEnabled = process.env.NEXT_PUBLIC_FEATURE_MATRIMONY !== 'false';
+
   return (
-    <footer className="footer">
-      <div className="container-lg">
-        <div className="footer-grid">
-          <div className="footer-brand">
-            <Link href="/" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-block', marginBottom: 'var(--space-4)' }}>
-              <svg viewBox="0 0 210 44" width="180" height="38" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Maple Leaf Icon on the left */}
-                <g transform="translate(0, 2)">
-                  <path d="M18 2l2.02 4.55 4.35-.93-1.15 4.38 4.16-1.92-1.35 4.14 4.38.77-3.38 2.9 1.69 3.89-4.38-.88.9 4.27-3.03-1.35v5.44h-2.45v-5.44l-3.03 1.35.9-4.27-4.38.88 1.69-3.89-3.38-2.9 4.38-.77-1.35-4.14 4.16 1.92-1.15-4.38 4.35.93L18 2z" fill="#e85d04" stroke="#ffffff" strokeWidth="0.8" strokeLinejoin="round" />
-                </g>
-                <text x="44" y="16" fill="#ffffff" fontSize="10" fontWeight="900" letterSpacing="1.8" fontFamily="var(--font-display), system-ui, sans-serif">
-                  PROFESSIONALS
-                </text>
-                <text x="44" y="36" fill="#e85d04" fontSize="19.5" fontWeight="950" letterSpacing="0.8" fontFamily="var(--font-display), system-ui, sans-serif">
-                  CLUB
-                </text>
+    <footer className="footer-editorial">
+      <div className="container">
+        <div className="footer-editorial-top">
+          <div className="footer-editorial-brand">
+            <Link href="/" className="wordmark wordmark-inverse" aria-label="Professionals Club, home">
+              <svg className="wordmark-leaf" viewBox="0 0 512 512" aria-hidden="true" focusable="false">
+                <path
+                  d="M256 24l-30 56c-3 6-9 5-16 1l-38-20 21 100c4 20-9 20-17 11l-59-63-15 41c-2 4-6 4-13 3l-73-15 20 68c4 15 7 21-5 25l-31 15 137 111c6 5 8 13 5 21l-12 39 132-17c4 0 7 3 6 7l-6 100h34l-6-100c-1-4 2-7 6-7l132 17-12-39c-3-8-1-16 5-21l137-111-31-15c-12-4-9-10-5-25l20-68-73 15c-7 1-11 1-13-3l-15-41-59 63c-8 9-21 9-17-11l21-100-38 20c-7 4-13 5-16-1l-30-56z"
+                  fill="currentColor"
+                />
               </svg>
+              <span className="wordmark-text">
+                <span className="wordmark-top">Professionals</span>
+                <span className="wordmark-bottom">Club</span>
+              </span>
             </Link>
-            <p>Helping newcomers and professionals build their future in Canada — job referrals, settlement, mentorship, and community. Free, human help from people who've been there.</p>
-            <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
-              <span style={{ color: '#94a3b8', cursor: 'pointer' }}><Globe size={20} /></span>
-              <span style={{ color: '#94a3b8', cursor: 'pointer' }}><AtSign size={20} /></span>
-              <span style={{ color: '#94a3b8', cursor: 'pointer' }}><Camera size={20} /></span>
-              <span style={{ color: '#94a3b8', cursor: 'pointer' }}><Briefcase size={20} /></span>
-            </div>
+
+            <p className="footer-editorial-blurb">
+              Job referrals, settlement help, mentorship and community for
+              newcomers to Canada. Free, run by volunteers who arrived the same
+              way you did.
+            </p>
+
+            <Link href="/portal/auth" className="btn btn-primary footer-editorial-cta">
+              Join the club
+            </Link>
           </div>
-          <div className="footer-col">
-            <h4>Platform</h4>
-            <ul>
-              <li><Link href="/portal/auth">Request Help</Link></li>
-              <li><Link href="/portal/auth">Volunteer</Link></li>
-              {process.env.NEXT_PUBLIC_FEATURE_MATRIMONY !== 'false' && (
-                <li><Link href="/matrimony">Matrimony</Link></li>
-              )}
-              <li><Link href="/about">How It Works</Link></li>
-              <li><Link href="/portal/auth">Member Login</Link></li>
-            </ul>
-          </div>
-          <div className="footer-col">
-            <h4>Community</h4>
-            <ul>
-              <li><Link href="/community">Discussions</Link></li>
-              <li><Link href="/events">Events & Meetups</Link></li>
-              <li><Link href="/news">Career News</Link></li>
-              <li><Link href="/about">About Us</Link></li>
-              <li><Link href="/contact">Contact</Link></li>
-            </ul>
-          </div>
-          <div className="footer-col">
-            <h4>Resources</h4>
-            <ul>
-              <li><Link href="/faq#general">FAQ</Link></li>
-              <li><Link href="/faq#general">Help Center</Link></li>
-              <li><Link href="/news">Blog</Link></li>
-              <li><Link href="/faq#general">API Docs</Link></li>
-            </ul>
-          </div>
-          <div className="footer-col">
-            <h4>Legal</h4>
-            <ul>
-              <li><Link href="/faq#terms">Terms of Service</Link></li>
-              <li><Link href="/faq#privacy">Privacy Policy</Link></li>
-              <li><Link href="/faq#cookie">Cookie Policy</Link></li>
-              <li><Link href="/faq#refund">Refund Policy</Link></li>
-            </ul>
-          </div>
+
+          <nav className="footer-editorial-cols" aria-label="Footer">
+            {COLUMNS.map((col) => (
+              <div key={col.heading}>
+                <h2>{col.heading}</h2>
+                <ul>
+                  {col.links.map((link) => (
+                    <li key={link.href + link.label}>
+                      <Link href={link.href}>{link.label}</Link>
+                    </li>
+                  ))}
+                  {col.heading === 'Take part' && matrimonyEnabled && (
+                    <li>
+                      <Link href="/matrimony">Matrimony</Link>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            ))}
+          </nav>
         </div>
-        <div className="footer-bottom">
-          <p>&copy; {new Date().getFullYear()} Professionals Club. All rights reserved. Built in Canada.</p>
-          <p style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>Made with <Heart size={14} style={{ color: 'var(--primary-600)' }} /> for the Canadian professional community</p>
+
+        <div className="footer-editorial-bottom">
+          <p>&copy; {year} Professionals Club. Built in Canada.</p>
+          <ul>
+            <li><Link href="/faq#terms">Terms</Link></li>
+            <li><Link href="/faq#privacy">Privacy</Link></li>
+            <li><Link href="/faq#cookie">Cookies</Link></li>
+            <li><Link href="/support">Support us</Link></li>
+          </ul>
         </div>
       </div>
     </footer>

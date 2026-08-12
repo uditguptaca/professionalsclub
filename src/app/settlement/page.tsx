@@ -124,7 +124,7 @@ export default function SettlementPage() {
       <Navbar />
 
       {/* Hero */}
-      <section className="settlement-hero-section" style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: '#0c0c0e' }}>
+      <section className="settlement-hero-section" style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: 'var(--text-primary)' }}>
         {/* Background Animation (Toronto Skyline CN Tower) */}
         <div className="cinematic-bg-container">
           <img 
@@ -176,7 +176,7 @@ export default function SettlementPage() {
 
               {/* Image Side */}
               <div style={{ direction: 'ltr', borderRadius: 24, overflow: 'hidden', boxShadow: '0 25px 50px rgba(0,0,0,0.12)', position: 'relative', aspectRatio: '4/3', width: '100%' }}>
-                <Image src={cat.image} alt={cat.title} fill style={{ objectFit: 'cover' }} />
+                <Image src={cat.image} alt={cat.title} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '24px 28px', background: 'linear-gradient(transparent, rgba(12,12,14,0.7))' }}>
                   <span style={{ color: 'white', fontWeight: 700, fontSize: '0.85rem' }}>{cat.imgOverlayText}</span>
                 </div>
@@ -189,7 +189,7 @@ export default function SettlementPage() {
       {/* Newcomer Checklist — Side-by-Side */}
       <section className="section" style={{ position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/study-bg.png" alt="Newcomer Studying Checklist" fill style={{ objectFit: 'cover' }} />
+          <Image src="/study-bg.png" alt="Newcomer Studying Checklist" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.95), rgba(12,12,14,0.85))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10 }}>

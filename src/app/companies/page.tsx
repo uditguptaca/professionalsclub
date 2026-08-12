@@ -7,18 +7,18 @@ import Footer from '@/components/shared/Footer';
 import { Search, MapPin, ArrowRight, Building2 } from 'lucide-react';
 
 const companies = [
-  { id: 'c1', name: 'Shopify', logo: 'S', industry: 'Technology', size: '10,000+', location: 'Ottawa, ON', description: 'Commerce platform helping merchants sell online', color: '#e85d04' },
-  { id: 'c2', name: 'Amazon Canada', logo: 'A', industry: 'Technology', size: '50,000+', location: 'Vancouver, BC', description: 'Global technology and e-commerce company', color: '#e85d04' },
-  { id: 'c3', name: 'Royal Bank of Canada', logo: 'RBC', industry: 'Banking', size: '50,000+', location: 'Toronto, ON', description: 'Canada\'s largest bank by market capitalization', color: '#e85d04' },
-  { id: 'c4', name: 'TD Bank', logo: 'TD', industry: 'Banking', size: '50,000+', location: 'Toronto, ON', description: 'One of Canada\'s Big Five banks', color: '#e85d04' },
-  { id: 'c5', name: 'Google Canada', logo: 'G', industry: 'Technology', size: '10,000+', location: 'Waterloo, ON', description: 'Technology giant with offices across Canada', color: '#e85d04' },
-  { id: 'c6', name: 'Microsoft Canada', logo: 'MS', industry: 'Technology', size: '10,000+', location: 'Vancouver, BC', description: 'Global technology leader in cloud and software', color: '#e85d04' },
-  { id: 'c7', name: 'Deloitte Canada', logo: 'D', industry: 'Consulting', size: '10,000+', location: 'Toronto, ON', description: 'Global professional services and consulting firm', color: '#e85d04' },
-  { id: 'c8', name: 'CIBC', logo: 'CI', industry: 'Banking', size: '40,000+', location: 'Toronto, ON', description: 'Full-service financial institution', color: '#e85d04' },
-  { id: 'c9', name: 'Telus', logo: 'T', industry: 'Telecommunications', size: '30,000+', location: 'Vancouver, BC', description: 'Leading Canadian telecom company', color: '#e85d04' },
-  { id: 'c10', name: 'Scotiabank', logo: 'SB', industry: 'Banking', size: '50,000+', location: 'Toronto, ON', description: 'International banking and financial services', color: '#e85d04' },
-  { id: 'c11', name: 'Wealthsimple', logo: 'W', industry: 'Fintech', size: '1,000+', location: 'Toronto, ON', description: 'Canadian online investment management service', color: '#e85d04' },
-  { id: 'c12', name: 'Manulife', logo: 'M', industry: 'Insurance', size: '30,000+', location: 'Toronto, ON', description: 'Leading international financial services company', color: '#e85d04' },
+  { id: 'c1', name: 'Shopify', logo: 'S', industry: 'Technology', size: '10,000+', location: 'Ottawa, ON', description: 'Commerce platform helping merchants sell online', color: 'var(--primary-600)' },
+  { id: 'c2', name: 'Amazon Canada', logo: 'A', industry: 'Technology', size: '50,000+', location: 'Vancouver, BC', description: 'Global technology and e-commerce company', color: 'var(--primary-600)' },
+  { id: 'c3', name: 'Royal Bank of Canada', logo: 'RBC', industry: 'Banking', size: '50,000+', location: 'Toronto, ON', description: 'Canada\'s largest bank by market capitalization', color: 'var(--primary-600)' },
+  { id: 'c4', name: 'TD Bank', logo: 'TD', industry: 'Banking', size: '50,000+', location: 'Toronto, ON', description: 'One of Canada\'s Big Five banks', color: 'var(--primary-600)' },
+  { id: 'c5', name: 'Google Canada', logo: 'G', industry: 'Technology', size: '10,000+', location: 'Waterloo, ON', description: 'Technology giant with offices across Canada', color: 'var(--primary-600)' },
+  { id: 'c6', name: 'Microsoft Canada', logo: 'MS', industry: 'Technology', size: '10,000+', location: 'Vancouver, BC', description: 'Global technology leader in cloud and software', color: 'var(--primary-600)' },
+  { id: 'c7', name: 'Deloitte Canada', logo: 'D', industry: 'Consulting', size: '10,000+', location: 'Toronto, ON', description: 'Global professional services and consulting firm', color: 'var(--primary-600)' },
+  { id: 'c8', name: 'CIBC', logo: 'CI', industry: 'Banking', size: '40,000+', location: 'Toronto, ON', description: 'Full-service financial institution', color: 'var(--primary-600)' },
+  { id: 'c9', name: 'Telus', logo: 'T', industry: 'Telecommunications', size: '30,000+', location: 'Vancouver, BC', description: 'Leading Canadian telecom company', color: 'var(--primary-600)' },
+  { id: 'c10', name: 'Scotiabank', logo: 'SB', industry: 'Banking', size: '50,000+', location: 'Toronto, ON', description: 'International banking and financial services', color: 'var(--primary-600)' },
+  { id: 'c11', name: 'Wealthsimple', logo: 'W', industry: 'Fintech', size: '1,000+', location: 'Toronto, ON', description: 'Canadian online investment management service', color: 'var(--primary-600)' },
+  { id: 'c12', name: 'Manulife', logo: 'M', industry: 'Insurance', size: '30,000+', location: 'Toronto, ON', description: 'Leading international financial services company', color: 'var(--primary-600)' },
 ];
 
 export default function CompaniesPage() {
@@ -36,9 +36,9 @@ export default function CompaniesPage() {
       <Navbar />
 
       {/* Hero */}
-      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: '#0c0c0e', overflow: 'hidden' }}>
+      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: 'var(--text-primary)', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/toronto-skyline.png" alt="Toronto skyline" fill style={{ objectFit: 'cover', opacity: 0.2 }} />
+          <Image src="/toronto-skyline.png" alt="Toronto skyline" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.2 }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.95), rgba(232,93,4,0.15))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
@@ -114,7 +114,7 @@ export default function CompaniesPage() {
       {/* CTA */}
       <section className="section-sm" style={{ position: 'relative', textAlign: 'center', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/event_bg.png" alt="Company Referrals" fill style={{ objectFit: 'cover' }} />
+          <Image src="/event_bg.png" alt="Company Referrals" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.92), rgba(12,12,14,0.85))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 600 }}>

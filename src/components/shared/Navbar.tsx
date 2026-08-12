@@ -1,117 +1,246 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X } from 'lucide-react';
+import {
+  Menu, X, ChevronDown, ArrowRight, ArrowUpRight,
+  Info, Workflow, Users, HandHeart, Gift, Phone,
+  Briefcase, UserCheck, FileText, Building,
+  Map, Newspaper, BookOpen, PlaySquare, PenSquare, Link2, Calculator,
+  CalendarDays, MessageCircle, Store, Heart, LifeBuoy, Mail,
+} from 'lucide-react';
+
+/**
+ * Site navigation: four top-level groups, each opening a glass megamenu of
+ * icon + description rows, plus one emphasized CTA per menu. Everything the
+ * old ten-link bar pointed at still exists — reorganized, not removed.
+ *
+ * Interaction model: hover or focus-within opens a menu (CSS-driven, so it
+ * works without JS); the mobile panel lists every group flat. Escape and
+ * route changes close the mobile panel; body scroll locks while it is open.
+ */
+
+type MegaItem = { href: string; label: string; desc: string; icon: React.ReactNode; external?: boolean };
+type MegaGroup = {
+  label: string;
+  href: string;
+  items: MegaItem[];
+  cta: { href: string; label: string };
+};
+
+const GROUPS: MegaGroup[] = [
+  {
+    label: 'About',
+    href: '/about',
+    items: [
+      { href: '/about', label: 'Who we are', desc: 'The club, its mission, its people', icon: <Info size={17} /> },
+      { href: '/how-it-works', label: 'How it works', desc: 'From request to resolution', icon: <Workflow size={17} /> },
+      { href: '/team', label: 'Team', desc: 'The volunteers behind the desk', icon: <Users size={17} /> },
+      { href: '/support', label: 'Support us', desc: 'Ways to keep this running', icon: <HandHeart size={17} /> },
+      { href: '/donate', label: 'Donate', desc: 'Every dollar goes to programs', icon: <Gift size={17} /> },
+      { href: '/contact', label: 'Contact', desc: 'Reach the organizing team', icon: <Phone size={17} /> },
+    ],
+    cta: { href: '/portal/signup', label: 'Join the club free' },
+  },
+  {
+    label: 'Careers',
+    href: '/jobs',
+    items: [
+      { href: '/jobs', label: 'Jobs board', desc: 'Openings shared by members weekly', icon: <Briefcase size={17} /> },
+      { href: '/companies', label: 'Referrals', desc: 'Someone inside puts your name forward', icon: <UserCheck size={17} /> },
+      { href: '/build-resume', label: 'Build a resume', desc: 'Canadian-format resume, free', icon: <FileText size={17} /> },
+      { href: '/recruit-firms', label: 'Recruitment firms', desc: 'Vetted agencies worth your time', icon: <Building size={17} /> },
+    ],
+    cta: { href: '/portal/auth', label: 'Request career help' },
+  },
+  {
+    label: 'Resources',
+    href: '/resources',
+    items: [
+      { href: '/settlement', label: 'Settlement guides', desc: 'Housing, banking, SIN, health card', icon: <Map size={17} /> },
+      { href: '/news', label: 'News', desc: 'Immigration and career updates', icon: <Newspaper size={17} /> },
+      { href: '/e-books', label: 'E-books', desc: 'Newcomer guides to keep', icon: <BookOpen size={17} /> },
+      { href: '/youtube', label: 'Video library', desc: 'Talks, webinars and walkthroughs', icon: <PlaySquare size={17} /> },
+      { href: '/blogs', label: 'Blog', desc: 'Stories and practical advice', icon: <PenSquare size={17} /> },
+      { href: '/imp-links', label: 'Useful links', desc: 'Official portals in one place', icon: <Link2 size={17} /> },
+      { href: 'https://www.forbes.com/advisor/ca/income-tax-calculator/', label: 'Tax calculator', desc: 'Estimate your first return', icon: <Calculator size={17} />, external: true },
+    ],
+    cta: { href: '/settlement', label: 'Start with the guides' },
+  },
+  {
+    label: 'Community',
+    href: '/community',
+    items: [
+      { href: '/events', label: 'Events & meetups', desc: 'Monthly, in person, ten provinces', icon: <CalendarDays size={17} /> },
+      { href: '/groups', label: 'WhatsApp groups', desc: 'Six communities, 6,000+ members', icon: <MessageCircle size={17} /> },
+      { href: '/businesses', label: 'Business directory', desc: 'Vetted by members who used them', icon: <Store size={17} /> },
+      { href: '/volunteers', label: 'Volunteer', desc: 'Give an hour, change a landing', icon: <LifeBuoy size={17} /> },
+    ],
+    cta: { href: '/events', label: 'See what is on this month' },
+  },
+];
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
 
-  const isActive = (path: string) => {
-    if (path === '/') return pathname === '/';
-    return pathname === path || pathname?.startsWith(path + '/');
-  };
+  const isActive = useCallback(
+    (path: string) => (path === '/' ? pathname === '/' : pathname === path || pathname?.startsWith(path + '/')),
+    [pathname]
+  );
+
+  useEffect(() => setMobileOpen(false), [pathname]);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMobileOpen(false); };
+    window.addEventListener('keydown', onKey);
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = previous;
+    };
+  }, [mobileOpen]);
+
+  const matrimonyEnabled = process.env.NEXT_PUBLIC_FEATURE_MATRIMONY !== 'false';
+  const groups: MegaGroup[] = matrimonyEnabled
+    ? GROUPS.map((g) =>
+        g.label === 'Community'
+          ? { ...g, items: [...g.items, { href: '/matrimony', label: 'Matrimony', desc: 'Verified profiles, privacy first', icon: <Heart size={17} /> }] }
+          : g
+      )
+    : GROUPS;
+
+  const groupActive = (g: MegaGroup) =>
+    isActive(g.href) || g.items.some((it) => !it.external && isActive(it.href));
 
   return (
-    <nav className="navbar">
-      <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-          <svg viewBox="0 0 210 44" width="210" height="44" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
-            {/* Maple Leaf Icon on the left */}
-            <g transform="translate(0, 2)">
-              {/* Back glow for maple leaf */}
-              <path d="M18 2l2.02 4.55 4.35-.93-1.15 4.38 4.16-1.92-1.35 4.14 4.38.77-3.38 2.9 1.69 3.89-4.38-.88.9 4.27-3.03-1.35v5.44h-2.45v-5.44l-3.03 1.35.9-4.27-4.38.88 1.69-3.89-3.38-2.9 4.38-.77-1.35-4.14 4.16 1.92-1.15-4.38 4.35.93L18 2z" fill="rgba(232, 93, 4, 0.25)" />
-              {/* Maple Leaf border and fill */}
-              <path d="M18 2l2.02 4.55 4.35-.93-1.15 4.38 4.16-1.92-1.35 4.14 4.38.77-3.38 2.9 1.69 3.89-4.38-.88.9 4.27-3.03-1.35v5.44h-2.45v-5.44l-3.03 1.35.9-4.27-4.38.88 1.69-3.89-3.38-2.9 4.38-.77-1.35-4.14 4.16 1.92-1.15-4.38 4.35.93L18 2z" fill="#e85d04" stroke="#ffffff" strokeWidth="0.8" strokeLinejoin="round" />
-            </g>
-            
-            {/* Stacked Typography on the right */}
-            {/* "PROFESSIONALS" in small spaced uppercase white text */}
-            <text x="44" y="16" fill="#ffffff" fontSize="10" fontWeight="900" letterSpacing="1.8" fontFamily="var(--font-display), system-ui, sans-serif">
-              PROFESSIONALS
-            </text>
-            
-            {/* "CLUB" in bold uppercase orange text */}
-            <text x="44" y="36" fill="#e85d04" fontSize="19.5" fontWeight="950" letterSpacing="0.8" fontFamily="var(--font-display), system-ui, sans-serif">
-              CLUB
-            </text>
+    <header className={`nav-shell ${scrolled ? 'is-scrolled' : ''}`}>
+      {/* Orange utility bar: the community line and the essentials. */}
+      <div className="nav-topbar">
+        <div className="container nav-topbar-inner">
+          <p>For newcomers and professionals building their future in Canada</p>
+          <div className="nav-topbar-links">
+            <a href="mailto:support@professionalsclub.ca">
+              <Mail size={13} aria-hidden="true" /> support@professionalsclub.ca
+            </a>
+            <Link href="/groups">
+              <MessageCircle size={13} aria-hidden="true" /> Join 6,000+ on WhatsApp
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <div className="container nav-inner">
+        <Link href="/" className="wordmark" aria-label="Professionals Club, home">
+          <svg className="wordmark-leaf" viewBox="0 0 512 512" aria-hidden="true" focusable="false">
+            <path
+              d="M256 24l-30 56c-3 6-9 5-16 1l-38-20 21 100c4 20-9 20-17 11l-59-63-15 41c-2 4-6 4-13 3l-73-15 20 68c4 15 7 21-5 25l-31 15 137 111c6 5 8 13 5 21l-12 39 132-17c4 0 7 3 6 7l-6 100h34l-6-100c-1-4 2-7 6-7l132 17-12-39c-3-8-1-16 5-21l137-111-31-15c-12-4-9-10-5-25l20-68-73 15c-7 1-11 1-13-3l-15-41-59 63c-8 9-21 9-17-11l21-100-38 20c-7 4-13 5-16-1l-30-56z"
+              fill="currentColor"
+            />
           </svg>
+          <span className="wordmark-text">
+            <span className="wordmark-top">Professionals</span>
+            <span className="wordmark-bottom">Club</span>
+          </span>
         </Link>
 
-        <ul className="navbar-links" style={mobileOpen ? { display: 'flex', position: 'absolute', top: '100%', left: 0, right: 0, background: 'rgba(12, 12, 14, 0.98)', flexDirection: 'column', gap: '16px', padding: 'var(--space-6)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', alignItems: 'stretch' } : {}}>
-          <li className="nav-dropdown-container">
-            <Link href="/about" className={isActive('/about') || isActive('/how-it-works') || isActive('/team') || isActive('/support') || isActive('/donate') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              About Us
-              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </Link>
-            <ul className="nav-dropdown-menu">
-              <li><Link href="/how-it-works" className={isActive('/how-it-works') ? 'active' : ''}>How It Works</Link></li>
-              <li><Link href="/team" className={isActive('/team') ? 'active' : ''}>Team</Link></li>
-              <li><Link href="/support" className={isActive('/support') ? 'active' : ''}>Support Us</Link></li>
-              <li><Link href="/donate" className={isActive('/donate') ? 'active' : ''}>Donate Now</Link></li>
-            </ul>
-          </li>
-          <li className="nav-dropdown-container">
-            <Link href="/jobs" className={isActive('/jobs') || isActive('/companies') || isActive('/build-resume') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              Jobs
-              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </Link>
-            <ul className="nav-dropdown-menu">
-              <li><Link href="/companies" className={isActive('/companies') ? 'active' : ''}>Referrals</Link></li>
-              <li><Link href="/build-resume" className={isActive('/build-resume') ? 'active' : ''}>Build Resume</Link></li>
-            </ul>
-          </li>
-          <li>
-            <Link href="/groups" className={isActive('/groups') ? 'active' : ''}>
-              WhatsApp
-            </Link>
-          </li>
-          <li className="nav-dropdown-container">
-            <Link href="/resources" className={isActive('/resources') || isActive('/news') || isActive('/e-books') || isActive('/youtube') || isActive('/blogs') || isActive('/recruit-firms') || isActive('/imp-links') ? 'active' : ''} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              Resources
-              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </Link>
-            <ul className="nav-dropdown-menu">
-              <li><Link href="/news" className={isActive('/news') ? 'active' : ''}>News</Link></li>
-              <li><Link href="/e-books" className={isActive('/e-books') ? 'active' : ''}>E-Books</Link></li>
-              <li><Link href="/youtube" className={isActive('/youtube') ? 'active' : ''}>YouTube</Link></li>
-              <li><Link href="/blogs" className={isActive('/blogs') ? 'active' : ''}>Blogs</Link></li>
-              <li><a href="https://www.forbes.com/advisor/ca/income-tax-calculator/" target="_blank" rel="noopener noreferrer">Tax Calculator</a></li>
-              <li><Link href="/recruit-firms" className={isActive('/recruit-firms') ? 'active' : ''}>Recruit Firms</Link></li>
-              <li><Link href="/imp-links" className={isActive('/imp-links') ? 'active' : ''}>Imp Links</Link></li>
-            </ul>
-          </li>
-          <li><Link href="/settlement" className={isActive('/settlement') ? 'active' : ''}>Newcomer</Link></li>
+        <nav className="nav-links" aria-label="Main">
+          <ul>
+            {groups.map((g) => (
+              <li key={g.label} className="has-mega">
+                <Link
+                  href={g.href}
+                  className={groupActive(g) ? 'active' : undefined}
+                  aria-current={isActive(g.href) ? 'page' : undefined}
+                >
+                  {g.label}
+                  <ChevronDown size={13} aria-hidden="true" className="mega-caret" />
+                </Link>
 
-          <li><Link href="/events" className={isActive('/events') ? 'active' : ''}>Events</Link></li>
-          <li><Link href="/businesses" className={isActive('/businesses') ? 'active' : ''}>Businesses</Link></li>
-          {process.env.NEXT_PUBLIC_FEATURE_MATRIMONY !== 'false' && (
-            <li><Link href="/matrimony" className={isActive('/matrimony') ? 'active' : ''}>Matrimony</Link></li>
-          )}
-          <li><Link href="/volunteers" className={isActive('/volunteers') ? 'active' : ''}>Volunteer</Link></li>
-          {mobileOpen && (
-            <li style={{ marginTop: 16 }}>
-              <Link href="/portal/auth" className="btn btn-primary" style={{ display: 'block', textAlign: 'center', width: '100%', padding: '12px 16px' }}>
-                Login / Signup
-              </Link>
-            </li>
-          )}
-        </ul>
+                <div className="nav-mega" aria-label={g.label}>
+                  <ul className="nav-mega-grid">
+                    {g.items.map((it) =>
+                      it.external ? (
+                        <li key={it.href}>
+                          <a href={it.href} target="_blank" rel="noopener noreferrer">
+                            <span className="nav-mega-icon">{it.icon}</span>
+                            <span className="nav-mega-body">
+                              <strong>{it.label} <ArrowUpRight size={11} aria-hidden="true" /></strong>
+                              <small>{it.desc}</small>
+                            </span>
+                          </a>
+                        </li>
+                      ) : (
+                        <li key={it.href}>
+                          <Link href={it.href} aria-current={isActive(it.href) ? 'page' : undefined}>
+                            <span className="nav-mega-icon">{it.icon}</span>
+                            <span className="nav-mega-body">
+                              <strong>{it.label}</strong>
+                              <small>{it.desc}</small>
+                            </span>
+                          </Link>
+                        </li>
+                      )
+                    )}
+                  </ul>
+                  <Link href={g.cta.href} className="nav-mega-cta">
+                    {g.cta.label} <ArrowRight size={15} aria-hidden="true" />
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-        <div className="navbar-actions">
-          <Link href="/portal/auth" className="btn btn-primary mobile-hide" style={{ padding: '8px 16px', fontSize: '0.85rem', borderRadius: '8px' }}>Login / Signup</Link>
-          <button className="navbar-mobile-toggle" onClick={() => setMobileOpen(!mobileOpen)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+        <div className="nav-actions">
+          <Link href="/portal/auth" className="btn btn-primary btn-sm nav-cta">Sign in</Link>
+          <button
+            type="button"
+            className="nav-burger"
+            onClick={() => setMobileOpen((v) => !v)}
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-nav"
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+          >
+            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </div>
-    </nav>
+
+      {/* Mobile panel */}
+      <div id="mobile-nav" className={`nav-panel ${mobileOpen ? 'is-open' : ''}`} hidden={!mobileOpen}>
+        <div className="container">
+          <ul>
+            {groups.map((g) => (
+              <li key={g.label}>
+                <Link href={g.href} className={groupActive(g) ? 'active' : undefined}>{g.label}</Link>
+                <div className="nav-panel-sub">
+                  {g.items.map((it) =>
+                    it.external ? (
+                      <a key={it.href} href={it.href} target="_blank" rel="noopener noreferrer">{it.label}</a>
+                    ) : (
+                      <Link key={it.href} href={it.href}>{it.label}</Link>
+                    )
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+          <Link href="/portal/auth" className="btn btn-primary" style={{ width: '100%', marginTop: '1.5rem' }}>
+            Sign in
+          </Link>
+        </div>
+      </div>
+    </header>
   );
 }

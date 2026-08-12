@@ -169,7 +169,7 @@ export default function GroupsPage() {
       <Navbar />
 
       {/* ─── HERO ─── */}
-      <section className="groups-hero-section" style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: '#0c0c0e' }}>
+      <section className="groups-hero-section" style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: 'var(--text-primary)' }}>
         {/* Background Animation (WhatsApp Communities) */}
         <div className="cinematic-bg-container">
           <img 
@@ -386,9 +386,9 @@ export default function GroupsPage() {
       ))}
 
       {/* ─── REGISTER AS MEMBER CTA ─── */}
-      <section style={{ padding: '80px 0', background: '#0c0c0e', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ padding: '80px 0', background: 'var(--text-primary)', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/toronto-skyline.png" alt="Toronto" fill style={{ objectFit: 'cover', opacity: 0.1 }} />
+          <Image src="/toronto-skyline.png" alt="Toronto" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.1 }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 700, textAlign: 'center' }}>
           <div style={{ width: 64, height: 64, borderRadius: 18, background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-200)', margin: '0 auto 16px' }}>

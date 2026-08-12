@@ -10,9 +10,9 @@ export default function CommunityPage() {
       <Navbar />
 
       {/* Hero */}
-      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: '#0c0c0e', overflow: 'hidden' }}>
+      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: 'var(--text-primary)', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/volunteer-help.png" alt="Community support" fill style={{ objectFit: 'cover', opacity: 0.25 }} />
+          <Image src="/volunteer-help.png" alt="Community support" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.25 }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.95), rgba(232,93,4,0.15))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
@@ -51,8 +51,8 @@ export default function CommunityPage() {
             </div>
 
             {/* Featured Video Embed */}
-            <div style={{ borderRadius: 20, overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.15)', position: 'relative', aspectRatio: '16/9', background: '#0c0c0e', cursor: 'pointer' }}>
-              <Image src="/events-meetup.png" alt="Video thumbnail" fill style={{ objectFit: 'cover', opacity: 0.5 }} />
+            <div style={{ borderRadius: 20, overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.15)', position: 'relative', aspectRatio: '16/9', background: 'var(--text-primary)', cursor: 'pointer' }}>
+              <Image src="/events-meetup.png" alt="Video thumbnail" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.5 }} />
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(12,12,14,0.7), transparent)' }} />
               <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 72, height: 72, borderRadius: '50%', background: 'var(--primary-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(232,93,4,0.4)' }}>
                 <PlayCircle size={36} style={{ color: 'white', marginLeft: 3 }} />
@@ -75,9 +75,9 @@ export default function CommunityPage() {
           </div>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {[
-              { icon: <TrendingUp size={28} />, title: 'Finance & Tax Guides', desc: 'Tutorials on building Canadian credit and filing your first tax return.', color: '#e85d04', link: '/resources' },
-              { icon: <HandHeart size={28} />, title: 'Cultural Adaptation Forums', desc: 'Engage with fellow newcomers and ask questions about daily life.', color: '#0c0c0e', link: '/portal/auth' },
-              { icon: <BookOpen size={28} />, title: 'Professional E-Books', desc: 'Download settlement checklists and e-books authored by mentors.', color: '#e85d04', link: '/resources' },
+              { icon: <TrendingUp size={28} />, title: 'Finance & Tax Guides', desc: 'Tutorials on building Canadian credit and filing your first tax return.', color: 'var(--primary-600)', link: '/resources' },
+              { icon: <HandHeart size={28} />, title: 'Cultural Adaptation Forums', desc: 'Engage with fellow newcomers and ask questions about daily life.', color: 'var(--text-primary)', link: '/portal/auth' },
+              { icon: <BookOpen size={28} />, title: 'Professional E-Books', desc: 'Download settlement checklists and e-books authored by mentors.', color: 'var(--primary-600)', link: '/resources' },
             ].map((item, i) => (
               <div key={i} style={{ borderRadius: 20, padding: '36px 28px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', transition: 'box-shadow 0.2s' }}>
                 <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(232, 93, 4, 0.08)', border: '1px solid rgba(232, 93, 4, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, marginBottom: 20 }}>
@@ -95,7 +95,7 @@ export default function CommunityPage() {
       </section>
 
       {/* CTA */}
-      <section style={{ padding: '40px 0', background: '#0c0c0e', textAlign: 'center' }}>
+      <section style={{ padding: '40px 0', background: 'var(--text-primary)', textAlign: 'center' }}>
         <div className="container" style={{ maxWidth: 700 }}>
           <MessageSquare size={40} style={{ color: 'var(--primary-600)', margin: '0 auto 20px' }} />
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Have Questions About Settling In?</h2>

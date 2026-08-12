@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+/* Typefaces come from next/font in src/app/layout.tsx, which self-hosts them
+   and sets --font-display / --font-sans / --font-mono. A Google Fonts @import
+   here would block first paint and defeat that. */
 
 /* ========== DESIGN TOKENS ========== */
 :root {
@@ -23,6 +25,21 @@
   --accent-500: #ffd700;
   --accent-600: #d97706;
   --accent-700: #b45309;
+
+  /* Forest green — the second brand family. Deep grounds that give the site
+     somewhere to go besides cream and white; lime is its highlight accent,
+     used on green grounds only (pills, key numbers), never as a button. */
+  --green-950: #0f2318;
+  --green-900: #16342a;
+  --green-800: #1b4332;
+  --green-700: #2d6a4f;
+  --green-600: #40916c;
+  --green-500: #52b788;
+  --green-300: #95d5b2;
+  --green-100: #d8f3dc;
+  --green-50: #eef7f0;
+  --lime-300: #d4ed8e;
+  --lime-400: #bcdf6a;
 
   /* Success (#00A86B) */
   --success-50: #f0fdf7;
@@ -88,8 +105,12 @@
   --space-20: 5rem;
 
   /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-display: 'Outfit', 'Inter', sans-serif;
+  /* The faces themselves are self-hosted by next/font, which publishes
+     --font-*-src on <html>. Aliasing rather than redeclaring avoids a
+     same-specificity collision between :root and next/font's class. */
+  --font-sans: var(--font-sans-src), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-display: var(--font-display-src), Georgia, 'Times New Roman', serif;
+  --font-mono: var(--font-mono-src), ui-monospace, 'SF Mono', Menlo, monospace;
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
@@ -118,6 +139,63 @@
   --sidebar-width: 260px;
   --sidebar-collapsed: 72px;
   --topbar-height: 64px;
+
+  /* ---------------------------------------------------------------------
+     Added by the editorial pass. Every colour above is untouched; these are
+     new dimensions the old system was missing.
+     --------------------------------------------------------------------- */
+
+  /* Display tracking. Large type needs negative tracking to stop looking
+     gappy; small caps labels need positive tracking to stay readable. */
+  --track-display: -0.03em;
+  --track-tight: -0.015em;
+  --track-label: 0.08em;
+
+  /* Optical line heights, tighter as type gets larger. */
+  --leading-display: 1.02;
+  --leading-title: 1.14;
+  --leading-body: 1.65;
+
+  /* Measure. Body copy past ~68 characters is measurably harder to read. */
+  --measure: 68ch;
+  --measure-narrow: 54ch;
+
+  /* Tinted shadows. Black at low opacity looks grey and dead on a cream
+     ground; these carry the warm hue of the surface they sit on. */
+  --shadow-warm-sm: 0 1px 2px rgba(124, 45, 18, 0.04);
+  --shadow-warm-md: 0 6px 16px -4px rgba(124, 45, 18, 0.08), 0 2px 6px -2px rgba(124, 45, 18, 0.05);
+  --shadow-warm-lg: 0 18px 40px -12px rgba(124, 45, 18, 0.13), 0 6px 14px -6px rgba(124, 45, 18, 0.07);
+  --shadow-warm-xl: 0 32px 64px -20px rgba(124, 45, 18, 0.18), 0 10px 24px -10px rgba(124, 45, 18, 0.08);
+  --shadow-inset-hair: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+  /* Z-index scale, replacing ad-hoc 9999s. */
+  --z-base: 1;
+  --z-raised: 10;
+  --z-sticky: 100;
+  --z-drawer: 200;
+  --z-overlay: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-grain: 600;
+
+  /* Motion. Springy easing reads as physical; the old cubic-bezier was the
+     Material default on everything. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --dur-fast: 140ms;
+  --dur-base: 240ms;
+  --dur-slow: 420ms;
+
+  /* Section rhythm. Bottom padding runs slightly larger than top, which is
+     what optically centres a band of content. */
+  --section-y: clamp(4.5rem, 9vw, 9rem);
+  --section-y-end: clamp(5.5rem, 10.5vw, 11rem);
+
+  /* Generated backdrops (see public/img). */
+  --texture-cream: url('/img/texture-cream-1.jpg');
+  --texture-cream-alt: url('/img/texture-cream-2.jpg');
+  --texture-dark: url('/img/texture-dark-1.jpg');
+  --texture-dark-alt: url('/img/texture-dark-2.jpg');
 }
 
 /* ========== RESET & BASE ========== */
@@ -134,38 +212,77 @@ html {
   overflow-x: hidden;
 }
 
+/* Anyone who has asked their OS to reduce motion means it. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Display type.
+   Weight 900 on every level gave no hierarchy at all — h1 and h3 read as the
+   same shout. These step down through the variable range, and tracking tightens
+   as size grows. `text-wrap: balance` kills the orphaned last word that made
+   headlines look accidental. */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
-  font-weight: 900;
-  letter-spacing: -0.01em;
   color: var(--text-primary);
+  text-wrap: balance;
+  font-optical-sizing: auto;
 }
 
 h1 {
-  font-size: clamp(34px, 4vw, 58px);
-  line-height: 1.15;
+  font-size: clamp(2.6rem, 6vw, 5rem);
+  font-weight: 600;
+  line-height: var(--leading-display);
+  letter-spacing: var(--track-display);
+  font-variation-settings: 'SOFT' 30, 'WONK' 1;
 }
 h2 {
-  font-size: clamp(28px, 3vw, 44px);
-  line-height: 1.2;
+  font-size: clamp(2rem, 3.8vw, 3.25rem);
+  font-weight: 600;
+  line-height: var(--leading-title);
+  letter-spacing: var(--track-display);
+  font-variation-settings: 'SOFT' 22, 'WONK' 1;
 }
 h3 {
-  font-size: clamp(18px, 2vw, 22px);
-  line-height: 1.25;
+  font-size: clamp(1.375rem, 2vw, 1.75rem);
+  font-weight: 600;
+  line-height: 1.24;
+  letter-spacing: var(--track-tight);
 }
+h4 {
+  font-size: clamp(1.1rem, 1.4vw, 1.25rem);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: var(--track-tight);
+}
+h5, h6 { font-size: 1rem; font-weight: 600; letter-spacing: 0; }
 
 body {
   font-family: var(--font-sans);
   background: var(--bg-primary);
-  background-image: linear-gradient(to right, rgba(12, 12, 14, 0.02) 1px, transparent 1px),
-                    linear-gradient(to bottom, rgba(12, 12, 14, 0.02) 1px, transparent 1px);
-  background-size: 30px 30px;
   color: var(--text-primary);
-  line-height: 1.6;
-  font-size: clamp(15px, 1.2vw, 17px);
-  min-height: 100vh;
+  line-height: var(--leading-body);
+  font-size: clamp(15.5px, 1.05vw, 17.5px);
+  font-weight: 400;
+  /* dvh, not vh: iOS Safari's collapsing toolbar makes 100vh jump. */
+  min-height: 100dvh;
   overflow-x: hidden;
+  /* The grid-paper background image that used to live here has gone. A 30px
+     rule grid behind every page is one of the loudest generic-template tells,
+     and it fought the photography. */
 }
+
+/* Paragraphs get a measure. Full-width prose on a 1440px container is
+   unreadable no matter how good the type is. */
+p { max-width: var(--measure); text-wrap: pretty; }
+
+/* Tabular figures wherever numbers are compared down a column. */
+.tabular, td, th, .stat-value, .metric { font-variant-numeric: tabular-nums; }
 
 a {
   color: var(--text-accent);
@@ -180,10 +297,12 @@ input, textarea, select { font-family: inherit; }
 
 /* ========== UTILITIES ========== */
 .container, .container-lg {
-  max-width: 1280px;
+  /* Full-width layout: content runs nearly edge to edge with a proportional
+     gutter, capped only on very large monitors. */
+  max-width: 1720px;
   margin: 0 auto;
   width: 100%;
-  padding: 0 clamp(3rem, 5vw, 4rem); /* Desktop: 48px–64px */
+  padding: 0 clamp(1.5rem, 4vw, 4.5rem);
 }
 
 @media (max-width: 1024px) {
@@ -839,9 +958,10 @@ select.input { appearance: auto; }
   top: 0;
   left: 0;
   width: var(--sidebar-width);
-  height: 100vh;
-  background: var(--bg-secondary);
-  border-right: 1px solid var(--border-color);
+  height: 100dvh;
+  background-color: var(--green-950);
+  background-image: radial-gradient(30rem 22rem at 0% 0%, rgba(82, 183, 136, 0.14), transparent 70%);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   flex-direction: column;
   z-index: 50;
@@ -850,7 +970,7 @@ select.input { appearance: auto; }
 }
 .sidebar-header {
   padding: var(--space-5) var(--space-5);
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -884,7 +1004,7 @@ select.input { appearance: auto; }
   font-family: var(--font-display);
   font-weight: 800;
   font-size: var(--text-sm);
-  color: var(--text-primary);
+  color: #fff;
 }
 .sidebar-nav {
   flex: 1;
@@ -896,7 +1016,7 @@ select.input { appearance: auto; }
 .sidebar-section-title {
   font-size: 0.65rem;
   font-weight: 700;
-  color: var(--text-muted);
+  color: var(--green-300);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   padding: var(--space-4) var(--space-3) var(--space-2);
@@ -909,7 +1029,7 @@ select.input { appearance: auto; }
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
   font-weight: 500;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.72);
   transition: all var(--transition-fast);
   border: none;
   background: none;
@@ -918,10 +1038,10 @@ select.input { appearance: auto; }
   cursor: pointer;
   text-decoration: none;
 }
-.sidebar-link:hover { background: var(--bg-glass-hover); color: var(--text-primary); }
+.sidebar-link:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
 .sidebar-link.active {
-  background: rgba(0, 103, 165, 0.08);
-  color: var(--primary-600);
+  background: rgba(188, 223, 106, 0.15);
+  color: var(--lime-300);
 }
 .sidebar-link .icon { width: 20px; height: 20px; flex-shrink: 0; }
 .sidebar-link .badge-count {
@@ -935,7 +1055,7 @@ select.input { appearance: auto; }
 }
 .sidebar-footer {
   padding: var(--space-4) var(--space-3);
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 .sidebar-user {
   display: flex;
@@ -946,21 +1066,21 @@ select.input { appearance: auto; }
   cursor: pointer;
   transition: all var(--transition-fast);
 }
-.sidebar-user:hover { background: var(--bg-glass-hover); }
+.sidebar-user:hover { background: rgba(255, 255, 255, 0.07); }
 .sidebar-user .avatar {
   width: 36px;
   height: 36px;
   border-radius: var(--radius-full);
-  background: var(--bg-glass);
+  background: rgba(255, 255, 255, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.2rem;
-  border: 2px solid var(--border-color);
+  border: 2px solid rgba(255, 255, 255, 0.15);
 }
 .sidebar-user .info { flex: 1; min-width: 0; }
-.sidebar-user .name { font-size: var(--text-sm); font-weight: 600; color: var(--text-primary); }
-.sidebar-user .role { font-size: var(--text-xs); color: var(--text-muted); }
+.sidebar-user .name { font-size: var(--text-sm); font-weight: 600; color: #fff; }
+.sidebar-user .role { font-size: var(--text-xs); color: var(--green-300); }
 
 /* Main Content Area */
 .portal-main {
@@ -993,7 +1113,7 @@ select.input { appearance: auto; }
 }
 .portal-content {
   padding: var(--space-6);
-  max-width: 1400px;
+  max-width: none;
 }
 
 /* ========== STAT CARDS ========== */
@@ -2690,8 +2810,8 @@ tr:last-child td { border-bottom: none; }
   color: var(--text-primary);
 }
 .biz-badge-deal {
-  background: rgba(225,29,72,0.9);
-  color: white;
+  background: rgba(12, 12, 14, 0.88);
+  color: var(--accent-400);
 }
 .biz-badge-pending {
   background: rgba(156,163,175,0.85);
