@@ -169,7 +169,7 @@ export default function MemberBusinessDirectory() {
                 </div>
 
                 {/* Path B: Admin Assisted */}
-                <div style={{ padding: 16, borderRadius: 12, background: 'rgba(0,103,165,0.04)', border: '1px solid rgba(0,103,165,0.12)' }}>
+                <div style={{ padding: 16, borderRadius: 12, background: 'rgba(232, 93, 4, 0.04)', border: '1px solid rgba(232, 93, 4, 0.12)' }}>
                   <div style={{ fontWeight: 700, fontSize: '0.88rem', marginBottom: 10 }}>Ask Admin to Help Connect</div>
                   <div className="form-field" style={{ marginBottom: 12 }}>
                     <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--gray-700)' }}>What help do you need?</label>

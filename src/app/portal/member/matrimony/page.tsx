@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/app-context';
-import { createClient } from '@/utils/supabase/client';
+import { getMatrimonyDashboard } from '@/app/actions/matrimony';
 import type { MatrimonyProfile, MatrimonyProfileCard, MatrimonyInterest, MatrimonyShortlist, MatrimonyProfileView } from '@/types/matrimony';
 import {
   Heart, User, Search, Star, MessageCircle, Settings, ArrowRight,
@@ -26,16 +26,15 @@ const navTabs: { key: DashboardTab; label: string; icon: React.ElementType }[] =
 
 const statusConfig: Record<string, { color: string; bg: string; icon: React.ElementType; label: string }> = {
   draft: { color: 'var(--text-secondary)', bg: 'rgba(100,116,139,0.1)', icon: FileEdit, label: 'Draft' },
-  pending: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', icon: Clock, label: 'Pending Review' },
-  approved: { color: '#00A86B', bg: 'rgba(0,168,107,0.1)', icon: CheckCircle2, label: 'Approved & Live' },
-  rejected: { color: '#F04923', bg: 'rgba(240,73,35,0.1)', icon: XCircle, label: 'Rejected' },
-  changes_requested: { color: '#d97706', bg: 'rgba(217,119,6,0.1)', icon: AlertCircle, label: 'Changes Requested' },
-  suspended: { color: '#dc2626', bg: 'rgba(220,38,38,0.1)', icon: PauseCircle, label: 'Suspended' },
+  pending: { color: 'var(--warning-500)', bg: 'rgba(245,158,11,0.1)', icon: Clock, label: 'Pending Review' },
+  approved: { color: 'var(--success-500)', bg: 'rgba(0,168,107,0.1)', icon: CheckCircle2, label: 'Approved & Live' },
+  rejected: { color: 'var(--error-500)', bg: 'rgba(240,73,35,0.1)', icon: XCircle, label: 'Rejected' },
+  changes_requested: { color: 'var(--accent-600)', bg: 'rgba(217,119,6,0.1)', icon: AlertCircle, label: 'Changes Requested' },
+  suspended: { color: 'var(--error-600)', bg: 'rgba(220,38,38,0.1)', icon: PauseCircle, label: 'Suspended' },
 };
 
 export default function MemberMatrimonyDashboard() {
   const { currentUserId, isAuthenticated } = useApp();
-  const supabase = createClient();
 
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
   const [profile, setProfile] = useState<MatrimonyProfile | null>(null);
@@ -51,96 +50,53 @@ export default function MemberMatrimonyDashboard() {
     async function fetchData() {
       if (!currentUserId) { setLoading(false); return; }
       setLoading(true);
-      try {
-        // Fetch profile
-        const { data: profileData } = await supabase
-          .from('matrimony_profiles')
-          .select('*')
-          .eq('user_id', currentUserId)
-          .single();
+      // One action returns the listing, the four counters, recommendations and
+      // the activity feed — the counts are aggregated in SQL rather than by
+      // four separate head-count round trips.
+      const result = await getMatrimonyDashboard();
 
-        if (profileData) {
-          setProfile(profileData as MatrimonyProfile);
-
-          // Fetch stats
-          const [intRecv, intSent, views, shortBy] = await Promise.all([
-            supabase.from('matrimony_interests').select('id', { count: 'exact', head: true }).eq('receiver_profile_id', profileData.id),
-            supabase.from('matrimony_interests').select('id', { count: 'exact', head: true }).eq('sender_profile_id', profileData.id),
-            supabase.from('matrimony_profile_views').select('id', { count: 'exact', head: true }).eq('viewed_profile_id', profileData.id),
-            supabase.from('matrimony_shortlists').select('id', { count: 'exact', head: true }).eq('target_profile_id', profileData.id),
-          ]);
-
-          setInterestsReceived(intRecv.count ?? 0);
-          setInterestsSent(intSent.count ?? 0);
-          setProfileViews(views.count ?? 0);
-          setShortlistedBy(shortBy.count ?? 0);
-
-          // Fetch recommendations (other approved profiles, opposite gender)
-          const { data: recData } = await supabase
-            .from('matrimony_profiles')
-            .select('id, user_id, full_name, display_pref, gender, dob, height_cm, city, province, country, religion, mother_tongue, occupation, qualification, residency_status, diet, marital_status, is_verified_id, is_verified_photo, is_verified_profession, photo_visibility, last_active_at, about_me, completeness_pct, status')
-            .eq('status', 'approved')
-            .neq('user_id', currentUserId)
-            .neq('gender', profileData.gender)
-            .limit(4);
-
-          if (recData) setRecommendations(recData as MatrimonyProfileCard[]);
-
-          // Build recent activity from interests/views
-          const { data: recentInterests } = await supabase
-            .from('matrimony_interests')
-            .select('id, status, created_at, sender_profile_id, receiver_profile_id')
-            .or(`sender_profile_id.eq.${profileData.id},receiver_profile_id.eq.${profileData.id}`)
-            .order('created_at', { ascending: false })
-            .limit(5);
-
-          const activities: typeof recentActivity = [];
-          if (recentInterests) {
-            recentInterests.forEach((i: { sender_profile_id: string; receiver_profile_id: string; status: string; created_at: string }) => {
-              if (i.sender_profile_id === profileData.id) {
-                activities.push({
-                  type: 'interest_sent',
-                  text: `You sent an interest`,
-                  time: i.created_at,
-                  icon: Send,
-                });
-              } else {
-                activities.push({
-                  type: 'interest_received',
-                  text: `You received an interest`,
-                  time: i.created_at,
-                  icon: Inbox,
-                });
-              }
-            });
-          }
-
-          const { data: recentViews } = await supabase
-            .from('matrimony_profile_views')
-            .select('id, created_at')
-            .eq('viewed_profile_id', profileData.id)
-            .order('created_at', { ascending: false })
-            .limit(3);
-
-          if (recentViews) {
-            recentViews.forEach((v: { created_at: string }) => {
-              activities.push({
-                type: 'view',
-                text: 'Someone viewed your profile',
-                time: v.created_at,
-                icon: Eye,
-              });
-            });
-          }
-
-          activities.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-          setRecentActivity(activities.slice(0, 8));
-        }
-      } catch (err) {
-        console.error('Error fetching matrimony data:', err);
-      } finally {
+      if (!result.ok) {
+        console.error('Error fetching matrimony data:', result.error);
         setLoading(false);
+        return;
       }
+
+      const data = result.data;
+
+      if (data) {
+        setProfile(data.profile);
+        setInterestsReceived(data.counts.interestsReceived);
+        setInterestsSent(data.counts.interestsSent);
+        setProfileViews(data.counts.profileViews);
+        setShortlistedBy(data.counts.shortlistedBy);
+        setRecommendations(data.recommendations);
+
+        const activities: typeof recentActivity = [];
+
+        for (const i of data.recentInterests as Array<Record<string, string>>) {
+          const sentByMe = i.sender_profile_id === data.profile.id;
+          activities.push({
+            type: sentByMe ? 'interest_sent' : 'interest_received',
+            text: sentByMe ? 'You sent an interest' : 'You received an interest',
+            time: i.created_at,
+            icon: sentByMe ? Send : Inbox,
+          });
+        }
+
+        for (const v of data.recentViews as Array<Record<string, string>>) {
+          activities.push({
+            type: 'view',
+            text: 'Someone viewed your profile',
+            time: v.created_at,
+            icon: Eye,
+          });
+        }
+
+        activities.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+        setRecentActivity(activities.slice(0, 8));
+      }
+
+      setLoading(false);
     }
     fetchData();
   }, [currentUserId]);
@@ -175,7 +131,7 @@ export default function MemberMatrimonyDashboard() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 16 }}>
           <div style={{
             width: 48, height: 48, border: '3px solid var(--border-color)',
-            borderTopColor: '#0067A5', borderRadius: '50%', animation: 'spin 1s linear infinite',
+            borderTopColor: 'var(--primary-600)', borderRadius: '50%', animation: 'spin 1s linear infinite',
           }} />
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading your matrimony dashboard...</p>
         </div>
@@ -196,7 +152,7 @@ export default function MemberMatrimonyDashboard() {
 
         {/* Create Profile CTA */}
         <div style={{
-          background: 'linear-gradient(145deg, #0f172a, #1e293b)',
+          background: 'linear-gradient(145deg, var(--gray-900), var(--gray-700))',
           borderRadius: 24, padding: 48, textAlign: 'center',
           position: 'relative', overflow: 'hidden',
         }}>
@@ -210,7 +166,7 @@ export default function MemberMatrimonyDashboard() {
               background: 'rgba(255,191,0,0.15)', display: 'flex',
               alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px',
             }}>
-              <Heart size={36} style={{ color: '#FFBF00' }} />
+              <Heart size={36} style={{ color: 'var(--accent-400)' }} />
             </div>
             <h2 style={{
               fontFamily: 'var(--font-display)', fontSize: '1.5rem',
@@ -227,7 +183,7 @@ export default function MemberMatrimonyDashboard() {
             </p>
             <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
               <Link href="/portal/member/matrimony/create" className="btn btn-lg" style={{
-                background: 'linear-gradient(135deg, #FFBF00, #ffc424)', color: 'var(--text-primary)',
+                background: 'linear-gradient(135deg, var(--accent-400), #ffc424)', color: 'var(--text-primary)',
                 fontWeight: 700, padding: '14px 32px', borderRadius: 14,
                 boxShadow: '0 8px 30px rgba(255,191,0,0.3)', border: 'none', textDecoration: 'none',
               }}>
@@ -248,9 +204,9 @@ export default function MemberMatrimonyDashboard() {
         {/* Info cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
           {[
-            { icon: ShieldCheck, title: 'Admin Verified', desc: 'Every profile is manually reviewed for authenticity.', color: '#0067A5' },
-            { icon: Eye, title: 'Privacy First', desc: 'Your contact info is never shared without your consent.', color: '#00A86B' },
-            { icon: HeartHandshake, title: 'Meaningful Matches', desc: 'Smart matching based on preferences, values, and lifestyle.', color: '#FFBF00' },
+            { icon: ShieldCheck, title: 'Admin Verified', desc: 'Every profile is manually reviewed for authenticity.', color: 'var(--primary-600)' },
+            { icon: Eye, title: 'Privacy First', desc: 'Your contact info is never shared without your consent.', color: 'var(--success-500)' },
+            { icon: HeartHandshake, title: 'Meaningful Matches', desc: 'Smart matching based on preferences, values, and lifestyle.', color: 'var(--accent-400)' },
           ].map((item) => {
             const Icon = item.icon;
             return (
@@ -309,7 +265,7 @@ export default function MemberMatrimonyDashboard() {
           </div>
         </div>
         {profile.status === 'rejected' && profile.rejection_reason && (
-          <div style={{ fontSize: '0.8rem', color: '#F04923' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--error-500)' }}>
             Reason: {profile.rejection_reason}
           </div>
         )}
@@ -324,12 +280,12 @@ export default function MemberMatrimonyDashboard() {
       <div className="card" style={{ padding: '20px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <BarChart3 size={18} style={{ color: '#0067A5' }} />
+            <BarChart3 size={18} style={{ color: 'var(--primary-600)' }} />
             <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Profile Completeness</span>
           </div>
           <span style={{
             fontWeight: 800, fontSize: '1rem',
-            color: profile.completeness_pct >= 80 ? '#00A86B' : profile.completeness_pct >= 50 ? '#f59e0b' : '#F04923',
+            color: profile.completeness_pct >= 80 ? 'var(--success-500)' : profile.completeness_pct >= 50 ? 'var(--warning-500)' : 'var(--error-500)',
           }}>
             {profile.completeness_pct}%
           </span>
@@ -342,17 +298,17 @@ export default function MemberMatrimonyDashboard() {
             height: '100%', borderRadius: 999,
             width: `${profile.completeness_pct}%`,
             background: profile.completeness_pct >= 80
-              ? 'linear-gradient(90deg, #00A86B, #34d399)'
+              ? 'linear-gradient(90deg, var(--success-500), var(--success-400))'
               : profile.completeness_pct >= 50
-                ? 'linear-gradient(90deg, #f59e0b, #fbbf24)'
-                : 'linear-gradient(90deg, #F04923, #f87171)',
+                ? 'linear-gradient(90deg, var(--warning-500), #fbbf24)'
+                : 'linear-gradient(90deg, var(--error-500), var(--error-400))',
             transition: 'width 0.6s ease',
           }} />
         </div>
         {profile.completeness_pct < 100 && (
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 8 }}>
             Complete your profile to improve your visibility and match quality.{' '}
-            <Link href="/portal/member/matrimony/edit" style={{ color: '#0067A5', fontWeight: 600 }}>
+            <Link href="/portal/member/matrimony/edit" style={{ color: 'var(--primary-600)', fontWeight: 600 }}>
               Complete Now →
             </Link>
           </p>
@@ -374,7 +330,7 @@ export default function MemberMatrimonyDashboard() {
               padding: '10px 16px', borderRadius: 10, border: 'none',
               background: isActive ? 'white' : 'transparent',
               boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-              color: isActive ? '#0067A5' : 'var(--text-muted)',
+              color: isActive ? 'var(--primary-600)' : 'var(--text-muted)',
               fontWeight: isActive ? 700 : 500, fontSize: '0.8rem',
               cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s',
             }}>
@@ -391,10 +347,10 @@ export default function MemberMatrimonyDashboard() {
           {/* Quick Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
             {[
-              { label: 'Interests Received', value: interestsReceived, icon: Inbox, color: '#F04923', link: '/portal/member/matrimony/interests' },
-              { label: 'Interests Sent', value: interestsSent, icon: Send, color: '#0067A5', link: '/portal/member/matrimony/interests' },
-              { label: 'Profile Views', value: profileViews, icon: Eye, color: '#00A86B', link: '#' },
-              { label: 'Shortlisted By', value: shortlistedBy, icon: Bookmark, color: '#FFBF00', link: '#' },
+              { label: 'Interests Received', value: interestsReceived, icon: Inbox, color: 'var(--error-500)', link: '/portal/member/matrimony/interests' },
+              { label: 'Interests Sent', value: interestsSent, icon: Send, color: 'var(--primary-600)', link: '/portal/member/matrimony/interests' },
+              { label: 'Profile Views', value: profileViews, icon: Eye, color: 'var(--success-500)', link: '#' },
+              { label: 'Shortlisted By', value: shortlistedBy, icon: Bookmark, color: 'var(--accent-400)', link: '#' },
             ].map((stat) => {
               const Icon = stat.icon;
               return (
@@ -435,11 +391,11 @@ export default function MemberMatrimonyDashboard() {
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Sparkles size={18} style={{ color: '#FFBF00' }} />
+                  <Sparkles size={18} style={{ color: 'var(--accent-400)' }} />
                   <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>Recommended for You</span>
                 </div>
                 <Link href="/portal/member/matrimony/browse" style={{
-                  fontSize: '0.8rem', color: '#0067A5', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4,
+                  fontSize: '0.8rem', color: 'var(--primary-600)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4,
                 }}>
                   Browse All <ChevronRight size={14} />
                 </Link>
@@ -470,17 +426,17 @@ export default function MemberMatrimonyDashboard() {
                         {/* Avatar placeholder */}
                         <div style={{
                           width: 48, height: 48, borderRadius: 14, flexShrink: 0,
-                          background: `linear-gradient(135deg, ${rec.gender === 'female' ? '#ec4899' : '#0067A5'}20, ${rec.gender === 'female' ? '#f472b6' : '#0091d5'}10)`,
+                          background: `linear-gradient(135deg, ${rec.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)'}20, ${rec.gender === 'female' ? 'var(--accent-400)' : 'var(--primary-500)'}10)`,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
-                          <User size={22} style={{ color: rec.gender === 'female' ? '#ec4899' : '#0067A5' }} />
+                          <User size={22} style={{ color: rec.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>
                               {getDisplayName(rec.full_name, rec.display_pref)}
                             </span>
-                            {rec.is_verified_id && <UserCheck size={14} style={{ color: '#0067A5' }} />}
+                            {rec.is_verified_id && <UserCheck size={14} style={{ color: 'var(--primary-600)' }} />}
                           </div>
                           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>
                             {calculateAge(rec.dob)} yrs • {rec.city}, {rec.province} • {rec.occupation}
@@ -500,7 +456,7 @@ export default function MemberMatrimonyDashboard() {
                 padding: '20px 24px', borderBottom: '1px solid var(--border-color)',
                 display: 'flex', alignItems: 'center', gap: 8,
               }}>
-                <Activity size={18} style={{ color: '#00A86B' }} />
+                <Activity size={18} style={{ color: 'var(--success-500)' }} />
                 <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>Recent Activity</span>
               </div>
 
@@ -523,11 +479,11 @@ export default function MemberMatrimonyDashboard() {
                       }}>
                         <div style={{
                           width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                          background: act.type === 'interest_received' ? 'rgba(240,73,35,0.1)' : act.type === 'interest_sent' ? 'rgba(0,103,165,0.1)' : 'rgba(0,168,107,0.1)',
+                          background: act.type === 'interest_received' ? 'rgba(240,73,35,0.1)' : act.type === 'interest_sent' ? 'rgba(232, 93, 4, 0.1)' : 'rgba(0,168,107,0.1)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
                           <Icon size={16} style={{
-                            color: act.type === 'interest_received' ? '#F04923' : act.type === 'interest_sent' ? '#0067A5' : '#00A86B',
+                            color: act.type === 'interest_received' ? 'var(--error-500)' : act.type === 'interest_sent' ? 'var(--primary-600)' : 'var(--success-500)',
                           }} />
                         </div>
                         <div style={{ flex: 1 }}>
@@ -549,10 +505,10 @@ export default function MemberMatrimonyDashboard() {
           {/* Quick Actions */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
             {[
-              { href: '/portal/member/matrimony/browse', icon: Search, label: 'Browse Profiles', desc: 'Find compatible matches', color: '#0067A5' },
-              { href: '/portal/member/matrimony/edit', icon: FileEdit, label: 'Edit Profile', desc: 'Update your details', color: '#00A86B' },
-              { href: '/portal/member/matrimony/preferences', icon: Settings, label: 'Partner Preferences', desc: 'Set your criteria', color: '#FFBF00' },
-              { href: '/portal/member/matrimony/shortlist', icon: Bookmark, label: 'My Shortlist', desc: 'View saved profiles', color: '#7c3aed' },
+              { href: '/portal/member/matrimony/browse', icon: Search, label: 'Browse Profiles', desc: 'Find compatible matches', color: 'var(--primary-600)' },
+              { href: '/portal/member/matrimony/edit', icon: FileEdit, label: 'Edit Profile', desc: 'Update your details', color: 'var(--success-500)' },
+              { href: '/portal/member/matrimony/preferences', icon: Settings, label: 'Partner Preferences', desc: 'Set your criteria', color: 'var(--accent-400)' },
+              { href: '/portal/member/matrimony/shortlist', icon: Bookmark, label: 'My Shortlist', desc: 'View saved profiles', color: 'var(--primary-700)' },
             ].map((action) => {
               const Icon = action.icon;
               return (

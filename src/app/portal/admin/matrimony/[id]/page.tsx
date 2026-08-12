@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useApp } from '@/context/app-context';
-import { createClient } from '@/utils/supabase/client';
+import { adminGetMatrimonyProfile, adminModerateProfile } from '@/app/actions/matrimony';
 import type { MatrimonyProfile, MatrimonyPreferences, MatrimonyContact, MatrimonyMedia } from '@/types/matrimony';
 import {
   User, CheckCircle2, XCircle, AlertCircle, ArrowLeft, Shield,
@@ -13,11 +13,11 @@ import {
 
 const statusConfig: Record<string, { color: string; bg: string; label: string }> = {
   draft: { color: 'var(--text-secondary)', bg: 'rgba(100,116,139,0.1)', label: 'Draft' },
-  pending: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', label: 'Pending Review' },
-  approved: { color: '#00A86B', bg: 'rgba(0,168,107,0.1)', label: 'Approved & Live' },
-  rejected: { color: '#F04923', bg: 'rgba(240,73,35,0.1)', label: 'Rejected' },
-  changes_requested: { color: '#d97706', bg: 'rgba(217,119,6,0.1)', label: 'Changes Requested' },
-  suspended: { color: '#dc2626', bg: 'rgba(220,38,38,0.1)', label: 'Suspended' },
+  pending: { color: 'var(--warning-500)', bg: 'rgba(245,158,11,0.1)', label: 'Pending Review' },
+  approved: { color: 'var(--success-500)', bg: 'rgba(0,168,107,0.1)', label: 'Approved & Live' },
+  rejected: { color: 'var(--error-500)', bg: 'rgba(240,73,35,0.1)', label: 'Rejected' },
+  changes_requested: { color: 'var(--accent-600)', bg: 'rgba(217,119,6,0.1)', label: 'Changes Requested' },
+  suspended: { color: 'var(--error-600)', bg: 'rgba(220,38,38,0.1)', label: 'Suspended' },
 };
 
 export default function AdminReviewProfilePage() {
@@ -25,7 +25,6 @@ export default function AdminReviewProfilePage() {
   const router = useRouter();
   const id = params.id as string;
   const { currentUserId } = useApp();
-  const supabase = createClient();
 
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<MatrimonyProfile | null>(null);
@@ -46,41 +45,27 @@ export default function AdminReviewProfilePage() {
     async function loadData() {
       if (!id) return;
       setLoading(true);
-      try {
-        const { data: prof } = await supabase
-          .from('matrimony_profiles')
-          .select('*')
-          .eq('id', id)
-          .single();
+      // Admins read the base table, not the curated view: moderation notes and
+      // the rejection reason live there and are exactly what this page needs.
+      const result = await adminGetMatrimonyProfile(id as string);
 
-        if (prof) {
-          setProfile(prof as MatrimonyProfile);
-          setStatus(prof.status);
-          setRejectionReason(prof.rejection_reason || '');
-          setAdminNotes(prof.admin_notes || '');
-          setIsVerifiedId(prof.is_verified_id || false);
-          setIsVerifiedPhoto(prof.is_verified_photo || false);
-          setIsVerifiedProfession(prof.is_verified_profession || false);
-
-          const [
-            { data: prefs },
-            { data: cont },
-            { data: med },
-          ] = await Promise.all([
-            supabase.from('matrimony_preferences').select('*').eq('profile_id', prof.id).maybeSingle(),
-            supabase.from('matrimony_contacts').select('*').eq('profile_id', prof.id).maybeSingle(),
-            supabase.from('matrimony_media').select('*').eq('profile_id', prof.id),
-          ]);
-
-          if (prefs) setPreferences(prefs as MatrimonyPreferences);
-          if (cont) setContact(cont as MatrimonyContact);
-          if (med) setMedia(med as MatrimonyMedia[]);
-        }
-      } catch (err) {
-        console.error('Error loading admin review data:', err);
-      } finally {
-        setLoading(false);
+      if (result.ok && result.data) {
+        const { profile: prof, preferences: prefs, contact: cont, media: med } = result.data;
+        setProfile(prof);
+        setStatus(prof.status);
+        setRejectionReason(prof.rejection_reason || '');
+        setAdminNotes(prof.admin_notes || '');
+        setIsVerifiedId(prof.is_verified_id || false);
+        setIsVerifiedPhoto(prof.is_verified_photo || false);
+        setIsVerifiedProfession(prof.is_verified_profession || false);
+        if (prefs) setPreferences(prefs);
+        if (cont) setContact(cont);
+        setMedia(med);
+      } else if (!result.ok) {
+        console.error('Error loading admin review data:', result.error);
       }
+
+      setLoading(false);
     }
     loadData();
   }, [id]);
@@ -90,66 +75,27 @@ export default function AdminReviewProfilePage() {
     if (!profile || saving) return;
     setSaving(true);
 
-    try {
-      // 1. Update matrimony profile
-      const { error: profileError } = await supabase
-        .from('matrimony_profiles')
-        .update({
-          status,
-          rejection_reason: status === 'rejected' || status === 'changes_requested' ? rejectionReason : null,
-          admin_notes: adminNotes,
-          is_verified_id: isVerifiedId,
-          is_verified_photo: isVerifiedPhoto,
-          is_verified_profession: isVerifiedProfession,
-          reviewed_by: currentUserId,
-          reviewed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', profile.id);
+    // Status, badges, notes and the audit entry are written in one transaction,
+    // and the owner is notified by the notify_on_matrimony_review trigger.
+    const result = await adminModerateProfile(profile.id, {
+      status,
+      rejectionReason:
+        status === 'rejected' || status === 'changes_requested' ? rejectionReason : null,
+      adminNotes,
+      isVerifiedId,
+      isVerifiedPhoto,
+      isVerifiedProfession,
+    });
 
-      if (profileError) throw profileError;
-
-      // 2. Create admin audit log entry
-      await supabase
-        .from('matrimony_admin_audit')
-        .insert([{
-          admin_user_id: currentUserId || 'admin',
-          admin_name: 'Admin Moderation',
-          action: `moderated_profile_${status}`,
-          target_id: profile.id,
-          details: `Status set to ${status}. Verified Badges - ID: ${isVerifiedId}, Photo: ${isVerifiedPhoto}, Profession: ${isVerifiedProfession}. Notes: ${adminNotes}`
-        }]);
-
-      // 3. Notify the user
-      let title = 'Matrimony Profile Updated';
-      let content = `Your matrimony profile status is now: ${statusConfig[status]?.label || status}.`;
-      if (status === 'approved') {
-        title = 'Matrimony Profile Approved!';
-        content = 'Congratulations! Your matrimony profile has been approved and is now live.';
-      } else if (status === 'rejected') {
-        title = 'Matrimony Profile Rejected';
-        content = `Your profile was rejected. Reason: ${rejectionReason}`;
-      } else if (status === 'changes_requested') {
-        title = 'Changes Requested on Matrimony Profile';
-        content = `Please update your profile details. Request: ${rejectionReason}`;
-      }
-
-      await supabase.from('in_app_notifications').insert([{
-        user_id: profile.user_id,
-        title,
-        content,
-        category: 'matrimony',
-        link_to: status === 'changes_requested' ? `/portal/member/matrimony/edit` : `/portal/member/matrimony`
-      }]);
-
+    if (result.ok) {
       alert('Moderation saved successfully.');
       router.push('/portal/admin/matrimony');
-    } catch (err) {
-      console.error('Error saving moderation:', err);
+    } else {
+      console.error('Error saving moderation:', result.error);
       alert('Failed to save moderation. Please try again.');
-    } finally {
-      setSaving(false);
     }
+
+    setSaving(false);
   };
 
   if (loading) {
@@ -157,7 +103,7 @@ export default function AdminReviewProfilePage() {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 16 }}>
         <div style={{
           width: 48, height: 48, border: '3px solid var(--border-color)',
-          borderTopColor: '#0067A5', borderRadius: '50%', animation: 'spin 1s linear infinite',
+          borderTopColor: 'var(--primary-600)', borderRadius: '50%', animation: 'spin 1s linear infinite',
         }} />
         <p style={{ color: 'var(--text-muted)' }}>Loading review queue details...</p>
       </div>
@@ -209,10 +155,10 @@ export default function AdminReviewProfilePage() {
           <div className="card" style={{ display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'center', padding: 24 }}>
             <div style={{
               width: 90, height: 90, borderRadius: 16,
-              background: `linear-gradient(135deg, ${profile.gender === 'female' ? '#ec4899' : '#0067A5'}20, ${profile.gender === 'female' ? '#f472b6' : '#0091d5'}10)`,
+              background: `linear-gradient(135deg, ${profile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)'}20, ${profile.gender === 'female' ? 'var(--accent-400)' : 'var(--primary-500)'}10)`,
               display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
-              <User size={44} style={{ color: profile.gender === 'female' ? '#ec4899' : '#0067A5' }} />
+              <User size={44} style={{ color: profile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
             </div>
             <div>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 6px 0' }}>{profile.full_name}</h2>
@@ -237,7 +183,7 @@ export default function AdminReviewProfilePage() {
                       <FileText size={24} style={{ color: 'var(--text-muted)' }} />
                     </div>
                     <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)' }}>{item.type}</span>
-                    <a href={item.url} target="_blank" rel="noreferrer" style={{ display: 'block', fontSize: '0.7rem', color: '#0067A5', textDecoration: 'none', marginTop: 4 }}>
+                    <a href={item.url} target="_blank" rel="noreferrer" style={{ display: 'block', fontSize: '0.7rem', color: 'var(--primary-600)', textDecoration: 'none', marginTop: 4 }}>
                       Open File
                     </a>
                   </div>
@@ -249,7 +195,7 @@ export default function AdminReviewProfilePage() {
           {/* About Me */}
           <div className="card" style={{ padding: 24 }}>
             <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Smile size={18} style={{ color: '#0067A5' }} /> About Me & Lifestyle
+              <Smile size={18} style={{ color: 'var(--primary-600)' }} /> About Me & Lifestyle
             </h3>
             <p style={{ lineHeight: 1.6, color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '0 0 16px 0' }}>
               {profile.about_me || 'No bio written.'}
@@ -271,7 +217,7 @@ export default function AdminReviewProfilePage() {
           {/* Background details */}
           <div className="card" style={{ padding: 24 }}>
             <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Users size={18} style={{ color: '#00A86B' }} /> Religion, Community & Location
+              <Users size={18} style={{ color: 'var(--success-500)' }} /> Religion, Community & Location
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
               {[
@@ -295,7 +241,7 @@ export default function AdminReviewProfilePage() {
           {/* Education & Career */}
           <div className="card" style={{ padding: 24 }}>
             <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Briefcase size={18} style={{ color: '#FFBF00' }} /> Education & Career
+              <Briefcase size={18} style={{ color: 'var(--accent-400)' }} /> Education & Career
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
               {[
@@ -320,7 +266,7 @@ export default function AdminReviewProfilePage() {
           {/* Contact Details (For verification review) */}
           <div className="card" style={{ padding: 24 }}>
             <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Phone size={18} style={{ color: '#0067A5' }} /> Contact Details
+              <Phone size={18} style={{ color: 'var(--primary-600)' }} /> Contact Details
             </h3>
             {contact ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -345,9 +291,9 @@ export default function AdminReviewProfilePage() {
           </div>
 
           {/* Moderation Form */}
-          <div className="card" style={{ padding: 24, border: '1px solid rgba(0,103,165,0.2)', background: 'rgba(0,103,165,0.01)' }}>
+          <div className="card" style={{ padding: 24, border: '1px solid rgba(232, 93, 4, 0.2)', background: 'rgba(232, 93, 4, 0.01)' }}>
             <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Shield size={18} style={{ color: '#0067A5' }} /> Moderation Decision
+              <Shield size={18} style={{ color: 'var(--primary-600)' }} /> Moderation Decision
             </h3>
             <form onSubmit={handleSaveModeration} className="flex flex-col gap-4">
               

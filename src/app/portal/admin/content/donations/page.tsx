@@ -42,12 +42,12 @@ export default function DonationsManagementPage() {
             <div key={campaign.id} className="card" style={{ padding: 32 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 12, background: campaign.isActive ? '#ecfdf5' : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Heart size={24} color={campaign.isActive ? '#059669' : '#94a3b8'} />
+                  <div style={{ width: 48, height: 48, borderRadius: 12, background: campaign.isActive ? 'var(--success-50)' : 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Heart size={24} color={campaign.isActive ? 'var(--success-600)' : 'var(--text-muted)'} />
                   </div>
                   <div>
                     <h2 style={{ fontSize: '1.2rem', fontWeight: 800 }}>{campaign.title}</h2>
-                    <span style={{ padding: '2px 8px', background: campaign.isActive ? '#d1fae5' : '#f1f5f9', color: campaign.isActive ? '#065f46' : '#64748b', borderRadius: 4, fontSize: '0.7rem', fontWeight: 700 }}>{campaign.isActive ? 'Active' : 'Inactive'}</span>
+                    <span style={{ padding: '2px 8px', background: campaign.isActive ? 'var(--success-50)' : 'var(--bg-secondary)', color: campaign.isActive ? 'var(--success-600)' : 'var(--gray-400)', borderRadius: 4, fontSize: '0.7rem', fontWeight: 700 }}>{campaign.isActive ? 'Active' : 'Inactive'}</span>
                   </div>
                 </div>
                 <button className="btn btn-ghost" onClick={() => openEdit(campaign)} style={{ padding: '8px 12px' }}><Pencil size={16} /> Edit</button>
@@ -61,7 +61,7 @@ export default function DonationsManagementPage() {
                 </div>
                 <div style={{ padding: 20, background: 'var(--bg-secondary)', borderRadius: 12, textAlign: 'center' }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>Raised</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#059669' }}>${campaign.raisedAmount.toLocaleString()}</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--success-600)' }}>${campaign.raisedAmount.toLocaleString()}</div>
                 </div>
                 <div style={{ padding: 20, background: 'var(--bg-secondary)', borderRadius: 12, textAlign: 'center' }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>Progress</div>
@@ -69,8 +69,8 @@ export default function DonationsManagementPage() {
                 </div>
               </div>
 
-              <div style={{ width: '100%', height: 10, background: '#e2e8f0', borderRadius: 5, overflow: 'hidden' }}>
-                <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #059669, #34d399)', borderRadius: 5, transition: 'width 0.5s ease' }} />
+              <div style={{ width: '100%', height: 10, background: 'var(--border-color)', borderRadius: 5, overflow: 'hidden' }}>
+                <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, var(--success-600), var(--success-400))', borderRadius: 5, transition: 'width 0.5s ease' }} />
               </div>
             </div>
           );

@@ -14,11 +14,11 @@ const JOB_TYPE_OPTIONS: { value: JobType; label: string }[] = [
 ];
 
 const JOB_TYPE_COLORS: Record<JobType, { bg: string; color: string }> = {
-  full_time: { bg: '#dbeafe', color: '#1e40af' },
+  full_time: { bg: 'var(--primary-50)', color: 'var(--primary-700)' },
   part_time: { bg: '#fce7f3', color: '#9d174d' },
-  contract: { bg: '#d1fae5', color: '#065f46' },
-  freelance: { bg: '#fef3c7', color: '#92400e' },
-  internship: { bg: '#ede9fe', color: '#5b21b6' },
+  contract: { bg: 'var(--success-50)', color: 'var(--success-600)' },
+  freelance: { bg: 'var(--accent-100)', color: 'var(--primary-800)' },
+  internship: { bg: 'var(--primary-50)', color: '#5b21b6' },
 };
 
 export default function JobsManagementPage() {
@@ -127,7 +127,7 @@ export default function JobsManagementPage() {
                 <tr key={job.id} style={{ transition: 'background 0.15s' }} onMouseOver={e => (e.currentTarget.style.background = 'var(--bg-secondary)')} onMouseOut={e => (e.currentTarget.style.background = '')}>
                   <td style={{ ...tableCellStyle, fontWeight: 700, maxWidth: 250 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {job.isFeatured && <Star size={14} color="#d97706" fill="#d97706" />}
+                      {job.isFeatured && <Star size={14} color="var(--accent-600)" fill="var(--accent-600)" />}
                       {job.title}
                     </div>
                   </td>
@@ -156,7 +156,7 @@ export default function JobsManagementPage() {
                   </td>
                   <td style={{ ...tableCellStyle, textAlign: 'right' }}>
                     <button style={actionBtnStyle} onClick={() => toggleActive(job.id, job.isActive)} title={job.isActive ? 'Deactivate' : 'Activate'}>
-                      {job.isActive ? <Eye size={15} color="#059669" /> : <EyeOff size={15} color="#94a3b8" />}
+                      {job.isActive ? <Eye size={15} color="var(--success-600)" /> : <EyeOff size={15} color="var(--text-muted)" />}
                     </button>
                     <button style={actionBtnStyle} onClick={() => openEdit(job)} title="Edit"><Pencil size={15} color="var(--primary-600)" /></button>
                     <button style={actionBtnStyle} onClick={() => handleDelete(job.id)} title="Delete"><Trash2 size={15} color="var(--error-500)" /></button>
@@ -178,9 +178,9 @@ export default function JobsManagementPage() {
       {/* Stats row */}
       <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
         {[
-          { label: 'Active Jobs', value: activeJobs.length, color: '#059669', bg: '#d1fae5' },
-          { label: 'Featured', value: jobPostings.filter(j => j.isFeatured).length, color: '#d97706', bg: '#fef3c7' },
-          { label: 'Inactive', value: inactiveJobs.length, color: 'var(--text-muted)', bg: '#f1f5f9' },
+          { label: 'Active Jobs', value: activeJobs.length, color: 'var(--success-600)', bg: 'var(--success-50)' },
+          { label: 'Featured', value: jobPostings.filter(j => j.isFeatured).length, color: 'var(--accent-600)', bg: 'var(--accent-100)' },
+          { label: 'Inactive', value: inactiveJobs.length, color: 'var(--text-muted)', bg: 'var(--bg-secondary)' },
           { label: 'Total', value: jobPostings.length, color: '#0891b2', bg: '#ecfeff' },
         ].map((stat, i) => (
           <div key={i} style={{ padding: '20px 24px', borderRadius: 12, background: stat.bg, border: `1px solid ${stat.color}20` }}>
@@ -190,8 +190,8 @@ export default function JobsManagementPage() {
         ))}
       </div>
 
-      {renderTable('Active Jobs', activeJobs, '#059669', true)}
-      {inactiveJobs.length > 0 && renderTable('Inactive Jobs', inactiveJobs, '#94a3b8')}
+      {renderTable('Active Jobs', activeJobs, 'var(--success-600)', true)}
+      {inactiveJobs.length > 0 && renderTable('Inactive Jobs', inactiveJobs, 'var(--text-muted)')}
 
       {/* Add/Edit Modal */}
       {showModal && (

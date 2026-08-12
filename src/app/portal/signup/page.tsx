@@ -2,11 +2,12 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useApp } from '@/context/app-context';
+import { signUpMember } from '@/app/actions/auth';
+import ResendVerification from '@/components/portal/ResendVerification';
 import {
   ArrowRight, ArrowLeft, Check, User, MapPin, Target,
   Briefcase, Bell, Heart, Shield, Eye, EyeOff, ChevronDown,
-  CheckCircle, Link2, HelpCircle, HandHeart, Star,
+  CheckCircle, Link2, HelpCircle, HandHeart, Star, AlertCircle, Mail,
 } from 'lucide-react';
 
 /* ─── STEP DEFINITIONS ─── */
@@ -50,10 +51,12 @@ const AVAILABILITY_OPTIONS = ['1–2 hours/week', '3–5 hours/week', '5–10 ho
 
 export default function SignupPage() {
   const router = useRouter();
-  const { setCurrentRole, setIsAuthenticated } = useApp();
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [checkEmail, setCheckEmail] = useState(false);
 
   /* ─── FORM STATE ─── */
   // Step 1 — Account
@@ -118,14 +121,131 @@ export default function SignupPage() {
     setArr(prev => prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]);
   };
 
-  const next = () => { if (step < 7) setStep(step + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  /**
+   * Step 1 creates the credentials, so it is validated before the user can move
+   * on. Everything after it is profile detail that can be corrected later.
+   */
+  const step1Error = (): string => {
+    if (!firstName.trim() || !lastName.trim()) return 'First and last name are required.';
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) return 'Enter a valid email address.';
+    if (!phone.trim()) return 'Phone number is required.';
+    if (password.length < 8) return 'Password must be at least 8 characters.';
+    if (password !== confirmPassword) return 'Passwords do not match.';
+    return '';
+  };
+
+  const next = () => {
+    if (step === 1) {
+      const err = step1Error();
+      if (err) { setSubmitError(err); return; }
+    }
+    setSubmitError('');
+    if (step < 7) setStep(step + 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const prev = () => { if (step > 1) setStep(step - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
-  const handleSubmit = () => {
-    setCurrentRole('member');
-    setIsAuthenticated(true);
-    router.push('/portal/member/dashboard');
+  const handleSubmit = async () => {
+    if (submitting) return;
+
+    const err = step1Error();
+    if (err) { setStep(1); setSubmitError(err); return; }
+
+    setSubmitting(true);
+    setSubmitError('');
+
+    // Everything below goes to a Server Action, which creates the Neon Auth
+    // account and the profile row together. Nothing privileged is sent: role and
+    // account status are the database's to decide, not this form's.
+    const result = await signUpMember({
+      email: email.trim(),
+      password,
+      profile: {
+        first_name: firstName.trim(),
+        middle_name: middleName.trim(),
+        last_name: lastName.trim(),
+        phone: phone.trim(),
+        date_of_birth: dob,
+        gender,
+        country,
+        province,
+        city,
+        postal_code: postalCode,
+        current_status: currentStatus,
+        purposes,
+        joining_for: joiningFor,
+        help_type: helpType,
+        help_description: helpDescription,
+        contribute_areas: contributeAreas,
+        availability,
+        employment_status: employmentStatus,
+        job_title: jobTitle,
+        company,
+        industry,
+        previous_job_title: prevJobTitle,
+        previous_company: prevCompany,
+        experience_range: experience,
+        education_level: education,
+        field_of_study: fieldOfStudy,
+        professional_category: profCategory,
+        certifications,
+        skills,
+        linkedin_url: linkedinUrl,
+        professional_summary: summary,
+        preferred_contact_method: contactMethod,
+        preferred_language: prefLanguage,
+        update_topics: updateTopics,
+        consent_register: consentRegister,
+        consent_admin_review: consentAdminReview,
+        consent_no_direct_contact: consentNoDirectContact,
+        consent_no_misuse: consentNoMisuse,
+        consent_updates: consentUpdates,
+        consent_terms: consentTerms,
+      },
+    });
+
+    if (!result.ok) {
+      setSubmitError(result.error);
+      setSubmitting(false);
+      return;
+    }
+
+    if (result.needsVerification) {
+      setCheckEmail(true);
+      setSubmitting(false);
+      return;
+    }
+
+    router.replace('/portal/member/dashboard');
+    router.refresh();
   };
+
+  if (checkEmail) {
+    return (
+      <div className="onboarding-page">
+        <div className="onboarding-container">
+          <div className="onboarding-card" style={{ textAlign: 'center', padding: 48 }}>
+            <Mail size={48} style={{ color: 'var(--primary-600)', marginBottom: 16 }} />
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: 12 }}>Confirm your email</h2>
+            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440, margin: '0 auto 20px' }}>
+              We sent a confirmation link to <strong>{email}</strong>. Open it to activate your
+              account — everything you filled in has already been saved, so there is nothing to
+              redo.
+            </p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', maxWidth: 440, margin: '0 auto 24px' }}>
+              Nothing arrived? Check your spam folder first, then resend below.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 320, margin: '0 auto' }}>
+              <Link href="/portal/auth" className="btn btn-primary">Go to Sign In</Link>
+              <ResendVerification defaultEmail={email} compact />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   /* ─── STEP PROGRESS ─── */
   const progressPercent = ((step) / 7) * 100;
@@ -616,6 +736,16 @@ export default function SignupPage() {
             </div>
           )}
 
+          {submitError && (
+            <div
+              role="alert"
+              style={{ marginTop: 20, color: 'var(--error-500)', fontSize: '0.85rem', fontWeight: 500, padding: '10px 14px', background: 'rgba(240, 73, 35, 0.1)', borderRadius: 8, display: 'flex', alignItems: 'flex-start', gap: 8 }}
+            >
+              <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+              <span>{submitError}</span>
+            </div>
+          )}
+
           {/* ─── ACTIONS ─── */}
           <div className="onboarding-actions">
             {step > 1 && (
@@ -634,9 +764,9 @@ export default function SignupPage() {
                 type="button"
                 className="btn-submit"
                 onClick={handleSubmit}
-                disabled={!consentRegister || !consentAdminReview || !consentNoDirectContact || !consentNoMisuse || !consentTerms}
+                disabled={submitting || !consentRegister || !consentAdminReview || !consentNoDirectContact || !consentNoMisuse || !consentTerms}
               >
-                <CheckCircle size={18} /> Create Account
+                <CheckCircle size={18} /> {submitting ? 'Creating account…' : 'Create Account'}
               </button>
             )}
           </div>

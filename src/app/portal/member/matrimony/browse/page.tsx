@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/app-context';
-import { createClient } from '@/utils/supabase/client';
+import { getMyMatrimony, browseProfiles, saveSearch } from '@/app/actions/matrimony';
 import type { MatrimonyProfileCard, MatrimonySearchFilters } from '@/types/matrimony';
 import {
   RELIGIONS, COMMUNITIES, MOTHER_TONGUES, QUALIFICATIONS, COUNTRIES,
@@ -113,7 +113,6 @@ const emptyFilters: MatrimonySearchFilters = {
 export default function MatrimonyBrowsePage() {
   const router = useRouter();
   const { currentUserId } = useApp();
-  const supabase = useMemo(() => createClient(), []);
 
   const [profiles, setProfiles] = useState<MatrimonyProfileCard[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -128,142 +127,55 @@ export default function MatrimonyBrowsePage() {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [savedMsg, setSavedMsg] = useState('');
 
-  // Load my profile + blocked IDs
+  // Blocked profiles are excluded by matrimony_visible_profiles itself, in both
+  // directions, so nothing is filtered client-side.
   useEffect(() => {
     if (!currentUserId) return;
-    (async () => {
-      const { data: mp } = await supabase
-        .from('matrimony_profiles')
-        .select('id')
-        .eq('user_id', currentUserId)
-        .single();
-      if (mp) setMyProfileId(mp.id);
-
-      if (mp) {
-        const { data: blocks } = await supabase
-          .from('matrimony_blocks')
-          .select('blocked_profile_id')
-          .eq('blocker_profile_id', mp.id);
-        if (blocks) setBlockedIds(blocks.map(b => b.blocked_profile_id));
-
-        // Also get profiles that blocked me
-        const { data: blockedByOthers } = await supabase
-          .from('matrimony_blocks')
-          .select('blocker_profile_id')
-          .eq('blocked_profile_id', mp.id);
-        if (blockedByOthers) {
-          setBlockedIds(prev => [...prev, ...blockedByOthers.map(b => b.blocker_profile_id)]);
-        }
-      }
-    })();
-  }, [currentUserId, supabase]);
+    void getMyMatrimony().then((r) => {
+      if (r.ok && r.data.profile) setMyProfileId(r.data.profile.id);
+    });
+  }, [currentUserId]);
 
   // Fetch profiles
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
-    try {
-      let query = supabase
-        .from('matrimony_profiles')
-        .select(`
-          id, user_id, full_name, display_pref, gender, dob, height_cm,
-          city, province, country, religion, mother_tongue, occupation,
-          qualification, residency_status, diet, marital_status,
-          is_verified_id, is_verified_photo, is_verified_profession,
-          photo_visibility, last_active_at, about_me, completeness_pct,
-          status
-        `, { count: 'exact' })
-        .eq('status', 'approved')
-        .eq('is_hidden', false);
 
-      // Exclude own profile
-      if (myProfileId) {
-        query = query.neq('id', myProfileId);
-      }
+    const result = await browseProfiles({
+      gender: filters.gender || undefined,
+      religion: filters.religion?.length ? filters.religion : undefined,
+      city: filters.city || undefined,
+      province: filters.province || undefined,
+      country: filters.country || undefined,
+      residency_status: filters.residency_status?.length ? filters.residency_status : undefined,
+      marital_status: filters.marital_status?.length ? filters.marital_status : undefined,
+      mother_tongue: filters.mother_tongue?.length ? filters.mother_tongue : undefined,
+      verified_only: filters.verified_only || undefined,
+      limit: 100,
+    });
 
-      // Exclude blocked profiles
-      if (blockedIds.length > 0) {
-        query = query.not('id', 'in', `(${blockedIds.join(',')})`);
-      }
-
-      // Apply filters
-      if (filters.gender) query = query.eq('gender', filters.gender);
-      if (filters.religion && filters.religion.length > 0) query = query.in('religion', filters.religion);
-      if (filters.community && filters.community.length > 0) query = query.in('community', filters.community);
-      if (filters.mother_tongue && filters.mother_tongue.length > 0) query = query.in('mother_tongue', filters.mother_tongue);
-      if (filters.marital_status && filters.marital_status.length > 0) query = query.in('marital_status', filters.marital_status);
-      if (filters.residency_status && filters.residency_status.length > 0) query = query.in('residency_status', filters.residency_status);
-      if (filters.education && filters.education.length > 0) query = query.in('qualification', filters.education);
-      if (filters.diet && filters.diet.length > 0) query = query.in('diet', filters.diet);
-      if (filters.country) query = query.eq('country', filters.country);
-      if (filters.province) query = query.eq('province', filters.province);
-      if (filters.city) query = query.ilike('city', `%${filters.city}%`);
-      if (filters.height_min_cm) query = query.gte('height_cm', filters.height_min_cm);
-      if (filters.height_max_cm) query = query.lte('height_cm', filters.height_max_cm);
-      if (filters.verified_only) {
-        query = query.eq('is_verified_id', true);
-      }
-      if (filters.has_photo) {
-        query = query.neq('photo_visibility', 'blurred');
-      }
-      if (filters.recently_active) {
-        const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
-        query = query.gte('last_active_at', threeDaysAgo);
-      }
-
-      // Sort
-      if (filters.sort_by === 'recently_active') {
-        query = query.order('last_active_at', { ascending: false });
-      } else {
-        query = query.order('created_at', { ascending: false });
-      }
-
-      // Pagination
-      const from = (page - 1) * ITEMS_PER_PAGE;
-      const to = from + ITEMS_PER_PAGE - 1;
-      query = query.range(from, to);
-
-      const { data, count, error } = await query;
-      if (error) throw error;
-
-      // Age filtering (done client-side since dob needs computation)
-      let filtered = (data || []) as MatrimonyProfileCard[];
-      if (filters.age_min || filters.age_max) {
-        filtered = filtered.filter(p => {
-          const age = getAge(p.dob);
-          if (filters.age_min && age < filters.age_min) return false;
-          if (filters.age_max && age > filters.age_max) return false;
-          return true;
-        });
-      }
-
-      // Fetch primary photos
-      if (filtered.length > 0) {
-        const profileIds = filtered.map(p => p.id);
-        const { data: photos } = await supabase
-          .from('matrimony_media')
-          .select('profile_id, url')
-          .in('profile_id', profileIds)
-          .eq('type', 'photo')
-          .eq('is_primary', true)
-          .eq('is_approved', true);
-
-        if (photos) {
-          const photoMap = new Map(photos.map(p => [p.profile_id, p.url]));
-          filtered = filtered.map(p => ({
-            ...p,
-            primary_photo_url: photoMap.get(p.id) || undefined,
-          }));
-        }
-      }
-
-      setProfiles(filtered);
-      setTotalCount(count || 0);
-    } catch (err) {
-      console.error('Error fetching profiles:', err);
-    } finally {
+    if (!result.ok) {
+      console.error('Error fetching profiles:', result.error);
       setLoading(false);
+      return;
     }
-  }, [supabase, page, filters, myProfileId, blockedIds]);
+
+    // Age is derived from date of birth, so it is filtered here rather than in
+    // SQL. Everything else is applied by the query.
+    let rows = result.data;
+    if (filters.age_min || filters.age_max) {
+      rows = rows.filter((p) => {
+        if (!p.dob) return true;
+        const age = Math.floor((Date.now() - new Date(p.dob).getTime()) / 31557600000);
+        if (filters.age_min && age < filters.age_min) return false;
+        if (filters.age_max && age > filters.age_max) return false;
+        return true;
+      });
+    }
+
+    setProfiles(rows);
+    setTotalCount(rows.length);
+    setLoading(false);
+  }, [filters]);
 
   useEffect(() => {
     fetchProfiles();
@@ -315,13 +227,8 @@ export default function MatrimonyBrowsePage() {
     if (!myProfileId || !saveSearchName.trim()) return;
     setSavingSearch(true);
     try {
-      const { error } = await supabase.from('matrimony_saved_searches').insert({
-        profile_id: myProfileId,
-        name: saveSearchName.trim(),
-        filters: filters,
-        notify: true,
-      });
-      if (error) throw error;
+      const result = await saveSearch(saveSearchName.trim(), { ...filters }, true);
+      if (!result.ok) throw new Error(result.error);
       setSavedMsg('Search saved!');
       setShowSaveModal(false);
       setSaveSearchName('');
@@ -854,7 +761,7 @@ function ProfileCard({ profile, onClick, delay }: { profile: MatrimonyProfileCar
             )}
             {profile.is_verified_photo && (
               <span style={{
-                background: 'rgba(0,103,165,0.9)', color: 'white', borderRadius: '50%',
+                background: 'rgba(232, 93, 4, 0.9)', color: 'white', borderRadius: '50%',
                 width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
               }} title="Photo Verified">
                 <Camera size={12} />
@@ -962,7 +869,7 @@ function MultiSelectFilter({ label, options, selected, onToggle }: {
               style={{
                 display: 'flex', alignItems: 'center', gap: 8, padding: '4px 6px', borderRadius: 6,
                 cursor: 'pointer', fontSize: '0.8rem',
-                background: selected.includes(opt.value) ? 'rgba(0,103,165,0.08)' : 'transparent',
+                background: selected.includes(opt.value) ? 'rgba(232, 93, 4, 0.08)' : 'transparent',
               }}
             >
               <input
@@ -990,7 +897,7 @@ function ToggleFilter({ label, icon, checked, onChange }: {
   return (
     <label style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '8px 12px', background: checked ? 'rgba(0,103,165,0.06)' : 'transparent',
+      padding: '8px 12px', background: checked ? 'rgba(232, 93, 4, 0.06)' : 'transparent',
       border: `1px solid ${checked ? 'var(--primary-300)' : 'var(--border-color)'}`,
       borderRadius: 10, cursor: 'pointer', fontSize: '0.8rem', transition: 'all 0.2s',
     }}>

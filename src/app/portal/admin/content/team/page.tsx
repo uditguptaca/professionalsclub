@@ -60,7 +60,7 @@ export default function TeamManagementPage() {
               </div>
               <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 4, zIndex: 5 }}>
                 <button onClick={() => openEdit(member)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: 6, cursor: 'pointer', backdropFilter: 'blur(4px)' }}><Pencil size={14} color="white" /></button>
-                <button onClick={() => handleDelete(member.id)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: 6, cursor: 'pointer', backdropFilter: 'blur(4px)' }}><Trash2 size={14} color="#fca5a5" /></button>
+                <button onClick={() => handleDelete(member.id)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: 6, cursor: 'pointer', backdropFilter: 'blur(4px)' }}><Trash2 size={14} color="var(--error-400)" /></button>
               </div>
             </div>
             <div style={{ padding: '16px 20px' }}>

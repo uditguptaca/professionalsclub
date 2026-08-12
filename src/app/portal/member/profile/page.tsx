@@ -1,50 +1,121 @@
 'use client';
-import React, { useState } from 'react';
-import { useApp } from '@/context/app-context';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Save, Trash2, AlertTriangle, UserCircle } from 'lucide-react';
+import { useApp } from '@/context/app-context';
+import { updateOwnProfile, archiveOwnAccount } from '@/app/actions/portal';
+import { authClient } from '@/lib/auth/client';
+import { readAuthError } from '@/lib/auth/errors';
+import { Save, Trash2, AlertTriangle, UserCircle, AlertCircle } from 'lucide-react';
+
+const FIELDS = [
+  'firstName', 'lastName', 'email', 'phone', 'city', 'province', 'industry', 'jobTitle',
+] as const;
+
+type Field = (typeof FIELDS)[number];
 
 export default function MemberProfilePage() {
   const router = useRouter();
-  const { setIsAuthenticated } = useApp();
-  
-  // Mock initial state from when the user signed up
-  const [firstName, setFirstName] = useState('Priya');
-  const [lastName, setLastName] = useState('Sharma');
-  const [email, setEmail] = useState('priya.sharma@gmail.com');
-  const [phone, setPhone] = useState('+1-416-555-0101');
-  const [city, setCity] = useState('Toronto');
-  const [industry, setIndustry] = useState('Technology');
-  const [professionalTitle, setProfessionalTitle] = useState('Software Engineer');
-  
+  const { profile, refreshProfile } = useApp();
+
+  const [form, setForm] = useState<Record<Field, string>>({
+    firstName: '', lastName: '', email: '', phone: '',
+    city: '', province: '', industry: '', jobTitle: '',
+  });
+
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [error, setError] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
-  const handleSave = () => {
+  // Seed from the server-resolved profile rather than hardcoded placeholders.
+  useEffect(() => {
+    if (!profile) return;
+    setForm({
+      firstName: profile.firstName ?? '',
+      lastName: profile.lastName ?? '',
+      email: profile.email ?? '',
+      phone: profile.phone ?? '',
+      city: profile.city ?? '',
+      province: profile.province ?? '',
+      industry: profile.industry ?? '',
+      jobTitle: profile.jobTitle ?? '',
+    });
+  }, [profile]);
+
+  const set = (key: Field, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleSave = async () => {
+    if (!profile || isSaving) return;
+
     setIsSaving(true);
     setSaveSuccess(false);
-    setTimeout(() => {
-      setIsSaving(false);
+    setError('');
+
+    // email is intentionally not sent: changing the sign-in address has to go
+    // through Neon Auth so the new address gets verified. Writing it here would
+    // desynchronise neon_auth."user" from profiles.
+    //
+    // The action's allowlist has no role, account_status or verification_status
+    // entry, so those cannot be written through this path even if the payload
+    // carried them.
+    const result = await updateOwnProfile({
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      phone: form.phone.trim(),
+      city: form.city.trim(),
+      province: form.province.trim(),
+      industry: form.industry.trim(),
+      jobTitle: form.jobTitle.trim(),
+    });
+
+    if (!result.ok) {
+      setError(result.error);
+    } else {
       setSaveSuccess(true);
+      await refreshProfile();
       setTimeout(() => setSaveSuccess(false), 3000);
-    }, 800);
+    }
+    setIsSaving(false);
   };
 
-  const handleDelete = () => {
-    if (window.confirm("Are you incredibly sure you want to delete your profile? This will permanently erase your data and remove you from the Professionals Club network.")) {
-      // Simulate account deletion
-      setIsAuthenticated(false);
-      localStorage.removeItem('pc_auth');
-      localStorage.removeItem('pc_role');
-      alert("Your account has been deleted.");
-      router.replace('/');
+  const handleDelete = async () => {
+    if (!profile) return;
+
+    const confirmed = window.confirm(
+      'Delete your profile? This permanently erases your requests, volunteer history and network access. This cannot be undone.'
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setError('');
+
+    // Archive rather than hard-delete. Removing the identity row is Neon Auth's
+    // to do, and an immediate purge would also destroy case history that admins
+    // still need. An admin completes the erasure.
+    const result = await archiveOwnAccount();
+
+    if (!result.ok) {
+      setError(`Could not close the account: ${result.error}`);
+      setDeleting(false);
+      return;
     }
+
+    try {
+      await authClient.signOut();
+    } catch (thrown) {
+      console.error('[auth] Sign-out failed:', readAuthError(thrown).code);
+    }
+
+    router.replace('/');
+    router.refresh();
   };
+
+  if (!profile) return null;
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto' }} className="animate-fade-in">
       <div style={{ marginBottom: 32, display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--bg-secondary)', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--bg-secondary)', color: 'var(--primary-700)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <UserCircle size={40} />
         </div>
         <div>
@@ -55,72 +126,88 @@ export default function MemberProfilePage() {
 
       <div className="card" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.04)', marginBottom: 32 }}>
         <h2 className="text-xl font-bold mb-6 border-b pb-4">Personal Details</h2>
-        
+
         <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
           <div className="input-group">
-            <label>First Name</label>
-            <input className="input" value={firstName} onChange={e => setFirstName(e.target.value)} />
+            <label htmlFor="firstName">First Name</label>
+            <input id="firstName" className="input" value={form.firstName} onChange={(e) => set('firstName', e.target.value)} />
           </div>
           <div className="input-group">
-            <label>Last Name</label>
-            <input className="input" value={lastName} onChange={e => setLastName(e.target.value)} />
+            <label htmlFor="lastName">Last Name</label>
+            <input id="lastName" className="input" value={form.lastName} onChange={(e) => set('lastName', e.target.value)} />
           </div>
           <div className="input-group">
-            <label>Email Address</label>
-            <input className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} />
+            <label htmlFor="email">Email Address</label>
+            <input id="email" className="input" type="email" value={form.email} disabled readOnly />
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
+              Contact an administrator to change your sign-in email.
+            </span>
           </div>
           <div className="input-group">
-            <label>Phone Number</label>
-            <input className="input" value={phone} onChange={e => setPhone(e.target.value)} />
+            <label htmlFor="phone">Phone Number</label>
+            <input id="phone" className="input" value={form.phone} onChange={(e) => set('phone', e.target.value)} />
           </div>
           <div className="input-group">
-            <label>City & Province</label>
-            <input className="input" value={city} onChange={e => setCity(e.target.value)} />
-          </div>
-        </div>
-        
-        <h2 className="text-xl font-bold mt-10 mb-6 border-b pb-4">Professional Information</h2>
-        
-        <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-          <div className="input-group">
-            <label>Industry</label>
-            <input className="input" value={industry} onChange={e => setIndustry(e.target.value)} />
+            <label htmlFor="city">City</label>
+            <input id="city" className="input" value={form.city} onChange={(e) => set('city', e.target.value)} />
           </div>
           <div className="input-group">
-            <label>Job Title / Profession</label>
-            <input className="input" value={professionalTitle} onChange={e => setProfessionalTitle(e.target.value)} />
+            <label htmlFor="province">Province</label>
+            <input id="province" className="input" value={form.province} onChange={(e) => set('province', e.target.value)} />
           </div>
         </div>
 
+        <h2 className="text-xl font-bold mt-10 mb-6 border-b pb-4">Professional Information</h2>
+
+        <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          <div className="input-group">
+            <label htmlFor="industry">Industry</label>
+            <input id="industry" className="input" value={form.industry} onChange={(e) => set('industry', e.target.value)} />
+          </div>
+          <div className="input-group">
+            <label htmlFor="jobTitle">Job Title / Profession</label>
+            <input id="jobTitle" className="input" value={form.jobTitle} onChange={(e) => set('jobTitle', e.target.value)} />
+          </div>
+        </div>
+
+        {error && (
+          <div role="alert" style={{ marginTop: 24, color: 'var(--error-500)', fontSize: '0.85rem', padding: '10px 14px', background: 'rgba(240, 73, 35, 0.1)', borderRadius: 8, display: 'flex', gap: 8 }}>
+            <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+            <span>{error}</span>
+          </div>
+        )}
+
         <div style={{ marginTop: 40, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 16 }}>
-          {saveSuccess && <span style={{ color: '#059669', fontWeight: 600, fontSize: '0.9rem' }}>Changes saved successfully!</span>}
+          {saveSuccess && <span style={{ color: 'var(--success-600)', fontWeight: 600, fontSize: '0.9rem' }}>Changes saved.</span>}
           <button className="btn btn-primary" onClick={handleSave} disabled={isSaving}>
             <Save size={18} style={{ marginRight: 8 }} />
-            {isSaving ? 'Saving...' : 'Save Profile Changes'}
+            {isSaving ? 'Saving…' : 'Save Profile Changes'}
           </button>
         </div>
       </div>
 
-      {/* Danger Zone */}
-      <div style={{ borderRadius: 16, border: '1px solid #fecaca', background: '#fef2f2', padding: 32 }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#b91c1c', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ borderRadius: 16, border: '1px solid var(--error-50)', background: 'var(--error-50)', padding: 32 }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--error-600)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
           <AlertTriangle size={20} /> Danger Zone
         </h2>
-        <p style={{ color: '#991b1b', fontSize: '0.95rem', marginBottom: 24, maxWidth: 600 }}>
-          Once you delete your member profile, there is no going back. All of your requests, volunteer history, and networking access will be permanently erased. Please be certain.
+        <p style={{ color: 'var(--error-600)', fontSize: '0.95rem', marginBottom: 24, maxWidth: 600 }}>
+          Closing your profile signs you out and removes your access to the Professionals Club
+          network. Your case history is retained for administrative records and is permanently
+          erased on request.
         </p>
-        <button 
+        <button
           onClick={handleDelete}
-          style={{ 
-            padding: '12px 24px', background: '#dc2626', color: 'white', borderRadius: 8, 
-            fontWeight: 700, fontSize: '0.95rem', border: 'none', cursor: 'pointer',
-            display: 'inline-flex', alignItems: 'center', gap: 8
+          disabled={deleting}
+          style={{
+            padding: '12px 24px', background: 'var(--error-600)', color: 'white', borderRadius: 8,
+            fontWeight: 700, fontSize: '0.95rem', border: 'none',
+            cursor: deleting ? 'not-allowed' : 'pointer',
+            display: 'inline-flex', alignItems: 'center', gap: 8, opacity: deleting ? 0.7 : 1,
           }}
         >
-          <Trash2 size={16} /> Delete My Profile
+          <Trash2 size={16} /> {deleting ? 'Closing…' : 'Close My Account'}
         </button>
       </div>
-
     </div>
   );
 }

@@ -2,7 +2,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useApp } from '@/context/app-context';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/utils/supabase/client';
+import { getMyMatrimony, saveMatrimonyProfile, saveMatrimonyPreferences, saveMatrimonyContact } from '@/app/actions/matrimony';
 import type { MatrimonyWizardData } from '@/types/matrimony';
 import {
   RELIGIONS, DENOMINATIONS, COMMUNITIES, MOTHER_TONGUES, LANGUAGES,
@@ -125,7 +125,6 @@ function calcCompleteness(d: MatrimonyWizardData): number {
 export default function MatrimonyCreatePage() {
   const router = useRouter();
   const { currentUserId, isAuthenticated } = useApp();
-  const supabase = createClient();
 
   const [step, setStep] = useState(0);
   const [data, setData] = useState<MatrimonyWizardData>({ ...DEFAULT_DATA });
@@ -144,20 +143,12 @@ export default function MatrimonyCreatePage() {
     async function loadExisting() {
       if (!currentUserId) return;
       try {
-        const { data: profile } = await supabase
-          .from('matrimony_profiles')
-          .select('*')
-          .eq('user_id', currentUserId)
-          .single();
-        
+        const existing = await getMyMatrimony();
+        const profile = existing.ok ? existing.data.profile : null;
+
         if (profile) {
-          const [
-            { data: prefs },
-            { data: contact },
-          ] = await Promise.all([
-            supabase.from('matrimony_preferences').select('*').eq('profile_id', profile.id).maybeSingle(),
-            supabase.from('matrimony_contacts').select('*').eq('profile_id', profile.id).maybeSingle(),
-          ]);
+          const prefs = existing.ok ? existing.data.preferences : null;
+          const contact = existing.ok ? existing.data.contact : null;
 
           const loadedData: MatrimonyWizardData = {
             ...DEFAULT_DATA,
@@ -251,7 +242,7 @@ export default function MatrimonyCreatePage() {
       }
     }
     loadExisting();
-  }, [currentUserId, supabase]);
+  }, [currentUserId]);
 
   // ── Field updater ──────────────────────────────────────
   const set = useCallback(<K extends keyof MatrimonyWizardData>(field: K, value: MatrimonyWizardData[K]) => {
@@ -310,9 +301,11 @@ export default function MatrimonyCreatePage() {
   const saveDraft = useCallback(async () => {
     setSaving(true);
     try {
-      const profilePayload = buildProfilePayload(data, currentUserId, 'draft', completeness);
-      const { error } = await supabase.from('matrimony_profiles').upsert(profilePayload, { onConflict: 'user_id' });
-      if (error) throw error;
+      // user_id is stripped: the action writes against the caller's own listing,
+      // resolved from the session.
+      const { user_id: _ignored, ...profilePayload } = buildProfilePayload(data, currentUserId, 'draft', completeness);
+      const result = await saveMatrimonyProfile(profilePayload, 'draft');
+      if (!result.ok) throw new Error(result.error);
       setDraftSavedMsg(true);
       setTimeout(() => setDraftSavedMsg(false), 3000);
     } catch (err) {
@@ -321,7 +314,7 @@ export default function MatrimonyCreatePage() {
     } finally {
       setSaving(false);
     }
-  }, [data, currentUserId, completeness, supabase]);
+  }, [data, currentUserId, completeness]);
 
   // ── Final Submit ───────────────────────────────────────
   const handleSubmit = useCallback(async () => {
@@ -338,20 +331,27 @@ export default function MatrimonyCreatePage() {
 
     setSubmitting(true);
     try {
-      const profilePayload = buildProfilePayload(data, currentUserId, 'pending', completeness);
-      const { data: profile, error: profileErr } = await supabase
-        .from('matrimony_profiles').upsert(profilePayload, { onConflict: 'user_id' }).select('id').single();
-      if (profileErr) throw profileErr;
+      const { user_id: _ignored, ...profilePayload } = buildProfilePayload(data, currentUserId, 'pending', completeness);
 
-      const profileId = profile.id;
+      // 'pending' is as far as a member can move their own listing; the
+      // guard_matrimony_profile_fields trigger refuses anything beyond it, so
+      // nobody can self-approve.
+      const saved = await saveMatrimonyProfile(profilePayload, 'pending');
+      if (!saved.ok) throw new Error(saved.error);
 
-      // Save preferences
-      const prefPayload = buildPreferencesPayload(data, profileId);
-      await supabase.from('matrimony_preferences').upsert(prefPayload, { onConflict: 'profile_id' });
+      const profileId = saved.data.id;
 
-      // Save contacts
-      const contactPayload = buildContactPayload(data, profileId);
-      await supabase.from('matrimony_contacts').upsert(contactPayload, { onConflict: 'profile_id' });
+      // profile_id is stripped for the same reason as user_id above.
+      const { profile_id: _p1, ...prefPayload } = buildPreferencesPayload(data, profileId);
+      const { profile_id: _p2, ...contactPayload } = buildContactPayload(data, profileId);
+
+      const [prefsResult, contactResult] = await Promise.all([
+        saveMatrimonyPreferences(prefPayload),
+        saveMatrimonyContact(contactPayload),
+      ]);
+
+      if (!prefsResult.ok) throw new Error(prefsResult.error);
+      if (!contactResult.ok) throw new Error(contactResult.error);
 
       setSubmitted(true);
     } catch (err) {
@@ -360,7 +360,7 @@ export default function MatrimonyCreatePage() {
     } finally {
       setSubmitting(false);
     }
-  }, [data, currentUserId, completeness, supabase, validateStep]);
+  }, [data, currentUserId, completeness, validateStep]);
 
   // ── Success Screen ─────────────────────────────────────
   if (submitted) {
@@ -368,7 +368,7 @@ export default function MatrimonyCreatePage() {
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '60px 20px', textAlign: 'center' }} className="animate-fade-in-up">
         <div style={{
           width: 120, height: 120, borderRadius: '50%', margin: '0 auto 32px',
-          background: 'linear-gradient(135deg, #00A86B, #34d399)',
+          background: 'linear-gradient(135deg, var(--success-500), var(--success-400))',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 20px 60px rgba(0,168,107,0.3)',
           animation: 'float 3s ease-in-out infinite',
@@ -394,7 +394,7 @@ export default function MatrimonyCreatePage() {
         </div>
         <div style={{
           marginTop: 48, padding: 24, borderRadius: 'var(--radius-xl)',
-          background: 'rgba(0,103,165,0.04)', border: '1px solid var(--border-color)',
+          background: 'rgba(232, 93, 4, 0.04)', border: '1px solid var(--border-color)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginBottom: 8 }}>
             <Shield size={18} color="var(--primary-600)" />
@@ -418,7 +418,7 @@ export default function MatrimonyCreatePage() {
             width: 48, height: 48, borderRadius: 'var(--radius-lg)',
             background: 'linear-gradient(135deg, var(--primary-600), var(--accent-500))',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 8px 24px rgba(0,103,165,0.25)',
+            boxShadow: '0 8px 24px rgba(232, 93, 4, 0.25)',
           }}>
             <Sparkles size={24} color="white" />
           </div>
@@ -462,7 +462,7 @@ export default function MatrimonyCreatePage() {
                 border: i > step ? '1.5px solid var(--border-color)' : 'none',
                 fontSize: 'var(--text-xs)', fontWeight: 700,
                 transition: 'all 0.3s ease',
-                boxShadow: i === step ? '0 4px 16px rgba(0,103,165,0.35)' : 'none',
+                boxShadow: i === step ? '0 4px 16px rgba(232, 93, 4, 0.35)' : 'none',
               }}>
                 {i < step ? <CheckCircle2 size={18} /> : STEP_ICONS[s.icon]}
               </div>
@@ -511,7 +511,7 @@ export default function MatrimonyCreatePage() {
             width: 40, height: 40, borderRadius: 'var(--radius-lg)',
             background: 'linear-gradient(135deg, var(--primary-600), var(--primary-400))',
             display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white',
-            boxShadow: '0 4px 12px rgba(0,103,165,0.25)',
+            boxShadow: '0 4px 12px rgba(232, 93, 4, 0.25)',
           }}>
             {STEP_ICONS[WIZARD_STEPS[step].icon]}
           </div>
@@ -640,7 +640,7 @@ function MultiSelectTags({ options, selected, onToggle, max }: MultiSelectProps)
               padding: '6px 14px', borderRadius: 'var(--radius-full)',
               fontSize: 'var(--text-xs)', fontWeight: 600, cursor: 'pointer',
               border: active ? '1.5px solid var(--primary-500)' : '1.5px solid var(--border-color)',
-              background: active ? 'rgba(0,103,165,0.1)' : 'var(--bg-glass)',
+              background: active ? 'rgba(232, 93, 4, 0.1)' : 'var(--bg-glass)',
               color: active ? 'var(--primary-600)' : 'var(--text-secondary)',
               transition: 'all 0.2s ease',
             }}
@@ -1084,7 +1084,7 @@ function StepAbout({ data, set, errors }: StepProps) {
       {/* Consent */}
       <div style={{
         padding: 20, borderRadius: 'var(--radius-lg)',
-        background: 'rgba(0,103,165,0.03)', border: '1px solid var(--border-color)',
+        background: 'rgba(232, 93, 4, 0.03)', border: '1px solid var(--border-color)',
       }}>
         <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, marginBottom: 16 }}>
           Terms & Confirmation

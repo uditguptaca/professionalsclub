@@ -24,8 +24,8 @@ export default function ResourcesManagementPage() {
 
   const handleSave = () => {
     if (modalType === 'ebook') {
-      if (editId) updateEBook(editId, { title: form.title, author: form.author, type: form.type || 'PDF', size: form.size, color: form.color || '#6366f1', image: form.image || '/finance_bg.png', downloadUrl: form.downloadUrl || '#' });
-      else addEBook({ title: form.title || 'New E-Book', author: form.author || 'Professionals Club', type: form.type || 'PDF', size: form.size || '1.0 MB', color: form.color || '#6366f1', image: form.image || '/finance_bg.png', downloadUrl: form.downloadUrl || '#' });
+      if (editId) updateEBook(editId, { title: form.title, author: form.author, type: form.type || 'PDF', size: form.size, color: form.color || 'var(--primary-600)', image: form.image || '/finance_bg.png', downloadUrl: form.downloadUrl || '#' });
+      else addEBook({ title: form.title || 'New E-Book', author: form.author || 'Professionals Club', type: form.type || 'PDF', size: form.size || '1.0 MB', color: form.color || 'var(--primary-600)', image: form.image || '/finance_bg.png', downloadUrl: form.downloadUrl || '#' });
     } else if (modalType === 'workshop') {
       if (editId) updateWorkshop(editId, { title: form.title, duration: form.duration, recordedDate: form.recordedDate, platform: form.platform, thumbnailImage: form.thumbnailImage || '/meetup_bg.png', videoUrl: form.videoUrl || '#' });
       else addWorkshop({ title: form.title || 'New Workshop', duration: form.duration || '60 mins', recordedDate: form.recordedDate || new Date().toLocaleDateString(), platform: form.platform || 'YouTube', thumbnailImage: form.thumbnailImage || '/meetup_bg.png', videoUrl: form.videoUrl || '#' });
@@ -67,7 +67,7 @@ export default function ResourcesManagementPage() {
                   <div><label style={labelStyle}>File Size</label><input style={inputStyle} value={form.size || ''} onChange={e => handleChange('size', e.target.value)} placeholder="2.4 MB" /></div>
                 </div>
                 <div><label style={labelStyle}>Image Path</label><input style={inputStyle} value={form.image || ''} onChange={e => handleChange('image', e.target.value)} placeholder="/finance_bg.png" /></div>
-                <div><label style={labelStyle}>Color</label><input style={inputStyle} value={form.color || ''} onChange={e => handleChange('color', e.target.value)} placeholder="#6366f1" /></div>
+                <div><label style={labelStyle}>Color</label><input style={inputStyle} value={form.color || ''} onChange={e => handleChange('color', e.target.value)} placeholder="var(--primary-600)" /></div>
               </>
             )}
             {modalType === 'workshop' && (
@@ -109,7 +109,7 @@ export default function ResourcesManagementPage() {
       {/* E-Books Section */}
       <div className="card" style={{ marginBottom: 32, padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><BookOpen size={20} style={{ color: '#6366f1' }} /><h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>E-Books & Guides ({ebooks.length})</h2></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><BookOpen size={20} style={{ color: 'var(--primary-600)' }} /><h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>E-Books & Guides ({ebooks.length})</h2></div>
           <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '0.8rem' }} onClick={() => openAddModal('ebook')}><Plus size={14} /> Add E-Book</button>
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -134,7 +134,7 @@ export default function ResourcesManagementPage() {
       {/* Workshops Section */}
       <div className="card" style={{ marginBottom: 32, padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><Video size={20} style={{ color: '#dc2626' }} /><h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Video Workshops ({workshops.length})</h2></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><Video size={20} style={{ color: 'var(--error-600)' }} /><h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Video Workshops ({workshops.length})</h2></div>
           <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '0.8rem' }} onClick={() => openAddModal('workshop')}><Plus size={14} /> Add Workshop</button>
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -144,7 +144,7 @@ export default function ResourcesManagementPage() {
               <tr key={ws.id} style={{ transition: 'background 0.15s' }} onMouseOver={e => (e.currentTarget.style.background = 'var(--bg-secondary)')} onMouseOut={e => (e.currentTarget.style.background = '')}>
                 <td style={{ ...tableCellStyle, fontWeight: 700 }}>{ws.title}</td>
                 <td style={tableCellStyle}>{ws.duration}</td>
-                <td style={tableCellStyle}><span style={{ padding: '2px 8px', background: '#fef2f2', color: '#dc2626', borderRadius: 4, fontSize: '0.7rem', fontWeight: 700 }}>{ws.platform}</span></td>
+                <td style={tableCellStyle}><span style={{ padding: '2px 8px', background: 'var(--error-50)', color: 'var(--error-600)', borderRadius: 4, fontSize: '0.7rem', fontWeight: 700 }}>{ws.platform}</span></td>
                 <td style={tableCellStyle}>{ws.recordedDate}</td>
                 <td style={{ ...tableCellStyle, textAlign: 'right' }}>
                   <button style={actionBtnStyle} onClick={() => openEditModal('workshop', ws)} title="Edit"><Pencil size={15} color="var(--primary-600)" /></button>
@@ -159,7 +159,7 @@ export default function ResourcesManagementPage() {
       {/* Templates Section */}
       <div className="card" style={{ marginBottom: 32, padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><FileCheck size={20} style={{ color: '#059669' }} /><h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Templates & Worksheets ({templates.length})</h2></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><FileCheck size={20} style={{ color: 'var(--success-600)' }} /><h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Templates & Worksheets ({templates.length})</h2></div>
           <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '0.8rem' }} onClick={() => openAddModal('template')}><Plus size={14} /> Add Template</button>
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -169,7 +169,7 @@ export default function ResourcesManagementPage() {
               <tr key={tp.id} style={{ transition: 'background 0.15s' }} onMouseOver={e => (e.currentTarget.style.background = 'var(--bg-secondary)')} onMouseOut={e => (e.currentTarget.style.background = '')}>
                 <td style={{ ...tableCellStyle, fontWeight: 700 }}>{tp.title}</td>
                 <td style={tableCellStyle}>{tp.fileType}</td>
-                <td style={tableCellStyle}><span style={{ padding: '2px 8px', background: '#ecfdf5', color: '#059669', borderRadius: 4, fontSize: '0.7rem', fontWeight: 700 }}>{tp.category}</span></td>
+                <td style={tableCellStyle}><span style={{ padding: '2px 8px', background: 'var(--success-50)', color: 'var(--success-600)', borderRadius: 4, fontSize: '0.7rem', fontWeight: 700 }}>{tp.category}</span></td>
                 <td style={{ ...tableCellStyle, textAlign: 'right' }}>
                   <button style={actionBtnStyle} onClick={() => openEditModal('template', tp)} title="Edit"><Pencil size={15} color="var(--primary-600)" /></button>
                   <button style={actionBtnStyle} onClick={() => handleDelete('template', tp.id)} title="Delete"><Trash2 size={15} color="var(--error-500)" /></button>

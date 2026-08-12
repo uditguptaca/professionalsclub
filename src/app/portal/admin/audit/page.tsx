@@ -23,7 +23,7 @@ export default function AdminAuditPage() {
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
         <div style={{ position: 'relative', flex: 1, maxWidth: 400 }}>
-          <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+          <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input className="input" style={{ paddingLeft: 36 }} placeholder="Search audit log..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <select className="input" style={{ width: 220 }} value={filterType} onChange={e => setFilterType(e.target.value)}>
@@ -35,25 +35,25 @@ export default function AdminAuditPage() {
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid #e5e7eb', background: '#f9fafb' }}>
+            <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--bg-secondary)' }}>
               {['Timestamp', 'Actor', 'Role', 'Action', 'Target', 'Description'].map(h => (
-                <th key={h} style={{ padding: '12px 16px', fontSize: '0.7rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left' }}>{h}</th>
+                <th key={h} style={{ padding: '12px 16px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={6} style={{ padding: 40, textAlign: 'center', color: '#9ca3af' }}>No audit entries match.</td></tr>
+              <tr><td colSpan={6} style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>No audit entries match.</td></tr>
             ) : (
               filtered.map(entry => (
-                <tr key={entry.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                <tr key={entry.id} style={{ borderBottom: '1px solid var(--bg-secondary)' }}>
                   <td style={{ padding: '10px 16px', fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{new Date(entry.timestamp).toLocaleString()}</td>
                   <td style={{ padding: '10px 16px', fontSize: '0.82rem', fontWeight: 600 }}>{entry.actorName}</td>
                   <td style={{ padding: '10px 16px' }}>
-                    <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 4, background: entry.actorRole === 'admin' ? 'rgba(99,102,241,0.08)' : '#f3f4f6', color: entry.actorRole === 'admin' ? '#4338ca' : '#374151' }}>{entry.actorRole}</span>
+                    <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 4, background: entry.actorRole === 'admin' ? 'rgba(232, 93, 4, 0.08)' : 'var(--bg-secondary)', color: entry.actorRole === 'admin' ? 'var(--primary-700)' : 'var(--gray-600)' }}>{entry.actorRole}</span>
                   </td>
                   <td style={{ padding: '10px 16px', fontSize: '0.78rem' }}>
-                    <span style={{ padding: '2px 8px', borderRadius: 4, background: '#f3f4f6', fontSize: '0.72rem', fontWeight: 600 }}>{entry.actionType.replace(/_/g, ' ')}</span>
+                    <span style={{ padding: '2px 8px', borderRadius: 4, background: 'var(--bg-secondary)', fontSize: '0.72rem', fontWeight: 600 }}>{entry.actionType.replace(/_/g, ' ')}</span>
                   </td>
                   <td style={{ padding: '10px 16px', fontSize: '0.72rem', fontFamily: 'monospace', color: 'var(--text-muted)' }}>{entry.targetId}</td>
                   <td style={{ padding: '10px 16px', fontSize: '0.82rem', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.description}</td>

@@ -61,7 +61,7 @@ export default function NewsManagementPage() {
             {newsArticles.map(article => (
               <tr key={article.id} style={{ transition: 'background 0.15s' }} onMouseOver={e => (e.currentTarget.style.background = 'var(--bg-secondary)')} onMouseOut={e => (e.currentTarget.style.background = '')}>
                 <td style={{ ...tableCellStyle, fontWeight: 700, maxWidth: 300 }}>{article.title}</td>
-                <td style={tableCellStyle}><span style={{ padding: '2px 8px', background: '#eef2ff', color: '#4f46e5', borderRadius: 4, fontSize: '0.7rem', fontWeight: 700 }}>{article.category}</span></td>
+                <td style={tableCellStyle}><span style={{ padding: '2px 8px', background: '#eef2ff', color: 'var(--primary-700)', borderRadius: 4, fontSize: '0.7rem', fontWeight: 700 }}>{article.category}</span></td>
                 <td style={tableCellStyle}>{article.author}</td>
                 <td style={tableCellStyle}>{new Date(article.publishedAt).toLocaleDateString()}</td>
                 <td style={{ ...tableCellStyle, textAlign: 'right' }}>

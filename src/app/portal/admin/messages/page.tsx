@@ -5,7 +5,7 @@ import { MessageSquare, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminMessagesPage() {
-  const { messages } = usePortal();
+  const { messages, helpRequests } = usePortal();
 
   // Group by case
   const caseGroups = messages.reduce<Record<string, typeof messages>>((acc, msg) => {
@@ -23,7 +23,7 @@ export default function AdminMessagesPage() {
 
       {Object.keys(caseGroups).length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 60 }}>
-          <MessageSquare size={40} style={{ color: '#d1d5db', marginBottom: 12 }} />
+          <MessageSquare size={40} style={{ color: 'var(--gray-300)', marginBottom: 12 }} />
           <p className="text-secondary">No messages yet.</p>
         </div>
       ) : (
@@ -42,17 +42,19 @@ export default function AdminMessagesPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                         <MessageSquare size={16} className="text-primary-600" />
                         <span style={{ fontWeight: 700 }}>{latest.caseTitle}</span>
-                        {unreadFromMembers > 0 && <span style={{ fontSize: '0.65rem', fontWeight: 700, background: '#fef3c7', color: '#92400e', padding: '1px 8px', borderRadius: 99 }}>{unreadFromMembers} from member</span>}
-                        {unreadFromVols > 0 && <span style={{ fontSize: '0.65rem', fontWeight: 700, background: '#d1fae5', color: '#065f46', padding: '1px 8px', borderRadius: 99 }}>{unreadFromVols} from volunteer</span>}
+                        {unreadFromMembers > 0 && <span style={{ fontSize: '0.65rem', fontWeight: 700, background: 'var(--accent-100)', color: 'var(--primary-800)', padding: '1px 8px', borderRadius: 99 }}>{unreadFromMembers} from member</span>}
+                        {unreadFromVols > 0 && <span style={{ fontSize: '0.65rem', fontWeight: 700, background: 'var(--success-50)', color: 'var(--success-600)', padding: '1px 8px', borderRadius: 99 }}>{unreadFromVols} from volunteer</span>}
                       </div>
-                      <span style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: 'var(--text-muted)' }}>{caseId}</span>
+                      <span style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: 'var(--text-muted)' }}>
+                        {helpRequests.find(r => r.id === caseId)?.reference ?? '—'}
+                      </span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{new Date(latest.createdAt).toLocaleDateString()}</span>
-                      <ArrowRight size={14} style={{ color: '#9ca3af' }} />
+                      <ArrowRight size={14} style={{ color: 'var(--text-muted)' }} />
                     </div>
                   </div>
-                  <div style={{ fontSize: '0.82rem', color: '#6b7280', lineHeight: 1.5 }}>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                     <strong>{latest.senderName} ({latest.senderRole}):</strong> {latest.body.substring(0, 100)}...
                   </div>
                   <div style={{ marginTop: 8, fontSize: '0.72rem', color: 'var(--text-muted)' }}>

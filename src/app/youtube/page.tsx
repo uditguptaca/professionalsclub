@@ -4,33 +4,33 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import Image from 'next/image';
 import { Briefcase, DollarSign, ShieldCheck, Globe, PlayCircle, ExternalLink, ChevronDown, ChevronUp, MoreVertical } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
+import { getPublicVideos } from '@/app/actions/public';
 
 const CATEGORY_CONFIG: Record<string, { icon: React.ReactNode; color: string; bgColor: string; borderColor: string; description: string }> = {
   'Career & Job Search': {
     icon: <Briefcase size={22} />,
-    color: '#e85d04',
-    bgColor: '#fff7ed',
+    color: 'var(--primary-600)',
+    bgColor: 'var(--bg-secondary)',
     borderColor: 'rgba(232, 93, 4, 0.2)',
     description: 'Explore resources to help you navigate the Canadian job market - from building a standout resume and cover letter, to finding freelance or full-time opportunities.',
   },
   'Tax & Finance': {
     icon: <DollarSign size={22} />,
-    color: '#0c0c0e',
+    color: 'var(--text-primary)',
     bgColor: 'rgba(12, 12, 14, 0.05)',
     borderColor: 'rgba(12, 12, 14, 0.1)',
     description: 'A comprehensive series on understanding the Canadian tax system, CRA filings, partnership structures, and personal finance management.',
   },
   'Certifications & Licensing': {
     icon: <ShieldCheck size={22} />,
-    color: '#e85d04',
-    bgColor: '#fff7ed',
+    color: 'var(--primary-600)',
+    bgColor: 'var(--bg-secondary)',
     borderColor: 'rgba(232, 93, 4, 0.2)',
     description: 'Expert strategy sessions and step-by-step guides on obtaining professional designations like CPA, CFA, or a Real Estate license in Canada.',
   },
   'Immigration & Visas': {
     icon: <Globe size={22} />,
-    color: '#0c0c0e',
+    color: 'var(--text-primary)',
     bgColor: 'rgba(12, 12, 14, 0.05)',
     borderColor: 'rgba(12, 12, 14, 0.1)',
     description: 'Clarifying common myths and providing walkthroughs for Express Entry profiles, Parent Sponsorships, Super Visas, and the PR process.',
@@ -40,7 +40,7 @@ const CATEGORY_CONFIG: Record<string, { icon: React.ReactNode; color: string; bg
 const DEFAULT_CONFIG = {
   icon: <PlayCircle size={22} />,
   color: 'var(--text-secondary)',
-  bgColor: '#fff7ed',
+  bgColor: 'var(--bg-secondary)',
   borderColor: 'var(--border-color)',
   description: 'Watch our latest videos in this category.',
 };
@@ -164,31 +164,13 @@ export default function YouTubePage() {
   };
   React.useEffect(() => {
     async function fetchVideos() {
-      try {
-        const { data, error } = await supabase
-          .from('youtube_videos')
-          .select('*')
-          .order('created_at', { ascending: true });
-
-        if (data && data.length > 0) {
-          setVideos(data);
-          const firstCat = data.find(v => v.category)?.category;
-          if (firstCat) setExpandedSection(firstCat);
-        } else {
-          // Fallback to rich mock data if empty or error
-          setVideos(MOCK_YOUTUBE_VIDEOS);
-          setExpandedSection(MOCK_YOUTUBE_VIDEOS[0].category);
-        }
-        if (error) console.error('Supabase error:', error);
-      } catch (err) {
-        console.error('Error connecting to Supabase:', err);
-        setVideos(MOCK_YOUTUBE_VIDEOS);
-        setExpandedSection(MOCK_YOUTUBE_VIDEOS[0].category);
-      } finally {
-        setLoading(false);
-      }
+      const rows = await getPublicVideos();
+      setVideos(rows);
+      const firstCat = rows.find((v) => v.category)?.category;
+      if (firstCat) setExpandedSection(firstCat);
+      setLoading(false);
     }
-    fetchVideos();
+    void fetchVideos();
   }, []);
 
   const groupedVideos = React.useMemo(() => {
@@ -214,9 +196,9 @@ export default function YouTubePage() {
       <Navbar />
 
       {/* Hero */}
-      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: '#0c0c0e', overflow: 'hidden' }}>
+      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: 'var(--text-primary)', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/meetup_bg.png" alt="YouTube Archive" fill style={{ objectFit: 'cover', opacity: 0.25 }} />
+          <Image src="/meetup_bg.png" alt="YouTube Archive" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.25 }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.95), rgba(232,93,4,0.15))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
@@ -360,7 +342,7 @@ export default function YouTubePage() {
 
           {!loading && orderedCategories.length === 0 && (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)', fontWeight: 600 }}>
-              No videos found. Add videos in your Supabase dashboard!
+              No videos found. Add videos from the admin portal.
             </div>
           )}
 
@@ -458,7 +440,7 @@ export default function YouTubePage() {
                               paddingBottom: '56.25%', // 16:9 aspect ratio
                               borderRadius: 12,
                               overflow: 'hidden',
-                              background: '#1a1a24',
+                              background: 'var(--gray-800)',
                               border: '1px solid var(--border-color)',
                               marginBottom: 10,
                             }}>

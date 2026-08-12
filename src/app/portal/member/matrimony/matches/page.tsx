@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/app-context';
-import { createClient } from '@/utils/supabase/client';
+import { getMyMatrimony, browseProfiles } from '@/app/actions/matrimony';
 import type { MatrimonyProfile, MatrimonyPreferences, MatrimonyProfileCard } from '@/types/matrimony';
 import { computeMatchScore } from '@/lib/matrimony/matching';
 import {
@@ -14,7 +14,6 @@ type MatchTab = 'recommended' | 'mutual' | 'they-match-me' | 'newest';
 
 export default function MatchesPage() {
   const { currentUserId } = useApp();
-  const supabase = createClient();
 
   const [activeTab, setActiveTab] = useState<MatchTab>('recommended');
   const [loading, setLoading] = useState(true);
@@ -27,40 +26,20 @@ export default function MatchesPage() {
     async function loadData() {
       if (!currentUserId) { setLoading(false); return; }
       setLoading(true);
-      try {
-        // Load my profile & prefs
-        const { data: myProf } = await supabase
-          .from('matrimony_profiles')
-          .select('*')
-          .eq('user_id', currentUserId)
-          .single();
+      const mine = await getMyMatrimony();
+      const myProf = mine.ok ? mine.data.profile : null;
 
-        if (myProf) {
-          setMyProfile(myProf as MatrimonyProfile);
+      if (myProf) {
+        setMyProfile(myProf);
+        if (mine.ok && mine.data.preferences) setMyPrefs(mine.data.preferences);
 
-          const { data: myPreferences } = await supabase
-            .from('matrimony_preferences')
-            .select('*')
-            .eq('profile_id', myProf.id)
-            .maybeSingle();
-
-          if (myPreferences) setMyPrefs(myPreferences as MatrimonyPreferences);
-
-          // Load other approved profiles of opposite gender
-          const { data: cands } = await supabase
-            .from('matrimony_profiles')
-            .select('id, user_id, full_name, display_pref, gender, dob, height_cm, city, province, country, religion, mother_tongue, occupation, qualification, residency_status, diet, marital_status, is_verified_id, is_verified_photo, is_verified_profession, photo_visibility, last_active_at, about_me, completeness_pct, status')
-            .eq('status', 'approved')
-            .neq('user_id', currentUserId)
-            .neq('gender', myProf.gender);
-
-          if (cands) setCandidates(cands as MatrimonyProfileCard[]);
-        }
-      } catch (err) {
-        console.error('Error loading matches data:', err);
-      } finally {
-        setLoading(false);
+        // Candidates come from the curated view, which excludes moderation
+        // columns and anyone either side has blocked.
+        const cands = await browseProfiles({ exclude_gender: myProf.gender });
+        if (cands.ok) setCandidates(cands.data);
       }
+
+      setLoading(false);
     }
     loadData();
   }, [currentUserId]);
@@ -121,7 +100,7 @@ export default function MatchesPage() {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 16 }}>
         <div style={{
           width: 48, height: 48, border: '3px solid var(--border-color)',
-          borderTopColor: '#0067A5', borderRadius: '50%', animation: 'spin 1s linear infinite',
+          borderTopColor: 'var(--primary-600)', borderRadius: '50%', animation: 'spin 1s linear infinite',
         }} />
         <p style={{ color: 'var(--text-muted)' }}>Finding matches...</p>
       </div>
@@ -179,8 +158,8 @@ export default function MatchesPage() {
               style={{
                 display: 'flex', alignItems: 'center', gap: 8,
                 padding: '12px 20px', background: 'none', border: 'none',
-                borderBottom: isActive ? '3px solid #0067A5' : '3px solid transparent',
-                color: isActive ? '#0067A5' : 'var(--text-muted)',
+                borderBottom: isActive ? '3px solid var(--primary-600)' : '3px solid transparent',
+                color: isActive ? 'var(--primary-600)' : 'var(--text-muted)',
                 fontWeight: isActive ? 700 : 500, fontSize: '0.85rem',
                 cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s'
               }}
@@ -217,7 +196,7 @@ export default function MatchesPage() {
               <div style={{
                 position: 'absolute', top: 16, right: 16,
                 background: cand.score >= 80 ? 'rgba(0,168,107,0.1)' : cand.score >= 60 ? 'rgba(255,191,0,0.1)' : 'rgba(240,73,35,0.1)',
-                color: cand.score >= 80 ? '#00A86B' : cand.score >= 60 ? '#b28500' : '#F04923',
+                color: cand.score >= 80 ? 'var(--success-500)' : cand.score >= 60 ? '#b28500' : 'var(--error-500)',
                 padding: '4px 10px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 800
               }}>
                 {cand.score}% match
@@ -226,17 +205,17 @@ export default function MatchesPage() {
               {/* Avatar placeholder */}
               <div style={{
                 width: 60, height: 60, borderRadius: 16,
-                background: `linear-gradient(135deg, ${cand.gender === 'female' ? '#ec4899' : '#0067A5'}20, ${cand.gender === 'female' ? '#f472b6' : '#0091d5'}10)`,
+                background: `linear-gradient(135deg, ${cand.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)'}20, ${cand.gender === 'female' ? 'var(--accent-400)' : 'var(--primary-500)'}10)`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16
               }}>
-                <User size={30} style={{ color: cand.gender === 'female' ? '#ec4899' : '#0067A5' }} />
+                <User size={30} style={{ color: cand.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
               </div>
 
               {/* Profile Details */}
               <div style={{ flex: 1 }}>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                   {getDisplayName(cand.full_name, cand.display_pref)}
-                  {cand.is_verified_id && <UserCheck size={14} style={{ color: '#0067A5' }} />}
+                  {cand.is_verified_id && <UserCheck size={14} style={{ color: 'var(--primary-600)' }} />}
                 </h3>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>

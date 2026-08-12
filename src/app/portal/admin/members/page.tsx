@@ -20,7 +20,7 @@ export default function AdminMembersPage() {
 
       <div style={{ marginBottom: 20 }}>
         <div style={{ position: 'relative', maxWidth: 400 }}>
-          <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+          <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input className="input" style={{ paddingLeft: 36 }} placeholder="Search by name or email..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </div>
@@ -28,27 +28,27 @@ export default function AdminMembersPage() {
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid #e5e7eb', background: '#f9fafb' }}>
+            <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--bg-secondary)' }}>
               {['Name', 'Email', 'Location', 'PC Number', 'Roles', 'Verification', 'Status'].map(h => (
-                <th key={h} style={{ padding: '12px 16px', fontSize: '0.7rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left' }}>{h}</th>
+                <th key={h} style={{ padding: '12px 16px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'left' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {filtered.map(m => (
-              <tr key={m.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+              <tr key={m.id} style={{ borderBottom: '1px solid var(--bg-secondary)' }}>
                 <td style={{ padding: '12px 16px', fontWeight: 600, fontSize: '0.85rem' }}>{m.firstName} {m.lastName}</td>
                 <td style={{ padding: '12px 16px', fontSize: '0.82rem', color: 'var(--text-muted)' }}>{m.email}</td>
                 <td style={{ padding: '12px 16px', fontSize: '0.82rem' }}>{m.city}, {m.province}</td>
                 <td style={{ padding: '12px 16px', fontSize: '0.75rem', fontFamily: 'monospace' }}>{m.pcNumber || '—'}</td>
                 <td style={{ padding: '12px 16px' }}>
                   <div style={{ display: 'flex', gap: 4 }}>
-                    {m.roleFlags.isHelpSeeker && <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: 4, background: 'rgba(99,102,241,0.08)', color: '#4338ca', fontWeight: 600 }}>Seeker</span>}
-                    {m.roleFlags.isVolunteer && <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: 4, background: 'rgba(5,150,105,0.08)', color: '#065f46', fontWeight: 600 }}>Volunteer</span>}
+                    {m.isHelpSeeker && <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: 4, background: 'rgba(232, 93, 4, 0.08)', color: 'var(--primary-700)', fontWeight: 600 }}>Seeker</span>}
+                    {m.isVolunteer && <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: 4, background: 'rgba(5,150,105,0.08)', color: 'var(--success-600)', fontWeight: 600 }}>Volunteer</span>}
                   </div>
                 </td>
                 <td style={{ padding: '12px 16px' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.72rem', fontWeight: 600, color: m.verificationStatus === 'verified' ? '#059669' : m.verificationStatus === 'pending' ? '#d97706' : '#9ca3af' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.72rem', fontWeight: 600, color: m.verificationStatus === 'verified' ? 'var(--success-600)' : m.verificationStatus === 'pending' ? 'var(--accent-600)' : 'var(--text-muted)' }}>
                     {m.verificationStatus === 'verified' ? <CheckCircle size={14} /> : m.verificationStatus === 'pending' ? <Clock size={14} /> : <XCircle size={14} />}
                     {m.verificationStatus}
                   </span>

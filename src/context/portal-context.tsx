@@ -1,16 +1,38 @@
 'use client';
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { HelpRequest, VolunteerApplication, CaseAssignment, AdminMessage, AuditLogEntry, Member, HelpDeskStats, RequestStatus, VolunteerStatus, Business, BusinessContactRequest, BusinessStatus, EBook, VideoWorkshop, ContentTemplate, CommunityEvent, TeamMember, NewsArticle, DonationCampaign, JobPosting } from '@/types';
-import { createClient } from '@/utils/supabase/client';
-import { 
-  mockMembers, mockHelpRequests, mockVolunteerApplications, mockAssignments, 
-  mockMessages, mockAuditLog, mockStats, mockBusinesses, mockBusinessContactRequests, 
-  mockEBooks, mockWorkshops, mockTemplates, mockEvents, mockTeamMembers, 
-  mockNewsArticles, mockDonationCampaigns, mockJobPostings 
-} from '@/lib/mock-data';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import type {
+  HelpRequest, VolunteerApplication, CaseAssignment, AdminMessage, AuditLogEntry,
+  Member, HelpDeskStats, RequestStatus, VolunteerStatus, Business,
+  BusinessContactRequest, BusinessStatus, EBook, VideoWorkshop, ContentTemplate,
+  CommunityEvent, TeamMember, NewsArticle, DonationCampaign, JobPosting,
+} from '@/types';
+import * as actions from '@/app/actions/portal';
+import type { ActionResult } from '@/app/actions/portal';
+import { useApp } from '@/context/app-context';
+
+/**
+ * Portal state for client components.
+ *
+ * This holds no database credentials and makes no authorization decisions. It
+ * calls Server Actions and mirrors what comes back. Which rows a member is
+ * allowed to see is settled on the server and again by RLS; if this file
+ * filtered anything by role it would only be a display convention.
+ *
+ * The public API is unchanged from the previous version, so the pages consuming
+ * `usePortal()` did not need rewriting when the backend moved to Neon.
+ */
+
+const EMPTY_STATS: HelpDeskStats = {
+  totalMembers: 0, totalRequests: 0, openRequests: 0, closedRequests: 0,
+  pendingVolunteerApps: 0, approvedVolunteers: 0, activeAssignments: 0,
+  avgResolutionDays: 0, escalations: 0, categoryCounts: {},
+};
 
 interface HelpDeskContextType {
-  // Data
+  loading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
+
   members: Member[];
   helpRequests: HelpRequest[];
   volunteerApps: VolunteerApplication[];
@@ -18,377 +40,278 @@ interface HelpDeskContextType {
   messages: AdminMessage[];
   auditLog: AuditLogEntry[];
   stats: HelpDeskStats;
-  // Business Directory
+
   businesses: Business[];
   businessContactRequests: BusinessContactRequest[];
-  addBusinessContactRequest: (req: Omit<BusinessContactRequest, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => void;
-  updateBusinessStatus: (id: string, status: BusinessStatus) => void;
-  toggleBusinessFeatured: (id: string) => void;
-  // Actions - Help Requests
-  addHelpRequest: (req: Omit<HelpRequest, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'timeline' | 'internalNotes'>) => void;
-  updateRequestStatus: (id: string, status: RequestStatus) => void;
-  addInternalNote: (requestId: string, note: { authorId: string; authorName: string; body: string }) => void;
-  // Actions - Volunteer
-  addVolunteerApp: (app: Omit<VolunteerApplication, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => void;
-  updateVolunteerStatus: (id: string, status: VolunteerStatus, notes?: string) => void;
-  // Actions - Assignments
-  createAssignment: (assignment: Omit<CaseAssignment, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => void;
-  // Actions - Messages
-  sendMessage: (msg: Omit<AdminMessage, 'id' | 'createdAt' | 'read'>) => void;
-  markMessageRead: (id: string) => void;
-  // Actions - Audit
-  logAction: (entry: Omit<AuditLogEntry, 'id' | 'timestamp'>) => void;
+  addBusinessContactRequest: (req: Omit<BusinessContactRequest, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateBusinessStatus: (id: string, status: BusinessStatus) => Promise<void>;
+  toggleBusinessFeatured: (id: string) => Promise<void>;
 
-  // ========== DYNAMIC CONTENT ==========
-  // E-Books
+  addHelpRequest: (req: Omit<HelpRequest, 'id' | 'reference' | 'status' | 'createdAt' | 'updatedAt' | 'timeline' | 'internalNotes'>) => Promise<void>;
+  updateRequestStatus: (id: string, status: RequestStatus) => Promise<void>;
+  addInternalNote: (requestId: string, note: { authorId: string; authorName: string; body: string }) => Promise<void>;
+
+  addVolunteerApp: (app: Omit<VolunteerApplication, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateVolunteerStatus: (id: string, status: VolunteerStatus, notes?: string) => Promise<void>;
+
+  createAssignment: (assignment: Omit<CaseAssignment, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  sendMessage: (msg: Omit<AdminMessage, 'id' | 'createdAt' | 'read'>) => Promise<void>;
+  markMessageRead: (id: string) => Promise<void>;
+  logAction: (entry: Omit<AuditLogEntry, 'id' | 'timestamp' | 'actorId' | 'actorName' | 'actorRole'>) => Promise<void>;
+
   ebooks: EBook[];
-  addEBook: (item: Omit<EBook, 'id' | 'createdAt'>) => void;
-  updateEBook: (id: string, item: Partial<EBook>) => void;
-  deleteEBook: (id: string) => void;
-  // Workshops
+  addEBook: (item: Omit<EBook, 'id' | 'createdAt'>) => Promise<void>;
+  updateEBook: (id: string, item: Partial<EBook>) => Promise<void>;
+  deleteEBook: (id: string) => Promise<void>;
+
   workshops: VideoWorkshop[];
-  addWorkshop: (item: Omit<VideoWorkshop, 'id' | 'createdAt'>) => void;
-  updateWorkshop: (id: string, item: Partial<VideoWorkshop>) => void;
-  deleteWorkshop: (id: string) => void;
-  // Templates
+  addWorkshop: (item: Omit<VideoWorkshop, 'id' | 'createdAt'>) => Promise<void>;
+  updateWorkshop: (id: string, item: Partial<VideoWorkshop>) => Promise<void>;
+  deleteWorkshop: (id: string) => Promise<void>;
+
   templates: ContentTemplate[];
-  addTemplate: (item: Omit<ContentTemplate, 'id' | 'createdAt'>) => void;
-  updateTemplate: (id: string, item: Partial<ContentTemplate>) => void;
-  deleteTemplate: (id: string) => void;
-  // Events
+  addTemplate: (item: Omit<ContentTemplate, 'id' | 'createdAt'>) => Promise<void>;
+  updateTemplate: (id: string, item: Partial<ContentTemplate>) => Promise<void>;
+  deleteTemplate: (id: string) => Promise<void>;
+
   events: CommunityEvent[];
-  addEvent: (item: Omit<CommunityEvent, 'id' | 'createdAt'>) => void;
-  updateEvent: (id: string, item: Partial<CommunityEvent>) => void;
-  deleteEvent: (id: string) => void;
-  // Team Members
+  addEvent: (item: Omit<CommunityEvent, 'id' | 'createdAt'>) => Promise<void>;
+  updateEvent: (id: string, item: Partial<CommunityEvent>) => Promise<void>;
+  deleteEvent: (id: string) => Promise<void>;
+
   teamMembers: TeamMember[];
-  addTeamMember: (item: Omit<TeamMember, 'id' | 'createdAt'>) => void;
-  updateTeamMember: (id: string, item: Partial<TeamMember>) => void;
-  deleteTeamMember: (id: string) => void;
-  // News
+  addTeamMember: (item: Omit<TeamMember, 'id' | 'createdAt'>) => Promise<void>;
+  updateTeamMember: (id: string, item: Partial<TeamMember>) => Promise<void>;
+  deleteTeamMember: (id: string) => Promise<void>;
+
   newsArticles: NewsArticle[];
-  addNewsArticle: (item: Omit<NewsArticle, 'id' | 'createdAt'>) => void;
-  updateNewsArticle: (id: string, item: Partial<NewsArticle>) => void;
-  deleteNewsArticle: (id: string) => void;
-  // Donations
+  addNewsArticle: (item: Omit<NewsArticle, 'id' | 'createdAt'>) => Promise<void>;
+  updateNewsArticle: (id: string, item: Partial<NewsArticle>) => Promise<void>;
+  deleteNewsArticle: (id: string) => Promise<void>;
+
   donationCampaigns: DonationCampaign[];
-  updateDonationCampaign: (id: string, item: Partial<DonationCampaign>) => void;
-  // Job Postings
+  updateDonationCampaign: (id: string, item: Partial<DonationCampaign>) => Promise<void>;
+
   jobPostings: JobPosting[];
-  addJobPosting: (item: Omit<JobPosting, 'id' | 'createdAt'>) => void;
-  updateJobPosting: (id: string, item: Partial<JobPosting>) => void;
-  deleteJobPosting: (id: string) => void;
+  addJobPosting: (item: Omit<JobPosting, 'id' | 'createdAt'>) => Promise<void>;
+  updateJobPosting: (id: string, item: Partial<JobPosting>) => Promise<void>;
+  deleteJobPosting: (id: string) => Promise<void>;
 }
 
 const HelpDeskContext = createContext<HelpDeskContextType | undefined>(undefined);
 
 export function PortalProvider({ children }: { children: React.ReactNode }) {
-  const supabase = createClient();
-  const [loading, setLoading] = useState(true);
+  const { isAuthenticated } = useApp();
 
-  const [members, setMembers] = useState<Member[]>(mockMembers);
-  const [helpRequests, setHelpRequests] = useState<HelpRequest[]>(mockHelpRequests);
-  const [volunteerApps, setVolunteerApps] = useState<VolunteerApplication[]>(mockVolunteerApplications);
-  const [assignments, setAssignments] = useState<CaseAssignment[]>(mockAssignments);
-  const [messages, setMessages] = useState<AdminMessage[]>(mockMessages);
-  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>(mockAuditLog);
-  const [stats, setStats] = useState<HelpDeskStats>(mockStats);
-  const [businesses, setBusinesses] = useState<Business[]>(mockBusinesses);
-  const [businessContactRequests, setBusinessContactRequests] = useState<BusinessContactRequest[]>(mockBusinessContactRequests);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Dynamic Content State
-  const [ebooks, setEbooks] = useState<EBook[]>(mockEBooks);
-  const [workshops, setWorkshops] = useState<VideoWorkshop[]>(mockWorkshops);
-  const [templates, setTemplates] = useState<ContentTemplate[]>(mockTemplates);
-  const [events, setEvents] = useState<CommunityEvent[]>(mockEvents);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(mockTeamMembers);
-  const [newsArticles, setNewsArticles] = useState<NewsArticle[]>(mockNewsArticles);
-  const [donationCampaigns, setDonationCampaigns] = useState<DonationCampaign[]>(mockDonationCampaigns);
-  const [jobPostings, setJobPostings] = useState<JobPosting[]>(mockJobPostings);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [helpRequests, setHelpRequests] = useState<HelpRequest[]>([]);
+  const [volunteerApps, setVolunteerApps] = useState<VolunteerApplication[]>([]);
+  const [assignments, setAssignments] = useState<CaseAssignment[]>([]);
+  const [messages, setMessages] = useState<AdminMessage[]>([]);
+  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
+  const [stats, setStats] = useState<HelpDeskStats>(EMPTY_STATS);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [businessContactRequests, setBusinessContactRequests] = useState<BusinessContactRequest[]>([]);
+  const [ebooks, setEbooks] = useState<EBook[]>([]);
+  const [workshops, setWorkshops] = useState<VideoWorkshop[]>([]);
+  const [templates, setTemplates] = useState<ContentTemplate[]>([]);
+  const [events, setEvents] = useState<CommunityEvent[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
+  const [donationCampaigns, setDonationCampaigns] = useState<DonationCampaign[]>([]);
+  const [jobPostings, setJobPostings] = useState<JobPosting[]>([]);
 
-  // Fetch data from Supabase on mount
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      try {
-        const [
-          { data: membersData },
-          { data: requestsData },
-          { data: jobsData },
-          { data: eventsData },
-          { data: businessesData }
-        ] = await Promise.all([
-          supabase.from('club_members').select('*'),
-          supabase.from('help_requests').select('*'),
-          supabase.from('jobs').select('*'),
-          supabase.from('events').select('*'),
-          supabase.from('businesses').select('*'),
-        ]);
-
-        if (membersData) setMembers(membersData as any);
-        if (requestsData) setHelpRequests(requestsData as any);
-        if (jobsData) setJobPostings(jobsData as any);
-        if (eventsData) setEvents(eventsData as any);
-        if (businessesData) setBusinesses(businessesData as any);
-      } catch (error) {
-        console.error('Error fetching portal data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
+  /** Unwraps an action result, recording the message on failure. */
+  const unwrap = useCallback(<T,>(result: ActionResult<T>): T | null => {
+    if (result.ok) return result.data;
+    // Surfaced rather than swallowed: a silently failing write is how the old
+    // version looked like it worked while saving nothing.
+    setError(result.error);
+    return null;
   }, []);
 
-  // ========== ACTIONS ==========
-  const addHelpRequest = async (req: Omit<HelpRequest, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'timeline' | 'internalNotes'>) => {
-    const { data, error } = await supabase
-      .from('help_requests')
-      .insert([{
-        ...req,
-        status: 'submitted',
-        timeline: [{ date: new Date().toISOString(), status: 'submitted', description: `Help request submitted by ${req.memberName}` }],
-        internal_notes: [],
-      }])
-      .select()
-      .single();
-
-    if (data) {
-      setHelpRequests(prev => [data as any, ...prev]);
-    } else if (error) {
-      console.error('Error adding help request:', error);
+  const refresh = useCallback(async () => {
+    if (!isAuthenticated) {
+      setMembers([]); setHelpRequests([]); setVolunteerApps([]); setAssignments([]);
+      setMessages([]); setAuditLog([]); setStats(EMPTY_STATS);
+      setBusinesses([]); setBusinessContactRequests([]);
+      return;
     }
-  };
 
-  const updateRequestStatus = async (id: string, status: RequestStatus) => {
-    const { data, error } = await supabase
-      .from('help_requests')
-      .update({ 
-        status, 
-        updated_at: new Date().toISOString(),
-        // We'll handle timeline updates in a real app with a trigger or batching
-      })
-      .eq('id', id)
-      .select()
-      .single();
+    setLoading(true);
+    setError(null);
 
-    if (data) {
-      setHelpRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+    const snapshot = unwrap(await actions.loadPortal());
+
+    if (snapshot) {
+      setMembers(snapshot.members);
+      setHelpRequests(snapshot.helpRequests);
+      setVolunteerApps(snapshot.volunteerApps);
+      setAssignments(snapshot.assignments);
+      setMessages(snapshot.messages);
+      setAuditLog(snapshot.auditLog);
+      setStats(snapshot.stats);
+      setBusinesses(snapshot.businesses);
+      setBusinessContactRequests(snapshot.businessContactRequests);
+      setEbooks(snapshot.ebooks);
+      setWorkshops(snapshot.workshops);
+      setTemplates(snapshot.templates);
+      setEvents(snapshot.events);
+      setTeamMembers(snapshot.teamMembers);
+      setNewsArticles(snapshot.newsArticles);
+      setDonationCampaigns(snapshot.donationCampaigns);
+      setJobPostings(snapshot.jobPostings);
     }
+
+    setLoading(false);
+  }, [isAuthenticated, unwrap]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  // ========== HELP REQUESTS ==========
+
+  const addHelpRequest: HelpDeskContextType['addHelpRequest'] = async (req) => {
+    const saved = unwrap(await actions.submitHelpRequest(req));
+    if (saved) setHelpRequests((prev) => [saved, ...prev]);
   };
 
-  const addInternalNote = async (requestId: string, note: { authorId: string; authorName: string; body: string }) => {
-    // For now, we update the array in the DB (Postgres handle arrays well)
-    // Note: This is simplified for the demo
-    setHelpRequests(prev => prev.map(r => {
-      if (r.id === requestId) {
-        return {
-          ...r,
-          internalNotes: [...r.internalNotes, { ...note, id: `note-${Date.now()}`, createdAt: new Date().toISOString() }],
-        };
-      }
-      return r;
-    }));
+  const updateRequestStatus: HelpDeskContextType['updateRequestStatus'] = async (id, status) => {
+    const saved = unwrap(await actions.updateRequestStatus(id, status));
+    if (saved) setHelpRequests((prev) => prev.map((r) => (r.id === id ? saved : r)));
   };
 
-  const addVolunteerApp = async (app: Omit<VolunteerApplication, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => {
-    const { data, error } = await supabase
-      .from('volunteer_applications')
-      .insert([{
-        ...app,
-        status: 'new_application',
-      }])
-      .select()
-      .single();
-
-    if (data) {
-      setVolunteerApps(prev => [data as any, ...prev]);
-    }
+  const addInternalNote: HelpDeskContextType['addInternalNote'] = async (requestId, note) => {
+    // authorId and authorName are stamped server-side from the session; only the
+    // body is taken from the caller.
+    const saved = unwrap(await actions.addInternalNote(requestId, note.body));
+    if (saved) setHelpRequests((prev) => prev.map((r) => (r.id === requestId ? saved : r)));
   };
 
-  const updateVolunteerStatus = async (id: string, status: VolunteerStatus, notes?: string) => {
-    const { error } = await supabase
-      .from('volunteer_applications')
-      .update({ status, admin_notes: notes })
-      .eq('id', id);
+  // ========== VOLUNTEERS ==========
 
-    if (!error) {
-      setVolunteerApps(prev => prev.map(a => a.id === id ? { ...a, status, adminNotes: notes || a.adminNotes } : a));
-    }
+  const addVolunteerApp: HelpDeskContextType['addVolunteerApp'] = async (app) => {
+    const saved = unwrap(await actions.submitVolunteerApplication(app));
+    if (saved) setVolunteerApps((prev) => [saved, ...prev]);
   };
 
-  const createAssignment = async (assignment: Omit<CaseAssignment, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => {
-    const { data, error } = await supabase
-      .from('case_assignments')
-      .insert([{
-        ...assignment,
-        status: 'pending',
-      }])
-      .select()
-      .single();
-
-    if (data) {
-      setAssignments(prev => [data as any, ...prev]);
-    }
+  const updateVolunteerStatus: HelpDeskContextType['updateVolunteerStatus'] = async (id, status, notes) => {
+    const saved = unwrap(await actions.updateVolunteerStatus(id, status, notes));
+    if (saved) setVolunteerApps((prev) => prev.map((a) => (a.id === id ? saved : a)));
   };
 
-  const sendMessage = async (msg: Omit<AdminMessage, 'id' | 'createdAt' | 'read'>) => {
-    const { data, error } = await supabase
-      .from('admin_messages')
-      .insert([{
-        ...msg,
-        read: false,
-      }])
-      .select()
-      .single();
+  // ========== ASSIGNMENTS ==========
 
-    if (data) {
-      setMessages(prev => [data as any, ...prev]);
-    }
+  const createAssignment: HelpDeskContextType['createAssignment'] = async (assignment) => {
+    const saved = unwrap(await actions.createAssignment(assignment));
+    if (!saved) return;
+    // The request is stamped with the volunteer in the same transaction, so both
+    // slices are refreshed together.
+    setAssignments((prev) => [saved.assignment, ...prev]);
+    setHelpRequests((prev) => prev.map((r) => (r.id === saved.request.id ? saved.request : r)));
   };
 
-  const markMessageRead = async (id: string) => {
-    const { error } = await supabase
-      .from('admin_messages')
-      .update({ read: true })
-      .eq('id', id);
+  // ========== MESSAGES ==========
 
-    if (!error) {
-      setMessages(prev => prev.map(m => m.id === id ? { ...m, read: true } : m));
-    }
+  const sendMessage: HelpDeskContextType['sendMessage'] = async (msg) => {
+    const saved = unwrap(await actions.sendMessage(msg));
+    if (saved) setMessages((prev) => [saved, ...prev]);
   };
 
-  const logAction = (entry: Omit<AuditLogEntry, 'id' | 'timestamp'>) => {
-    const newEntry: AuditLogEntry = {
-      ...entry,
-      id: `log-${Date.now()}`,
-      timestamp: new Date().toISOString(),
+  const markMessageRead: HelpDeskContextType['markMessageRead'] = async (id) => {
+    const result = await actions.markMessageRead(id);
+    if (result.ok) setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, read: true } : m)));
+    else setError(result.error);
+  };
+
+  /**
+   * Audit entries are written by the server as a side effect of the action that
+   * caused them, with the actor taken from the session. There is no client-side
+   * audit write, because an audit trail its subject can forge is not one.
+   */
+  const logAction: HelpDeskContextType['logAction'] = async () => {};
+
+  // ========== BUSINESSES ==========
+
+  const addBusinessContactRequest: HelpDeskContextType['addBusinessContactRequest'] = async (req) => {
+    const saved = unwrap(await actions.submitBusinessContactRequest(req));
+    if (saved) setBusinessContactRequests((prev) => [saved, ...prev]);
+  };
+
+  const updateBusinessStatus: HelpDeskContextType['updateBusinessStatus'] = async (id, status) => {
+    const saved = unwrap(await actions.updateBusinessStatus(id, status));
+    if (saved) setBusinesses((prev) => prev.map((b) => (b.id === id ? saved : b)));
+  };
+
+  const toggleBusinessFeatured: HelpDeskContextType['toggleBusinessFeatured'] = async (id) => {
+    const saved = unwrap(await actions.toggleBusinessFeatured(id));
+    if (saved) setBusinesses((prev) => prev.map((b) => (b.id === id ? saved : b)));
+  };
+
+  // ========== CONTENT CRUD ==========
+
+  /**
+   * The eight content tables behave identically, so one factory covers them all
+   * instead of twenty-four near-identical methods.
+   */
+  function contentCrud<T extends { id: string }>(
+    entity: Parameters<typeof actions.createContent>[0],
+    setter: React.Dispatch<React.SetStateAction<T[]>>,
+    sort?: (a: T, b: T) => number
+  ) {
+    const applySort = (rows: T[]) => (sort ? [...rows].sort(sort) : rows);
+
+    return {
+      add: async (item: Partial<T>) => {
+        const saved = unwrap(await actions.createContent<T>(entity, item as Record<string, unknown>));
+        if (saved) setter((prev) => applySort([saved, ...prev]));
+      },
+      update: async (id: string, item: Partial<T>) => {
+        const saved = unwrap(await actions.updateContent<T>(entity, id, item as Record<string, unknown>));
+        if (saved) setter((prev) => applySort(prev.map((row) => (row.id === id ? saved : row))));
+      },
+      remove: async (id: string) => {
+        const result = await actions.deleteContent(entity, id);
+        if (result.ok) setter((prev) => prev.filter((row) => row.id !== id));
+        else setError(result.error);
+      },
     };
-    setAuditLog(prev => [newEntry, ...prev]);
-  };
+  }
 
-  const addBusinessContactRequest = (req: Omit<BusinessContactRequest, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => {
-    const now = new Date().toISOString();
-    const newReq: BusinessContactRequest = {
-      ...req,
-      id: `bcr-${Date.now()}`,
-      status: 'pending',
-      createdAt: now,
-      updatedAt: now,
-    };
-    setBusinessContactRequests(prev => [newReq, ...prev]);
-  };
-
-  const updateBusinessStatus = (id: string, status: BusinessStatus) => {
-    setBusinesses(prev => prev.map(b => b.id === id ? { ...b, verificationStatus: status, updatedAt: new Date().toISOString() } : b));
-  };
-
-  const toggleBusinessFeatured = (id: string) => {
-    setBusinesses(prev => prev.map(b => b.id === id ? { ...b, isFeatured: !b.isFeatured, updatedAt: new Date().toISOString() } : b));
-  };
-
-  // ========== DYNAMIC CONTENT ACTIONS ==========
-
-  // E-Books
-  const addEBook = (item: Omit<EBook, 'id' | 'createdAt'>) => {
-    setEbooks(prev => [{ ...item, id: `eb-${Date.now()}`, createdAt: new Date().toISOString() }, ...prev]);
-  };
-  const updateEBook = (id: string, item: Partial<EBook>) => {
-    setEbooks(prev => prev.map(e => e.id === id ? { ...e, ...item } : e));
-  };
-  const deleteEBook = (id: string) => {
-    setEbooks(prev => prev.filter(e => e.id !== id));
-  };
-
-  // Workshops
-  const addWorkshop = (item: Omit<VideoWorkshop, 'id' | 'createdAt'>) => {
-    setWorkshops(prev => [{ ...item, id: `ws-${Date.now()}`, createdAt: new Date().toISOString() }, ...prev]);
-  };
-  const updateWorkshop = (id: string, item: Partial<VideoWorkshop>) => {
-    setWorkshops(prev => prev.map(e => e.id === id ? { ...e, ...item } : e));
-  };
-  const deleteWorkshop = (id: string) => {
-    setWorkshops(prev => prev.filter(e => e.id !== id));
-  };
-
-  // Templates
-  const addTemplate = (item: Omit<ContentTemplate, 'id' | 'createdAt'>) => {
-    setTemplates(prev => [{ ...item, id: `tp-${Date.now()}`, createdAt: new Date().toISOString() }, ...prev]);
-  };
-  const updateTemplate = (id: string, item: Partial<ContentTemplate>) => {
-    setTemplates(prev => prev.map(e => e.id === id ? { ...e, ...item } : e));
-  };
-  const deleteTemplate = (id: string) => {
-    setTemplates(prev => prev.filter(e => e.id !== id));
-  };
-
-  // Events
-  const addEvent = (item: Omit<CommunityEvent, 'id' | 'createdAt'>) => {
-    setEvents(prev => [{ ...item, id: `evt-${Date.now()}`, createdAt: new Date().toISOString() }, ...prev]);
-  };
-  const updateEvent = (id: string, item: Partial<CommunityEvent>) => {
-    setEvents(prev => prev.map(e => e.id === id ? { ...e, ...item } : e));
-  };
-  const deleteEvent = (id: string) => {
-    setEvents(prev => prev.filter(e => e.id !== id));
-  };
-
-  // Team Members
-  const addTeamMember = (item: Omit<TeamMember, 'id' | 'createdAt'>) => {
-    setTeamMembers(prev => [{ ...item, id: `tm-${Date.now()}`, createdAt: new Date().toISOString() }, ...prev]);
-  };
-  const updateTeamMember = (id: string, item: Partial<TeamMember>) => {
-    setTeamMembers(prev => prev.map(e => e.id === id ? { ...e, ...item } : e));
-  };
-  const deleteTeamMember = (id: string) => {
-    setTeamMembers(prev => prev.filter(e => e.id !== id));
-  };
-
-  // News
-  const addNewsArticle = (item: Omit<NewsArticle, 'id' | 'createdAt'>) => {
-    setNewsArticles(prev => [{ ...item, id: `news-${Date.now()}`, createdAt: new Date().toISOString() }, ...prev]);
-  };
-  const updateNewsArticle = (id: string, item: Partial<NewsArticle>) => {
-    setNewsArticles(prev => prev.map(e => e.id === id ? { ...e, ...item } : e));
-  };
-  const deleteNewsArticle = (id: string) => {
-    setNewsArticles(prev => prev.filter(e => e.id !== id));
-  };
-
-  // Donations
-  const updateDonationCampaign = (id: string, item: Partial<DonationCampaign>) => {
-    setDonationCampaigns(prev => prev.map(e => e.id === id ? { ...e, ...item } : e));
-  };
-
-  // Job Postings
-  const addJobPosting = (item: Omit<JobPosting, 'id' | 'createdAt'>) => {
-    setJobPostings(prev => [{ ...item, id: `job-${Date.now()}`, createdAt: new Date().toISOString() }, ...prev]);
-  };
-  const updateJobPosting = (id: string, item: Partial<JobPosting>) => {
-    setJobPostings(prev => prev.map(e => e.id === id ? { ...e, ...item } : e));
-  };
-  const deleteJobPosting = (id: string) => {
-    setJobPostings(prev => prev.filter(e => e.id !== id));
-  };
+  const ebookCrud = contentCrud<EBook>('ebooks', setEbooks);
+  const workshopCrud = contentCrud<VideoWorkshop>('workshops', setWorkshops);
+  const templateCrud = contentCrud<ContentTemplate>('templates', setTemplates);
+  const eventCrud = contentCrud<CommunityEvent>('events', setEvents);
+  const newsCrud = contentCrud<NewsArticle>('news', setNewsArticles);
+  const donationCrud = contentCrud<DonationCampaign>('donations', setDonationCampaigns);
+  const jobCrud = contentCrud<JobPosting>('jobs', setJobPostings);
+  const teamCrud = contentCrud<TeamMember>('team', setTeamMembers, (a, b) => a.order - b.order);
 
   return (
-    <HelpDeskContext.Provider value={{
-      members, helpRequests, volunteerApps, assignments, messages, auditLog, stats,
-      businesses, businessContactRequests,
-      addHelpRequest, updateRequestStatus, addInternalNote,
-      addVolunteerApp, updateVolunteerStatus,
-      createAssignment, sendMessage, markMessageRead, logAction,
-      addBusinessContactRequest, updateBusinessStatus, toggleBusinessFeatured,
-      // Dynamic Content
-      ebooks, addEBook, updateEBook, deleteEBook,
-      workshops, addWorkshop, updateWorkshop, deleteWorkshop,
-      templates, addTemplate, updateTemplate, deleteTemplate,
-      events, addEvent, updateEvent, deleteEvent,
-      teamMembers, addTeamMember, updateTeamMember, deleteTeamMember,
-      newsArticles, addNewsArticle, updateNewsArticle, deleteNewsArticle,
-      donationCampaigns, updateDonationCampaign,
-      jobPostings, addJobPosting, updateJobPosting, deleteJobPosting,
-    }}>
+    <HelpDeskContext.Provider
+      value={{
+        loading, error, refresh,
+        members, helpRequests, volunteerApps, assignments, messages, auditLog, stats,
+        businesses, businessContactRequests,
+        addHelpRequest, updateRequestStatus, addInternalNote,
+        addVolunteerApp, updateVolunteerStatus,
+        createAssignment, sendMessage, markMessageRead, logAction,
+        addBusinessContactRequest, updateBusinessStatus, toggleBusinessFeatured,
+
+        ebooks, addEBook: ebookCrud.add, updateEBook: ebookCrud.update, deleteEBook: ebookCrud.remove,
+        workshops, addWorkshop: workshopCrud.add, updateWorkshop: workshopCrud.update, deleteWorkshop: workshopCrud.remove,
+        templates, addTemplate: templateCrud.add, updateTemplate: templateCrud.update, deleteTemplate: templateCrud.remove,
+        events, addEvent: eventCrud.add, updateEvent: eventCrud.update, deleteEvent: eventCrud.remove,
+        teamMembers, addTeamMember: teamCrud.add, updateTeamMember: teamCrud.update, deleteTeamMember: teamCrud.remove,
+        newsArticles, addNewsArticle: newsCrud.add, updateNewsArticle: newsCrud.update, deleteNewsArticle: newsCrud.remove,
+        donationCampaigns, updateDonationCampaign: donationCrud.update,
+        jobPostings, addJobPosting: jobCrud.add, updateJobPosting: jobCrud.update, deleteJobPosting: jobCrud.remove,
+      }}
+    >
       {children}
     </HelpDeskContext.Provider>
   );

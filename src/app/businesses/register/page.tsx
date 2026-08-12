@@ -162,7 +162,7 @@ export default function BusinessSignupPage() {
 
   if (submitted) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #ffffff, #fff7ed)' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, var(--bg-primary), var(--bg-secondary))' }}>
         <div style={{ maxWidth: 520, textAlign: 'center', padding: 40 }}>
           <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary-600), var(--primary-500))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', boxShadow: '0 8px 32px rgba(232,93,4,0.3)' }}>
             <CheckCircle size={40} color="white" />
@@ -192,14 +192,14 @@ export default function BusinessSignupPage() {
 
   if (!mounted) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #ffffff, #fff7ed)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, var(--bg-primary), var(--bg-secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ padding: 40, textAlign: 'center', color: 'var(--primary-600)', fontWeight: 600 }}>Loading form...</div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #ffffff, #fff7ed)' }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, var(--bg-primary), var(--bg-secondary))' }}>
       {/* Header */}
       <div style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-color)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 20 }}>
         <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -307,7 +307,7 @@ export default function BusinessSignupPage() {
                     {TARGET_AUDIENCES.map(aud => (
                       <button key={aud} type="button" onClick={() => toggleTargetAudience(aud)}
                         style={{ padding: '7px 14px', borderRadius: 99, fontSize: '0.78rem', fontWeight: 500, border: '1.5px solid', cursor: 'pointer', transition: 'all 0.15s',
-                          background: targetAudience.includes(aud) ? 'rgba(99,102,241,0.08)' : 'white',
+                          background: targetAudience.includes(aud) ? 'rgba(232, 93, 4, 0.08)' : 'white',
                           borderColor: targetAudience.includes(aud) ? 'var(--primary-500)' : 'var(--gray-200)',
                           color: targetAudience.includes(aud) ? 'var(--primary-700)' : 'var(--gray-600)' }}
                       >{targetAudience.includes(aud) && <CheckCircle size={12} style={{ marginRight: 4, verticalAlign: '-2px' }} />}{aud}</button>
@@ -676,7 +676,7 @@ export default function BusinessSignupPage() {
                   <span style={hintStyle}>Select any featured promotion options you&rsquo;d be interested in. Our team will reach out with details.</span>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
                     {PROMOTION_OPTIONS.map(opt => (
-                      <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 10, border: `1.5px solid ${promotionInterests.includes(opt.value) ? 'var(--primary-500)' : 'var(--gray-200)'}`, cursor: 'pointer', background: promotionInterests.includes(opt.value) ? 'rgba(99,102,241,0.04)' : 'white', transition: 'all 0.15s' }}>
+                      <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 10, border: `1.5px solid ${promotionInterests.includes(opt.value) ? 'var(--primary-500)' : 'var(--gray-200)'}`, cursor: 'pointer', background: promotionInterests.includes(opt.value) ? 'rgba(232, 93, 4, 0.04)' : 'white', transition: 'all 0.15s' }}>
                         <input type="checkbox" checked={promotionInterests.includes(opt.value)} onChange={() => togglePromotion(opt.value)} style={{ accentColor: 'var(--primary-600)', width: 16, height: 16 }} />
                         <span style={{ fontSize: '0.85rem', fontWeight: promotionInterests.includes(opt.value) ? 600 : 400 }}>{opt.label}</span>
                       </label>

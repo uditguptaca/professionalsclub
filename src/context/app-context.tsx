@@ -1,89 +1,69 @@
 'use client';
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import type { UserRole } from '@/types';
-import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
+import type { Member, UserRole } from '@/types';
 
 interface AppContextType {
+  profile: Member | null;
   currentRole: UserRole;
-  setCurrentRole: (role: UserRole) => void;
   isAuthenticated: boolean;
-  setIsAuthenticated: (v: boolean) => void;
+  currentUserId: string;
   sidebarOpen: boolean;
   setSidebarOpen: (v: boolean) => void;
   toggleSidebar: () => void;
-  currentUserId: string;
+  /** Re-reads the profile after the user edits it. */
+  refreshProfile: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export function AppProvider({ children }: { children: React.ReactNode }) {
-  const supabase = createClient();
-  const [currentRole, setCurrentRole] = useState<UserRole>('member');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+/**
+ * Session state for client components.
+ *
+ * `initialProfile` is resolved on the server in the root layout, so there is no
+ * authenticated/unauthenticated flicker and no client-side source of truth for
+ * who you are. Nothing here decides access — the server layouts do that. This
+ * only tells the UI what to draw.
+ */
+export function AppProvider({
+  initialProfile,
+  children,
+}: {
+  initialProfile: Member | null;
+  children: React.ReactNode;
+}) {
+  const router = useRouter();
+  const [profile, setProfile] = useState<Member | null>(initialProfile);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [hydrated, setHydrated] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string>('');
 
-  // Initial Hydration & Auth Setup
+  // Keep in step when the server sends a newer profile (e.g. after router.refresh()).
   useEffect(() => {
-    async function initAuth() {
-      // 1. First, check if we have a real Supabase session
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        setIsAuthenticated(true);
-        setCurrentUserId(session.user.id);
-        const role = (session.user.user_metadata?.role as UserRole) || 'member';
-        setCurrentRole(role);
-      } else {
-        // 2. Fallback to localStorage for mock/dev role ONLY if not already authenticated via demo
-        const savedAuth = localStorage.getItem('pc_auth') === 'true';
-        if (savedAuth) {
-          setIsAuthenticated(true);
-          const savedRole = localStorage.getItem('pc_role') as UserRole;
-          if (savedRole && (savedRole === 'member' || savedRole === 'admin')) {
-            setCurrentRole(savedRole);
-          }
-        }
-      }
-      setHydrated(true);
-    }
+    setProfile(initialProfile);
+  }, [initialProfile]);
 
-    initAuth();
+  // No client-side auth subscription. The session cookie is owned by
+  // /api/auth/*, and the server layouts re-read it on every navigation, so the
+  // only thing this provider needs to do is mirror what the server sent.
 
-    // Listen for auth changes (Login/Logout)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        setIsAuthenticated(true);
-        setCurrentUserId(session.user.id);
-        const role = (session.user.user_metadata?.role as UserRole) || 'member';
-        setCurrentRole(role);
-      } else if (event === 'SIGNED_OUT') {
-        setIsAuthenticated(false);
-        setCurrentUserId('');
-        setCurrentRole('member');
-      }
-    });
+  const refreshProfile = useCallback(async () => {
+    router.refresh();
+  }, [router]);
 
-    return () => subscription.unsubscribe();
-  }, []); // Run ONLY once on mount
-
-  // Sync state to localStorage (Separate from Auth check)
-  useEffect(() => {
-    if (!hydrated) return;
-    localStorage.setItem('pc_role', currentRole);
-    localStorage.setItem('pc_auth', isAuthenticated.toString());
-    
-    // Update mock ID based on role if no real user
-    if (!currentUserId && isAuthenticated) {
-      setCurrentUserId(currentRole === 'admin' ? 'admin1' : 'm1');
-    }
-  }, [currentRole, isAuthenticated, hydrated, currentUserId]);
-
-  const toggleSidebar = useCallback(() => setSidebarOpen(p => !p), []);
+  const toggleSidebar = useCallback(() => setSidebarOpen((p) => !p), []);
 
   return (
-    <AppContext.Provider value={{ currentRole, setCurrentRole, isAuthenticated, setIsAuthenticated, sidebarOpen, setSidebarOpen, toggleSidebar, currentUserId }}>
+    <AppContext.Provider
+      value={{
+        profile,
+        currentRole: profile?.role ?? 'member',
+        isAuthenticated: profile !== null,
+        currentUserId: profile?.id ?? '',
+        sidebarOpen,
+        setSidebarOpen,
+        toggleSidebar,
+        refreshProfile,
+      }}
+    >
       {children}
     </AppContext.Provider>
   );

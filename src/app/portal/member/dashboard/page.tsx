@@ -26,7 +26,7 @@ export default function MemberDashboard() {
       {/* Primary Actions */}
       <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <Link href="/portal/member/request-help" style={{ textDecoration: 'none' }}>
-          <div className="card card-clickable" style={{ background: 'linear-gradient(135deg, var(--primary-600), var(--primary-400))', color: 'white', border: 'none', padding: '32px 28px', boxShadow: '0 10px 30px rgba(99,102,241,0.25)', transition: 'transform 0.2s', cursor: 'pointer' }}>
+          <div className="card card-clickable" style={{ background: 'linear-gradient(135deg, var(--primary-600), var(--primary-400))', color: 'white', border: 'none', padding: '32px 28px', boxShadow: '0 10px 30px rgba(232, 93, 4, 0.25)', transition: 'transform 0.2s', cursor: 'pointer' }}>
             <HelpCircle size={36} style={{ marginBottom: 16, opacity: 0.9 }} />
             <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: 8 }}>Request Help</h2>
             <p style={{ fontSize: '0.85rem', opacity: 0.85, lineHeight: 1.5 }}>Submit a support request for job referrals, settlement guidance, tax help, mentorship, and more.</p>
@@ -37,7 +37,7 @@ export default function MemberDashboard() {
         </Link>
 
         <Link href="/portal/member/volunteer" style={{ textDecoration: 'none' }}>
-          <div className="card card-clickable" style={{ background: 'linear-gradient(135deg, #dc2626, #f87171)', color: 'white', border: 'none', padding: '32px 28px', boxShadow: '0 10px 30px rgba(220,38,38,0.25)', transition: 'transform 0.2s', cursor: 'pointer' }}>
+          <div className="card card-clickable" style={{ background: 'linear-gradient(135deg, var(--green-800), var(--green-600))', color: 'white', border: 'none', padding: '32px 28px', boxShadow: '0 10px 30px rgba(27, 67, 50, 0.3)', transition: 'transform 0.2s', cursor: 'pointer' }}>
             <HandHeart size={36} style={{ marginBottom: 16, opacity: 0.9 }} />
             <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: 8 }}>Volunteer to Help</h2>
             <p style={{ fontSize: '0.85rem', opacity: 0.85, lineHeight: 1.5 }}>Apply to become a volunteer or mentor. Help community members with your professional expertise.</p>
@@ -53,7 +53,7 @@ export default function MemberDashboard() {
         <Link href="/portal/member/my-requests" style={{ textDecoration: 'none' }}>
           <div className="card-stat" style={{ cursor: 'pointer' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ padding: 10, background: 'rgba(99,102,241,0.1)', borderRadius: 10 }}>
+              <div style={{ padding: 10, background: 'rgba(232, 93, 4, 0.1)', borderRadius: 10 }}>
                 <FileText size={22} className="text-primary-600" />
               </div>
               <div>
@@ -73,16 +73,16 @@ export default function MemberDashboard() {
           <div className="card-stat" style={{ cursor: 'pointer' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ padding: 10, background: 'rgba(16,185,129,0.1)', borderRadius: 10 }}>
-                <ClipboardList size={22} style={{ color: '#059669' }} />
+                <ClipboardList size={22} style={{ color: 'var(--success-600)' }} />
               </div>
               <div>
                 <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>
                   {myVolunteerApp ? (
                     <span style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      {myVolunteerApp.status === 'approved' && <><CheckCircle size={16} style={{ color: '#059669' }} /> Approved</>}
+                      {myVolunteerApp.status === 'approved' && <><CheckCircle size={16} style={{ color: 'var(--success-600)' }} /> Approved</>}
                       {myVolunteerApp.status === 'pending_verification' && '⏳ Pending'}
-                      {myVolunteerApp.status === 'new_application' && <><FileEdit size={16} style={{ color: '#d97706' }} /> Submitted</>}
-                      {myVolunteerApp.status === 'rejected' && <><XCircle size={16} style={{ color: '#ef4444' }} /> Rejected</>}
+                      {myVolunteerApp.status === 'new_application' && <><FileEdit size={16} style={{ color: 'var(--accent-600)' }} /> Submitted</>}
+                      {myVolunteerApp.status === 'rejected' && <><XCircle size={16} style={{ color: 'var(--error-500)' }} /> Rejected</>}
                       {!['approved', 'pending_verification', 'new_application', 'rejected'].includes(myVolunteerApp.status) && myVolunteerApp.status}
                     </span>
                   ) : '—'}
@@ -97,9 +97,9 @@ export default function MemberDashboard() {
           <div className="card-stat" style={{ cursor: 'pointer', position: 'relative' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ padding: 10, background: 'rgba(245,158,11,0.1)', borderRadius: 10, position: 'relative' }}>
-                <MessageSquare size={22} style={{ color: '#d97706' }} />
+                <MessageSquare size={22} style={{ color: 'var(--accent-600)' }} />
                 {unreadMessages > 0 && (
-                  <div style={{ position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: '50%', background: '#ef4444', color: 'white', fontSize: '0.65rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unreadMessages}</div>
+                  <div style={{ position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: '50%', background: 'var(--error-500)', color: 'white', fontSize: '0.65rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unreadMessages}</div>
                 )}
               </div>
               <div>
@@ -108,7 +108,7 @@ export default function MemberDashboard() {
               </div>
             </div>
             {unreadMessages > 0 && (
-              <div style={{ marginTop: 8, fontSize: '0.75rem', color: '#ef4444', fontWeight: 600 }}>
+              <div style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--error-500)', fontWeight: 600 }}>
                 {unreadMessages} unread
               </div>
             )}
@@ -153,7 +153,7 @@ export default function MemberDashboard() {
 
       {/* Business Directory CTA */}
       <Link href="/portal/member/businesses" style={{ textDecoration: 'none' }}>
-        <div className="card card-clickable" style={{ background: 'linear-gradient(135deg, #0067a5, #0ea5e9)', color: 'white', border: 'none', padding: '24px 28px', boxShadow: '0 8px 24px rgba(0,103,165,0.25)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 20 }}>
+        <div className="card card-clickable" style={{ background: 'linear-gradient(135deg, var(--primary-600), var(--primary-400))', color: 'white', border: 'none', padding: '24px 28px', boxShadow: '0 8px 24px rgba(232, 93, 4, 0.25)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 20 }}>
           <div style={{ padding: 12, background: 'rgba(255,255,255,0.15)', borderRadius: 12 }}>
             <Building2 size={28} />
           </div>
@@ -169,7 +169,7 @@ export default function MemberDashboard() {
       </Link>
 
       {/* Safety Notice */}
-      <div style={{ padding: '16px 20px', borderRadius: 12, background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.1)' }}>
+      <div style={{ padding: '16px 20px', borderRadius: 12, background: 'rgba(232, 93, 4, 0.04)', border: '1px solid rgba(232, 93, 4, 0.1)' }}>
         <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.6, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
           <Lock size={14} className="text-primary-600" /> <strong>Your privacy is protected.</strong> All communications go through our admin team. No member can contact you directly.
         </p>

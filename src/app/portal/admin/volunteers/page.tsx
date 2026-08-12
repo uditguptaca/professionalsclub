@@ -26,7 +26,7 @@ export default function AdminVolunteersPage() {
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
         <div style={{ position: 'relative', flex: 1, maxWidth: 300 }}>
-          <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+          <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input className="input" style={{ paddingLeft: 36 }} placeholder="Search volunteers..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <select className="input" style={{ width: 200 }} value={filter} onChange={e => setFilter(e.target.value)}>
@@ -42,7 +42,7 @@ export default function AdminVolunteersPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {filtered.length === 0 ? (
           <div className="card" style={{ textAlign: 'center', padding: 60 }}>
-            <HandHeart size={40} style={{ color: '#d1d5db', marginBottom: 12 }} />
+            <HandHeart size={40} style={{ color: 'var(--gray-300)', marginBottom: 12 }} />
             <p className="text-secondary">No volunteer applications match your filters.</p>
           </div>
         ) : (
@@ -51,7 +51,7 @@ export default function AdminVolunteersPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-                    <span style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: 'var(--text-muted)', background: '#f3f4f6', padding: '2px 6px', borderRadius: 4 }}>{app.id}</span>
+                    <span style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: 'var(--text-muted)', background: 'var(--bg-secondary)', padding: '2px 6px', borderRadius: 4 }}>{app.id}</span>
                     <span className={`badge ${app.status === 'approved' ? 'badge-success' : app.status === 'rejected' ? 'badge-error' : 'badge-warning'}`} style={{ textTransform: 'capitalize', fontSize: '0.68rem' }}>
                       {app.status.replace(/_/g, ' ')}
                     </span>
@@ -61,12 +61,12 @@ export default function AdminVolunteersPage() {
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {app.status !== 'approved' && (
-                    <button className="btn btn-sm" onClick={() => handleAction(app.id, 'approved')} style={{ background: '#059669', color: 'white', border: 'none', fontSize: '0.72rem' }}>
+                    <button className="btn btn-sm" onClick={() => handleAction(app.id, 'approved')} style={{ background: 'var(--success-600)', color: 'white', border: 'none', fontSize: '0.72rem' }}>
                       <CheckCircle size={14} /> Approve
                     </button>
                   )}
                   {app.status !== 'rejected' && (
-                    <button className="btn btn-outline btn-sm" onClick={() => handleAction(app.id, 'rejected')} style={{ fontSize: '0.72rem', color: '#dc2626', borderColor: '#fecaca' }}>
+                    <button className="btn btn-outline btn-sm" onClick={() => handleAction(app.id, 'rejected')} style={{ fontSize: '0.72rem', color: 'var(--error-600)', borderColor: 'var(--error-50)' }}>
                       <XCircle size={14} /> Reject
                     </button>
                   )}
@@ -79,29 +79,29 @@ export default function AdminVolunteersPage() {
               </div>
 
               <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 12 }}>
-                <div style={{ padding: 10, borderRadius: 8, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
-                  <div style={{ fontSize: '0.65rem', color: '#9ca3af', textTransform: 'uppercase' }}>City</div>
+                <div style={{ padding: 10, borderRadius: 8, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>City</div>
                   <div style={{ fontSize: '0.82rem', fontWeight: 600, marginTop: 2 }}>{app.city}, {app.province}</div>
                 </div>
-                <div style={{ padding: 10, borderRadius: 8, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
-                  <div style={{ fontSize: '0.65rem', color: '#9ca3af', textTransform: 'uppercase' }}>Languages</div>
+                <div style={{ padding: 10, borderRadius: 8, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Languages</div>
                   <div style={{ fontSize: '0.82rem', fontWeight: 600, marginTop: 2 }}>{app.languages.join(', ')}</div>
                 </div>
-                <div style={{ padding: 10, borderRadius: 8, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
-                  <div style={{ fontSize: '0.65rem', color: '#9ca3af', textTransform: 'uppercase' }}>Availability</div>
+                <div style={{ padding: 10, borderRadius: 8, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Availability</div>
                   <div style={{ fontSize: '0.82rem', fontWeight: 600, marginTop: 2 }}>{app.availability}</div>
                 </div>
-                <div style={{ padding: 10, borderRadius: 8, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
-                  <div style={{ fontSize: '0.65rem', color: '#9ca3af', textTransform: 'uppercase' }}>Max Cases/Month</div>
+                <div style={{ padding: 10, borderRadius: 8, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Max Cases/Month</div>
                   <div style={{ fontSize: '0.82rem', fontWeight: 600, marginTop: 2 }}>{app.maxCasesPerMonth}</div>
                 </div>
               </div>
 
               <div style={{ marginBottom: 8 }}>
-                <div style={{ fontSize: '0.72rem', color: '#9ca3af', marginBottom: 4, fontWeight: 600, textTransform: 'uppercase' }}>Expertise Areas</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 4, fontWeight: 600, textTransform: 'uppercase' }}>Expertise Areas</div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {app.expertiseAreas.map(a => (
-                    <span key={a} style={{ fontSize: '0.72rem', padding: '3px 10px', borderRadius: 6, background: 'rgba(5,150,105,0.08)', color: '#065f46', fontWeight: 600 }}>{a}</span>
+                    <span key={a} style={{ fontSize: '0.72rem', padding: '3px 10px', borderRadius: 6, background: 'rgba(5,150,105,0.08)', color: 'var(--success-600)', fontWeight: 600 }}>{a}</span>
                   ))}
                 </div>
               </div>

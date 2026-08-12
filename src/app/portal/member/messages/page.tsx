@@ -6,7 +6,7 @@ import { MessageSquare, Mail } from 'lucide-react';
 import Link from 'next/link';
 
 export default function MemberMessagesPage() {
-  const { messages } = usePortal();
+  const { messages, helpRequests } = usePortal();
   const { currentUserId } = useApp();
 
   // Messages visible to the current member
@@ -30,7 +30,7 @@ export default function MemberMessagesPage() {
 
       {Object.keys(caseGroups).length === 0 ? (
         <div style={{ textAlign: 'center', padding: '80px 20px' }}>
-          <Mail size={48} style={{ color: '#d1d5db', marginBottom: 16 }} />
+          <Mail size={48} style={{ color: 'var(--gray-300)', marginBottom: 16 }} />
           <h3 className="text-xl font-bold mb-2">No messages yet</h3>
           <p className="text-secondary">Admin will send you updates when your requests are being processed.</p>
         </div>
@@ -48,18 +48,20 @@ export default function MemberMessagesPage() {
                         <MessageSquare size={16} className="text-primary-600" />
                         <span style={{ fontWeight: 700 }}>{latestMsg.caseTitle}</span>
                         {unread > 0 && (
-                          <span style={{ fontSize: '0.65rem', fontWeight: 700, background: '#ef4444', color: 'white', padding: '1px 8px', borderRadius: 99 }}>
+                          <span style={{ fontSize: '0.65rem', fontWeight: 700, background: 'var(--error-500)', color: 'white', padding: '1px 8px', borderRadius: 99 }}>
                             {unread} new
                           </span>
                         )}
                       </div>
-                      <span style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: 'var(--text-muted)' }}>{caseId}</span>
+                      <span style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: 'var(--text-muted)' }}>
+                        {helpRequests.find(r => r.id === caseId)?.reference ?? '—'}
+                      </span>
                     </div>
                     <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                       {new Date(latestMsg.createdAt).toLocaleDateString()}
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.83rem', color: '#6b7280', lineHeight: 1.5 }}>
+                  <div style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                     <strong>{latestMsg.senderName}:</strong> {latestMsg.body.substring(0, 120)}{latestMsg.body.length > 120 ? '...' : ''}
                   </div>
                   <div style={{ marginTop: 8, fontSize: '0.72rem', color: 'var(--text-muted)' }}>

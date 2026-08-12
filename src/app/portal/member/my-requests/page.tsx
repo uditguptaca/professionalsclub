@@ -38,7 +38,7 @@ export default function MyRequestsPage() {
 
       {myRequests.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '80px 20px' }}>
-          <FileText size={48} style={{ color: '#d1d5db', marginBottom: 16 }} />
+          <FileText size={48} style={{ color: 'var(--gray-300)', marginBottom: 16 }} />
           <h3 className="text-xl font-bold mb-2">No requests yet</h3>
           <p className="text-secondary mb-6">Submit your first help request to get started.</p>
           <Link href="/portal/member/request-help" className="btn btn-primary">Request Help</Link>
@@ -50,7 +50,7 @@ export default function MyRequestsPage() {
               <div className="card" style={{ padding: '20px 24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'border-color 0.15s' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace', background: '#f3f4f6', padding: '2px 8px', borderRadius: 4 }}>{req.id}</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace', background: 'var(--bg-secondary)', padding: '2px 8px', borderRadius: 4 }}>{req.reference}</span>
                     <span className={`badge ${statusColor(req.status)}`} style={{ textTransform: 'capitalize', fontSize: '0.68rem', display: 'flex', alignItems: 'center', gap: 4 }}>
                       {statusIcon(req.status)} {req.status.replace(/_/g, ' ')}
                     </span>
@@ -64,7 +64,7 @@ export default function MyRequestsPage() {
                     <span style={{ textTransform: 'capitalize' }}>{req.urgency} priority</span>
                   </div>
                 </div>
-                <ArrowRight size={18} style={{ color: '#9ca3af', flexShrink: 0 }} />
+                <ArrowRight size={18} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
               </div>
             </Link>
           ))}

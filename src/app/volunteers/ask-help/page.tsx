@@ -259,7 +259,7 @@ function AskHelpForm() {
         ) : (
           <div style={{ background: 'white', border: '1px solid var(--border-color)', borderRadius: 24, padding: '64px 40px', boxShadow: 'var(--shadow-sm)', textAlign: 'center', maxWidth: 600, margin: '0 auto' }}>
             <div style={{ color: 'var(--success-500)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
-              <CheckCircle2 size={64} style={{ color: '#10b981' }} />
+              <CheckCircle2 size={64} style={{ color: 'var(--success-400)' }} />
             </div>
             <h2 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 12 }}>Relay Request Sent!</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: 1.6, marginBottom: 32 }}>

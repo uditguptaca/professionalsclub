@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
@@ -8,19 +8,21 @@ import { CheckCircle2, Upload, AlertCircle, ArrowLeft, ArrowRight, Shield } from
 
 export default function RequestHelpPage() {
   const router = useRouter();
-  const { currentUserId } = useApp();
-  const { addHelpRequest } = usePortal();
+  const { profile } = useApp();
+  const { addHelpRequest, error } = usePortal();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form state
-  const [firstName, setFirstName] = useState('Priya');
-  const [lastName, setLastName] = useState('Sharma');
-  const [email, setEmail] = useState('priya.sharma@gmail.com');
-  const [phone, setPhone] = useState('+1-416-555-0101');
-  const [pcNumber, setPcNumber] = useState('PC-2025-0042');
-  const [city, setCity] = useState('Toronto');
-  const [province, setProvince] = useState('Ontario');
+  // Identity, prefilled from the signed-in member's profile. These used to be
+  // hardcoded sample values, which meant every member saw the same stranger's
+  // name and phone number on this form.
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [pcNumber, setPcNumber] = useState('');
+  const [city, setCity] = useState('');
+  const [province, setProvince] = useState('');
   const [category, setCategory] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -32,29 +34,44 @@ export default function RequestHelpPage() {
 
   const totalSteps = 4;
 
-  const handleSubmit = () => {
-    if (!consent) return;
+  // The profile arrives from the server on first render; seed the form once it does.
+  useEffect(() => {
+    if (!profile) return;
+    setFirstName(profile.firstName ?? '');
+    setLastName(profile.lastName ?? '');
+    setEmail(profile.email ?? '');
+    setPhone(profile.phone ?? '');
+    setPcNumber(profile.pcNumber ?? '');
+    setCity(profile.city ?? '');
+    setProvince(profile.province ?? '');
+  }, [profile]);
+
+  const handleSubmit = async () => {
+    if (!consent || isSubmitting) return;
     setIsSubmitting(true);
-    setTimeout(() => {
-      addHelpRequest({
-        memberId: currentUserId,
-        memberName: `${firstName} ${lastName}`,
-        category: category as any,
-        title,
-        description,
-        urgency,
-        preferredTimeline: timeline,
-        previouslyRequested: false,
-        documentsRequired: false,
-        documents: [],
-        consentGiven: true,
-        supportType,
-        openToGroupResources: openToGroup,
-        contactByAdminOnly: true,
-      });
-      setIsSubmitting(false);
-      router.push('/portal/member/my-requests');
-    }, 1000);
+
+    // member_id is set server-side from the session; sending it from here would
+    // be ignored anyway. The artificial 1s delay this used to have is gone — the
+    // request now waits on the real write.
+    await addHelpRequest({
+      memberId: '',
+      memberName: `${firstName} ${lastName}`.trim(),
+      category: category as any,
+      title,
+      description,
+      urgency,
+      preferredTimeline: timeline,
+      previouslyRequested: false,
+      documentsRequired: false,
+      documents: [],
+      consentGiven: true,
+      supportType,
+      openToGroupResources: openToGroup,
+      contactByAdminOnly: true,
+    });
+
+    setIsSubmitting(false);
+    router.push('/portal/member/my-requests');
   };
 
   return (
@@ -71,14 +88,14 @@ export default function RequestHelpPage() {
             <div style={{
               width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontWeight: 700, fontSize: '0.85rem', border: '3px solid',
-              borderColor: step > i + 1 ? '#059669' : step === i + 1 ? 'var(--primary-500)' : '#e5e7eb',
-              background: step > i + 1 ? '#059669' : step === i + 1 ? 'var(--primary-500)' : 'transparent',
-              color: step >= i + 1 ? 'white' : '#9ca3af',
+              borderColor: step > i + 1 ? 'var(--success-600)' : step === i + 1 ? 'var(--primary-500)' : 'var(--border-color)',
+              background: step > i + 1 ? 'var(--success-600)' : step === i + 1 ? 'var(--primary-500)' : 'transparent',
+              color: step >= i + 1 ? 'white' : 'var(--text-muted)',
             }}>
               {step > i + 1 ? <CheckCircle2 size={18} /> : i + 1}
             </div>
             {i < totalSteps - 1 && (
-              <div style={{ width: 48, height: 3, borderRadius: 2, background: step > i + 1 ? '#059669' : '#e5e7eb' }} />
+              <div style={{ width: 48, height: 3, borderRadius: 2, background: step > i + 1 ? 'var(--success-600)' : 'var(--border-color)' }} />
             )}
           </React.Fragment>
         ))}
@@ -162,10 +179,10 @@ export default function RequestHelpPage() {
             <div className="input-group">
               <label>Support Type</label>
               <div style={{ display: 'flex', gap: 12 }}>
-                <button onClick={() => setSupportType('one_time')} style={{ padding: '10px 16px', borderRadius: 8, border: '2px solid', borderColor: supportType === 'one_time' ? 'var(--primary-500)' : '#e5e7eb', background: supportType === 'one_time' ? 'rgba(99,102,241,0.06)' : 'white', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>
+                <button onClick={() => setSupportType('one_time')} style={{ padding: '10px 16px', borderRadius: 8, border: '2px solid', borderColor: supportType === 'one_time' ? 'var(--primary-500)' : 'var(--border-color)', background: supportType === 'one_time' ? 'rgba(232, 93, 4, 0.06)' : 'white', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>
                   One-time help
                 </button>
-                <button onClick={() => setSupportType('ongoing_mentorship')} style={{ padding: '10px 16px', borderRadius: 8, border: '2px solid', borderColor: supportType === 'ongoing_mentorship' ? 'var(--primary-500)' : '#e5e7eb', background: supportType === 'ongoing_mentorship' ? 'rgba(99,102,241,0.06)' : 'white', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>
+                <button onClick={() => setSupportType('ongoing_mentorship')} style={{ padding: '10px 16px', borderRadius: 8, border: '2px solid', borderColor: supportType === 'ongoing_mentorship' ? 'var(--primary-500)' : 'var(--border-color)', background: supportType === 'ongoing_mentorship' ? 'rgba(232, 93, 4, 0.06)' : 'white', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>
                   Ongoing mentorship
                 </button>
               </div>
@@ -175,10 +192,10 @@ export default function RequestHelpPage() {
               <label htmlFor="group" style={{ fontSize: '0.85rem', cursor: 'pointer' }}>I am open to group resources instead of 1:1 support</label>
             </div>
             {/* Upload area */}
-            <div style={{ border: '2px dashed #d1d5db', borderRadius: 12, padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, background: '#fafafa' }}>
-              <Upload size={24} style={{ color: '#9ca3af' }} />
-              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#6b7280' }}>Upload supporting documents (optional)</div>
-              <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>PDF, DOC, or image files up to 10MB</div>
+            <div style={{ border: '2px dashed var(--gray-300)', borderRadius: 12, padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, background: 'var(--bg-secondary)' }}>
+              <Upload size={24} style={{ color: 'var(--text-muted)' }} />
+              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Upload supporting documents (optional)</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>PDF, DOC, or image files up to 10MB</div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <button className="btn btn-outline" onClick={() => setStep(2)}><ArrowLeft size={16} /> Back</button>
@@ -193,48 +210,55 @@ export default function RequestHelpPage() {
             <h2 className="text-xl font-bold">Review & Submit</h2>
 
             <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div style={{ padding: 16, borderRadius: 10, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Name</div>
+              <div style={{ padding: 16, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Name</div>
                 <div style={{ fontWeight: 600 }}>{firstName} {lastName}</div>
               </div>
-              <div style={{ padding: 16, borderRadius: 10, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Category</div>
+              <div style={{ padding: 16, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Category</div>
                 <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{category}</div>
               </div>
-              <div style={{ padding: 16, borderRadius: 10, background: '#f9fafb', border: '1px solid var(--border-color)', gridColumn: '1 / -1' }}>
-                <div style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Request Title</div>
+              <div style={{ padding: 16, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', gridColumn: '1 / -1' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Request Title</div>
                 <div style={{ fontWeight: 600 }}>{title}</div>
               </div>
-              <div style={{ padding: 16, borderRadius: 10, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Urgency</div>
+              <div style={{ padding: 16, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Urgency</div>
                 <div style={{ fontWeight: 600, textTransform: 'capitalize' }}>{urgency}</div>
               </div>
-              <div style={{ padding: 16, borderRadius: 10, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Support Type</div>
+              <div style={{ padding: 16, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Support Type</div>
                 <div style={{ fontWeight: 600 }}>{supportType === 'one_time' ? 'One-time' : 'Ongoing Mentorship'}</div>
               </div>
             </div>
 
             {/* Disclaimers */}
             <div style={{ padding: 16, borderRadius: 10, background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', gap: 12 }}>
-              <AlertCircle size={18} style={{ color: '#d97706', flexShrink: 0, marginTop: 2 }} />
-              <div style={{ fontSize: '0.8rem', color: '#92400e', lineHeight: 1.6 }}>
+              <AlertCircle size={18} style={{ color: 'var(--accent-600)', flexShrink: 0, marginTop: 2 }} />
+              <div style={{ fontSize: '0.8rem', color: 'var(--primary-800)', lineHeight: 1.6 }}>
                 <strong>Important:</strong> Your request will be sent for secure review. A volunteer may be assigned to assist you. All communication will be securely routed — no one will contact you directly outside the platform.
               </div>
             </div>
 
             {/* Consent */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 16px', borderRadius: 10, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 16px', borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
               <input type="checkbox" id="consent" checked={consent} onChange={() => setConsent(!consent)} style={{ marginTop: 3 }} />
               <label htmlFor="consent" style={{ fontSize: '0.8rem', cursor: 'pointer', lineHeight: 1.5 }}>
                 I agree to the platform terms and conditions. I understand that all support is community-based, securely routed, and does not constitute professional advice. I consent to the platform reviewing my request and assigning a volunteer if appropriate.
               </label>
             </div>
 
+            {error && (
+              <div role="alert" style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(240,73,35,0.1)', color: 'var(--error-500)', fontSize: '0.85rem', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+                <span>{error}</span>
+              </div>
+            )}
+
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <button className="btn btn-outline" onClick={() => setStep(3)}><ArrowLeft size={16} /> Edit</button>
               <button className="btn btn-primary btn-lg" onClick={handleSubmit} disabled={isSubmitting || !consent}>
-                {isSubmitting ? 'Submitting...' : 'Submit Request'}
+                {isSubmitting ? 'Submitting…' : 'Submit Request'}
               </button>
             </div>
           </div>

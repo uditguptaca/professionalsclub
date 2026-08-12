@@ -7,6 +7,7 @@ import "./editorial.css";
 import { AppProvider } from "@/context/app-context";
 import { PortalProvider } from "@/context/portal-context";
 import { MatrimonyProvider } from "@/context/matrimony-context";
+import { getCurrentProfile } from "@/server/auth";
 
 /**
  * Typefaces, self-hosted by next/font.
@@ -41,6 +42,16 @@ const mono = JetBrains_Mono({
   display: 'swap',
   variable: '--font-mono-src',
 });
+
+/**
+ * The root layout resolves the session, which reads cookies, so no route can be
+ * statically prerendered. Declaring it here stops Next attempting a static pass
+ * that is guaranteed to bail out, and keeps the build log free of
+ * DYNAMIC_SERVER_USAGE noise.
+ *
+ * Nothing is lost: every page in this app already renders per-request.
+ */
+export const dynamic = 'force-dynamic';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://professionalsclub.ca';
 
@@ -88,11 +99,15 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Resolved server-side so client components never have to guess who is signed
+  // in, and so a signed-out visitor never briefly renders as signed in.
+  const profile = await getCurrentProfile();
+
   return (
     <html lang="en" className={`${fraunces.variable} ${manrope.variable} ${mono.variable}`}>
       <body>
@@ -100,10 +115,10 @@ export default function RootLayout({
         <a href="#main" className="skip-link">Skip to content</a>
 
         {/* Fixed grain overlay. Breaks the digital flatness of large cream areas
-            without costing a repaint; it never receives pointer events. */}
+            without costing a repaint — it never receives pointer events. */}
         <div className="grain" aria-hidden="true" />
 
-        <AppProvider>
+        <AppProvider initialProfile={profile}>
           <PortalProvider>
             <MatrimonyProvider>
               {children}

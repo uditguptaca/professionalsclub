@@ -25,7 +25,7 @@ export default function AdminBusinesses() {
   const pendingRequests = businessContactRequests.filter(r => r.status === 'pending').length;
 
   const statusColors: Record<string, string> = {
-    verified: '#059669', featured: '#d97706', pending_review: '#6366f1', rejected: '#ef4444', draft: '#9ca3af', inactive: '#6b7280',
+    verified: 'var(--success-600)', featured: 'var(--accent-600)', pending_review: 'var(--primary-600)', rejected: 'var(--error-500)', draft: 'var(--text-muted)', inactive: 'var(--text-secondary)',
   };
 
   return (
@@ -38,10 +38,10 @@ export default function AdminBusinesses() {
       {/* Stats */}
       <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
         {[
-          { label: 'Total Businesses', value: businesses.length, icon: <Building2 size={22} />, color: 'var(--text-primary)', bg: '#f3f4f6' },
-          { label: 'Verified', value: verified, icon: <ShieldCheck size={22} />, color: '#059669', bg: 'rgba(5,150,105,0.1)' },
-          { label: 'Featured', value: featured, icon: <Star size={22} />, color: '#d97706', bg: 'rgba(245,158,11,0.1)' },
-          { label: 'Pending Review', value: pending, icon: <Clock size={22} />, color: '#6366f1', bg: 'rgba(99,102,241,0.1)' },
+          { label: 'Total Businesses', value: businesses.length, icon: <Building2 size={22} />, color: 'var(--text-primary)', bg: 'var(--bg-secondary)' },
+          { label: 'Verified', value: verified, icon: <ShieldCheck size={22} />, color: 'var(--success-600)', bg: 'rgba(5,150,105,0.1)' },
+          { label: 'Featured', value: featured, icon: <Star size={22} />, color: 'var(--accent-600)', bg: 'rgba(245,158,11,0.1)' },
+          { label: 'Pending Review', value: pending, icon: <Clock size={22} />, color: 'var(--primary-600)', bg: 'rgba(232, 93, 4, 0.1)' },
         ].map((s, i) => (
           <div key={i} className="card-stat">
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -106,7 +106,7 @@ export default function AdminBusinesses() {
                   <button
                     type="button"
                     onClick={() => toggleBusinessFeatured(biz.id)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: biz.isFeatured ? '#d97706' : 'var(--gray-300)' }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: biz.isFeatured ? 'var(--accent-600)' : 'var(--gray-300)' }}
                   >
                     {biz.isFeatured ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}
                   </button>
@@ -121,7 +121,7 @@ export default function AdminBusinesses() {
                         <button type="button" className="btn btn-primary" style={{ padding: '5px 12px', fontSize: '0.72rem' }} onClick={() => updateBusinessStatus(biz.id, 'verified')}>
                           <CheckCircle size={12} /> Verify
                         </button>
-                        <button type="button" className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: '0.72rem', color: '#ef4444' }} onClick={() => updateBusinessStatus(biz.id, 'rejected')}>
+                        <button type="button" className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: '0.72rem', color: 'var(--error-500)' }} onClick={() => updateBusinessStatus(biz.id, 'rejected')}>
                           <XCircle size={12} /> Reject
                         </button>
                       </>
@@ -146,11 +146,11 @@ export default function AdminBusinesses() {
 
       {/* Pending Contact Requests Alert */}
       {pendingRequests > 0 && (
-        <div style={{ padding: '16px 20px', borderRadius: 12, background: '#fef3c7', border: '1px solid #fde68a', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <AlertTriangle size={18} style={{ color: '#92400e' }} />
+        <div style={{ padding: '16px 20px', borderRadius: 12, background: 'var(--accent-100)', border: '1px solid var(--accent-200)', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <AlertTriangle size={18} style={{ color: 'var(--primary-800)' }} />
           <div>
-            <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#92400e' }}>{pendingRequests} pending business contact request{pendingRequests > 1 ? 's' : ''}</div>
-            <div style={{ fontSize: '0.78rem', color: '#92400e', opacity: 0.8 }}>Members are waiting for admin-assisted connections.</div>
+            <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--primary-800)' }}>{pendingRequests} pending business contact request{pendingRequests > 1 ? 's' : ''}</div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--primary-800)', opacity: 0.8 }}>Members are waiting for admin-assisted connections.</div>
           </div>
         </div>
       )}

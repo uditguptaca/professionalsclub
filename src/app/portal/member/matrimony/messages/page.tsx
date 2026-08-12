@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/app-context';
-import { createClient } from '@/utils/supabase/client';
+import { getMyMatrimony, listConversations, listMessages, sendMatrimonyMessage } from '@/app/actions/matrimony';
 import type { MatrimonyProfile, MatrimonyConversation, MatrimonyMessage, MatrimonyProfileCard } from '@/types/matrimony';
 import {
   MessageCircle, ArrowLeft, Send, User, ChevronRight, UserCheck, ShieldCheck,
@@ -15,7 +15,6 @@ interface PopulatedConversation extends MatrimonyConversation {
 
 export default function MessagesPage() {
   const { currentUserId } = useApp();
-  const supabase = createClient();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const [loading, setLoading] = useState(true);
@@ -26,60 +25,19 @@ export default function MessagesPage() {
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
 
-  // Load conversations
-  async function loadConversations(profileId: string) {
-    try {
-      const { data, error } = await supabase
-        .from('matrimony_conversations')
-        .select(`
-          id, profile_a_id, profile_b_id, last_message_at, created_at,
-          profile_a:profile_a_id (
-            id, user_id, full_name, display_pref, gender, dob, height_cm, city, province, country, religion, mother_tongue, occupation, qualification, residency_status, diet, marital_status, is_verified_id, is_verified_photo, is_verified_profession, photo_visibility, last_active_at, about_me, completeness_pct, status
-          ),
-          profile_b:profile_b_id (
-            id, user_id, full_name, display_pref, gender, dob, height_cm, city, province, country, religion, mother_tongue, occupation, qualification, residency_status, diet, marital_status, is_verified_id, is_verified_photo, is_verified_profession, photo_visibility, last_active_at, about_me, completeness_pct, status
-          )
-        `)
-        .or(`profile_a_id.eq.${profileId},profile_b_id.eq.${profileId}`)
-        .order('last_message_at', { ascending: false });
-
-      if (error) throw error;
-
-      if (data) {
-        const formatted: PopulatedConversation[] = data.map((item: any) => {
-          const otherProfile = item.profile_a_id === profileId 
-            ? item.profile_b as unknown as MatrimonyProfileCard
-            : item.profile_a as unknown as MatrimonyProfileCard;
-          return {
-            id: item.id,
-            profile_a_id: item.profile_a_id,
-            profile_b_id: item.profile_b_id,
-            last_message_at: item.last_message_at,
-            created_at: item.created_at,
-            otherProfile
-          };
-        }).filter(item => item.otherProfile !== null);
-        setConversations(formatted);
-      }
-    } catch (err) {
-      console.error('Error loading conversations:', err);
-    }
+  // Conversation cards are joined server-side from
+  // matrimony_visible_profiles; matrimony_profiles exposes only your own row.
+  async function loadConversations() {
+    const result = await listConversations();
+    if (result.ok) setConversations(result.data.conversations as unknown as PopulatedConversation[]);
+    else console.error('Error loading conversations:', result.error);
   }
 
   // Load messages for a conversation
   async function loadMessages(convId: string) {
-    try {
-      const { data, error } = await supabase
-        .from('matrimony_messages')
-        .select('*')
-        .eq('conversation_id', convId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      if (data) setMessages(data as MatrimonyMessage[]);
-    } catch (err) {
-      console.error('Error loading messages:', err);
-    }
+    const result = await listMessages(convId);
+    if (result.ok) setMessages(result.data);
+    else console.error('Error loading messages:', result.error);
   }
 
   // Initial load
@@ -87,56 +45,33 @@ export default function MessagesPage() {
     async function init() {
       if (!currentUserId) { setLoading(false); return; }
       setLoading(true);
-      try {
-        const { data: myProf } = await supabase
-          .from('matrimony_profiles')
-          .select('*')
-          .eq('user_id', currentUserId)
-          .single();
-
-        if (myProf) {
-          setMyProfile(myProf as MatrimonyProfile);
-          await loadConversations(myProf.id);
-        }
-      } catch (err) {
-        console.error('Error initializing chat:', err);
-      } finally {
-        setLoading(false);
+      const mine = await getMyMatrimony();
+      if (mine.ok && mine.data.profile) {
+        setMyProfile(mine.data.profile);
+        await loadConversations();
       }
+      setLoading(false);
     }
     init();
   }, [currentUserId]);
 
-  // Handle selected conversation change & Realtime subscription
+  // Poll for new messages while a thread is open.
+  //
+  // Supabase Realtime backed this before. Neon has no equivalent push channel,
+  // and adding a websocket layer for one screen is not worth the moving parts,
+  // so this polls every five seconds and stops when the tab is hidden.
   useEffect(() => {
     if (!selectedConv) return;
-    loadMessages(selectedConv.id);
 
-    // Subscribe to new messages
-    const channel = supabase
-      .channel(`matrimony_messages:conv_id=eq.${selectedConv.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'matrimony_messages',
-          filter: `conversation_id=eq.${selectedConv.id}`
-        },
-        (payload) => {
-          const newMsg = payload.new as MatrimonyMessage;
-          setMessages(prev => {
-            if (prev.some(m => m.id === newMsg.id)) return prev;
-            return [...prev, newMsg];
-          });
-        }
-      )
-      .subscribe();
+    const convId = selectedConv.id;
+    void loadMessages(convId);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [selectedConv, supabase]);
+    const timer = setInterval(() => {
+      if (document.visibilityState === 'visible') void loadMessages(convId);
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [selectedConv]);
 
   // Scroll to bottom when messages update
   useEffect(() => {
@@ -148,42 +83,19 @@ export default function MessagesPage() {
     if (!newMessage.trim() || !selectedConv || !myProfile || sending) return;
     setSending(true);
 
-    try {
-      const { data, error } = await supabase
-        .from('matrimony_messages')
-        .insert([{
-          conversation_id: selectedConv.id,
-          sender_profile_id: myProfile.id,
-          body: newMessage.trim(),
-        }])
-        .select()
-        .single();
+    // The sender is stamped server-side from the session, the conversation's
+    // ordering timestamp is bumped by a trigger, and the recipient is notified
+    // by notify_on_matrimony_message. Nothing here needs to do any of that.
+    const result = await sendMatrimonyMessage(selectedConv.id, newMessage.trim());
 
-      if (error) throw error;
-
-      // Update last message timestamp on conversation
-      await supabase
-        .from('matrimony_conversations')
-        .update({ last_message_at: new Date().toISOString() })
-        .eq('id', selectedConv.id);
-
+    if (result.ok) {
       setNewMessage('');
-      setMessages(prev => [...prev, data as MatrimonyMessage]);
-
-      // Notify the receiver
-      await supabase.from('in_app_notifications').insert([{
-        user_id: selectedConv.otherProfile.user_id,
-        title: 'New Matrimony Message',
-        content: `You received a message from ${myProfile.display_pref === 'full_name' ? myProfile.full_name : myProfile.full_name.split(' ')[0]}.`,
-        category: 'matrimony',
-        link_to: `/portal/member/matrimony/messages`
-      }]);
-
-    } catch (err) {
-      console.error('Error sending message:', err);
-    } finally {
-      setSending(false);
+      setMessages(prev => [...prev, result.data]);
+    } else {
+      console.error('Error sending message:', result.error);
     }
+
+    setSending(false);
   };
 
   function getDisplayName(name: string, pref: string) {
@@ -198,7 +110,7 @@ export default function MessagesPage() {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 16 }}>
         <div style={{
           width: 48, height: 48, border: '3px solid var(--border-color)',
-          borderTopColor: '#0067A5', borderRadius: '50%', animation: 'spin 1s linear infinite',
+          borderTopColor: 'var(--primary-600)', borderRadius: '50%', animation: 'spin 1s linear infinite',
         }} />
         <p style={{ color: 'var(--text-muted)' }}>Loading chat...</p>
       </div>
@@ -237,7 +149,7 @@ export default function MessagesPage() {
         <div style={{ borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', height: '100%' }}>
           <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-color)' }}>
             <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <MessageCircle size={18} style={{ color: '#0067A5' }} /> Messages
+              <MessageCircle size={18} style={{ color: 'var(--primary-600)' }} /> Messages
             </h2>
           </div>
 
@@ -257,24 +169,24 @@ export default function MessagesPage() {
                     onClick={() => setSelectedConv(conv)}
                     style={{
                       padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12,
-                      background: isSelected ? 'rgba(0,103,165,0.06)' : 'transparent',
+                      background: isSelected ? 'rgba(232, 93, 4, 0.06)' : 'transparent',
                       borderBottom: '1px solid var(--border-color)', cursor: 'pointer',
                       transition: 'background 0.2s',
                     }}
                   >
                     <div style={{
                       width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                      background: `linear-gradient(135deg, ${conv.otherProfile.gender === 'female' ? '#ec4899' : '#0067A5'}20, ${conv.otherProfile.gender === 'female' ? '#f472b6' : '#0091d5'}10)`,
+                      background: `linear-gradient(135deg, ${conv.otherProfile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)'}20, ${conv.otherProfile.gender === 'female' ? 'var(--accent-400)' : 'var(--primary-500)'}10)`,
                       display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}>
-                      <User size={20} style={{ color: conv.otherProfile.gender === 'female' ? '#ec4899' : '#0067A5' }} />
+                      <User size={20} style={{ color: conv.otherProfile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                         <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                           {getDisplayName(conv.otherProfile.full_name, conv.otherProfile.display_pref)}
                         </span>
-                        {conv.otherProfile.is_verified_id && <UserCheck size={12} style={{ color: '#0067A5' }} />}
+                        {conv.otherProfile.is_verified_id && <UserCheck size={12} style={{ color: 'var(--primary-600)' }} />}
                       </div>
                       <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {conv.otherProfile.occupation}
@@ -299,15 +211,15 @@ export default function MessagesPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{
                     width: 38, height: 38, borderRadius: 10,
-                    background: `linear-gradient(135deg, ${selectedConv.otherProfile.gender === 'female' ? '#ec4899' : '#0067A5'}20, ${selectedConv.otherProfile.gender === 'female' ? '#f472b6' : '#0091d5'}10)`,
+                    background: `linear-gradient(135deg, ${selectedConv.otherProfile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)'}20, ${selectedConv.otherProfile.gender === 'female' ? 'var(--accent-400)' : 'var(--primary-500)'}10)`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>
-                    <User size={18} style={{ color: selectedConv.otherProfile.gender === 'female' ? '#ec4899' : '#0067A5' }} />
+                    <User size={18} style={{ color: selectedConv.otherProfile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
                   </div>
                   <div>
                     <h3 style={{ fontSize: '0.9rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
                       {getDisplayName(selectedConv.otherProfile.full_name, selectedConv.otherProfile.display_pref)}
-                      {selectedConv.otherProfile.is_verified_id && <UserCheck size={14} style={{ color: '#0067A5' }} />}
+                      {selectedConv.otherProfile.is_verified_id && <UserCheck size={14} style={{ color: 'var(--primary-600)' }} />}
                     </h3>
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{selectedConv.otherProfile.city}, {selectedConv.otherProfile.province}</span>
                   </div>
@@ -318,12 +230,12 @@ export default function MessagesPage() {
               </div>
 
               {/* Message History */}
-              <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: 16, background: 'rgba(0,103,165,0.01)' }}>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: 16, background: 'rgba(232, 93, 4, 0.01)' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
                   <div style={{
                     display: 'inline-flex', alignItems: 'center', gap: 6,
                     padding: '6px 12px', borderRadius: 8, background: 'rgba(0,168,107,0.08)',
-                    color: '#00A86B', fontSize: '0.72rem', fontWeight: 600
+                    color: 'var(--success-500)', fontSize: '0.72rem', fontWeight: 600
                   }}>
                     <Shield size={12} /> Encrypted, secure chat unlocked via mutual interest
                   </div>
@@ -344,7 +256,7 @@ export default function MessagesPage() {
                           maxWidth: '70%',
                           padding: '12px 16px',
                           borderRadius: isMine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                          background: isMine ? '#0067A5' : 'white',
+                          background: isMine ? 'var(--primary-600)' : 'white',
                           color: isMine ? 'white' : 'var(--text-primary)',
                           boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
                           border: isMine ? 'none' : '1px solid var(--border-color)',

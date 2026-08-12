@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/app-context';
-import { createClient } from '@/utils/supabase/client';
+import { getMyMatrimony, saveMatrimonyProfile, deleteMyMatrimonyProfile } from '@/app/actions/matrimony';
 import type { MatrimonyProfile } from '@/types/matrimony';
 import {
   Settings, ArrowLeft, Shield, Eye, PauseCircle, Trash2, CheckCircle2,
@@ -13,7 +13,6 @@ import {
 export default function MatrimonySettingsPage() {
   const router = useRouter();
   const { currentUserId } = useApp();
-  const supabase = createClient();
 
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<MatrimonyProfile | null>(null);
@@ -29,14 +28,11 @@ export default function MatrimonySettingsPage() {
     async function loadSettings() {
       if (!currentUserId) { setLoading(false); return; }
       try {
-        const { data } = await supabase
-          .from('matrimony_profiles')
-          .select('*')
-          .eq('user_id', currentUserId)
-          .single();
+        const result = await getMyMatrimony();
+        const data = result.ok ? result.data.profile : null;
 
         if (data) {
-          setProfile(data as MatrimonyProfile);
+          setProfile(data);
           setPhotoVisibility(data.photo_visibility);
           setIsHidden(data.is_hidden);
         }
@@ -56,17 +52,15 @@ export default function MatrimonySettingsPage() {
     setSavedMsg(false);
 
     try {
-      const { error } = await supabase
-        .from('matrimony_profiles')
-        .update({
-          photo_visibility: photoVisibility,
-          is_hidden: isHidden,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', profile.id);
+      // The action writes against the caller's own listing; no profile id is
+      // sent, so this cannot be pointed at someone else's settings.
+      const result = await saveMatrimonyProfile({
+        photo_visibility: photoVisibility,
+        is_hidden: isHidden,
+      });
 
-      if (error) throw error;
-      
+      if (!result.ok) throw new Error(result.error);
+
       setSavedMsg(true);
       setTimeout(() => setSavedMsg(false), 3000);
     } catch (err) {
@@ -86,14 +80,10 @@ export default function MatrimonySettingsPage() {
 
     setDeleting(true);
     try {
-      // The DB schema has cascading deletes configured on foreign keys.
-      // So deleting the profile row in matrimony_profiles deletes preferences, contact, interests, shortlists, etc.
-      const { error } = await supabase
-        .from('matrimony_profiles')
-        .delete()
-        .eq('id', profile.id);
-
-      if (error) throw error;
+      // Foreign keys cascade, so removing the listing also removes
+      // preferences, contact, interests, shortlists and conversations.
+      const result = await deleteMyMatrimonyProfile();
+      if (!result.ok) throw new Error(result.error);
 
       alert('Your Matrimony Profile has been successfully deleted.');
       router.push('/portal/member/matrimony');
@@ -110,7 +100,7 @@ export default function MatrimonySettingsPage() {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 16 }}>
         <div style={{
           width: 48, height: 48, border: '3px solid var(--border-color)',
-          borderTopColor: '#0067A5', borderRadius: '50%', animation: 'spin 1s linear infinite',
+          borderTopColor: 'var(--primary-600)', borderRadius: '50%', animation: 'spin 1s linear infinite',
         }} />
         <p style={{ color: 'var(--text-muted)' }}>Loading settings...</p>
       </div>
@@ -152,7 +142,7 @@ export default function MatrimonySettingsPage() {
         {/* Privacy Settings Card */}
         <div className="card" style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 20 }}>
           <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Shield size={18} style={{ color: '#0067A5' }} /> Privacy Settings
+            <Shield size={18} style={{ color: 'var(--primary-600)' }} /> Privacy Settings
           </h2>
 
           <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
@@ -188,7 +178,7 @@ export default function MatrimonySettingsPage() {
         {/* Profile Visibility Card */}
         <div className="card" style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 20 }}>
           <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Eye size={18} style={{ color: '#00A86B' }} /> Profile Visibility
+            <Eye size={18} style={{ color: 'var(--success-500)' }} /> Profile Visibility
           </h2>
 
           <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
@@ -201,7 +191,7 @@ export default function MatrimonySettingsPage() {
               />
               <div>
                 <div style={{ fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  Pause Profile (Hide from search) {isHidden && <EyeOff size={14} style={{ color: '#F04923' }} />}
+                  Pause Profile (Hide from search) {isHidden && <EyeOff size={14} style={{ color: 'var(--error-500)' }} />}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.5, marginTop: 2 }}>
                   When paused, your profile will be hidden from search results and browse catalogs.
@@ -219,7 +209,7 @@ export default function MatrimonySettingsPage() {
             Save Settings
           </button>
           {savedMsg && (
-            <span style={{ fontSize: '0.8rem', color: '#00A86B', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--success-500)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
               <CheckCircle2 size={14} /> Settings saved successfully!
             </span>
           )}
@@ -231,7 +221,7 @@ export default function MatrimonySettingsPage() {
         padding: 28, border: '1px solid rgba(240,73,35,0.2)', background: 'rgba(240,73,35,0.01)',
         display: 'flex', flexDirection: 'column', gap: 16, marginTop: 24
       }}>
-        <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8, color: '#F04923' }}>
+        <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--error-500)' }}>
           <Trash2 size={18} /> Danger Zone
         </h2>
         <div style={{ borderTop: '1px solid rgba(240,73,35,0.1)', paddingTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
@@ -241,7 +231,7 @@ export default function MatrimonySettingsPage() {
               Permanently delete all matrimony data. This will not affect your core portal account.
             </div>
           </div>
-          <button className="btn" onClick={handleDeleteProfile} disabled={deleting} style={{ background: '#F04923', color: 'white', border: 'none' }}>
+          <button className="btn" onClick={handleDeleteProfile} disabled={deleting} style={{ background: 'var(--error-500)', color: 'white', border: 'none' }}>
             {deleting ? 'Deleting...' : 'Delete Profile'}
           </button>
         </div>

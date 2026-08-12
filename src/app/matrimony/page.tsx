@@ -7,7 +7,6 @@ import {
   Heart, ShieldCheck, Lock, Eye, UserCheck, ArrowRight,
   ChevronDown, ChevronUp, Sparkles, Star, Users, FileCheck, Fingerprint, HeartHandshake, Search, Send, Clock, Globe, MapPin
 } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
 
 
 const howItWorks = [
@@ -200,30 +199,16 @@ export default function MatrimonyLandingPage() {
   // Active Grid Tab (either brides or grooms)
   const [activeTab, setActiveTab] = useState<'brides' | 'grooms'>('brides');
 
-  // Supabase Fetch
+  // Illustrative sample cards only.
+  //
+  // This is a signed-out marketing page, and the page's own FAQ promises that
+  // profiles are visible only to verified members. It therefore does not query
+  // matrimony_profiles: doing so would let anyone enumerate the real member
+  // base. Signed-in browsing lives at /portal/member/matrimony/browse, behind
+  // the gated view.
   useEffect(() => {
-    async function fetchProfiles() {
-      try {
-        const { data, error } = await supabase
-          .from('matrimony_profiles')
-          .select('*')
-          .eq('status', 'approved')
-          .eq('country', 'Canada'); // strictly Canada only!
-
-        if (data && data.length > 0) {
-          setDbProfiles(data);
-        } else {
-          setDbProfiles(MOCK_MATRIMONY_PROFILES);
-        }
-        if (error) console.error('Supabase error:', error);
-      } catch (err) {
-        console.error('Error connecting to Supabase:', err);
-        setDbProfiles(MOCK_MATRIMONY_PROFILES);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchProfiles();
+    setDbProfiles(MOCK_MATRIMONY_PROFILES);
+    setLoading(false);
   }, []);
 
   // Filter Profiles
@@ -271,7 +256,7 @@ export default function MatrimonyLandingPage() {
         padding: '140px 0 100px',
         display: 'flex',
         alignItems: 'center',
-        background: '#0c0c0e',
+        background: 'var(--text-primary)',
       }}>
         {/* Background Video */}
         <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
@@ -653,7 +638,7 @@ export default function MatrimonyLandingPage() {
                       <div style={{
                         height: 220,
                         position: 'relative',
-                        background: '#1a1a24',
+                        background: 'var(--gray-800)',
                         overflow: 'hidden',
                         display: 'flex',
                         alignItems: 'center',
@@ -694,9 +679,9 @@ export default function MatrimonyLandingPage() {
                           top: 16,
                           left: 16,
                           zIndex: 3,
-                          background: profile.gender === 'female' ? '#fdf2f8' : '#eff6ff',
-                          color: profile.gender === 'female' ? '#db2777' : '#2563eb',
-                          border: `1px solid ${profile.gender === 'female' ? '#fbcfe8' : '#bfdbfe'}`,
+                          background: profile.gender === 'female' ? 'var(--accent-100)' : 'var(--primary-50)',
+                          color: profile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-700)',
+                          border: `1px solid ${profile.gender === 'female' ? 'var(--accent-200)' : 'var(--primary-200)'}`,
                           padding: '4px 10px',
                           borderRadius: 99,
                           fontSize: '0.72rem',
@@ -788,7 +773,7 @@ export default function MatrimonyLandingPage() {
             <div>
               {/* Free Platform Card */}
               <div style={{
-                background: 'linear-gradient(135deg, #0f172a, #1e293b)',
+                background: 'linear-gradient(135deg, var(--gray-900), var(--gray-700))',
                 borderRadius: 20,
                 padding: 28,
                 color: 'white',
@@ -1065,7 +1050,7 @@ export default function MatrimonyLandingPage() {
       {/* ═══════ CTA ═══════ */}
       <section style={{
         padding: '100px 0',
-        background: '#0c0c0e',
+        background: 'var(--text-primary)',
         textAlign: 'center', position: 'relative', overflow: 'hidden',
       }}>
         <div style={{

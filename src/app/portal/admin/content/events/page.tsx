@@ -63,13 +63,13 @@ export default function EventsManagementPage() {
             <tr key={evt.id} style={{ transition: 'background 0.15s' }} onMouseOver={e => (e.currentTarget.style.background = 'var(--bg-secondary)')} onMouseOut={e => (e.currentTarget.style.background = '')}>
               <td style={{ ...tableCellStyle, fontWeight: 700 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {evt.isFeatured && <Star size={14} color="#d97706" fill="#d97706" />}
+                  {evt.isFeatured && <Star size={14} color="var(--accent-600)" fill="var(--accent-600)" />}
                   {evt.title}
                 </div>
               </td>
               <td style={tableCellStyle}>{evt.date}</td>
               <td style={tableCellStyle}><span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} />{evt.location}</span></td>
-              <td style={tableCellStyle}><span style={{ padding: '2px 8px', background: evt.eventType === 'in_person' ? '#d1fae5' : '#dbeafe', color: evt.eventType === 'in_person' ? '#065f46' : '#1e40af', borderRadius: 4, fontSize: '0.7rem', fontWeight: 700, textTransform: 'capitalize' }}>{evt.eventType.replace('_', '-')}</span></td>
+              <td style={tableCellStyle}><span style={{ padding: '2px 8px', background: evt.eventType === 'in_person' ? 'var(--success-50)' : 'var(--primary-50)', color: evt.eventType === 'in_person' ? 'var(--success-600)' : 'var(--primary-700)', borderRadius: 4, fontSize: '0.7rem', fontWeight: 700, textTransform: 'capitalize' }}>{evt.eventType.replace('_', '-')}</span></td>
               <td style={tableCellStyle}><span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Users size={12} />{evt.attendees}/{evt.capacity}</span></td>
               <td style={{ ...tableCellStyle, textAlign: 'right' }}>
                 <button style={actionBtnStyle} onClick={() => openEdit(evt)} title="Edit"><Pencil size={15} color="var(--primary-600)" /></button>
@@ -87,8 +87,8 @@ export default function EventsManagementPage() {
       <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: 8 }}>Events Manager</h1>
       <p style={{ color: 'var(--text-secondary)', marginBottom: 32 }}>Manage upcoming and past events displayed on the public Events page.</p>
 
-      {renderTable('Upcoming Events', upcomingEvents, '#059669')}
-      {renderTable('Past Events', pastEvents, '#94a3b8')}
+      {renderTable('Upcoming Events', upcomingEvents, 'var(--success-600)')}
+      {renderTable('Past Events', pastEvents, 'var(--text-muted)')}
 
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }} onClick={closeModal}>

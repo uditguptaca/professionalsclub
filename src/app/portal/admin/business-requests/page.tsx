@@ -7,10 +7,10 @@ export default function AdminBusinessRequests() {
   const { businessContactRequests } = usePortal();
 
   const statusStyles: Record<string, { bg: string; color: string }> = {
-    pending: { bg: '#fef3c7', color: '#92400e' },
-    in_progress: { bg: '#dbeafe', color: '#1e40af' },
-    completed: { bg: '#d1fae5', color: '#065f46' },
-    closed: { bg: '#f3f4f6', color: '#6b7280' },
+    pending: { bg: 'var(--accent-100)', color: 'var(--primary-800)' },
+    in_progress: { bg: 'var(--primary-50)', color: 'var(--primary-700)' },
+    completed: { bg: 'var(--success-50)', color: 'var(--success-600)' },
+    closed: { bg: 'var(--bg-secondary)', color: 'var(--text-secondary)' },
   };
 
   const helpTypeLabels: Record<string, string> = {
@@ -31,9 +31,9 @@ export default function AdminBusinessRequests() {
       {/* Stats */}
       <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
         {[
-          { label: 'Pending', value: businessContactRequests.filter(r => r.status === 'pending').length, icon: <Clock size={22} />, color: '#d97706', bg: 'rgba(245,158,11,0.1)' },
-          { label: 'In Progress', value: businessContactRequests.filter(r => r.status === 'in_progress').length, icon: <ArrowRight size={22} />, color: '#1e40af', bg: 'rgba(59,130,246,0.1)' },
-          { label: 'Completed', value: businessContactRequests.filter(r => r.status === 'completed').length, icon: <CheckCircle size={22} />, color: '#059669', bg: 'rgba(5,150,105,0.1)' },
+          { label: 'Pending', value: businessContactRequests.filter(r => r.status === 'pending').length, icon: <Clock size={22} />, color: 'var(--accent-600)', bg: 'rgba(245,158,11,0.1)' },
+          { label: 'In Progress', value: businessContactRequests.filter(r => r.status === 'in_progress').length, icon: <ArrowRight size={22} />, color: 'var(--primary-700)', bg: 'rgba(232, 93, 4, 0.1)' },
+          { label: 'Completed', value: businessContactRequests.filter(r => r.status === 'completed').length, icon: <CheckCircle size={22} />, color: 'var(--success-600)', bg: 'rgba(5,150,105,0.1)' },
         ].map((s, i) => (
           <div key={i} className="card-stat">
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -96,7 +96,7 @@ export default function AdminBusinessRequests() {
                     )}
                   </td>
                   <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                    <span style={{ display: 'inline-flex', padding: '3px 10px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700, background: statusStyles[req.status]?.bg || '#f3f4f6', color: statusStyles[req.status]?.color || '#6b7280', textTransform: 'capitalize' }}>
+                    <span style={{ display: 'inline-flex', padding: '3px 10px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700, background: statusStyles[req.status]?.bg || 'var(--bg-secondary)', color: statusStyles[req.status]?.color || 'var(--text-secondary)', textTransform: 'capitalize' }}>
                       {req.status.replace('_', ' ')}
                     </span>
                   </td>

@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
@@ -7,12 +7,36 @@ import {
   ShieldCheck, Star, Tag, MapPin, Phone, Mail, Globe, Clock, Briefcase,
   ArrowLeft, CheckCircle, ExternalLink, User, Calendar, Target,
 } from 'lucide-react';
-import { mockBusinesses } from '@/lib/mock-data';
+import { getBusinessBySlug } from '@/app/actions/public';
+import type { Business } from '@/types';
 
 export default function BusinessProfilePage() {
   const params = useParams();
   const slug = params?.slug as string;
-  const biz = mockBusinesses.find(b => b.slug === slug);
+
+  const [biz, setBiz] = useState<Business | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      // An unverified or missing slug is a normal "not found": RLS simply does
+      // not return the row to an anonymous reader.
+      setBiz(await getBusinessBySlug(slug));
+      setLoading(false);
+    }
+    if (slug) void load();
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <div style={{ maxWidth: 600, margin: '120px auto', textAlign: 'center', padding: 24, color: 'var(--text-muted)' }}>
+          Loading…
+        </div>
+      </>
+    );
+  }
 
   if (!biz) {
     return (

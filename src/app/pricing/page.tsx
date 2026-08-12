@@ -10,7 +10,7 @@ export default function PricingPage() {
       <Navbar />
 
       {/* Hero */}
-      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 80, background: '#0c0c0e', overflow: 'hidden' }}>
+      <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 80, background: 'var(--text-primary)', overflow: 'hidden' }}>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
             Completely <span style={{ color: 'var(--primary-600)' }}>Free</span>
@@ -55,9 +55,9 @@ export default function PricingPage() {
 
             {/* Volunteers */}
             <div style={{ borderRadius: 20, border: '2px solid var(--border-color)', padding: 40, background: 'var(--bg-primary)', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: '#0c0c0e' }} />
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: 'var(--text-primary)' }} />
               <div style={{ textAlign: 'center', marginBottom: 28 }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0c0c0e', textTransform: 'uppercase', letterSpacing: '0.1em' }}>For Volunteers</span>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>For Volunteers</span>
                 <div style={{ fontSize: '3.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', margin: '8px 0' }}>$0</div>
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Always free</div>
               </div>
@@ -76,7 +76,7 @@ export default function PricingPage() {
                   <span style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>{f}</span>
                 </div>
               ))}
-              <Link href="/portal/auth" className="btn" style={{ width: '100%', marginTop: 28, padding: '14px 0', textAlign: 'center', display: 'block', background: '#0c0c0e', color: 'white', border: 'none' }}>
+              <Link href="/portal/auth" className="btn" style={{ width: '100%', marginTop: 28, padding: '14px 0', textAlign: 'center', display: 'block', background: 'var(--text-primary)', color: 'white', border: 'none' }}>
                 Apply to Volunteer
               </Link>
             </div>
@@ -93,9 +93,9 @@ export default function PricingPage() {
           </div>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {[
-              { icon: <Heart size={28} />, title: 'Community-Driven', desc: 'Our team and volunteers manage operations as a community service.', color: '#e85d04' },
-              { icon: <Shield size={28} />, title: '100% Free Forever', desc: 'The entire platform is and will always remain completely free to use, with no hidden fees or charges.', color: '#0c0c0e' },
-              { icon: <Users size={28} />, title: 'Pay It Forward', desc: 'Consider volunteering to help the next wave of newcomers.', color: '#e85d04' },
+              { icon: <Heart size={28} />, title: 'Community-Driven', desc: 'Our team and volunteers manage operations as a community service.', color: 'var(--primary-600)' },
+              { icon: <Shield size={28} />, title: '100% Free Forever', desc: 'The entire platform is and will always remain completely free to use, with no hidden fees or charges.', color: 'var(--text-primary)' },
+              { icon: <Users size={28} />, title: 'Pay It Forward', desc: 'Consider volunteering to help the next wave of newcomers.', color: 'var(--primary-600)' },
             ].map((item, i) => (
               <div key={i} style={{ textAlign: 'center', padding: '36px 28px', borderRadius: 20, background: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
                 <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(232, 93, 4, 0.08)', color: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/app-context';
-import { createClient } from '@/utils/supabase/client';
+import { getMyMatrimony } from '@/app/actions/matrimony';
 import type { MatrimonyProfile, MatrimonyPreferences, MatrimonyContact, MatrimonyMedia } from '@/types/matrimony';
 import {
   User, Heart, MapPin, Briefcase, GraduationCap, Users, Calendar,
@@ -13,17 +13,16 @@ import {
 
 const statusConfig: Record<string, { color: string; bg: string; label: string; icon: React.ElementType }> = {
   draft: { color: 'var(--text-secondary)', bg: 'rgba(100,116,139,0.1)', label: 'Draft', icon: Clock },
-  pending: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', label: 'Pending Admin Review', icon: Clock },
-  approved: { color: '#00A86B', bg: 'rgba(0,168,107,0.1)', label: 'Approved & Live', icon: CheckCircle2 },
-  rejected: { color: '#F04923', bg: 'rgba(240,73,35,0.1)', label: 'Rejected', icon: XCircle },
-  changes_requested: { color: '#d97706', bg: 'rgba(217,119,6,0.1)', label: 'Changes Requested', icon: AlertCircle },
-  suspended: { color: '#dc2626', bg: 'rgba(220,38,38,0.1)', label: 'Suspended', icon: XCircle },
+  pending: { color: 'var(--warning-500)', bg: 'rgba(245,158,11,0.1)', label: 'Pending Admin Review', icon: Clock },
+  approved: { color: 'var(--success-500)', bg: 'rgba(0,168,107,0.1)', label: 'Approved & Live', icon: CheckCircle2 },
+  rejected: { color: 'var(--error-500)', bg: 'rgba(240,73,35,0.1)', label: 'Rejected', icon: XCircle },
+  changes_requested: { color: 'var(--accent-600)', bg: 'rgba(217,119,6,0.1)', label: 'Changes Requested', icon: AlertCircle },
+  suspended: { color: 'var(--error-600)', bg: 'rgba(220,38,38,0.1)', label: 'Suspended', icon: XCircle },
 };
 
 export default function MyProfilePage() {
   const router = useRouter();
   const { currentUserId } = useApp();
-  const supabase = createClient();
 
   const [profile, setProfile] = useState<MatrimonyProfile | null>(null);
   const [preferences, setPreferences] = useState<MatrimonyPreferences | null>(null);
@@ -34,37 +33,20 @@ export default function MyProfilePage() {
   useEffect(() => {
     async function loadProfile() {
       if (!currentUserId) { setLoading(false); return; }
-      try {
-        const { data: prof } = await supabase
-          .from('matrimony_profiles')
-          .select('*')
-          .eq('user_id', currentUserId)
-          .single();
 
-        if (prof) {
-          setProfile(prof as MatrimonyProfile);
-
-          const [
-            { data: prefs },
-            { data: cont },
-            { data: med },
-          ] = await Promise.all([
-            supabase.from('matrimony_preferences').select('*').eq('profile_id', prof.id).maybeSingle(),
-            supabase.from('matrimony_contacts').select('*').eq('profile_id', prof.id).maybeSingle(),
-            supabase.from('matrimony_media').select('*').eq('profile_id', prof.id),
-          ]);
-
-          if (prefs) setPreferences(prefs as MatrimonyPreferences);
-          if (cont) setContact(cont as MatrimonyContact);
-          if (med) setMedia(med as MatrimonyMedia[]);
-        }
-      } catch (err) {
-        console.error('Error loading profile:', err);
-      } finally {
-        setLoading(false);
+      // One action returns the listing with its preferences, contact and media.
+      const result = await getMyMatrimony();
+      if (result.ok) {
+        setProfile(result.data.profile);
+        setPreferences(result.data.preferences);
+        setContact(result.data.contact);
+        setMedia(result.data.media);
+      } else {
+        console.error('Error loading profile:', result.error);
       }
+      setLoading(false);
     }
-    loadProfile();
+    void loadProfile();
   }, [currentUserId]);
 
   if (loading) {
@@ -72,7 +54,7 @@ export default function MyProfilePage() {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 16 }}>
         <div style={{
           width: 48, height: 48, border: '3px solid var(--border-color)',
-          borderTopColor: '#0067A5', borderRadius: '50%', animation: 'spin 1s linear infinite',
+          borderTopColor: 'var(--primary-600)', borderRadius: '50%', animation: 'spin 1s linear infinite',
         }} />
         <p style={{ color: 'var(--text-muted)' }}>Loading your matrimony profile...</p>
       </div>
@@ -86,7 +68,7 @@ export default function MyProfilePage() {
           width: 64, height: 64, borderRadius: '50%', background: 'rgba(240,73,35,0.1)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto'
         }}>
-          <AlertCircle size={32} color="#F04923" />
+          <AlertCircle size={32} color="var(--error-500)" />
         </div>
         <h2 style={{ fontWeight: 800 }}>Profile Not Found</h2>
         <p style={{ color: 'var(--text-secondary)' }}>
@@ -116,18 +98,18 @@ export default function MyProfilePage() {
 
       {/* Main Header Card */}
       <div className="card" style={{
-        background: 'linear-gradient(145deg, var(--bg-card), rgba(0,103,165,0.02))',
+        background: 'linear-gradient(145deg, var(--bg-card), rgba(232, 93, 4, 0.02))',
         border: '1px solid var(--border-color)', borderRadius: 24, padding: 32,
         display: 'flex', gap: 32, flexWrap: 'wrap', alignItems: 'center'
       }}>
         {/* Avatar/Photo */}
         <div style={{
           width: 140, height: 140, borderRadius: 24, flexShrink: 0,
-          background: `linear-gradient(135deg, ${profile.gender === 'female' ? '#ec4899' : '#0067A5'}20, ${profile.gender === 'female' ? '#f472b6' : '#0091d5'}10)`,
+          background: `linear-gradient(135deg, ${profile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)'}20, ${profile.gender === 'female' ? 'var(--accent-400)' : 'var(--primary-500)'}10)`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 8px 30px rgba(0,0,0,0.04)', border: '1px solid var(--border-color)'
         }}>
-          <User size={64} style={{ color: profile.gender === 'female' ? '#ec4899' : '#0067A5' }} />
+          <User size={64} style={{ color: profile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
         </div>
 
         {/* Basic info */}
@@ -137,7 +119,7 @@ export default function MyProfilePage() {
               {profile.full_name}
             </h1>
             {profile.is_verified_id && (
-              <span className="badge" style={{ background: 'rgba(0,103,165,0.1)', color: '#0067A5', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <span className="badge" style={{ background: 'rgba(232, 93, 4, 0.1)', color: 'var(--primary-600)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 <CheckCircle2 size={12} /> ID Verified
               </span>
             )}
@@ -178,7 +160,7 @@ export default function MyProfilePage() {
           {/* About Me */}
           <div className="card" style={{ padding: 24 }}>
             <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Smile size={18} style={{ color: '#0067A5' }} /> About Me
+              <Smile size={18} style={{ color: 'var(--primary-600)' }} /> About Me
             </h2>
             <p style={{ lineHeight: 1.7, color: 'var(--text-secondary)', whiteSpace: 'pre-line', margin: 0, fontSize: '0.95rem' }}>
               {profile.about_me || 'No bio written yet.'}
@@ -188,7 +170,7 @@ export default function MyProfilePage() {
           {/* Background Details */}
           <div className="card" style={{ padding: 24 }}>
             <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Users size={18} style={{ color: '#00A86B' }} /> Religious & Cultural Background
+              <Users size={18} style={{ color: 'var(--success-500)' }} /> Religious & Cultural Background
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
               {[
@@ -211,7 +193,7 @@ export default function MyProfilePage() {
           {/* Education & Career */}
           <div className="card" style={{ padding: 24 }}>
             <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Briefcase size={18} style={{ color: '#FFBF00' }} /> Education & Career
+              <Briefcase size={18} style={{ color: 'var(--accent-400)' }} /> Education & Career
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
               {[
@@ -236,7 +218,7 @@ export default function MyProfilePage() {
           {/* Family details */}
           <div className="card" style={{ padding: 24 }}>
             <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <HeartHandshake size={18} style={{ color: '#7c3aed' }} /> Family & Lifestyle
+              <HeartHandshake size={18} style={{ color: 'var(--primary-700)' }} /> Family & Lifestyle
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
               {[
@@ -268,9 +250,9 @@ export default function MyProfilePage() {
         {/* Right Column: Preferences & contact */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           {/* Contact details */}
-          <div className="card" style={{ padding: 24, border: '1px solid rgba(0,103,165,0.15)', background: 'rgba(0,103,165,0.01)' }}>
+          <div className="card" style={{ padding: 24, border: '1px solid rgba(232, 93, 4, 0.15)', background: 'rgba(232, 93, 4, 0.01)' }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Phone size={18} style={{ color: '#0067A5' }} /> Contact Details
+              <Phone size={18} style={{ color: 'var(--primary-600)' }} /> Contact Details
             </h2>
             {contact ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -311,7 +293,7 @@ export default function MyProfilePage() {
           {/* Preferences Summary */}
           <div className="card" style={{ padding: 24 }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Star size={18} style={{ color: '#FFBF00' }} /> Partner Preferences
+              <Star size={18} style={{ color: 'var(--accent-400)' }} /> Partner Preferences
             </h2>
             {preferences ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

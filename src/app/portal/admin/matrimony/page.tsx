@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { adminMatrimonyOverview } from '@/app/actions/matrimony';
 import { useApp } from '@/context/app-context';
 import Link from 'next/link';
 import {
@@ -20,11 +20,11 @@ import type {
 // ========== HELPERS ==========
 const STATUS_COLORS: Record<MatrimonyProfileStatus, { bg: string; color: string; label: string }> = {
   draft: { bg: 'rgba(71,85,105,0.12)', color: 'var(--text-secondary)', label: 'Draft' },
-  pending: { bg: 'rgba(245,158,11,0.14)', color: '#d97706', label: 'Pending' },
-  approved: { bg: 'rgba(0,168,107,0.14)', color: '#059669', label: 'Approved' },
-  rejected: { bg: 'rgba(240,73,35,0.14)', color: '#dc2626', label: 'Rejected' },
-  changes_requested: { bg: 'rgba(249,115,22,0.14)', color: '#ea580c', label: 'Changes Req.' },
-  suspended: { bg: 'rgba(30,41,59,0.18)', color: '#334155', label: 'Suspended' },
+  pending: { bg: 'rgba(245,158,11,0.14)', color: 'var(--accent-600)', label: 'Pending' },
+  approved: { bg: 'rgba(0,168,107,0.14)', color: 'var(--success-600)', label: 'Approved' },
+  rejected: { bg: 'rgba(240,73,35,0.14)', color: 'var(--error-600)', label: 'Rejected' },
+  changes_requested: { bg: 'rgba(249,115,22,0.14)', color: 'var(--primary-500)', label: 'Changes Req.' },
+  suspended: { bg: 'rgba(30,41,59,0.18)', color: 'var(--gray-600)', label: 'Suspended' },
 };
 
 function StatusBadge({ status }: { status: MatrimonyProfileStatus }) {
@@ -75,7 +75,7 @@ function SkeletonRow() {
 
 // ========== SIMPLE BAR CHART (no recharts dep) ==========
 function SimpleBarChart({ data, maxVal }: { data: { label: string; value: number }[]; maxVal: number }) {
-  const barColors = ['#0067A5', '#2b91b9', '#4baed0', '#88c9df', '#0067A5', '#2b91b9', '#4baed0', '#88c9df', '#0067A5', '#2b91b9', '#4baed0', '#88c9df'];
+  const barColors = ['var(--primary-600)', 'var(--primary-500)', 'var(--primary-400)', 'var(--primary-200)', 'var(--primary-600)', 'var(--primary-500)', 'var(--primary-400)', 'var(--primary-200)', 'var(--primary-600)', 'var(--primary-500)', 'var(--primary-400)', 'var(--primary-200)'];
   return (
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 200, padding: '0 4px' }}>
       {data.map((d, i) => (
@@ -130,7 +130,6 @@ type TabId = 'pending' | 'all' | 'reports' | 'verifications' | 'audit' | 'analyt
 
 // ========== MAIN PAGE ==========
 export default function AdminMatrimonyPage() {
-  const supabase = createClient();
   const { currentUserId } = useApp();
 
   // State
@@ -150,24 +149,21 @@ export default function AdminMatrimonyPage() {
 
   // ===== FETCH DATA =====
   const fetchData = async () => {
-    try {
-      const [profilesRes, reportsRes, verificationsRes, auditRes] = await Promise.all([
-        supabase.from('matrimony_profiles').select('*').order('created_at', { ascending: false }),
-        supabase.from('matrimony_reports').select('*').order('created_at', { ascending: false }),
-        supabase.from('matrimony_verifications').select('*').order('created_at', { ascending: false }),
-        supabase.from('matrimony_admin_audit').select('*').order('created_at', { ascending: false }).limit(100),
-      ]);
+    // Admin-only at both layers: requireAdminId() in the action, and the RLS
+    // policies on these tables.
+    const result = await adminMatrimonyOverview();
 
-      if (profilesRes.data) setProfiles(profilesRes.data);
-      if (reportsRes.data) setReports(reportsRes.data);
-      if (verificationsRes.data) setVerifications(verificationsRes.data);
-      if (auditRes.data) setAuditLog(auditRes.data);
-    } catch (err) {
-      console.error('Error fetching matrimony admin data:', err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+    if (result.ok) {
+      setProfiles(result.data.profiles);
+      setReports(result.data.reports);
+      setVerifications(result.data.verifications);
+      setAuditLog(result.data.audit as unknown as MatrimonyAdminAudit[]);
+    } else {
+      console.error('Error fetching matrimony admin data:', result.error);
     }
+
+    setLoading(false);
+    setRefreshing(false);
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -214,12 +210,12 @@ export default function AdminMatrimonyPage() {
 
   // ===== ANALYTICS DATA =====
   const pieData = useMemo(() => [
-    { label: 'Approved', value: stats.approved, color: '#059669' },
-    { label: 'Pending', value: stats.pending, color: '#d97706' },
-    { label: 'Rejected', value: stats.rejected, color: '#dc2626' },
-    { label: 'Suspended', value: stats.suspended, color: '#334155' },
+    { label: 'Approved', value: stats.approved, color: 'var(--success-600)' },
+    { label: 'Pending', value: stats.pending, color: 'var(--accent-600)' },
+    { label: 'Rejected', value: stats.rejected, color: 'var(--error-600)' },
+    { label: 'Suspended', value: stats.suspended, color: 'var(--gray-600)' },
     { label: 'Draft', value: profiles.filter(p => p.status === 'draft').length, color: 'var(--text-muted)' },
-    { label: 'Changes Req.', value: profiles.filter(p => p.status === 'changes_requested').length, color: '#ea580c' },
+    { label: 'Changes Req.', value: profiles.filter(p => p.status === 'changes_requested').length, color: 'var(--primary-500)' },
   ], [profiles, stats]);
 
   const weeklyData = useMemo(() => {
@@ -271,19 +267,19 @@ export default function AdminMatrimonyPage() {
       {/* ===== STATS ROW ===== */}
       <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
         {[
-          { label: 'Total Profiles', value: stats.total, icon: <Users size={20} />, color: '#0067A5', bg: 'rgba(0,103,165,0.1)' },
-          { label: 'Pending Review', value: stats.pending, icon: <Clock size={20} />, color: '#d97706', bg: 'rgba(245,158,11,0.1)', alert: stats.pending > 0 },
-          { label: 'Approved', value: stats.approved, icon: <CheckCircle size={20} />, color: '#059669', bg: 'rgba(5,150,105,0.1)' },
-          { label: 'Rejected', value: stats.rejected, icon: <XCircle size={20} />, color: '#dc2626', bg: 'rgba(220,38,38,0.1)' },
-          { label: 'Suspended', value: stats.suspended, icon: <Ban size={20} />, color: '#334155', bg: 'rgba(51,65,85,0.1)' },
-          { label: 'Open Reports', value: stats.openReports, icon: <AlertTriangle size={20} />, color: '#ea580c', bg: 'rgba(234,88,12,0.1)', alert: stats.openReports > 0 },
-          { label: 'Pending Verif.', value: stats.pendingVerifications, icon: <ShieldCheck size={20} />, color: '#7c3aed', bg: 'rgba(124,58,237,0.1)' },
+          { label: 'Total Profiles', value: stats.total, icon: <Users size={20} />, color: 'var(--primary-600)', bg: 'rgba(232, 93, 4, 0.1)' },
+          { label: 'Pending Review', value: stats.pending, icon: <Clock size={20} />, color: 'var(--accent-600)', bg: 'rgba(245,158,11,0.1)', alert: stats.pending > 0 },
+          { label: 'Approved', value: stats.approved, icon: <CheckCircle size={20} />, color: 'var(--success-600)', bg: 'rgba(5,150,105,0.1)' },
+          { label: 'Rejected', value: stats.rejected, icon: <XCircle size={20} />, color: 'var(--error-600)', bg: 'rgba(220,38,38,0.1)' },
+          { label: 'Suspended', value: stats.suspended, icon: <Ban size={20} />, color: 'var(--gray-600)', bg: 'rgba(51,65,85,0.1)' },
+          { label: 'Open Reports', value: stats.openReports, icon: <AlertTriangle size={20} />, color: 'var(--primary-500)', bg: 'rgba(234,88,12,0.1)', alert: stats.openReports > 0 },
+          { label: 'Pending Verif.', value: stats.pendingVerifications, icon: <ShieldCheck size={20} />, color: 'var(--primary-700)', bg: 'rgba(232, 93, 4, 0.1)' },
         ].map((item, i) => (
           <div key={i} className="card-stat" style={{ position: 'relative' }}>
             {item.alert && (
               <div style={{
                 position: 'absolute', top: 10, right: 10, width: 8, height: 8,
-                borderRadius: '50%', background: '#F04923',
+                borderRadius: '50%', background: 'var(--error-500)',
                 animation: 'pulse 2s infinite',
                 boxShadow: '0 0 6px rgba(240,73,35,0.5)',
               }} />
@@ -315,7 +311,7 @@ export default function AdminMatrimonyPage() {
               {tab.icon}
               {tab.label}
               {tab.count !== undefined && (
-                <span className="count" style={activeTab === tab.id ? { background: 'rgba(0,103,165,0.15)', color: 'var(--primary-600)' } : {}}>
+                <span className="count" style={activeTab === tab.id ? { background: 'rgba(232, 93, 4, 0.15)', color: 'var(--primary-600)' } : {}}>
                   {tab.count}
                 </span>
               )}
@@ -331,7 +327,7 @@ export default function AdminMatrimonyPage() {
         <div className="card" style={{ padding: 0 }}>
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ fontWeight: 700, fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Clock size={16} style={{ color: '#d97706' }} /> Pending Review Queue
+              <Clock size={16} style={{ color: 'var(--accent-600)' }} /> Pending Review Queue
             </h3>
             <span className="badge badge-warning">{pendingProfiles.length} awaiting</span>
           </div>
@@ -379,13 +375,13 @@ export default function AdminMatrimonyPage() {
 
                     {/* Completeness */}
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: profile.completeness_pct >= 80 ? 'var(--success-600)' : profile.completeness_pct >= 50 ? '#d97706' : 'var(--error-500)' }}>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: profile.completeness_pct >= 80 ? 'var(--success-600)' : profile.completeness_pct >= 50 ? 'var(--accent-600)' : 'var(--error-500)' }}>
                         {profile.completeness_pct}%
                       </div>
                       <div style={{ width: 60, height: 4, borderRadius: 2, background: 'var(--gray-200)', marginTop: 4 }}>
                         <div style={{
                           height: '100%', borderRadius: 2, width: `${profile.completeness_pct}%`,
-                          background: profile.completeness_pct >= 80 ? 'var(--success-500)' : profile.completeness_pct >= 50 ? '#d97706' : 'var(--error-500)',
+                          background: profile.completeness_pct >= 80 ? 'var(--success-500)' : profile.completeness_pct >= 50 ? 'var(--accent-600)' : 'var(--error-500)',
                           transition: 'width 0.5s',
                         }} />
                       </div>
@@ -496,7 +492,7 @@ export default function AdminMatrimonyPage() {
         <div className="card" style={{ padding: 0 }}>
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ fontWeight: 700, fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <AlertTriangle size={16} style={{ color: '#ea580c' }} /> Open Reports
+              <AlertTriangle size={16} style={{ color: 'var(--primary-500)' }} /> Open Reports
             </h3>
             <span className="badge badge-error">{openReports.length} open</span>
           </div>
@@ -518,7 +514,7 @@ export default function AdminMatrimonyPage() {
                   <div style={{
                     width: 40, height: 40, borderRadius: 10,
                     background: 'rgba(240,73,35,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#F04923', flexShrink: 0,
+                    color: 'var(--error-500)', flexShrink: 0,
                   }}>
                     <AlertTriangle size={18} />
                   </div>
@@ -547,7 +543,7 @@ export default function AdminMatrimonyPage() {
         <div className="card" style={{ padding: 0 }}>
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ fontWeight: 700, fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <ShieldCheck size={16} style={{ color: '#7c3aed' }} /> Pending Verifications
+              <ShieldCheck size={16} style={{ color: 'var(--primary-700)' }} /> Pending Verifications
             </h3>
             <span className="badge badge-primary">{pendingVerifs.length} pending</span>
           </div>
@@ -568,8 +564,8 @@ export default function AdminMatrimonyPage() {
                 }}>
                   <div style={{
                     width: 40, height: 40, borderRadius: 10,
-                    background: 'rgba(124,58,237,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#7c3aed', flexShrink: 0,
+                    background: 'rgba(232, 93, 4, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'var(--primary-700)', flexShrink: 0,
                   }}>
                     <ShieldCheck size={18} />
                   </div>
@@ -617,9 +613,9 @@ export default function AdminMatrimonyPage() {
             <div>
               {auditLog.map((entry, idx) => {
                 const actionColors: Record<string, string> = {
-                  'approve': '#059669', 'reject': '#dc2626', 'suspend': '#334155',
-                  'request_changes': '#ea580c', 'verify_id': '#7c3aed',
-                  'verify_photo': '#7c3aed', 'verify_profession': '#7c3aed',
+                  'approve': 'var(--success-600)', 'reject': 'var(--error-600)', 'suspend': 'var(--gray-600)',
+                  'request_changes': 'var(--primary-500)', 'verify_id': 'var(--primary-700)',
+                  'verify_photo': 'var(--primary-700)', 'verify_profession': 'var(--primary-700)',
                 };
                 const actionColor = Object.entries(actionColors).find(([k]) => entry.action?.toLowerCase().includes(k))?.[1] || 'var(--primary-600)';
                 return (
@@ -699,9 +695,9 @@ export default function AdminMatrimonyPage() {
               </div>
             ) : (
               <SimplePieChart data={[
-                { label: 'Male', value: profiles.filter(p => p.gender === 'male').length, color: '#0067A5' },
-                { label: 'Female', value: profiles.filter(p => p.gender === 'female').length, color: '#ec4899' },
-                { label: 'Other', value: profiles.filter(p => p.gender === 'other').length, color: '#8b5cf6' },
+                { label: 'Male', value: profiles.filter(p => p.gender === 'male').length, color: 'var(--primary-600)' },
+                { label: 'Female', value: profiles.filter(p => p.gender === 'female').length, color: 'var(--accent-600)' },
+                { label: 'Other', value: profiles.filter(p => p.gender === 'other').length, color: 'var(--primary-600)' },
               ].filter(d => d.value > 0)} />
             )}
           </div>

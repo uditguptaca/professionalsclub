@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
@@ -8,22 +8,23 @@ import { CheckCircle2, Upload, ArrowLeft, ArrowRight, Shield, HandHeart, Check }
 
 export default function VolunteerApplicationPage() {
   const router = useRouter();
-  const { currentUserId } = useApp();
-  const { addVolunteerApp, volunteerApps } = usePortal();
+  const { profile, currentUserId } = useApp();
+  const { addVolunteerApp, volunteerApps, error } = usePortal();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Check if already applied
   const existingApp = volunteerApps.find(a => a.memberId === currentUserId);
 
-  // Form state
-  const [firstName] = useState('Priya');
-  const [lastName] = useState('Sharma');
-  const [email] = useState('priya.sharma@gmail.com');
-  const [phone] = useState('+1-416-555-0101');
-  const [pcNumber] = useState('PC-2025-0042');
-  const [city] = useState('Toronto');
-  const [province] = useState('Ontario');
+  // Identity comes from the signed-in member's profile. These were hardcoded
+  // sample values, so every applicant submitted the same stranger's details.
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [pcNumber, setPcNumber] = useState('');
+  const [city, setCity] = useState('');
+  const [province, setProvince] = useState('');
   const [linkedinUrl, setLinkedinUrl] = useState('');
   const [profession, setProfession] = useState('');
   const [organization, setOrganization] = useState('');
@@ -40,11 +41,26 @@ export default function VolunteerApplicationPage() {
   const [agreedAdmin, setAgreedAdmin] = useState(false);
   const [consentScreen, setConsentScreen] = useState(false);
 
+  useEffect(() => {
+    if (!profile) return;
+    setFirstName(profile.firstName ?? '');
+    setLastName(profile.lastName ?? '');
+    setEmail(profile.email ?? '');
+    setPhone(profile.phone ?? '');
+    setPcNumber(profile.pcNumber ?? '');
+    setCity(profile.city ?? '');
+    setProvince(profile.province ?? '');
+    // Prefill the professional fields the signup wizard already collected.
+    setProfession((prev) => prev || profile.jobTitle || '');
+    setOrganization((prev) => prev || profile.company || '');
+    setLinkedinUrl((prev) => prev || profile.linkedinUrl || '');
+  }, [profile]);
+
   if (existingApp) {
     return (
       <div className="animate-fade-in" style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center', padding: '80px 20px' }}>
-        <div style={{ width: 64, height: 64, borderRadius: '50%', background: existingApp.status === 'approved' ? '#059669' : 'rgba(245,158,11,0.15)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
-          {existingApp.status === 'approved' ? <CheckCircle2 size={28} style={{ color: 'white' }} /> : <HandHeart size={28} style={{ color: '#d97706' }} />}
+        <div style={{ width: 64, height: 64, borderRadius: '50%', background: existingApp.status === 'approved' ? 'var(--success-600)' : 'rgba(245,158,11,0.15)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
+          {existingApp.status === 'approved' ? <CheckCircle2 size={28} style={{ color: 'white' }} /> : <HandHeart size={28} style={{ color: 'var(--accent-600)' }} />}
         </div>
         <h1 className="text-2xl font-bold font-display mb-3">
           {existingApp.status === 'approved' ? 'You are an Approved Volunteer!' : 'Application Submitted'}
@@ -65,28 +81,31 @@ export default function VolunteerApplicationPage() {
     setAreas(a => a.includes(cat) ? a.filter(c => c !== cat) : [...a, cat]);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
-    setTimeout(() => {
-      addVolunteerApp({
-        memberId: currentUserId,
-        memberName: `${firstName} ${lastName}`,
-        email, phone, pcNumber, city, province,
-        linkedinUrl, currentProfession: profession, organization, yearsExperience: experience,
-        expertiseAreas: areas as any, languages: languages.split(',').map(l => l.trim()),
-        availability, maxCasesPerMonth: maxCases,
-        mentorshipInterest: mentorship, referralSupportInterest: areas.includes('Job Referrals and Placement Assistance'),
-        resumeReviewInterest: areas.includes('Resume and Cover Letter Review'),
-        settlementSupportInterest: areas.includes('Newcomer Settlement Support'),
-        taxGuidanceInterest: areas.includes('Tax Consultation'),
-        immigrationGuidanceInterest: areas.includes('Immigration Queries'),
-        motivation, experienceSummary: expSummary,
-        documents: [], agreedToRules: agreedRules, agreedNoDirectContact: agreedNoContact,
-        agreedAdminMediated: agreedAdmin, consentToScreening: consentScreen,
-      });
-      setIsSubmitting(false);
-      router.push('/portal/member/my-volunteer');
-    }, 1000);
+
+    // member_id is stamped server-side from the session; the value here is
+    // ignored. Waits on the real write instead of a simulated delay.
+    await addVolunteerApp({
+      memberId: currentUserId,
+      memberName: `${firstName} ${lastName}`,
+      email, phone, pcNumber, city, province,
+      linkedinUrl, currentProfession: profession, organization, yearsExperience: experience,
+      expertiseAreas: areas as any, languages: languages.split(',').map(l => l.trim()),
+      availability, maxCasesPerMonth: maxCases,
+      mentorshipInterest: mentorship, referralSupportInterest: areas.includes('Job Referrals and Placement Assistance'),
+      resumeReviewInterest: areas.includes('Resume and Cover Letter Review'),
+      settlementSupportInterest: areas.includes('Newcomer Settlement Support'),
+      taxGuidanceInterest: areas.includes('Tax Consultation'),
+      immigrationGuidanceInterest: areas.includes('Immigration Queries'),
+      motivation, experienceSummary: expSummary,
+      documents: [], agreedToRules: agreedRules, agreedNoDirectContact: agreedNoContact,
+      agreedAdminMediated: agreedAdmin, consentToScreening: consentScreen,
+    });
+
+    setIsSubmitting(false);
+    router.push('/portal/member/my-volunteer');
   };
 
   const allAgreed = agreedRules && agreedNoContact && agreedAdmin && consentScreen;
@@ -105,13 +124,13 @@ export default function VolunteerApplicationPage() {
             <div style={{
               width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontWeight: 700, fontSize: '0.85rem', border: '3px solid',
-              borderColor: step > i ? '#059669' : step === i ? 'var(--primary-500)' : '#e5e7eb',
-              background: step > i ? '#059669' : step === i ? 'var(--primary-500)' : 'transparent',
-              color: step >= i ? 'white' : '#9ca3af',
+              borderColor: step > i ? 'var(--success-600)' : step === i ? 'var(--primary-500)' : 'var(--border-color)',
+              background: step > i ? 'var(--success-600)' : step === i ? 'var(--primary-500)' : 'transparent',
+              color: step >= i ? 'white' : 'var(--text-muted)',
             }}>
               {step > i ? <CheckCircle2 size={18} /> : i}
             </div>
-            {i < 3 && <div style={{ width: 48, height: 3, borderRadius: 2, background: step > i ? '#059669' : '#e5e7eb' }} />}
+            {i < 3 && <div style={{ width: 48, height: 3, borderRadius: 2, background: step > i ? 'var(--success-600)' : 'var(--border-color)' }} />}
           </React.Fragment>
         ))}
       </div>
@@ -152,10 +171,10 @@ export default function VolunteerApplicationPage() {
               {SUPPORT_CATEGORIES.filter(c => c !== 'Other').map(cat => (
                 <button key={cat} onClick={() => toggleArea(cat)} style={{
                   padding: '12px 14px', borderRadius: 10, border: '2px solid',
-                  borderColor: areas.includes(cat) ? '#059669' : '#e5e7eb',
+                  borderColor: areas.includes(cat) ? 'var(--success-600)' : 'var(--border-color)',
                   background: areas.includes(cat) ? 'rgba(5,150,105,0.06)' : 'white',
                   cursor: 'pointer', textAlign: 'left', fontSize: '0.82rem', fontWeight: areas.includes(cat) ? 700 : 500,
-                  color: areas.includes(cat) ? '#065f46' : '#374151',
+                  color: areas.includes(cat) ? 'var(--success-600)' : 'var(--gray-600)',
                 }}>
                   {areas.includes(cat) && <Check size={14} style={{ display: 'inline', verticalAlign: '-1px', marginRight: 4 }} />}{cat}
                 </button>
@@ -170,8 +189,8 @@ export default function VolunteerApplicationPage() {
               <textarea className="input" rows={3} placeholder="Summarize your relevant experience..." value={expSummary} onChange={e => setExpSummary(e.target.value)} />
             </div>
             {/* Upload */}
-            <div style={{ border: '2px dashed #d1d5db', borderRadius: 12, padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: '#fafafa' }}>
-              <Upload size={20} style={{ color: '#9ca3af' }} /><div style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 600 }}>Upload CV / credentials (optional)</div>
+            <div style={{ border: '2px dashed var(--gray-300)', borderRadius: 12, padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: 'var(--bg-secondary)' }}>
+              <Upload size={20} style={{ color: 'var(--text-muted)' }} /><div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Upload CV / credentials (optional)</div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <button className="btn btn-outline" onClick={() => setStep(1)}><ArrowLeft size={16} /> Back</button>
@@ -185,9 +204,9 @@ export default function VolunteerApplicationPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <h2 className="text-xl font-bold">Agreements & Submit</h2>
 
-            <div style={{ padding: 16, borderRadius: 10, background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.15)' }}>
+            <div style={{ padding: 16, borderRadius: 10, background: 'rgba(232, 93, 4, 0.04)', border: '1px solid rgba(232, 93, 4, 0.15)' }}>
               <Shield size={18} style={{ display: 'inline', verticalAlign: '-3px', marginRight: 6, color: 'var(--primary-600)' }} />
-              <span style={{ fontSize: '0.8rem', color: '#4338ca', fontWeight: 600 }}>Platform Rules for Volunteers</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--primary-700)', fontWeight: 600 }}>Platform Rules for Volunteers</span>
               <ul style={{ fontSize: '0.8rem', color: 'var(--text-primary)', marginTop: 12, paddingLeft: 16, lineHeight: 1.8 }}>
                 <li>All support must go through the platform — you cannot contact members directly.</li>
                 <li>Personal contact details (phone, email) are never shared between members.</li>
@@ -204,17 +223,23 @@ export default function VolunteerApplicationPage() {
                 { id: 'admin', label: 'I understand all support goes through the platform', checked: agreedAdmin, set: setAgreedAdmin },
                 { id: 'screen', label: 'I consent to the platform screening my application', checked: consentScreen, set: setConsentScreen },
               ].map(item => (
-                <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, background: '#f9fafb', border: '1px solid var(--border-color)' }}>
+                <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
                   <input type="checkbox" id={item.id} checked={item.checked} onChange={() => item.set(!item.checked)} />
                   <label htmlFor={item.id} style={{ fontSize: '0.83rem', cursor: 'pointer', fontWeight: 500 }}>{item.label}</label>
                 </div>
               ))}
             </div>
 
+            {error && (
+              <div role="alert" style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(240,73,35,0.1)', color: 'var(--error-500)', fontSize: '0.85rem' }}>
+                {error}
+              </div>
+            )}
+
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <button className="btn btn-outline" onClick={() => setStep(2)}><ArrowLeft size={16} /> Back</button>
-              <button className="btn btn-primary btn-lg" onClick={handleSubmit} disabled={isSubmitting || !allAgreed} style={{ background: allAgreed ? 'linear-gradient(135deg, #059669, #10b981)' : undefined }}>
-                {isSubmitting ? 'Submitting...' : 'Submit Application'}
+              <button className="btn btn-primary btn-lg" onClick={handleSubmit} disabled={isSubmitting || !allAgreed} style={{ background: allAgreed ? 'linear-gradient(135deg, var(--success-600), var(--success-400))' : undefined }}>
+                {isSubmitting ? 'Submitting…' : 'Submit Application'}
               </button>
             </div>
           </div>

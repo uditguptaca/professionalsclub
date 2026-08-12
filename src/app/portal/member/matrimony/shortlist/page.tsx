@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/app-context';
-import { createClient } from '@/utils/supabase/client';
+import { getMyMatrimony, listShortlist, removeFromShortlist } from '@/app/actions/matrimony';
 import type { MatrimonyProfile, MatrimonyProfileCard } from '@/types/matrimony';
 import {
   Bookmark, ArrowLeft, Trash2, User, Calendar, MapPin, Briefcase,
@@ -11,56 +11,30 @@ import {
 
 export default function ShortlistPage() {
   const { currentUserId } = useApp();
-  const supabase = createClient();
 
   const [loading, setLoading] = useState(true);
   const [myProfile, setMyProfile] = useState<MatrimonyProfile | null>(null);
   const [list, setList] = useState<MatrimonyProfileCard[]>([]);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  async function loadShortlist(profileId: string) {
-    try {
-      const { data } = await supabase
-        .from('matrimony_shortlists')
-        .select(`
-          id, target_profile_id,
-          profile:target_profile_id (
-            id, user_id, full_name, display_pref, gender, dob, height_cm, city, province, country, religion, mother_tongue, occupation, qualification, residency_status, diet, marital_status, is_verified_id, is_verified_photo, is_verified_profession, photo_visibility, last_active_at, about_me, completeness_pct, status
-          )
-        `)
-        .eq('owner_profile_id', profileId);
-
-      if (data) {
-        const formatted = data
-          .filter((item: any) => item.profile !== null)
-          .map((item: any) => item.profile as unknown as MatrimonyProfileCard);
-        setList(formatted);
-      }
-    } catch (err) {
-      console.error('Error fetching shortlist:', err);
-    }
+  // Cards come from matrimony_visible_profiles server-side; the shortlist is
+  // scoped to the caller's own listing, so no owner id is sent.
+  async function loadShortlist() {
+    const result = await listShortlist();
+    if (result.ok) setList(result.data);
+    else console.error('Error fetching shortlist:', result.error);
   }
 
   useEffect(() => {
     async function loadData() {
       if (!currentUserId) { setLoading(false); return; }
       setLoading(true);
-      try {
-        const { data: myProf } = await supabase
-          .from('matrimony_profiles')
-          .select('*')
-          .eq('user_id', currentUserId)
-          .single();
-
-        if (myProf) {
-          setMyProfile(myProf as MatrimonyProfile);
-          await loadShortlist(myProf.id);
-        }
-      } catch (err) {
-        console.error('Error loading shortlist page:', err);
-      } finally {
-        setLoading(false);
+      const mine = await getMyMatrimony();
+      if (mine.ok && mine.data.profile) {
+        setMyProfile(mine.data.profile);
+        await loadShortlist();
       }
+      setLoading(false);
     }
     loadData();
   }, [currentUserId]);
@@ -68,20 +42,10 @@ export default function ShortlistPage() {
   const handleRemove = async (targetProfileId: string) => {
     if (!myProfile) return;
     setActionLoading(targetProfileId);
-    try {
-      const { error } = await supabase
-        .from('matrimony_shortlists')
-        .delete()
-        .eq('owner_profile_id', myProfile.id)
-        .eq('target_profile_id', targetProfileId);
-
-      if (error) throw error;
-      await loadShortlist(myProfile.id);
-    } catch (err) {
-      console.error('Error removing from shortlist:', err);
-    } finally {
-      setActionLoading(null);
-    }
+    const result = await removeFromShortlist(targetProfileId);
+    if (result.ok) await loadShortlist();
+    else console.error('Error removing from shortlist:', result.error);
+    setActionLoading(null);
   };
 
   function getAge(dob: string): number {
@@ -105,7 +69,7 @@ export default function ShortlistPage() {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 16 }}>
         <div style={{
           width: 48, height: 48, border: '3px solid var(--border-color)',
-          borderTopColor: '#0067A5', borderRadius: '50%', animation: 'spin 1s linear infinite',
+          borderTopColor: 'var(--primary-600)', borderRadius: '50%', animation: 'spin 1s linear infinite',
         }} />
         <p style={{ color: 'var(--text-muted)' }}>Loading shortlist...</p>
       </div>
@@ -170,7 +134,7 @@ export default function ShortlistPage() {
                 onClick={() => handleRemove(cand.id)}
                 disabled={actionLoading === cand.id}
                 style={{
-                  position: 'absolute', top: 16, right: 16, color: '#F04923',
+                  position: 'absolute', top: 16, right: 16, color: 'var(--error-500)',
                   padding: 8, borderRadius: 10, background: 'none'
                 }}
                 title="Remove from Shortlist"
@@ -181,17 +145,17 @@ export default function ShortlistPage() {
               {/* Avatar placeholder */}
               <div style={{
                 width: 60, height: 60, borderRadius: 16,
-                background: `linear-gradient(135deg, ${cand.gender === 'female' ? '#ec4899' : '#0067A5'}20, ${cand.gender === 'female' ? '#f472b6' : '#0091d5'}10)`,
+                background: `linear-gradient(135deg, ${cand.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)'}20, ${cand.gender === 'female' ? 'var(--accent-400)' : 'var(--primary-500)'}10)`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16
               }}>
-                <User size={30} style={{ color: cand.gender === 'female' ? '#ec4899' : '#0067A5' }} />
+                <User size={30} style={{ color: cand.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
               </div>
 
               {/* Profile Details */}
               <div style={{ flex: 1 }}>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                   {getDisplayName(cand.full_name, cand.display_pref)}
-                  {cand.is_verified_id && <UserCheck size={14} style={{ color: '#0067A5' }} />}
+                  {cand.is_verified_id && <UserCheck size={14} style={{ color: 'var(--primary-600)' }} />}
                 </h3>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>

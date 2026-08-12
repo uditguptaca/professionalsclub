@@ -3,7 +3,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useApp } from '@/context/app-context';
-import { createClient } from '@/utils/supabase/client';
+import {
+  getProfileDetail, getMyMatrimony, addToShortlist, removeFromShortlist,
+  sendInterest, respondToInterest, reportProfile, blockProfile,
+} from '@/app/actions/matrimony';
 import type { MatrimonyProfile, MatrimonyPreferences, MatrimonyContact, MatrimonyMedia } from '@/types/matrimony';
 import { computeMatchScore } from '@/lib/matrimony/matching';
 import {
@@ -15,10 +18,10 @@ import {
 
 const statusConfig: Record<string, { color: string; bg: string; label: string; icon: React.ElementType }> = {
   draft: { color: 'var(--text-secondary)', bg: 'rgba(100,116,139,0.1)', label: 'Draft', icon: Clock },
-  pending: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', label: 'Pending Review', icon: Clock },
-  approved: { color: '#00A86B', bg: 'rgba(0,168,107,0.1)', label: 'Approved', icon: CheckCircle2 },
-  rejected: { color: '#F04923', bg: 'rgba(240,73,35,0.1)', label: 'Rejected', icon: XCircle },
-  suspended: { color: '#dc2626', bg: 'rgba(220,38,38,0.1)', label: 'Suspended', icon: XCircle },
+  pending: { color: 'var(--warning-500)', bg: 'rgba(245,158,11,0.1)', label: 'Pending Review', icon: Clock },
+  approved: { color: 'var(--success-500)', bg: 'rgba(0,168,107,0.1)', label: 'Approved', icon: CheckCircle2 },
+  rejected: { color: 'var(--error-500)', bg: 'rgba(240,73,35,0.1)', label: 'Rejected', icon: XCircle },
+  suspended: { color: 'var(--error-600)', bg: 'rgba(220,38,38,0.1)', label: 'Suspended', icon: XCircle },
 };
 
 export default function CandidateProfilePage() {
@@ -26,7 +29,6 @@ export default function CandidateProfilePage() {
   const router = useRouter();
   const id = params.id as string;
   const { currentUserId } = useApp();
-  const supabase = createClient();
 
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<MatrimonyProfile | null>(null);
@@ -52,92 +54,46 @@ export default function CandidateProfilePage() {
   const fetchProfileAndRelations = useCallback(async () => {
     if (!id || !currentUserId) return;
     setLoading(true);
-    try {
-      // 1. Fetch Candidate Profile, Preferences, Media
-      const { data: candProf } = await supabase
-        .from('matrimony_profiles')
-        .select('*')
-        .eq('id', id)
-        .single();
 
-      if (candProf) {
-        setProfile(candProf as MatrimonyProfile);
+    // One action returns the listing, its preferences and media, whether it is
+    // shortlisted, the interest between the two profiles, and the contact row.
+    //
+    // The contact row comes back only when an interest between the two reached
+    // 'accepted' — that is the RLS policy on matrimony_contacts deciding, not a
+    // condition in this component, so a tampered client cannot reveal it.
+    const [detail, mine] = await Promise.all([getProfileDetail(id as string), getMyMatrimony()]);
 
-        const [
-          { data: candPrefs },
-          { data: candMed },
-          { data: myProf },
-        ] = await Promise.all([
-          supabase.from('matrimony_preferences').select('*').eq('profile_id', candProf.id).maybeSingle(),
-          supabase.from('matrimony_media').select('*').eq('profile_id', candProf.id),
-          supabase.from('matrimony_profiles').select('*').eq('user_id', currentUserId).maybeSingle(),
-        ]);
-
-        if (candPrefs) setPreferences(candPrefs as MatrimonyPreferences);
-        if (candMed) setMedia(candMed as MatrimonyMedia[]);
-        
-        if (myProf) {
-          setMyProfile(myProf as MatrimonyProfile);
-          const { data: myPreferences } = await supabase
-            .from('matrimony_preferences')
-            .select('*')
-            .eq('profile_id', myProf.id)
-            .maybeSingle();
-          if (myPreferences) setMyPrefs(myPreferences as MatrimonyPreferences);
-
-          // 2. Fetch shortlist status
-          const { data: shortlist } = await supabase
-            .from('matrimony_shortlists')
-            .select('id')
-            .eq('owner_profile_id', myProf.id)
-            .eq('target_profile_id', candProf.id)
-            .maybeSingle();
-          setIsShortlisted(!!shortlist);
-
-          // 3. Fetch Interest Status
-          const { data: sentInterest } = await supabase
-            .from('matrimony_interests')
-            .select('id, status')
-            .eq('sender_profile_id', myProf.id)
-            .eq('receiver_profile_id', candProf.id)
-            .maybeSingle();
-
-          const { data: recvInterest } = await supabase
-            .from('matrimony_interests')
-            .select('id, status')
-            .eq('sender_profile_id', candProf.id)
-            .eq('receiver_profile_id', myProf.id)
-            .maybeSingle();
-
-          if (sentInterest) {
-            setInterestStatus(sentInterest.status === 'accepted' ? 'accepted' : 'sent');
-            setInterestId(sentInterest.id);
-          } else if (recvInterest) {
-            setInterestStatus(recvInterest.status === 'accepted' ? 'accepted' : 'received');
-            setInterestId(recvInterest.id);
-          } else {
-            setInterestStatus('none');
-          }
-
-          // 4. Fetch contact info if interest is mutual (accepted)
-          if ((sentInterest && sentInterest.status === 'accepted') || (recvInterest && recvInterest.status === 'accepted')) {
-            setContactLoading(true);
-            const { data: contactData } = await supabase
-              .from('matrimony_contacts')
-              .select('*')
-              .eq('profile_id', candProf.id)
-              .maybeSingle();
-            if (contactData) setCandidateContact(contactData as MatrimonyContact);
-            setContactLoading(false);
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Error loading candidate profile:', err);
-    } finally {
+    if (!detail.ok || !detail.data) {
+      if (!detail.ok) console.error('Error loading candidate profile:', detail.error);
       setLoading(false);
+      return;
     }
-  }, [id, currentUserId, supabase]);
+
+    const d = detail.data;
+    setProfile(d.profile as unknown as MatrimonyProfile);
+    setPreferences(d.preferences);
+    setMedia(d.media);
+    setIsShortlisted(d.isShortlisted);
+    setCandidateContact(d.contact);
+
+    if (mine.ok && mine.data.profile) {
+      setMyProfile(mine.data.profile);
+      setMyPrefs(mine.data.preferences);
+    }
+
+    const myId = d.myProfileId;
+    if (d.interest && myId) {
+      const sentByMe = d.interest.sender_profile_id === myId;
+      setInterestId(d.interest.id);
+      setInterestStatus(
+        d.interest.status === 'accepted' ? 'accepted' : sentByMe ? 'sent' : 'received'
+      );
+    } else {
+      setInterestStatus('none');
+    }
+
+    setLoading(false);
+  }, [id, currentUserId]);
 
   useEffect(() => {
     fetchProfileAndRelations();
@@ -148,128 +104,69 @@ export default function CandidateProfilePage() {
   const handleToggleShortlist = async () => {
     if (!myProfile || !profile || actionLoading) return;
     setActionLoading(true);
-    try {
-      if (isShortlisted) {
-        await supabase
-          .from('matrimony_shortlists')
-          .delete()
-          .eq('owner_profile_id', myProfile.id)
-          .eq('target_profile_id', profile.id);
-        setIsShortlisted(false);
-      } else {
-        await supabase
-          .from('matrimony_shortlists')
-          .insert([{ owner_profile_id: myProfile.id, target_profile_id: profile.id }]);
-        setIsShortlisted(true);
-      }
-    } catch (err) {
-      console.error('Error toggling shortlist:', err);
-    } finally {
-      setActionLoading(false);
-    }
+
+    const result = isShortlisted
+      ? await removeFromShortlist(profile.id)
+      : await addToShortlist(profile.id);
+
+    if (result.ok) setIsShortlisted(!isShortlisted);
+    else console.error('Error toggling shortlist:', result.error);
+
+    setActionLoading(false);
   };
 
   const handleSendInterest = async () => {
     if (!myProfile || !profile || actionLoading) return;
     setActionLoading(true);
-    try {
-      const { data: newInterest, error } = await supabase
-        .from('matrimony_interests')
-        .insert([{
-          sender_profile_id: myProfile.id,
-          receiver_profile_id: profile.id,
-          status: 'pending'
-        }])
-        .select()
-        .single();
 
-      if (error) throw error;
+    // The recipient is notified by the matrimony_interests_notify trigger.
+    const result = await sendInterest(profile.id);
+    if (result.ok) {
       setInterestStatus('sent');
-      setInterestId(newInterest.id);
-
-      // Create notification
-      await supabase.from('in_app_notifications').insert([{
-        user_id: profile.user_id,
-        title: 'New Matrimony Interest',
-        content: `Someone expressed interest in your matrimony profile.`,
-        category: 'matrimony',
-        link_to: `/portal/member/matrimony/interests`
-      }]);
-
-    } catch (err) {
-      console.error('Error sending interest:', err);
-    } finally {
-      setActionLoading(false);
+      await fetchProfileAndRelations();
+    } else {
+      console.error('Error sending interest:', result.error);
     }
+
+    setActionLoading(false);
   };
 
   const handleAcceptInterest = async () => {
     if (!interestId || !profile || actionLoading) return;
     setActionLoading(true);
-    try {
-      const { error } = await supabase
-        .from('matrimony_interests')
-        .update({ status: 'accepted', updated_at: new Date().toISOString() })
-        .eq('id', interestId);
 
-      if (error) throw error;
+    // Accepting opens the conversation and releases both parties' contact
+    // details. Only the recipient may do it; the guard_interest_response trigger
+    // rejects an attempt by the sender.
+    const result = await respondToInterest(interestId, true);
+    if (result.ok) {
       setInterestStatus('accepted');
-
-      // Create notification
-      await supabase.from('in_app_notifications').insert([{
-        user_id: profile.user_id,
-        title: 'Interest Accepted',
-        content: `Your matrimony interest was accepted. You can now chat and view contact details!`,
-        category: 'matrimony',
-        link_to: `/portal/member/matrimony/messages`
-      }]);
-
-      // Fetch contact details
-      const { data: contactData } = await supabase
-        .from('matrimony_contacts')
-        .select('*')
-        .eq('profile_id', profile.id)
-        .maybeSingle();
-      if (contactData) setCandidateContact(contactData as MatrimonyContact);
-
-    } catch (err) {
-      console.error('Error accepting interest:', err);
-    } finally {
-      setActionLoading(false);
+      await fetchProfileAndRelations();
+    } else {
+      console.error('Error accepting interest:', result.error);
     }
+
+    setActionLoading(false);
   };
 
   const handleDeclineInterest = async () => {
     if (!interestId || actionLoading) return;
     setActionLoading(true);
-    try {
-      await supabase
-        .from('matrimony_interests')
-        .update({ status: 'declined', updated_at: new Date().toISOString() })
-        .eq('id', interestId);
-      setInterestStatus('declined');
-    } catch (err) {
-      console.error('Error declining interest:', err);
-    } finally {
-      setActionLoading(false);
-    }
+
+    const result = await respondToInterest(interestId, false);
+    if (result.ok) setInterestStatus('declined');
+    else console.error('Error declining interest:', result.error);
+
+    setActionLoading(false);
   };
 
   const handleReport = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!myProfile || !profile || !reportReason) return;
     setActionLoading(true);
-    try {
-      await supabase
-        .from('matrimony_reports')
-        .insert([{
-          reporter_profile_id: myProfile.id,
-          target_profile_id: profile.id,
-          target_type: 'profile',
-          reason: reportReason,
-          details: reportDetails,
-          status: 'open'
-        }]);
+
+    const result = await reportProfile(profile.id, reportReason, reportDetails);
+    if (result.ok) {
       setReportSubmitted(true);
       setTimeout(() => {
         setReportOpen(false);
@@ -277,31 +174,27 @@ export default function CandidateProfilePage() {
         setReportReason('');
         setReportDetails('');
       }, 2500);
-    } catch (err) {
-      console.error('Error submitting report:', err);
-    } finally {
-      setActionLoading(false);
+    } else {
+      console.error('Error submitting report:', result.error);
     }
+
+    setActionLoading(false);
   };
 
   const handleBlock = async () => {
     if (!myProfile || !profile) return;
     if (!confirm('Are you sure you want to block this member? You will no longer see each other in search results or browse.')) return;
     setActionLoading(true);
-    try {
-      await supabase
-        .from('matrimony_blocks')
-        .insert([{
-          blocker_profile_id: myProfile.id,
-          blocked_profile_id: profile.id
-        }]);
+
+    const result = await blockProfile(profile.id);
+    if (result.ok) {
       alert('Member blocked successfully.');
       router.push('/portal/member/matrimony/browse');
-    } catch (err) {
-      console.error('Error blocking member:', err);
-    } finally {
-      setActionLoading(false);
+    } else {
+      console.error('Error blocking member:', result.error);
     }
+
+    setActionLoading(false);
   };
 
   if (loading) {
@@ -309,7 +202,7 @@ export default function CandidateProfilePage() {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 16 }}>
         <div style={{
           width: 48, height: 48, border: '3px solid var(--border-color)',
-          borderTopColor: '#0067A5', borderRadius: '50%', animation: 'spin 1s linear infinite',
+          borderTopColor: 'var(--primary-600)', borderRadius: '50%', animation: 'spin 1s linear infinite',
         }} />
         <p style={{ color: 'var(--text-muted)' }}>Loading profile details...</p>
       </div>
@@ -323,7 +216,7 @@ export default function CandidateProfilePage() {
           width: 64, height: 64, borderRadius: '50%', background: 'rgba(240,73,35,0.1)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto'
         }}>
-          <AlertCircle size={32} color="#F04923" />
+          <AlertCircle size={32} color="var(--error-500)" />
         </div>
         <h2 style={{ fontWeight: 800 }}>Profile Not Found</h2>
         <p style={{ color: 'var(--text-secondary)' }}>
@@ -353,10 +246,10 @@ export default function CandidateProfilePage() {
         
         {/* Flag/Block actions */}
         <div style={{ display: 'flex', gap: 12 }}>
-          <button className="btn btn-ghost" onClick={() => setReportOpen(true)} style={{ color: '#F04923', fontSize: '0.8rem', padding: '6px 12px' }}>
+          <button className="btn btn-ghost" onClick={() => setReportOpen(true)} style={{ color: 'var(--error-500)', fontSize: '0.8rem', padding: '6px 12px' }}>
             <ShieldAlert size={14} /> Report
           </button>
-          <button className="btn btn-ghost" onClick={handleBlock} style={{ color: '#dc2626', fontSize: '0.8rem', padding: '6px 12px' }}>
+          <button className="btn btn-ghost" onClick={handleBlock} style={{ color: 'var(--error-600)', fontSize: '0.8rem', padding: '6px 12px' }}>
             <XCircle size={14} /> Block
           </button>
         </div>
@@ -364,14 +257,14 @@ export default function CandidateProfilePage() {
 
       {/* Main Header Card */}
       <div className="card" style={{
-        background: 'linear-gradient(145deg, var(--bg-card), rgba(0,103,165,0.02))',
+        background: 'linear-gradient(145deg, var(--bg-card), rgba(232, 93, 4, 0.02))',
         border: '1px solid var(--border-color)', borderRadius: 24, padding: 32,
         display: 'flex', gap: 32, flexWrap: 'wrap', alignItems: 'center', position: 'relative'
       }}>
         {/* Avatar/Photo */}
         <div style={{
           width: 140, height: 140, borderRadius: 24, flexShrink: 0,
-          background: `linear-gradient(135deg, ${profile.gender === 'female' ? '#ec4899' : '#0067A5'}20, ${profile.gender === 'female' ? '#f472b6' : '#0091d5'}10)`,
+          background: `linear-gradient(135deg, ${profile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)'}20, ${profile.gender === 'female' ? 'var(--accent-400)' : 'var(--primary-500)'}10)`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 8px 30px rgba(0,0,0,0.04)', border: '1px solid var(--border-color)',
           position: 'relative', overflow: 'hidden'
@@ -379,13 +272,13 @@ export default function CandidateProfilePage() {
           {profile.photo_visibility === 'blurred' && interestStatus !== 'accepted' ? (
             <div style={{
               width: '100%', height: '100%', filter: 'blur(8px)',
-              background: `linear-gradient(135deg, ${profile.gender === 'female' ? '#ec4899' : '#0067A5'}40, ${profile.gender === 'female' ? '#f472b6' : '#0091d5'}20)`,
+              background: `linear-gradient(135deg, ${profile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)'}40, ${profile.gender === 'female' ? 'var(--accent-400)' : 'var(--primary-500)'}20)`,
               display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
               <User size={64} style={{ opacity: 0.3 }} />
             </div>
           ) : (
-            <User size={64} style={{ color: profile.gender === 'female' ? '#ec4899' : '#0067A5' }} />
+            <User size={64} style={{ color: profile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
           )}
         </div>
 
@@ -396,7 +289,7 @@ export default function CandidateProfilePage() {
               {profile.display_pref === 'full_name' ? profile.full_name : profile.full_name.split(' ')[0]}
             </h1>
             {profile.is_verified_id && (
-              <span className="badge" style={{ background: 'rgba(0,103,165,0.1)', color: '#0067A5', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <span className="badge" style={{ background: 'rgba(232, 93, 4, 0.1)', color: 'var(--primary-600)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 <CheckCircle2 size={12} /> ID Verified
               </span>
             )}
@@ -422,16 +315,16 @@ export default function CandidateProfilePage() {
             )}
             {interestStatus === 'received' && (
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn" onClick={handleAcceptInterest} disabled={actionLoading} style={{ background: '#00A86B', color: 'white', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <button className="btn" onClick={handleAcceptInterest} disabled={actionLoading} style={{ background: 'var(--success-500)', color: 'white', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   Accept
                 </button>
-                <button className="btn btn-outline" onClick={handleDeclineInterest} disabled={actionLoading} style={{ borderColor: '#F04923', color: '#F04923' }}>
+                <button className="btn btn-outline" onClick={handleDeclineInterest} disabled={actionLoading} style={{ borderColor: 'var(--error-500)', color: 'var(--error-500)' }}>
                   Decline
                 </button>
               </div>
             )}
             {interestStatus === 'accepted' && (
-              <Link href="/portal/member/matrimony/messages" className="btn btn-primary" style={{ background: '#00A86B', borderColor: '#00A86B', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <Link href="/portal/member/matrimony/messages" className="btn btn-primary" style={{ background: 'var(--success-500)', borderColor: 'var(--success-500)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 <MessageCircle size={16} /> Start Chatting
               </Link>
             )}
@@ -456,7 +349,7 @@ export default function CandidateProfilePage() {
             <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>Match Score</span>
             <div style={{
               fontSize: '1.75rem', fontWeight: 800,
-              color: matchScore >= 80 ? '#00A86B' : matchScore >= 60 ? '#FFBF00' : '#F04923'
+              color: matchScore >= 80 ? 'var(--success-500)' : matchScore >= 60 ? 'var(--accent-400)' : 'var(--error-500)'
             }}>
               {matchScore}%
             </div>
@@ -471,7 +364,7 @@ export default function CandidateProfilePage() {
           {/* About Me */}
           <div className="card" style={{ padding: 24 }}>
             <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Smile size={18} style={{ color: '#0067A5' }} /> About Me
+              <Smile size={18} style={{ color: 'var(--primary-600)' }} /> About Me
             </h2>
             <p style={{ lineHeight: 1.7, color: 'var(--text-secondary)', whiteSpace: 'pre-line', margin: 0, fontSize: '0.95rem' }}>
               {profile.about_me || 'No bio written.'}
@@ -481,7 +374,7 @@ export default function CandidateProfilePage() {
           {/* Background Details */}
           <div className="card" style={{ padding: 24 }}>
             <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Users size={18} style={{ color: '#00A86B' }} /> Religious & Cultural Background
+              <Users size={18} style={{ color: 'var(--success-500)' }} /> Religious & Cultural Background
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
               {[
@@ -504,7 +397,7 @@ export default function CandidateProfilePage() {
           {/* Education & Career */}
           <div className="card" style={{ padding: 24 }}>
             <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Briefcase size={18} style={{ color: '#FFBF00' }} /> Education & Career
+              <Briefcase size={18} style={{ color: 'var(--accent-400)' }} /> Education & Career
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
               {[
@@ -529,7 +422,7 @@ export default function CandidateProfilePage() {
           {/* Family details */}
           <div className="card" style={{ padding: 24 }}>
             <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <HeartHandshake size={18} style={{ color: '#7c3aed' }} /> Family & Lifestyle
+              <HeartHandshake size={18} style={{ color: 'var(--primary-700)' }} /> Family & Lifestyle
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
               {[
@@ -561,9 +454,9 @@ export default function CandidateProfilePage() {
         {/* Right Column: Preferences & contact */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           {/* Contact details */}
-          <div className="card" style={{ padding: 24, border: '1px solid rgba(0,103,165,0.15)', background: 'rgba(0,103,165,0.01)' }}>
+          <div className="card" style={{ padding: 24, border: '1px solid rgba(232, 93, 4, 0.15)', background: 'rgba(232, 93, 4, 0.01)' }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Phone size={18} style={{ color: '#0067A5' }} /> Contact Details
+              <Phone size={18} style={{ color: 'var(--primary-600)' }} /> Contact Details
             </h2>
             {interestStatus === 'accepted' ? (
               contactLoading ? (
@@ -610,7 +503,7 @@ export default function CandidateProfilePage() {
           {/* Preferences Summary */}
           <div className="card" style={{ padding: 24 }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Star size={18} style={{ color: '#FFBF00' }} /> Partner Preferences
+              <Star size={18} style={{ color: 'var(--accent-400)' }} /> Partner Preferences
             </h2>
             {preferences ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -646,11 +539,11 @@ export default function CandidateProfilePage() {
         }}>
           <div className="card animate-fade-in-up" style={{ width: '90%', maxWidth: 500, padding: 28 }}>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <AlertTriangle size={20} color="#F04923" /> Report Profile
+              <AlertTriangle size={20} color="var(--error-500)" /> Report Profile
             </h3>
             {reportSubmitted ? (
               <div style={{ textAlign: 'center', padding: '24px 0' }}>
-                <CheckCircle2 size={44} color="#00A86B" style={{ marginBottom: 12 }} />
+                <CheckCircle2 size={44} color="var(--success-500)" style={{ marginBottom: 12 }} />
                 <p style={{ fontWeight: 600, margin: 0 }}>Report Submitted</p>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: 4 }}>Thank you. Our admins will investigate this profile.</p>
               </div>
@@ -673,7 +566,7 @@ export default function CandidateProfilePage() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
                   <button type="button" className="btn btn-outline" onClick={() => setReportOpen(false)} disabled={actionLoading}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" style={{ background: '#F04923', borderColor: '#F04923' }} disabled={actionLoading}>Submit Report</button>
+                  <button type="submit" className="btn btn-primary" style={{ background: 'var(--error-500)', borderColor: 'var(--error-500)' }} disabled={actionLoading}>Submit Report</button>
                 </div>
               </form>
             )}

@@ -1,10 +1,10 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import { Search, ShieldCheck, Star, Tag, MapPin, Clock, CheckCircle, ArrowRight, Building2 } from 'lucide-react';
-import { mockBusinesses } from '@/lib/mock-data';
-import { BUSINESS_CATEGORIES } from '@/types';
+import { getVerifiedBusinesses } from '@/app/actions/public';
+import { BUSINESS_CATEGORIES, type Business } from '@/types';
 
 export default function BusinessDirectoryPage() {
   const [search, setSearch] = useState('');
@@ -14,8 +14,13 @@ export default function BusinessDirectoryPage() {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [dealsOnly, setDealsOnly] = useState(false);
 
-  // Only show verified + pending_review businesses publicly
-  const publicBusinesses = mockBusinesses.filter(b => b.verificationStatus === 'verified' || b.verificationStatus === 'pending_review');
+  // Unverified listings are filtered out by RLS, not here: the policy on
+  // `businesses` only exposes verification_status = 'verified' to app_anonymous.
+  const [publicBusinesses, setPublicBusinesses] = useState<Business[]>([]);
+
+  useEffect(() => {
+    void getVerifiedBusinesses().then(setPublicBusinesses);
+  }, []);
 
   const cities = useMemo(() => [...new Set(publicBusinesses.map(b => b.city))].sort(), [publicBusinesses]);
 
@@ -44,7 +49,7 @@ export default function BusinessDirectoryPage() {
       <Navbar />
 
       {/* Hero */}
-      <section className="biz-hero" style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: '#0c0c0e' }}>
+      <section className="biz-hero" style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: 'var(--text-primary)' }}>
         {/* Background Animation (Toronto Skyline CN Tower) */}
         <div className="cinematic-bg-container">
           <img 
@@ -60,10 +65,10 @@ export default function BusinessDirectoryPage() {
           <div className="biz-hero-content" style={{ margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 40, textAlign: 'left', maxWidth: '100%', position: 'relative', zIndex: 10 }}>
           {/* Left Side */}
           <div style={{ flex: 1 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.12)', padding: '5px 14px', borderRadius: 99, marginBottom: 16, border: '1px solid rgba(255,255,255,0.15)', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#ffffff' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.12)', padding: '5px 14px', borderRadius: 99, marginBottom: 16, border: '1px solid rgba(255,255,255,0.15)', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--bg-primary)' }}>
               <Building2 size={12} /> Business Directory
             </div>
-            <h1 style={{ fontSize: '2.4rem', marginBottom: 10, color: '#ffffff' }}>Find Trusted Local Businesses</h1>
+            <h1 style={{ fontSize: '2.4rem', marginBottom: 10, color: 'var(--bg-primary)' }}>Find Trusted Local Businesses</h1>
             <p style={{ marginBottom: 20, maxWidth: 480, fontSize: '0.95rem', color: 'rgba(255, 255, 255, 0.85)' }}>Verified businesses our community recommends — discover, connect, and grow.</p>
 
             {/* Search */}

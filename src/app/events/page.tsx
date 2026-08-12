@@ -6,10 +6,10 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { usePortal } from '@/context/portal-context';
 import { Calendar, MapPin, Clock, Users, Video, ArrowRight, X, CheckCircle2, Ticket, Sparkles } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
+import { getUpcomingEvents } from '@/app/actions/public';
 import MeetupEventVideo from '@/components/events/MeetupEventVideo';
 
-interface SupabaseEvent {
+interface UpcomingDbEvent {
   id: string | number;
   title?: string;
   time?: string;
@@ -77,7 +77,7 @@ const mockUpcomingEvents: UpcomingEvent[] = [
 
 export default function EventsPage() {
   const { events } = usePortal();
-  const [supabaseEvents, setSupabaseEvents] = useState<SupabaseEvent[]>([]);
+  const [dbEvents, setDbEvents] = useState<UpcomingDbEvent[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<UpcomingEvent | null>(null);
   
   // RSVP Form States
@@ -93,28 +93,11 @@ export default function EventsPage() {
   const [bookTime, setBookTime] = useState('June 25, 3:00 PM');
   const [isBooked, setIsBooked] = useState(false);
 
-  const MOCK_DB_EVENTS = [
-    { id: 'db-evt-1', title: 'Tech Career & Mock Interview Workshop', time: '10:00 AM', date: '2026-06-30' },
-    { id: 'db-evt-2', title: 'Finance & Tax Q&A for Newcomers', time: '2:00 PM', date: '2026-07-04' },
-    { id: 'db-evt-3', title: 'Virtual Resume Clinic & Peer Review', time: '6:30 PM', date: '2026-07-08' }
-  ];
 
   useEffect(() => {
-    async function fetchEvents() {
-      try {
-        const { data, error } = await supabase.from('events').select('*');
-        if (data && data.length > 0) {
-          setSupabaseEvents(data as SupabaseEvent[]);
-        } else {
-          setSupabaseEvents(MOCK_DB_EVENTS);
-        }
-        if (error) console.error("Supabase error:", error);
-      } catch (err) {
-        console.error("Error connecting to Supabase:", err);
-        setSupabaseEvents(MOCK_DB_EVENTS);
-      }
-    }
-    fetchEvents();
+    // Empty is a real answer here — the section below renders its own empty
+    // state rather than substituting invented events.
+    void getUpcomingEvents().then((rows) => setDbEvents(rows as UpcomingDbEvent[]));
   }, []);
 
   const featuredEvent = events.find(e => e.isFeatured && e.status === 'upcoming');
@@ -234,13 +217,13 @@ export default function EventsPage() {
                 <h4 style={{ margin: '0 0 16px', fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Ticket size={18} style={{ color: 'var(--primary-600)' }} /> Database Relayed Events
                 </h4>
-                {supabaseEvents.length === 0 ? (
+                {dbEvents.length === 0 ? (
                   <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontStyle: 'italic', background: 'var(--bg-secondary)', padding: '12px', borderRadius: 8, border: '1px solid var(--border-color)' }}>
                     No upcoming workshops scheduled at the moment. Check back soon!
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {supabaseEvents.map(w => (
+                    {dbEvents.map(w => (
                       <div key={w.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--bg-secondary)', borderRadius: 10, border: '1px solid var(--border-color)' }}>
                         <div>
                           <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)' }}>{w.title || 'Untitled Event'}</div>
@@ -322,7 +305,7 @@ export default function EventsPage() {
                 </form>
               ) : (
                 <div style={{ textAlign: 'center', padding: '24px 0' }}>
-                  <CheckCircle2 size={56} style={{ color: '#10b981', margin: '0 auto 16px' }} />
+                  <CheckCircle2 size={56} style={{ color: 'var(--success-400)', margin: '0 auto 16px' }} />
                   <h3 style={{ fontSize: '1.3rem', fontWeight: 800, marginBottom: 8 }}>Virtual Seat Reserved!</h3>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.5, marginBottom: 24 }}>
                     Hey <strong>{bookName}</strong>, your seat for <strong>{bookTopic}</strong> on <strong>{bookTime}</strong> is booked successfully. We sent a calendar invitation and link to <strong>{bookEmail}</strong>.
@@ -357,7 +340,7 @@ export default function EventsPage() {
             {pastEvents.map((evt) => (
               <div key={evt.id} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border-color)', background: 'white', transition: 'transform 0.2s ease', cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }} className="hover:-translate-y-1">
                 <div style={{ position: 'relative', height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Image src={evt.image} alt={evt.title} fill style={{ objectFit: 'cover' }} />
+                  <Image src={evt.image} alt={evt.title} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
                   <div style={{ position: 'absolute', inset: 0, background: 'rgba(12,12,14,0.75)' }} />
                   <div style={{ position: 'relative', zIndex: 10, padding: '16px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)' }}>
                     <Calendar size={28} style={{ color: 'white' }} />
@@ -443,7 +426,7 @@ export default function EventsPage() {
               </form>
             ) : (
               <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                <CheckCircle2 size={56} style={{ color: '#10b981', margin: '0 auto 16px' }} />
+                <CheckCircle2 size={56} style={{ color: 'var(--success-400)', margin: '0 auto 16px' }} />
                 <h3 style={{ fontSize: '1.4rem', fontWeight: 800, fontFamily: 'var(--font-display)', marginBottom: 8 }}>Registration Confirmed!</h3>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: 24 }}>
                   Thanks <strong>{name}</strong>! We have registered <strong>{tickets} ticket(s)</strong> for you for <strong>{selectedEvent.title}</strong>. 
