@@ -1901,7 +1901,10 @@ a:hover > .card {
 .flow-forest .chip-grid a:hover { background: rgba(255, 255, 255, 0.12); border-color: var(--lime-400); }
 .flow-forest .chip-grid svg { color: var(--lime-300); }
 
-/* Content objects flip to white on the cream ground. */
-.bento-tile { background: var(--bg-primary); }
+/* Content objects flip to white on the cream ground — but never the photo or
+   forest tile variants, whose own grounds must win. */
+.bento-tile:not(.bento-forest):not(.bento-photo) { background: var(--bg-primary); }
 .chip-grid a, .chip-grid > div { background: var(--bg-primary); }
 .chip-grid a:hover { background: var(--bg-primary); }
+.flow-forest .chip-grid a, .flow-forest .chip-grid > div { background: rgba(255, 255, 255, 0.06); }
+.flow-forest .chip-grid a:hover { background: rgba(255, 255, 255, 0.12); }
