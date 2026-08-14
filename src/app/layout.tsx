@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Manrope, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 // Loaded after globals.css on purpose: the editorial layer redefines the shared
@@ -52,6 +52,19 @@ const mono = JetBrains_Mono({
  * Nothing is lost: every page in this app already renders per-request.
  */
 export const dynamic = 'force-dynamic';
+
+/**
+ * Viewport for the WebView app builds: viewport-fit=cover lets the layout use
+ * the full screen on notched phones (the chrome pads itself with
+ * env(safe-area-inset-*)), and themeColor tints the system status bar to the
+ * portal green.
+ */
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#0f2318',
+};
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://professionalsclub.ca';
 

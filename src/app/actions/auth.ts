@@ -138,3 +138,42 @@ export async function signUpMember(input: {
     return { ok: true, needsVerification: true };
   }
 }
+
+/**
+ * Permanent account deletion, required verbatim by Apple App Store Review
+ * Guideline 5.1.1(v) and Google Play User Data policy: an account created in
+ * the app must be deletable from inside the app.
+ *
+ * This is the second legitimate caller of withElevated() (the first creates
+ * the profile at signup). Elevation is unavoidable here: the row that has to
+ * die lives in neon_auth."user", a schema the RLS roles have no rights on.
+ * The blast radius is bounded the same way as at signup — the id passed to
+ * the statement is the caller's own session identity, never a parameter, so
+ * the only account this endpoint can ever delete is the one calling it.
+ *
+ * ON DELETE CASCADE does the rest: neon_auth."user" -> public.profiles ->
+ * every owned row (requests, applications, matrimony data, messages).
+ * Assignment references are ON DELETE SET NULL, so nothing an admin is
+ * working on dangles.
+ */
+export async function deleteOwnAccount(): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { requireUserId } = await import('@/server/auth');
+
+  let userId: string;
+  try {
+    userId = await requireUserId();
+  } catch {
+    return { ok: false, error: 'You are not signed in.' };
+  }
+
+  try {
+    await withElevated(async (db) => {
+      await db`delete from neon_auth."user" where id = ${userId}::uuid`;
+    });
+    return { ok: true };
+  } catch (err) {
+    console.error('[action] Account deletion failed:',
+      err instanceof Error ? err.message : err);
+    return { ok: false, error: 'Deletion failed. Contact support@professionalsclub.ca and we will remove the account manually.' };
+  }
+}

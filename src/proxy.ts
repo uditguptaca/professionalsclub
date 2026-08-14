@@ -26,10 +26,16 @@ const isPublicPortalPath = (pathname: string) =>
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (!pathname.startsWith('/portal')) return NextResponse.next();
-
+  // Runs on every page request, not just /portal. getSession() re-mints the
+  // session-data cache cookie when it has gone stale (5 min TTL), and the
+  // proxy is the only layer on a page request allowed to write cookies. The
+  // root layout calls getSession() during render on every route; if the cache
+  // were stale there, the SDK's refresh would try to write a cookie mid-render
+  // and Next throws. Keeping the cache fresh here means render never writes.
   const { data: session } = await auth.getSession();
   const signedIn = Boolean(session?.user?.id);
+
+  if (!pathname.startsWith('/portal')) return NextResponse.next();
 
   if (isPublicPortalPath(pathname)) {
     // Members and admins both land on the member dashboard; the admin layout
@@ -50,5 +56,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/portal/:path*'],
+  // All pages, minus API routes (handlers manage their own cookies) and
+  // static assets (anything with a file extension, _next internals).
+  matcher: ['/((?!api|_next/static|_next/image|.*\\..*).*)'],
 };

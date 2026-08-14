@@ -1908,3 +1908,332 @@ a:hover > .card {
 .chip-grid a:hover { background: var(--bg-primary); }
 .flow-forest .chip-grid a, .flow-forest .chip-grid > div { background: rgba(255, 255, 255, 0.06); }
 .flow-forest .chip-grid a:hover { background: rgba(255, 255, 255, 0.12); }
+
+/* ---------------------------------------------------------------------------
+   PORTAL APP CHROME (v2)
+   Desktop: forest sidebar + slim topbar. Phone (<1024px): native-app shell —
+   safe-area top bar, bottom tab bar, "More" sheet. This layer loads after
+   globals.css and wins ties, replacing the older drawer-only mobile portal.
+   --------------------------------------------------------------------------- */
+
+/* Touch ergonomics for the WebView build. */
+html { -webkit-text-size-adjust: 100%; }
+.portal-layout {
+  -webkit-tap-highlight-color: transparent;
+}
+.portal-layout button, .portal-layout a { touch-action: manipulation; }
+
+.portal-layout {
+  display: flex;
+  min-height: 100dvh;
+  background: var(--bg-secondary);
+}
+
+/* --- Brand block shared by sidebar, topbar and sheet ---------------------- */
+.portal-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  min-width: 0;
+}
+.portal-brand-leaf { width: 1.6rem; height: 1.5rem; color: var(--primary-500); flex-shrink: 0; }
+.portal-brand-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.portal-brand-text strong {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.portal-brand-text small {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--green-300);
+}
+
+/* --- Sidebar refinements (base styles live in globals.css) ---------------- */
+.sidebar-footer-nav {
+  padding: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* --- Topbar ---------------------------------------------------------------- */
+.portal-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 3.75rem;
+  height: auto;
+  padding: 0.5rem clamp(1rem, 2.5vw, 2rem);
+  padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
+  background: var(--green-950);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: none;
+}
+/* Desktop keeps the sidebar brand; the topbar brand appears on phones only. */
+.portal-topbar-brand { display: none; min-width: 0; }
+
+.portal-topbar-notice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--green-300);
+}
+
+.portal-topbar-user { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+.portal-user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  max-width: 12rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.portal-role-chip {
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--radius-full);
+  background: rgba(188, 223, 106, 0.15);
+  color: var(--lime-300);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+.portal-role-chip.is-admin { background: rgba(232, 93, 4, 0.2); color: var(--primary-400); }
+
+/* --- Content area ----------------------------------------------------------- */
+.portal-main {
+  flex: 1;
+  min-width: 0;
+  margin-left: var(--sidebar-width);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+}
+.portal-content-area {
+  width: 100%;
+  max-width: 1400px;
+  padding: clamp(1.25rem, 3vw, 2.5rem) clamp(1rem, 2.5vw, 2rem);
+  padding-bottom: calc(clamp(1.25rem, 3vw, 2.5rem) + env(safe-area-inset-bottom, 0px));
+}
+
+/* Cards inside the portal sit white on the cream canvas. */
+.portal-main .card {
+  background: var(--bg-primary);
+  border: 1px solid rgba(27, 67, 50, 0.08);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 1px 2px rgba(27, 67, 50, 0.04), 0 16px 40px -28px rgba(27, 67, 50, 0.16);
+}
+/* Inputs: 16px on touch screens so iOS does not zoom the page on focus. */
+@media (max-width: 1023px) {
+  .portal-main .input, .portal-main select, .portal-main textarea { font-size: 16px; }
+  .portal-main .btn, .portal-main button.btn { min-height: 44px; }
+}
+
+/* Table headers: the old slate-glass header reads as a grey slab on the new
+   light cards. Brand it. */
+.portal-main th, .portal-main thead td {
+  background: var(--green-950) !important;
+  color: var(--green-300) !important;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+/* Tables scroll inside their card instead of stretching the page. */
+.portal-main table { min-width: 640px; }
+.portal-main .table-scroll, .portal-main .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* --- Bottom tab bar (phones) ------------------------------------------------ */
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  display: none;
+  grid-template-columns: repeat(5, 1fr);
+  background: var(--green-950);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.tabbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  min-height: 3.5rem;
+  padding: 0.45rem 0.25rem;
+  background: none;
+  border: none;
+  text-decoration: none;
+  color: var(--green-300);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.tabbar-item span {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tabbar-item.active { color: var(--lime-300); }
+.tabbar-item:active { color: #fff; }
+
+/* --- The More sheet (phones) ------------------------------------------------ */
+.sheet-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(15, 35, 24, 0.55);
+  backdrop-filter: blur(2px);
+}
+.portal-sheet[hidden] { display: none; }
+.portal-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 80;
+  max-height: 82dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+  border-radius: 1.25rem 1.25rem 0 0;
+  box-shadow: 0 -24px 64px -24px rgba(15, 35, 24, 0.5);
+  padding: 0.75rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+  transform: translateY(8px);
+  animation: sheet-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes sheet-in {
+  from { transform: translateY(24px); opacity: 0.6; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .portal-sheet { animation: none; transform: none; }
+}
+
+.portal-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25rem 0.25rem 0.5rem;
+}
+.portal-sheet-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.portal-sheet-close {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.portal-sheet-user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-lg);
+  background: var(--green-950);
+  color: #fff;
+  margin-bottom: 0.6rem;
+}
+.portal-sheet-user svg { color: var(--lime-300); flex-shrink: 0; }
+.portal-sheet-user strong { display: block; font-size: 0.9rem; }
+.portal-sheet-user small { display: block; font-size: 0.72rem; color: var(--green-300); }
+
+.portal-sheet-links {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.portal-sheet-links a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 48px;
+  padding: 0.55rem 0.5rem;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(27, 67, 50, 0.06);
+}
+.portal-sheet-links a svg:first-child { color: var(--green-700); flex-shrink: 0; }
+.portal-sheet-links a .sheet-arrow { margin-left: auto; color: var(--text-muted); }
+.portal-sheet-links a.active { color: var(--green-800); background: var(--green-50); }
+.portal-sheet-links a:active { background: var(--bg-secondary); }
+.portal-sheet-section {
+  padding: 0.9rem 0.5rem 0.35rem;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.portal-sheet-logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  margin-top: 0.75rem;
+  border: 1px solid rgba(220, 73, 58, 0.35);
+  border-radius: var(--radius-lg);
+  background: var(--error-50);
+  color: var(--error-600);
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+/* --- Form factors ------------------------------------------------------------ */
+@media (max-width: 1023px) {
+  .sidebar { display: none !important; transform: none !important; }
+  .portal-main { margin-left: 0 !important; width: 100%; }
+  .portal-topbar-brand { display: block; }
+  .portal-topbar-notice { display: none; }
+  .tabbar { display: grid; }
+  /* keep content clear of the tab bar */
+  .portal-content-area {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+@media (min-width: 1024px) {
+  .tabbar, .portal-sheet, .sheet-scrim { display: none !important; }
+}

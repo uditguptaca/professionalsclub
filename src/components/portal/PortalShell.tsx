@@ -9,16 +9,25 @@ import {
   Home, HelpCircle, HandHeart, FileText, ClipboardList, MessageSquare,
   LogOut, BarChart3, Users, FolderKanban, Shield, ScrollText,
   UserCircle, Building2, Inbox, BookOpen, Calendar,
-  UsersRound, Newspaper, Heart, Briefcase, Menu, X,
+  UsersRound, Newspaper, Heart, Briefcase, X, LayoutGrid, ChevronRight,
 } from 'lucide-react';
 
 /**
- * Sidebar chrome for the portal.
+ * Portal chrome. Two form factors from one component:
+ *
+ *   ≥1024px — fixed forest sidebar plus a slim topbar, the classic desk layout.
+ *   <1024px — a native-app shell: safe-area-aware top bar, a bottom tab bar
+ *             with the four highest-traffic destinations, and a "More" sheet
+ *             for everything else. This is the layout the store-published
+ *             WebView app presents, so it follows phone conventions (44pt
+ *             targets, thumb-reach navigation, no hover-dependent UI).
  *
  * Purely presentational as far as access control goes: whether this renders at
- * all is decided by the server layouts, which is why there is no redirect logic
- * left in here.
+ * all is decided by the server layouts.
  */
+
+type NavLink = { label: string; href: string; icon: typeof Home };
+
 export default function PortalShell({
   role,
   userName,
@@ -30,31 +39,41 @@ export default function PortalShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [sheetOpen, setSheetOpen] = React.useState(false);
   const [signingOut, setSigningOut] = React.useState(false);
 
   const handleLogout = async () => {
     setSigningOut(true);
-
-    // signOut throws on failure like the rest of the client. Navigating anyway is
-    // deliberate: if the cookie survived, the proxy sends the user straight back
-    // to the dashboard, which is a truthful outcome. Silently swallowing the
-    // throw and leaving them on the page would just look broken.
+    // signOut throws on failure like the rest of the client. Navigating anyway
+    // is deliberate: if the cookie survived, the proxy sends the user straight
+    // back to the dashboard, which is a truthful outcome.
     try {
       await authClient.signOut();
     } catch (thrown) {
       console.error('[auth] Sign-out failed:', readAuthError(thrown).code);
     }
-
-    // refresh() re-runs the server layouts so the cleared cookie takes effect.
     router.replace('/portal/auth');
     router.refresh();
     setSigningOut(false);
   };
 
+  // The sheet closes on navigation and on Escape, and locks scroll while open.
+  React.useEffect(() => setSheetOpen(false), [pathname]);
+  React.useEffect(() => {
+    if (!sheetOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSheetOpen(false); };
+    window.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [sheetOpen]);
+
   const isMatrimonyEnabled = process.env.NEXT_PUBLIC_FEATURE_MATRIMONY !== 'false';
 
-  const memberLinks = [
+  const memberLinks: NavLink[] = [
     { label: 'Dashboard', href: '/portal/member/dashboard', icon: Home },
     { label: 'My Profile', href: '/portal/member/profile', icon: UserCircle },
     ...(isMatrimonyEnabled ? [{ label: 'Matrimony', href: '/portal/member/matrimony', icon: Heart }] : []),
@@ -66,7 +85,7 @@ export default function PortalShell({
     { label: 'Business Directory', href: '/portal/member/businesses', icon: Building2 },
   ];
 
-  const adminLinks = [
+  const adminLinks: NavLink[] = [
     { label: 'Overview', href: '/portal/admin/dashboard', icon: BarChart3 },
     ...(isMatrimonyEnabled ? [{ label: 'Matrimony', href: '/portal/admin/matrimony', icon: Heart }] : []),
     { label: 'Help Requests', href: '/portal/admin/requests', icon: FileText },
@@ -79,7 +98,7 @@ export default function PortalShell({
     { label: 'Biz Requests', href: '/portal/admin/business-requests', icon: Inbox },
   ];
 
-  const adminContentLinks = [
+  const adminContentLinks: NavLink[] = [
     { label: 'Resources', href: '/portal/admin/content/resources', icon: BookOpen },
     { label: 'Events', href: '/portal/admin/content/events', icon: Calendar },
     { label: 'Jobs', href: '/portal/admin/content/jobs', icon: Briefcase },
@@ -91,15 +110,21 @@ export default function PortalShell({
   const navLinks = role === 'admin' ? adminLinks : memberLinks;
   const roleName = role === 'admin' ? 'Admin Portal' : 'Help Desk';
 
-  const renderLink = (link: { label: string; href: string; icon: typeof Home }) => {
+  // Bottom tab bar: the four highest-traffic destinations plus More.
+  const tabs: NavLink[] =
+    role === 'admin'
+      ? [adminLinks[0], adminLinks.find((l) => l.href.endsWith('/requests'))!, adminLinks.find((l) => l.href.endsWith('/members'))!, adminLinks.find((l) => l.href.endsWith('/messages'))!]
+      : [memberLinks[0], memberLinks.find((l) => l.href.endsWith('/request-help'))!, memberLinks.find((l) => l.href.endsWith('/my-requests'))!, memberLinks.find((l) => l.href.endsWith('/messages'))!];
+
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
+
+  const renderSidebarLink = (link: NavLink) => {
     const Icon = link.icon;
-    const isActive = pathname === link.href || pathname.startsWith(link.href + '/');
     return (
       <Link
         key={link.href}
         href={link.href}
-        className={`sidebar-link ${isActive ? 'active' : ''}`}
-        onClick={() => setMobileOpen(false)}
+        className={`sidebar-link ${isActive(link.href) ? 'active' : ''}`}
       >
         <Icon className="icon" size={18} />
         <span>{link.label}</span>
@@ -107,39 +132,40 @@ export default function PortalShell({
     );
   };
 
+  const brand = (
+    <Link href="/" className="portal-brand" aria-label="Professionals Club, home">
+      <svg className="portal-brand-leaf" viewBox="0 0 512 512" aria-hidden="true" focusable="false">
+        <path
+          d="M256 24l-30 56c-3 6-9 5-16 1l-38-20 21 100c4 20-9 20-17 11l-59-63-15 41c-2 4-6 4-13 3l-73-15 20 68c4 15 7 21-5 25l-31 15 137 111c6 5 8 13 5 21l-12 39 132-17c4 0 7 3 6 7l-6 100h34l-6-100c-1-4 2-7 6-7l132 17-12-39c-3-8-1-16 5-21l137-111-31-15c-12-4-9-10-5-25l20-68-73 15c-7 1-11 1-13-3l-15-41-59 63c-8 9-21 9-17-11l21-100-38 20c-7 4-13 5-16-1l-30-56z"
+          fill="currentColor"
+        />
+      </svg>
+      <span className="portal-brand-text">
+        <strong>Professionals Club</strong>
+        <small>{roleName}</small>
+      </span>
+    </Link>
+  );
+
   return (
     <div className="portal-layout">
-      {mobileOpen && (
-        <div
-          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 40 }}
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
+      {/* Desktop sidebar */}
+      <aside className="sidebar">
+        <div className="sidebar-header">{brand}</div>
 
-      <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`} style={{ zIndex: 50 }}>
-        <div className="sidebar-header">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="logo-icon" style={{ background: 'linear-gradient(135deg, var(--primary-600), var(--primary-400))', color: 'white', fontWeight: 800, fontSize: '0.8rem', width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>PC</div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span className="brand" style={{ fontSize: '0.85rem', fontWeight: 700, lineHeight: 1.2 }}>Professionals Club</span>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{roleName}</span>
-            </div>
-          </Link>
-        </div>
-
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav" aria-label="Portal">
           <div className="sidebar-section-title">Menu</div>
-          {navLinks.map(renderLink)}
+          {navLinks.map(renderSidebarLink)}
 
           {role === 'admin' && (
             <>
               <div className="sidebar-section-title" style={{ marginTop: 16 }}>Content Manager</div>
-              {adminContentLinks.map(renderLink)}
+              {adminContentLinks.map(renderSidebarLink)}
             </>
           )}
         </nav>
 
-        <div className="sidebar-nav" style={{ flex: 'none', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+        <div className="sidebar-footer-nav">
           <button className="sidebar-link" onClick={handleLogout} disabled={signingOut}>
             <LogOut className="icon" size={18} />
             <span>{signingOut ? 'Signing out…' : 'Logout'}</span>
@@ -147,34 +173,104 @@ export default function PortalShell({
         </div>
       </aside>
 
-      <main className="portal-main" style={{ background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }}>
-        <header className="portal-topbar" style={{ height: '72px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 var(--space-6)', position: 'sticky', top: 0, zIndex: 10, background: 'var(--bg-glass)', backdropFilter: 'blur(12px)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button className="mobile-only-btn" onClick={() => setMobileOpen(!mobileOpen)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', color: 'var(--text-primary)', cursor: 'pointer', padding: 4 }}>
-              {mobileOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Shield size={16} className="text-primary-400" />
-              <span className="portal-header-notice" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Admin-Mediated • No Direct Contact
-              </span>
-            </div>
+      <main className="portal-main">
+        <header className="portal-topbar">
+          <div className="portal-topbar-brand">{brand}</div>
+
+          <div className="portal-topbar-notice">
+            <Shield size={14} aria-hidden="true" />
+            <span>Admin-mediated &middot; No direct contact</span>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="badge badge-neutral text-gray-600 border border-gray-200" style={{ fontSize: '0.7rem' }}>
-              <UserCircle size={12} style={{ marginRight: 4 }} />
-              {userName}
-            </div>
-            <div className="badge badge-accent bg-accent-50 text-accent-700 border border-accent-200 capitalize" style={{ fontSize: '0.7rem' }}>
-              {role}
-            </div>
+
+          <div className="portal-topbar-user">
+            <span className="portal-user-chip">
+              <UserCircle size={14} aria-hidden="true" /> {userName}
+            </span>
+            <span className={`portal-role-chip ${role === 'admin' ? 'is-admin' : ''}`}>{role}</span>
           </div>
         </header>
 
-        <div className="container" style={{ padding: 'var(--space-8) var(--space-6)' }}>
+        <div className="portal-content-area">
           {children}
         </div>
       </main>
+
+      {/* Phone: bottom tab bar */}
+      <nav className="tabbar" aria-label="Portal">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const active = isActive(tab.href);
+          return (
+            <Link key={tab.href} href={tab.href} className={`tabbar-item ${active ? 'active' : ''}`} aria-current={active ? 'page' : undefined}>
+              <Icon size={21} aria-hidden="true" />
+              <span>{tab.label.replace('My Requests', 'Requests').replace('Request Help', 'Get Help').replace('Message Center', 'Messages').replace('Admin Messages', 'Messages')}</span>
+            </Link>
+          );
+        })}
+        <button
+          type="button"
+          className={`tabbar-item ${sheetOpen ? 'active' : ''}`}
+          onClick={() => setSheetOpen((v) => !v)}
+          aria-expanded={sheetOpen}
+          aria-controls="portal-more-sheet"
+        >
+          <LayoutGrid size={21} aria-hidden="true" />
+          <span>More</span>
+        </button>
+      </nav>
+
+      {/* Phone: the More sheet, everything not on the tab bar */}
+      {sheetOpen && (
+        <div className="sheet-scrim" onClick={() => setSheetOpen(false)} aria-hidden="true" />
+      )}
+      <div id="portal-more-sheet" className={`portal-sheet ${sheetOpen ? 'is-open' : ''}`} role="dialog" aria-label="More" hidden={!sheetOpen}>
+        <div className="portal-sheet-head">
+          <span className="portal-sheet-title">{roleName}</span>
+          <button type="button" className="portal-sheet-close" onClick={() => setSheetOpen(false)} aria-label="Close">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="portal-sheet-user">
+          <UserCircle size={28} aria-hidden="true" />
+          <div>
+            <strong>{userName}</strong>
+            <small>{role === 'admin' ? 'Administrator' : 'Member'}</small>
+          </div>
+        </div>
+
+        <nav className="portal-sheet-links" aria-label="All destinations">
+          {navLinks.map((link) => {
+            const Icon = link.icon;
+            return (
+              <Link key={link.href} href={link.href} className={isActive(link.href) ? 'active' : undefined}>
+                <Icon size={18} aria-hidden="true" />
+                <span>{link.label}</span>
+                <ChevronRight size={15} aria-hidden="true" className="sheet-arrow" />
+              </Link>
+            );
+          })}
+          {role === 'admin' && (
+            <>
+              <div className="portal-sheet-section">Content manager</div>
+              {adminContentLinks.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <Link key={link.href} href={link.href} className={isActive(link.href) ? 'active' : undefined}>
+                    <Icon size={18} aria-hidden="true" />
+                    <span>{link.label}</span>
+                    <ChevronRight size={15} aria-hidden="true" className="sheet-arrow" />
+                  </Link>
+                );
+              })}
+            </>
+          )}
+        </nav>
+
+        <button type="button" className="portal-sheet-logout" onClick={handleLogout} disabled={signingOut}>
+          <LogOut size={17} aria-hidden="true" /> {signingOut ? 'Signing out…' : 'Log out'}
+        </button>
+      </div>
     </div>
   );
 }

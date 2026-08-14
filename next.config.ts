@@ -1,7 +1,52 @@
 import type { NextConfig } from "next";
 
+/**
+ * Security headers, applied to every route.
+ *
+ * These are table stakes for the store-published WebView builds: Apple's App
+ * Store Review (5.1 Data Collection and Storage) and Google Play's User Data
+ * policy both expect transport security and defence-in-depth on the web
+ * content the app ships. They cost nothing on the website either.
+ *
+ * The CSP is intentionally pragmatic: Next inlines bootstrap scripts and this
+ * codebase uses inline styles heavily, so 'unsafe-inline' stays. The clauses
+ * that matter most here are frame-ancestors (nobody may embed the portal),
+ * object-src, and base-uri.
+ */
+const securityHeaders = [
+  {
+    key: "Content-Security-Policy",
+    value: [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      "connect-src 'self' https:",
+      "media-src 'self'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+    ].join("; "),
+  },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+  },
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains",
+  },
+];
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  async headers() {
+    return [{ source: "/(.*)", headers: securityHeaders }];
+  },
 };
 
 export default nextConfig;

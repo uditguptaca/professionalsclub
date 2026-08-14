@@ -25,14 +25,23 @@ export type Session = { userId: string; email: string; name: string | null };
  * it share one session lookup and one profile query instead of four.
  */
 export const getSession = cache(async (): Promise<Session | null> => {
-  const { data } = await auth.getSession();
-  if (!data?.user?.id) return null;
+  try {
+    const { data } = await auth.getSession();
+    if (!data?.user?.id) return null;
 
-  return {
-    userId: data.user.id,
-    email: data.user.email ?? '',
-    name: data.user.name ?? null,
-  };
+    return {
+      userId: data.user.id,
+      email: data.user.email ?? '',
+      name: data.user.name ?? null,
+    };
+  } catch {
+    // A stale session-data cache makes the SDK refresh it, which writes a
+    // cookie — forbidden during RSC render, so it throws. The proxy keeps the
+    // cache fresh on every page request, so this path should never run; if it
+    // does, degrade to signed-out instead of crashing the whole page. Portal
+    // routes are still protected by the proxy redirect and by RLS.
+    return null;
+  }
 });
 
 /**

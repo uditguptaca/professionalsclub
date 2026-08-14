@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/app-context';
-import { updateOwnProfile, archiveOwnAccount } from '@/app/actions/portal';
+import { updateOwnProfile } from '@/app/actions/portal';
+import { deleteOwnAccount } from '@/app/actions/auth';
 import { authClient } from '@/lib/auth/client';
 import { readAuthError } from '@/lib/auth/errors';
 import { Save, Trash2, AlertTriangle, UserCircle, AlertCircle } from 'lucide-react';
@@ -81,18 +82,18 @@ export default function MemberProfilePage() {
   const handleDelete = async () => {
     if (!profile) return;
 
-    const confirmed = window.confirm(
-      'Delete your profile? This permanently erases your requests, volunteer history and network access. This cannot be undone.'
+    // App Store Guideline 5.1.1(v) / Play User Data policy: deletion must be
+    // real and initiated in-app. Typed confirmation instead of an OK box —
+    // this is the one action here that cannot be undone.
+    const typed = window.prompt(
+      'This permanently deletes your account, requests, volunteer history and matrimony data. It cannot be undone.\n\nType DELETE to confirm.'
     );
-    if (!confirmed) return;
+    if (typed !== 'DELETE') return;
 
     setDeleting(true);
     setError('');
 
-    // Archive rather than hard-delete. Removing the identity row is Neon Auth's
-    // to do, and an immediate purge would also destroy case history that admins
-    // still need. An admin completes the erasure.
-    const result = await archiveOwnAccount();
+    const result = await deleteOwnAccount();
 
     if (!result.ok) {
       setError(`Could not close the account: ${result.error}`);
@@ -191,9 +192,9 @@ export default function MemberProfilePage() {
           <AlertTriangle size={20} /> Danger Zone
         </h2>
         <p style={{ color: 'var(--error-600)', fontSize: '0.95rem', marginBottom: 24, maxWidth: 600 }}>
-          Closing your profile signs you out and removes your access to the Professionals Club
-          network. Your case history is retained for administrative records and is permanently
-          erased on request.
+          Deleting your account permanently erases your profile, help requests,
+          volunteer history, matrimony data and messages, and signs you out.
+          This cannot be undone.
         </p>
         <button
           onClick={handleDelete}
@@ -205,7 +206,7 @@ export default function MemberProfilePage() {
             display: 'inline-flex', alignItems: 'center', gap: 8, opacity: deleting ? 0.7 : 1,
           }}
         >
-          <Trash2 size={16} /> {deleting ? 'Closing…' : 'Close My Account'}
+          <Trash2 size={16} /> {deleting ? 'Deleting…' : 'Delete My Account'}
         </button>
       </div>
     </div>
