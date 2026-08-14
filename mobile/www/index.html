@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Professionals Club</title>
+<style>
+  :root { color-scheme: light; }
+  body {
+    margin: 0; min-height: 100vh; display: grid; place-items: center;
+    background: #0f2318; color: #d8f3dc; text-align: center;
+    font-family: -apple-system, Roboto, "Segoe UI", sans-serif;
+    padding: 2rem calc(1.5rem + env(safe-area-inset-right)) calc(2rem + env(safe-area-inset-bottom)) calc(1.5rem + env(safe-area-inset-left));
+  }
+  .leaf { width: 56px; height: 53px; margin: 0 auto 1.25rem; color: #f97316; }
+  h1 { font-size: 1.35rem; margin: 0 0 0.5rem; color: #fff; }
+  p { margin: 0 auto 1.75rem; max-width: 30ch; line-height: 1.55; color: #95d5b2; }
+  button {
+    min-height: 48px; padding: 0 2rem; border: 0; border-radius: 999px;
+    background: #bcdf6a; color: #0f2318; font-size: 1rem; font-weight: 700;
+  }
+</style>
+</head>
+<body>
+  <main>
+    <svg class="leaf" viewBox="0 0 512 512" aria-hidden="true"><path fill="currentColor" d="M256 24l-30 56c-3 6-9 5-16 1l-38-20 21 100c4 20-9 20-17 11l-59-63-15 41c-2 4-6 4-13 3l-73-15 20 68c4 15 7 21-5 25l-31 15 137 111c6 5 8 13 5 21l-12 39 132-17c4 0 7 3 6 7l-6 100h34l-6-100c-1-4 2-7 6-7l132 17-12-39c-3-8-1-16 5-21l137-111-31-15c-12-4-9-10-5-25l20-68-73 15c-7 1-11 1-13-3l-15-41-59 63c-8 9-21 9-17-11l21-100-38 20c-7 4-13 5-16-1l-30-56z"/></svg>
+    <h1>You&rsquo;re offline</h1>
+    <p>The portal needs an internet connection. Check your network and try again.</p>
+    <button onclick="location.href = 'https://professionalsclub.vercel.app'">Try again</button>
+  </main>
+</body>
+</html>

@@ -44,3 +44,14 @@ next-env.d.ts
 # scratch
 scratch/
 
+
+# Capacitor native build output (projects themselves are committed)
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/.idea/
+ios/App/Pods/
+ios/App/build/
+ios/App/App.xcworkspace/xcuserdata/
+ios/DerivedData/

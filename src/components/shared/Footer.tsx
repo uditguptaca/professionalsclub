@@ -110,9 +110,8 @@ export default function Footer() {
         <div className="footer-editorial-bottom">
           <p>&copy; {year} Professionals Club. Built in Canada.</p>
           <ul>
-            <li><Link href="/faq#terms">Terms</Link></li>
-            <li><Link href="/faq#privacy">Privacy</Link></li>
-            <li><Link href="/faq#cookie">Cookies</Link></li>
+            <li><Link href="/terms">Terms</Link></li>
+            <li><Link href="/privacy">Privacy</Link></li>
             <li><Link href="/support">Support us</Link></li>
           </ul>
         </div>

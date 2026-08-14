@@ -1,0 +1,47 @@
+'use client';
+import { useEffect } from 'react';
+
+/**
+ * Glue between the hosted site and the native app shells.
+ *
+ * The store apps load this site in a Capacitor WebView, which injects a
+ * `window.Capacitor` bridge into the page. On the plain web this component
+ * does nothing at all.
+ *
+ * What it wires when running inside the app:
+ *   - Android hardware back: navigate the in-app history; on the root screen,
+ *     minimize the app instead of dead-ending (Play pre-launch reports flag
+ *     apps where back does nothing).
+ *   - Tags <html> with `capacitor-app` so CSS can adapt if ever needed
+ *     (e.g. hiding "download the app" prompts inside the app itself).
+ */
+
+type CapacitorGlobal = {
+  isNativePlatform?: () => boolean;
+  Plugins?: {
+    App?: {
+      addListener: (event: 'backButton', cb: (state: { canGoBack: boolean }) => void) => void;
+      exitApp: () => void;
+      minimizeApp?: () => void;
+    };
+  };
+};
+
+export default function CapacitorBridge() {
+  useEffect(() => {
+    const cap = (window as unknown as { Capacitor?: CapacitorGlobal }).Capacitor;
+    if (!cap?.isNativePlatform?.()) return;
+
+    document.documentElement.classList.add('capacitor-app');
+
+    cap.Plugins?.App?.addListener('backButton', ({ canGoBack }) => {
+      if (canGoBack || window.history.length > 1) {
+        window.history.back();
+      } else {
+        (cap.Plugins?.App?.minimizeApp ?? cap.Plugins?.App?.exitApp)?.();
+      }
+    });
+  }, []);
+
+  return null;
+}

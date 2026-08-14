@@ -8,6 +8,7 @@ import { AppProvider } from "@/context/app-context";
 import { PortalProvider } from "@/context/portal-context";
 import { MatrimonyProvider } from "@/context/matrimony-context";
 import { getCurrentProfile } from "@/server/auth";
+import CapacitorBridge from "@/components/shared/CapacitorBridge";
 
 /**
  * Typefaces, self-hosted by next/font.
@@ -130,6 +131,9 @@ export default async function RootLayout({
         {/* Fixed grain overlay. Breaks the digital flatness of large cream areas
             without costing a repaint — it never receives pointer events. */}
         <div className="grain" aria-hidden="true" />
+
+        {/* No-op on the web; wires the native shell when inside the app. */}
+        <CapacitorBridge />
 
         <AppProvider initialProfile={profile}>
           <PortalProvider>

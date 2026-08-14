@@ -2237,3 +2237,9 @@ html { -webkit-text-size-adjust: 100%; }
 @media (min-width: 1024px) {
   .tabbar, .portal-sheet, .sheet-scrim { display: none !important; }
 }
+
+/* Legal pages */
+.legal-body p, .legal-body li { color: var(--text-secondary); line-height: var(--leading-body); }
+.legal-body ul { padding-left: 1.25rem; display: grid; gap: 0.45rem; margin: 0.5rem 0 0.75rem; }
+.legal-body a { color: var(--green-700); font-weight: 600; }
+.legal-body strong { color: var(--text-primary); }
