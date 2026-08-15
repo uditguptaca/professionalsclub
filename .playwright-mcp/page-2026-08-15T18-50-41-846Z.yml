@@ -1,0 +1,60 @@
+- generic [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main"
+  - button "Open Next.js Dev Tools" [ref=e21] [cursor=pointer]
+  - alert [ref=e25]
+  - generic [ref=e26]:
+    - main [ref=e27]:
+      - generic [ref=e28]:
+        - link "Professionals Club, home" [ref=e30] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e33]:
+            - strong [ref=e34]: Professionals Club
+            - generic [ref=e35]: Admin Portal
+        - generic [ref=e36]:
+          - generic [ref=e37]: Portal Admin
+          - generic [ref=e42]: admin
+      - generic [ref=e44]:
+        - generic [ref=e45]:
+          - generic [ref=e46]:
+            - heading "Community" [level=1] [ref=e47]
+            - paragraph [ref=e48]: What members across the club are talking about.
+          - link "Browse groups" [ref=e49] [cursor=pointer]:
+            - /url: /portal/member/community/groups
+        - generic [ref=e56]:
+          - generic [ref=e57]:
+            - textbox "Share something with the club — a win, a question, a tip…" [ref=e58]
+            - button "Post" [disabled] [ref=e60]
+          - article [ref=e64]:
+            - generic [ref=e65]:
+              - generic [ref=e66]: PA
+              - generic [ref=e67]:
+                - strong [ref=e68]: Portal Admin
+                - generic [ref=e69]: just now
+              - button "Delete post" [ref=e71] [cursor=pointer]
+            - paragraph [ref=e75]: Welcome to the new community feed! First post from the admin desk — say hello and tell us where you landed in Canada.
+            - generic [ref=e76]:
+              - button "1" [pressed] [ref=e111] [cursor=pointer]
+              - button "Comment" [expanded] [ref=e80] [cursor=pointer]
+            - generic [ref=e120]:
+              - generic [ref=e128]:
+                - generic [ref=e129]: PA
+                - generic [ref=e130]:
+                  - generic [ref=e131]:
+                    - strong [ref=e132]: Portal Admin
+                    - generic [ref=e133]: · just now
+                  - paragraph [ref=e134]: Landed in Toronto in 2019 — happy to answer settlement questions!
+                - button "Delete comment" [ref=e135] [cursor=pointer]
+              - generic [ref=e122]:
+                - textbox "Write a comment…" [active] [ref=e123]
+                - button "Send comment" [disabled] [ref=e124]
+    - navigation "Portal" [ref=e83]:
+      - link "Overview" [ref=e84] [cursor=pointer]:
+        - /url: /portal/admin/dashboard
+      - link "Help Requests" [ref=e88] [cursor=pointer]:
+        - /url: /portal/admin/requests
+      - link "Members" [ref=e93] [cursor=pointer]:
+        - /url: /portal/admin/members
+      - link "Messages" [ref=e100] [cursor=pointer]:
+        - /url: /portal/admin/messages
+      - button "More" [ref=e104] [cursor=pointer]

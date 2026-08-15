@@ -1,0 +1,66 @@
+- generic [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main"
+  - generic [ref=e3]:
+    - main [ref=e4]:
+      - generic [ref=e5]:
+        - link "Professionals Club, home" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e10]:
+            - strong [ref=e11]: Professionals Club
+            - generic [ref=e12]: Admin Portal
+        - generic [ref=e13]:
+          - generic [ref=e14]: Portal Admin
+          - generic [ref=e19]: admin
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - heading "Community" [level=1] [ref=e24]
+            - paragraph [ref=e25]: What members across the club are talking about.
+          - link "Groups" [ref=e26] [cursor=pointer]:
+            - /url: /portal/member/community/groups
+        - generic [ref=e32]:
+          - generic "Groups" [ref=e33]:
+            - link "Groups" [ref=e34] [cursor=pointer]:
+              - /url: /portal/member/community/groups
+            - link "TO Toronto Newcomers" [ref=e114] [cursor=pointer]:
+              - /url: /portal/member/community/groups/92a1b45d-693a-4e4f-816f-1f6f229fcb19
+              - generic [ref=e115]: TO
+              - generic [ref=e116]: Toronto Newcomers
+          - generic [ref=e41]:
+            - generic [ref=e42]:
+              - generic [ref=e43]: PA
+              - textbox "Share something with the club…" [ref=e44]: Photos from last month's meetup — what a turnout. Next one is already in the calendar!
+            - alert [ref=e117]: Upload failed — check the file size (8 MB photos, 120 MB video).
+            - generic [ref=e89]:
+              - generic [ref=e90]:
+                - button "Photo" [active] [ref=e91] [cursor=pointer]
+                - button "Video" [ref=e97] [cursor=pointer]
+              - button "Post" [ref=e104] [cursor=pointer]
+          - article [ref=e118]:
+            - generic [ref=e119]:
+              - generic [ref=e120]: PA
+              - generic [ref=e121]:
+                - strong [ref=e122]: Portal Admin
+                - generic [ref=e123]: 33m
+              - button "Delete post" [ref=e124] [cursor=pointer]
+            - paragraph [ref=e128]: Welcome to the new community feed! First post from the admin desk — say hello and tell us where you landed in Canada.
+            - generic [ref=e129]:
+              - generic [ref=e130]:
+                - button "Unlike" [pressed] [ref=e131] [cursor=pointer]
+                - button "Comments" [ref=e134] [cursor=pointer]
+                - button "Copy link" [ref=e137] [cursor=pointer]
+              - paragraph [ref=e141]: 1 like
+              - button "View the comment" [ref=e142] [cursor=pointer]
+    - navigation "Portal" [ref=e52]:
+      - link "Overview" [ref=e53] [cursor=pointer]:
+        - /url: /portal/admin/dashboard
+      - link "Help Requests" [ref=e57] [cursor=pointer]:
+        - /url: /portal/admin/requests
+      - link "Members" [ref=e62] [cursor=pointer]:
+        - /url: /portal/admin/members
+      - link "Messages" [ref=e69] [cursor=pointer]:
+        - /url: /portal/admin/messages
+      - button "More" [ref=e73] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=e85] [cursor=pointer]
+  - alert [ref=e113]

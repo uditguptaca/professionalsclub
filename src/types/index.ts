@@ -460,3 +460,66 @@ export interface JobPosting {
   expiresAt: string;
   createdAt: string;
 }
+
+// ========== COMMUNITY ==========
+export type CommunityContentStatus = 'active' | 'removed';
+export type CommunityReportStatus = 'open' | 'actioned' | 'dismissed';
+export type CommunityReportTarget = 'post' | 'comment';
+
+export interface CommunityGroup {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  createdBy: string | null;
+  isArchived: boolean;
+  createdAt: string;
+  memberCount: number;
+  isMember: boolean;
+  myRole: 'owner' | 'member' | null;
+}
+
+export interface CommunityMedia {
+  url: string;
+  type: 'image' | 'video';
+}
+
+export interface CommunityPost {
+  id: string;
+  authorId: string;
+  groupId: string | null;
+  body: string;
+  media: CommunityMedia[];
+  status: CommunityContentStatus;
+  createdAt: string;
+  authorFirstName: string;
+  authorLastName: string;
+  authorCity: string | null;
+  groupName: string | null;
+  likeCount: number;
+  commentCount: number;
+  likedByMe: boolean;
+}
+
+export interface CommunityComment {
+  id: string;
+  postId: string;
+  authorId: string;
+  body: string;
+  status: CommunityContentStatus;
+  createdAt: string;
+  authorFirstName: string;
+  authorLastName: string;
+}
+
+export interface CommunityReport {
+  id: string;
+  targetType: CommunityReportTarget;
+  targetId: string;
+  reporterId: string;
+  reason: string;
+  status: CommunityReportStatus;
+  createdAt: string;
+  targetBody: string | null;
+  targetAuthorId: string | null;
+}

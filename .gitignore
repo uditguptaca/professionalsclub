@@ -55,3 +55,6 @@ ios/App/Pods/
 ios/App/build/
 ios/App/App.xcworkspace/xcuserdata/
 ios/DerivedData/
+
+# Community media uploads (dev fallback)
+public/uploads/

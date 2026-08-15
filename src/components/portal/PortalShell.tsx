@@ -9,7 +9,7 @@ import {
   Home, HelpCircle, HandHeart, FileText, ClipboardList, MessageSquare,
   LogOut, BarChart3, Users, FolderKanban, Shield, ScrollText,
   UserCircle, Building2, Inbox, BookOpen, Calendar,
-  UsersRound, Newspaper, Heart, Briefcase, X, LayoutGrid, ChevronRight,
+  UsersRound, Newspaper, Heart, Briefcase, X, LayoutGrid, ChevronRight, Megaphone,
 } from 'lucide-react';
 
 /**
@@ -75,6 +75,7 @@ export default function PortalShell({
 
   const memberLinks: NavLink[] = [
     { label: 'Dashboard', href: '/portal/member/dashboard', icon: Home },
+    { label: 'Community', href: '/portal/member/community', icon: UsersRound },
     { label: 'My Profile', href: '/portal/member/profile', icon: UserCircle },
     ...(isMatrimonyEnabled ? [{ label: 'Matrimony', href: '/portal/member/matrimony', icon: Heart }] : []),
     { label: 'Request Help', href: '/portal/member/request-help', icon: HelpCircle },
@@ -93,6 +94,7 @@ export default function PortalShell({
     { label: 'Assignments', href: '/portal/admin/assignments', icon: FolderKanban },
     { label: 'Members', href: '/portal/admin/members', icon: Users },
     { label: 'Message Center', href: '/portal/admin/messages', icon: MessageSquare },
+    { label: 'Community Reports', href: '/portal/admin/community', icon: Megaphone },
     { label: 'Audit Logs', href: '/portal/admin/audit', icon: ScrollText },
     { label: 'Businesses', href: '/portal/admin/businesses', icon: Building2 },
     { label: 'Biz Requests', href: '/portal/admin/business-requests', icon: Inbox },
@@ -114,7 +116,7 @@ export default function PortalShell({
   const tabs: NavLink[] =
     role === 'admin'
       ? [adminLinks[0], adminLinks.find((l) => l.href.endsWith('/requests'))!, adminLinks.find((l) => l.href.endsWith('/members'))!, adminLinks.find((l) => l.href.endsWith('/messages'))!]
-      : [memberLinks[0], memberLinks.find((l) => l.href.endsWith('/request-help'))!, memberLinks.find((l) => l.href.endsWith('/my-requests'))!, memberLinks.find((l) => l.href.endsWith('/messages'))!];
+      : [memberLinks[0], memberLinks.find((l) => l.href.endsWith('/community'))!, memberLinks.find((l) => l.href.endsWith('/request-help'))!, memberLinks.find((l) => l.href.endsWith('/messages'))!];
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 

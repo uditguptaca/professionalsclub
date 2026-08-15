@@ -1,0 +1,36 @@
+- generic [active] [ref=f1e1]:
+  - link "Skip to content" [ref=f1e2] [cursor=pointer]:
+    - /url: "#main"
+  - button "Open Next.js Dev Tools" [ref=f1e116] [cursor=pointer]:
+    - generic [ref=f1e119]:
+      - text: Rendering
+      - generic [ref=f1e120]:
+        - generic [ref=f1e121]: .
+        - generic [ref=f1e122]: .
+        - generic [ref=f1e123]: .
+  - alert [ref=f1e33]
+  - generic [ref=f1e34]:
+    - main [ref=f1e35]:
+      - generic [ref=f1e36]:
+        - link "Professionals Club, home" [ref=f1e38] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f1e41]:
+            - strong [ref=f1e42]: Professionals Club
+            - generic [ref=f1e43]: Admin Portal
+        - generic [ref=f1e44]:
+          - generic [ref=f1e45]: Portal Admin
+          - generic [ref=f1e50]: admin
+      - generic [ref=f1e126]:
+        - link "All groups" [ref=f1e127] [cursor=pointer]:
+          - /url: /portal/member/community/groups
+        - heading "Loading…" [level=1] [ref=f1e130]
+    - navigation "Portal" [ref=f1e74]:
+      - link "Overview" [ref=f1e75] [cursor=pointer]:
+        - /url: /portal/admin/dashboard
+      - link "Help Requests" [ref=f1e79] [cursor=pointer]:
+        - /url: /portal/admin/requests
+      - link "Members" [ref=f1e84] [cursor=pointer]:
+        - /url: /portal/admin/members
+      - link "Messages" [ref=f1e91] [cursor=pointer]:
+        - /url: /portal/admin/messages
+      - button "More" [ref=f1e95] [cursor=pointer]
