@@ -1,5 +1,6 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import type {
   HelpRequest, VolunteerApplication, CaseAssignment, AdminMessage, AuditLogEntry,
   Member, HelpDeskStats, RequestStatus, VolunteerStatus, Business,
@@ -169,9 +170,22 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, [isAuthenticated, unwrap]);
 
+  // The snapshot is heavy (every help-desk slice in one query). Load it only
+  // on portal routes that actually render from it — not on the public site,
+  // and not on the community or matrimony surfaces, which have their own
+  // narrower data paths.
+  const pathname = usePathname();
+  const needsSnapshot =
+    pathname.startsWith('/portal') &&
+    !pathname.includes('/community') &&
+    !pathname.includes('/matrimony') &&
+    !pathname.startsWith('/portal/auth') &&
+    !pathname.startsWith('/portal/signup') &&
+    !pathname.startsWith('/portal/verify');
+
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    if (needsSnapshot) void refresh();
+  }, [refresh, needsSnapshot]);
 
   // ========== HELP REQUESTS ==========
 

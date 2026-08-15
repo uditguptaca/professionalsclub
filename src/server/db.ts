@@ -28,7 +28,15 @@ function getPool(): Pool {
         'pooled connection string from the Neon Console, then restart the dev server.'
     );
   }
-  pool ??= new Pool({ connectionString: process.env.DATABASE_URL });
+  // Default idleTimeoutMillis is 10s — shorter than the gap between two user
+  // interactions, so nearly every action was paying the full WebSocket +
+  // TLS connect (~1.3s from a distant dev machine) again. Hold sockets open
+  // across think-time instead.
+  pool ??= new Pool({
+    connectionString: process.env.DATABASE_URL,
+    idleTimeoutMillis: 300_000,
+    max: 8,
+  });
   return pool;
 }
 
@@ -72,28 +80,61 @@ type Mode =
   | { kind: 'anonymous' }
   | { kind: 'owner' };
 
-async function run<T>(mode: Mode, fn: (db: Db) => Promise<T>): Promise<T> {
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Transaction setup is ONE multi-statement round trip, not three.
+ *
+ * Latency dominates this app (the database is remote; a dev machine overseas
+ * pays ~250ms per round trip), so BEGIN and both set_config calls travel
+ * together as a simple-protocol batch. Simple protocol cannot carry bind
+ * parameters, so the user id is inlined — which is safe here and only here
+ * because it is validated against a strict UUID shape first. It never comes
+ * from request input anyway (always the session's own id), but the regex
+ * makes the inlining locally, provably injection-free.
+ */
+function setupSql(mode: Mode): string {
+  if (mode.kind === 'user') {
+    if (!UUID_RE.test(mode.userId)) throw new Error('Invalid user id');
+    return (
+      'begin; ' +
+      `select set_config('app.user_id', '${mode.userId}', true), ` +
+      "set_config('role', 'app_authenticated', true);"
+    );
+  }
+  if (mode.kind === 'anonymous') {
+    return "begin; select set_config('role', 'app_anonymous', true);";
+  }
+  return 'begin;';
+}
+
+async function run<T>(mode: Mode, fn: (db: Db) => Promise<T>, readOnly = false): Promise<T> {
   const client = await getPool().connect();
   try {
-    await client.query('BEGIN');
-
-    if (mode.kind === 'user') {
-      // Published before the role switch so the value is set while still
-      // privileged, then read back by app.current_user_id() inside policies.
-      await client.query("select set_config('app.user_id', $1, true)", [mode.userId]);
-      await client.query("select set_config('role', 'app_authenticated', true)");
-    } else if (mode.kind === 'anonymous') {
-      await client.query("select set_config('role', 'app_anonymous', true)");
-    }
-
+    await client.query(setupSql(mode));
     const result = await fn(bindClient(client));
+    if (readOnly) {
+      // A read-only transaction has nothing to persist: the caller gets the
+      // rows one network round trip earlier and COMMIT + release happen in
+      // the background. Failure here can only affect this already-finished
+      // read, so it is logged, never surfaced.
+      client
+        .query('COMMIT')
+        .catch((e) => console.error('[db] async COMMIT failed:', e))
+        .finally(() => client.release());
+      return result;
+    }
     await client.query('COMMIT');
+    client.release();
     return result;
   } catch (error) {
-    await client.query('ROLLBACK');
+    try {
+      await client.query('ROLLBACK');
+      client.release();
+    } catch {
+      client.release(true);
+    }
     throw error;
-  } finally {
-    client.release();
   }
 }
 
@@ -104,6 +145,15 @@ async function run<T>(mode: Mode, fn: (db: Db) => Promise<T>): Promise<T> {
  */
 export function withUser<T>(userId: string, fn: (db: Db) => Promise<T>): Promise<T> {
   return run({ kind: 'user', userId }, fn);
+}
+
+/**
+ * Same as withUser for SELECT-only work: the caller's promise resolves as
+ * soon as the rows arrive instead of waiting for COMMIT's round trip.
+ * Never use for anything that writes.
+ */
+export function withUserRead<T>(userId: string, fn: (db: Db) => Promise<T>): Promise<T> {
+  return run({ kind: 'user', userId }, fn, true);
 }
 
 /**

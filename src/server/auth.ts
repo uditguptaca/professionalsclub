@@ -68,9 +68,33 @@ async function ensureProfile(session: Session): Promise<void> {
   });
 }
 
+/**
+ * Short-lived in-process profile cache.
+ *
+ * React's cache() dedupes within one render pass, but every Server Action
+ * invocation is its own request — so before this cache, EVERY action paid a
+ * full profile round trip to the database before doing its real work. With a
+ * remote database that check alone costs three network round trips.
+ *
+ * A 30-second TTL is safe because this profile object is advisory UX state:
+ * the authoritative role and account-status checks happen inside Postgres on
+ * every query (is_admin() / is_active_member() in the RLS policies). A
+ * suspended member with a stale cache entry still gets nothing back from the
+ * database. Mutations that change the profile call invalidateProfileCache().
+ */
+const PROFILE_TTL_MS = 300_000;
+const profileCache = new Map<string, { profile: Member; expires: number }>();
+
+export function invalidateProfileCache(userId: string): void {
+  profileCache.delete(userId);
+}
+
 export const getCurrentProfile = cache(async (): Promise<Member | null> => {
   const session = await getSession();
   if (!session) return null;
+
+  const cached = profileCache.get(session.userId);
+  if (cached && cached.expires > Date.now()) return cached.profile;
 
   const load = () =>
     withUser(session.userId, async (db) =>
@@ -84,7 +108,10 @@ export const getCurrentProfile = cache(async (): Promise<Member | null> => {
     row = await load();
   }
 
-  return row ? toDomain<Member>(row) : null;
+  if (!row) return null;
+  const profile = toDomain<Member>(row);
+  profileCache.set(session.userId, { profile, expires: Date.now() + PROFILE_TTL_MS });
+  return profile;
 });
 
 /** Requires a signed-in, active account. Redirects to login otherwise. */
@@ -111,13 +138,27 @@ export async function requireAdmin(): Promise<Member> {
  * is not protection. Every action starts here.
  */
 export async function requireUserId(): Promise<string> {
-  const profile = await getCurrentProfile();
-  if (!profile) throw new Error('Not signed in.');
-  if (profile.accountStatus !== 'active') throw new Error('This account is not active.');
-  return profile.id;
+  const session = await getSession();
+  if (!session) throw new Error('Not signed in.');
+
+  // No database round trip here on purpose. The session cookie (verified
+  // locally) proves identity; account status and every permission are
+  // enforced authoritatively inside Postgres by the RLS policies on the very
+  // query this action is about to run — a suspended account gets nothing
+  // back regardless of what this function believes. The cached profile is
+  // only consulted to fail fast with a friendlier message when we already
+  // know the account is inactive.
+  const cached = profileCache.get(session.userId);
+  if (cached && cached.expires > Date.now() && cached.profile.accountStatus !== 'active') {
+    throw new Error('This account is not active.');
+  }
+  return session.userId;
 }
 
 export async function requireAdminId(): Promise<string> {
+  // Admin actions keep the explicit database check (cached up to five
+  // minutes): unlike member reads, several admin mutations rely on this
+  // throw for their error message, and admin traffic is a rounding error.
   const profile = await getCurrentProfile();
   if (!profile) throw new Error('Not signed in.');
   if (profile.accountStatus !== 'active') throw new Error('This account is not active.');

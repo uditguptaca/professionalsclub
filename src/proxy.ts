@@ -26,6 +26,12 @@ const isPublicPortalPath = (pathname: string) =>
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Server Actions arrive as POSTs. The redirect logic below is meaningless
+  // for them (the action re-authenticates itself), and the SDK is allowed to
+  // write cookies inside an action anyway — so skipping the session check
+  // here removes a full auth round trip from every action call.
+  if (request.method === 'POST') return NextResponse.next();
+
   // Runs on every page request, not just /portal. getSession() re-mints the
   // session-data cache cookie when it has gone stale (5 min TTL), and the
   // proxy is the only layer on a page request allowed to write cookies. The

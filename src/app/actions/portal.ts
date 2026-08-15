@@ -1,6 +1,6 @@
 'use server';
 
-import { requireUserId, requireAdminId, getCurrentProfile } from '@/server/auth';
+import { requireUserId, requireAdminId, getCurrentProfile, invalidateProfileCache } from '@/server/auth';
 import * as repo from '@/server/repos/portal';
 import type { ContentEntity } from '@/server/repos/content';
 import type {
@@ -196,12 +196,19 @@ export async function deleteContent(
 export async function updateOwnProfile(
   data: Record<string, unknown>
 ): Promise<ActionResult<Member>> {
-  return run('Saving profile', async () => repo.updateOwnProfile(await requireUserId(), data));
+  return run('Saving profile', async () => {
+    const uid = await requireUserId();
+    const result = await repo.updateOwnProfile(uid, data);
+    invalidateProfileCache(uid);
+    return result;
+  });
 }
 
 export async function archiveOwnAccount(): Promise<ActionResult<null>> {
   return run('Closing account', async () => {
-    await repo.archiveOwnAccount(await requireUserId());
+    const uid = await requireUserId();
+    await repo.archiveOwnAccount(uid);
+    invalidateProfileCache(uid);
     return null;
   });
 }

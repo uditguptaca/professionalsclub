@@ -73,6 +73,19 @@ async function uploadMedia(file: File, kind: 'image' | 'video'): Promise<string>
 
 type Draft = { media: CommunityMedia; previewUrl: string };
 
+/**
+ * The rail and the desktop aside mount together and both need the group
+ * list — share one in-flight request and reuse it for 30 seconds instead of
+ * paying two identical action calls per page view.
+ */
+let groupsInFlight: { promise: Promise<CommunityGroup[]>; expires: number } | null = null;
+function sharedGroups(): Promise<CommunityGroup[]> {
+  if (groupsInFlight && groupsInFlight.expires > Date.now()) return groupsInFlight.promise;
+  const promise = fetchGroups().then((r) => (r.ok ? r.data : []));
+  groupsInFlight = { promise, expires: Date.now() + 30_000 };
+  return promise;
+}
+
 // ============================================================ Composer
 
 export function PostComposer({
@@ -623,7 +636,7 @@ export function GroupsRail() {
   const [groups, setGroups] = useState<CommunityGroup[] | null>(null);
 
   useEffect(() => {
-    fetchGroups().then((r) => { if (r.ok) setGroups(r.data); });
+    sharedGroups().then(setGroups);
   }, []);
 
   return (
@@ -661,7 +674,7 @@ export function CommunityAside() {
   const [groups, setGroups] = useState<CommunityGroup[] | null>(null);
 
   useEffect(() => {
-    fetchGroups().then((r) => { if (r.ok) setGroups(r.data); });
+    sharedGroups().then(setGroups);
   }, []);
 
   const mine = (groups ?? []).filter((g) => g.isMember);

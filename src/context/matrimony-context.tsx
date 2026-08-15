@@ -1,5 +1,6 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import type {
   MatrimonyProfile, MatrimonyPreferences, MatrimonyContact, MatrimonyMedia,
   MatrimonyInterest, MatrimonyShortlist, MatrimonyProfileCard,
@@ -220,12 +221,18 @@ export function MatrimonyProvider({ children }: { children: React.ReactNode }) {
     await fetchAdminStats();
   };
 
+  // Matrimony data loads only on matrimony routes. Before this gate, every
+  // page in the app — including the public site — paid two matrimony action
+  // calls on mount for data it never rendered.
+  const pathname = usePathname();
+  const onMatrimonyRoute = pathname.includes('/matrimony');
+
   useEffect(() => {
-    if (isAuthenticated && currentUserId) {
+    if (isAuthenticated && currentUserId && onMatrimonyRoute) {
       void fetchMyProfile();
       void fetchNotifications();
     }
-  }, [isAuthenticated, currentUserId, fetchMyProfile, fetchNotifications]);
+  }, [isAuthenticated, currentUserId, onMatrimonyRoute, fetchMyProfile, fetchNotifications]);
 
   return (
     <MatrimonyContext.Provider

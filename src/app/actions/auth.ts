@@ -170,6 +170,8 @@ export async function deleteOwnAccount(): Promise<{ ok: true } | { ok: false; er
     await withElevated(async (db) => {
       await db`delete from neon_auth."user" where id = ${userId}::uuid`;
     });
+    const { invalidateProfileCache } = await import('@/server/auth');
+    invalidateProfileCache(userId);
     return { ok: true };
   } catch (err) {
     console.error('[action] Account deletion failed:',

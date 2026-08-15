@@ -1,5 +1,5 @@
 import 'server-only';
-import { withUser, type Db } from '@/server/db';
+import { withUser, withUserRead, type Db } from '@/server/db';
 import { toDomain, toDomainAll } from '@/server/case';
 import type {
   CommunityGroup, CommunityPost, CommunityComment, CommunityReport,
@@ -59,7 +59,7 @@ export async function listFeed(
   opts: { groupId?: string | null; before?: string; limit?: number } = {}
 ): Promise<CommunityPost[]> {
   const limit = Math.min(Math.max(opts.limit ?? 25, 1), 50);
-  return withUser(userId, async (db) => {
+  return withUserRead(userId, async (db) => {
     const scope =
       opts.groupId === undefined
         ? `(p.group_id is null or exists(
@@ -151,7 +151,7 @@ export async function toggleLike(
 // ========== COMMENTS ==========
 
 export async function listComments(userId: string, postId: string): Promise<CommunityComment[]> {
-  return withUser(userId, async (db) => {
+  return withUserRead(userId, async (db) => {
     const rows = await db`
       select c.id, c.post_id, c.author_id, c.body, c.status, c.created_at,
              n.first_name as author_first_name, n.last_name as author_last_name
@@ -196,7 +196,7 @@ export async function deleteComment(userId: string, commentId: string): Promise<
 // ========== GROUPS ==========
 
 export async function listGroups(userId: string): Promise<CommunityGroup[]> {
-  return withUser(userId, async (db) => {
+  return withUserRead(userId, async (db) => {
     const rows = await db.run(
       `select ${GROUP_SELECT}
        from public.community_groups g
@@ -208,7 +208,7 @@ export async function listGroups(userId: string): Promise<CommunityGroup[]> {
 }
 
 export async function getGroup(userId: string, groupId: string): Promise<CommunityGroup> {
-  return withUser(userId, async (db) => {
+  return withUserRead(userId, async (db) => {
     const rows = await db.run(
       `select ${GROUP_SELECT} from public.community_groups g where g.id = $1`,
       [groupId]
@@ -300,7 +300,7 @@ export async function listReports(
   adminId: string,
   status: CommunityReportStatus
 ): Promise<CommunityReport[]> {
-  return withUser(adminId, async (db) => {
+  return withUserRead(adminId, async (db) => {
     const rows = await db`
       select r.id, r.target_type, r.target_id, r.reporter_id, r.reason, r.status, r.created_at,
         case r.target_type

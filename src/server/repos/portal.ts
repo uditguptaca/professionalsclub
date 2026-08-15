@@ -1,5 +1,5 @@
 import 'server-only';
-import { withUser, one, type Db } from '@/server/db';
+import { withUser, withUserRead, one, type Db } from '@/server/db';
 import { toDomain, toDomainAll } from '@/server/case';
 import { insertRow, updateRow, selectList } from '@/server/query';
 import { CONTENT_TABLES, type ContentEntity } from '@/server/repos/content';
@@ -71,7 +71,7 @@ const contentQuery = (entity: ContentEntity) => {
 
 /** Everything the portal renders, in one transaction. */
 export async function loadSnapshot(userId: string, isAdmin: boolean): Promise<PortalSnapshot> {
-  return withUser(userId, async (db) => {
+  return withUserRead(userId, async (db) => {
     const [
       members, requests, volunteers, assignments, messages,
       businesses, contactRequests,
