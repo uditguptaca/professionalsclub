@@ -88,6 +88,7 @@ export default function PortalShell({
 
   const adminLinks: NavLink[] = [
     { label: 'Overview', href: '/portal/admin/dashboard', icon: BarChart3 },
+    { label: 'Community', href: '/portal/member/community', icon: UsersRound },
     ...(isMatrimonyEnabled ? [{ label: 'Matrimony', href: '/portal/admin/matrimony', icon: Heart }] : []),
     { label: 'Help Requests', href: '/portal/admin/requests', icon: FileText },
     { label: 'Volunteer Applications', href: '/portal/admin/volunteers', icon: HandHeart },
@@ -115,7 +116,7 @@ export default function PortalShell({
   // Bottom tab bar: the four highest-traffic destinations plus More.
   const tabs: NavLink[] =
     role === 'admin'
-      ? [adminLinks[0], adminLinks.find((l) => l.href.endsWith('/requests'))!, adminLinks.find((l) => l.href.endsWith('/members'))!, adminLinks.find((l) => l.href.endsWith('/messages'))!]
+      ? [adminLinks[0], adminLinks.find((l) => l.href.endsWith('/community'))!, adminLinks.find((l) => l.href.endsWith('/requests'))!, adminLinks.find((l) => l.href.endsWith('/messages'))!]
       : [memberLinks[0], memberLinks.find((l) => l.href.endsWith('/community'))!, memberLinks.find((l) => l.href.endsWith('/request-help'))!, memberLinks.find((l) => l.href.endsWith('/messages'))!];
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
