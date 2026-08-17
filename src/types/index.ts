@@ -523,3 +523,131 @@ export interface CommunityReport {
   targetBody: string | null;
   targetAuthorId: string | null;
 }
+
+// ============================================================================
+// Company referrals (0013)
+//
+// Camel-cased like the rest of this file; src/server/case.ts converts at the
+// repository boundary. The nullable identity fields on ReferralInboxItem are
+// nullable for a reason: the database NULLs them until the insider accepts, so
+// the type tells you the same thing the schema does.
+// ============================================================================
+
+export type JobSourceKind =
+  | 'greenhouse' | 'lever' | 'ashby' | 'workable' | 'smartrecruiters'
+  | 'recruitee' | 'workday' | 'jsonld' | 'rss' | 'jobbank' | 'adzuna'
+  | 'manual' | 'link';
+
+export interface Company {
+  id: string;
+  name: string;
+  slug: string;
+  logo: string | null;
+  industry: string | null;
+  sizeRange: string | null;
+  city: string | null;
+  province: string | null;
+  country?: string;
+  website: string | null;
+  careersUrl: string | null;
+  descriptionShort: string | null;
+  sourceKind: JobSourceKind;
+  /** Admin-only: absent from the public view. */
+  sourceConfig?: Record<string, unknown>;
+  openJobsCount: number;
+  jobsSyncedAt: string | null;
+  /** Admin-only. */
+  jobsSyncError?: string | null;
+  isActive?: boolean;
+  /** How many members work there and will help. Never who. */
+  helperCount: number;
+}
+
+export interface CompanyJob {
+  id: string;
+  companyId: string;
+  externalId: string;
+  title: string;
+  location: string | null;
+  province: string | null;
+  employmentType: string | null;
+  department: string | null;
+  applyUrl: string;
+  descriptionSnippet: string | null;
+  postedAt: string | null;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  isOpen: boolean;
+  sourceKind: JobSourceKind | null;
+}
+
+export interface CompanyInsider {
+  id: string;
+  companyId: string;
+  memberId: string;
+  jobTitle: string | null;
+  canRefer: boolean;
+  notifyEmail: boolean;
+  verifiedByAdmin: boolean;
+  createdAt: string;
+  companyName: string;
+  companyLogo: string | null;
+  companySlug: string;
+}
+
+/** A role attached to a request. Always visible: postings are public. */
+export interface ReferralJobRef {
+  id: string;
+  title: string;
+  location: string | null;
+  applyUrl: string;
+  isOpen: boolean;
+}
+
+/** An insider who agreed to help. Only ever built from accepted rows. */
+export interface ReferralHelper {
+  recipientId: string;
+  name: string | null;
+  title: string | null;
+  email: string | null;
+  linkedin: string | null;
+  respondedAt: string | null;
+}
+
+export type ReferralRequestStatus = 'open' | 'matched' | 'closed' | 'withdrawn';
+
+export interface MyReferralRequest {
+  id: string;
+  headline: string;
+  note: string | null;
+  status: ReferralRequestStatus;
+  notifiedCount: number;
+  createdAt: string;
+  companyId: string;
+  companyName: string;
+  companyLogo: string | null;
+  jobs: ReferralJobRef[];
+  helpers: ReferralHelper[];
+}
+
+export interface ReferralInboxItem {
+  recipientId: string;
+  myStatus: 'pending' | 'accepted' | 'declined';
+  respondedAt: string | null;
+  requestId: string;
+  /** The anonymous descriptor, e.g. "A QA Analyst (4-6 years)". */
+  headline: string;
+  note: string | null;
+  requestStatus: ReferralRequestStatus;
+  createdAt: string;
+  companyId: string;
+  companyName: string;
+  companyLogo: string | null;
+  jobs: ReferralJobRef[];
+  /** All null until myStatus === 'accepted'. Enforced by the view, not the UI. */
+  seekerName: string | null;
+  seekerEmail: string | null;
+  seekerPhone: string | null;
+  seekerLinkedin: string | null;
+  resumeUrl: string | null;
+}

@@ -2982,3 +2982,574 @@ html { -webkit-text-size-adjust: 100%; }
   font-weight: 600;
   color: var(--text-secondary);
 }
+
+/* ===== REFERRALS =========================================================== */
+/* Company referrals: jobs by employer, the ask, and the insider inbox.
+   Same grammar as the community module — white panels on the cream ground,
+   forest green as the one interactive accent, orange reserved for the primary
+   action. Reuses .community-panel / -empty / -error / -shimmer rather than
+   restating them. */
+
+.ref-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  max-width: 74rem;
+  padding-bottom: 4rem;
+}
+
+.ref-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.ref-head h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.35rem;
+}
+.ref-head p {
+  margin: 0;
+  max-width: 46rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.ref-muted { color: var(--text-muted); font-size: 0.82rem; }
+
+/* ---- Filters ------------------------------------------------------------- */
+.ref-filters {
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.ref-search {
+  position: relative;
+  flex: 1;
+  min-width: 14rem;
+  display: flex;
+  align-items: center;
+}
+.ref-search svg {
+  position: absolute;
+  left: 0.85rem;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.ref-search input,
+.ref-filters select {
+  width: 100%;
+  padding: 0.72rem 0.9rem;
+  border: 1px solid rgba(27, 67, 50, 0.16);
+  border-radius: 0.7rem;
+  background: var(--bg-primary);
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.ref-search input { padding-left: 2.5rem; }
+.ref-filters select { width: auto; min-width: 11rem; cursor: pointer; }
+.ref-search input:focus-visible,
+.ref-filters select:focus-visible {
+  border-color: var(--green-700, #1b4332);
+  box-shadow: 0 0 0 3px rgba(27, 67, 50, 0.12);
+}
+.ref-synced {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ---- Company cards ------------------------------------------------------- */
+.ref-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+  gap: 0.85rem;
+}
+
+.ref-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  padding: 1rem;
+  text-align: left;
+  background: var(--bg-primary);
+  border: 1px solid rgba(27, 67, 50, 0.1);
+  border-radius: 0.9rem;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.ref-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(27, 67, 50, 0.28);
+  box-shadow: 0 10px 24px -14px rgba(15, 35, 24, 0.32);
+}
+.ref-card:focus-visible {
+  outline: 2px solid var(--green-700, #1b4332);
+  outline-offset: 2px;
+}
+.ref-card-skeleton { pointer-events: none; flex-direction: column; align-items: stretch; }
+
+.ref-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.7rem;
+  height: 2.7rem;
+  border-radius: 0.7rem;
+  background: var(--green-950, #0f2318);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: -0.01em;
+}
+.ref-logo-lg { width: 3.4rem; height: 3.4rem; font-size: 1.1rem; border-radius: 0.85rem; }
+
+.ref-card-body { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; flex: 1; }
+.ref-card-body strong {
+  font-weight: 700;
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ref-card-body small { color: var(--text-muted); font-size: 0.78rem; }
+
+.ref-card-jobs {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.ref-card-jobs strong { font-size: 1.05rem; font-weight: 800; color: var(--primary-600); }
+
+/* The helper count is the whole point of the card, and it is a count only:
+   there is never a name here because the server never sends one. */
+.ref-helpers {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  margin-top: 0.2rem;
+  padding: 0.16rem 0.5rem;
+  border-radius: 99px;
+  background: rgba(27, 67, 50, 0.09);
+  color: var(--green-800, #1b4332);
+  font-size: 0.72rem;
+  font-weight: 700;
+  width: fit-content;
+}
+.ref-helpers-none {
+  background: rgba(0, 0, 0, 0.045);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ---- Company header ------------------------------------------------------ */
+.ref-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: fit-content;
+}
+.ref-back:hover { color: var(--primary-600); }
+
+.ref-company-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.ref-company-head h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2.6vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.ref-company-head p { margin: 0.15rem 0 0.3rem; color: var(--text-muted); font-size: 0.85rem; }
+.ref-company-head > div { flex: 1; min-width: 12rem; }
+
+/* ---- Role list ----------------------------------------------------------- */
+.ref-jobs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+
+.ref-job {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--bg-primary);
+  border: 1px solid rgba(27, 67, 50, 0.1);
+  border-radius: 0.75rem;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+.ref-job:hover { border-color: rgba(27, 67, 50, 0.24); }
+.ref-job.is-picked {
+  border-color: var(--primary-600);
+  background: rgba(232, 93, 4, 0.045);
+}
+.ref-job > label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  flex: 1;
+  padding: 0.8rem 0.9rem;
+  cursor: pointer;
+  min-width: 0;
+}
+.ref-job input[type='checkbox'] {
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-top: 0.12rem;
+  accent-color: var(--primary-600);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.ref-job-body { display: flex; flex-direction: column; gap: 0.18rem; min-width: 0; }
+.ref-job-body strong { font-weight: 650; font-size: 0.9rem; line-height: 1.35; }
+.ref-job-body small {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  flex-wrap: wrap;
+}
+.ref-job-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.8rem 0.9rem;
+  color: var(--text-muted);
+  border-left: 1px solid rgba(27, 67, 50, 0.08);
+  align-self: stretch;
+}
+.ref-job-link:hover { color: var(--primary-600); }
+.ref-job-skeleton { padding: 0.85rem 1rem; border-bottom: 1px solid rgba(27, 67, 50, 0.07); }
+
+/* ---- The ask (sticky) ---------------------------------------------------- */
+.ref-ask {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1rem;
+  background: var(--bg-primary);
+  border: 1px solid rgba(27, 67, 50, 0.16);
+  border-radius: 0.9rem;
+  box-shadow: 0 -8px 28px -18px rgba(15, 35, 24, 0.4);
+  z-index: 5;
+}
+.ref-ask-count { font-size: 0.85rem; color: var(--text-secondary); }
+.ref-ask-count strong { color: var(--primary-600); font-size: 1rem; }
+.ref-ask textarea {
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(27, 67, 50, 0.16);
+  border-radius: 0.7rem;
+  font: inherit;
+  font-size: 0.87rem;
+  line-height: 1.55;
+  resize: vertical;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  outline: none;
+}
+.ref-ask textarea:focus-visible {
+  border-color: var(--green-700, #1b4332);
+  box-shadow: 0 0 0 3px rgba(27, 67, 50, 0.1);
+}
+.ref-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--accent-700, #92400e);
+}
+.ref-warn svg { flex-shrink: 0; margin-top: 0.15rem; }
+
+/* ---- Sent confirmation --------------------------------------------------- */
+.ref-sent { padding: 2.5rem 1.75rem; text-align: center; }
+.ref-sent-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.6rem;
+  height: 3.6rem;
+  margin-bottom: 1rem;
+  border-radius: 50%;
+  background: rgba(27, 67, 50, 0.1);
+  color: var(--green-800, #1b4332);
+}
+.ref-sent h1 {
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  font-weight: 800;
+  margin: 0 0 0.6rem;
+}
+.ref-sent p { margin: 0 auto 0.65rem; max-width: 34rem; font-size: 0.9rem; line-height: 1.65; }
+.ref-sent-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 1.25rem;
+}
+
+/* ---- Tabs ---------------------------------------------------------------- */
+.ref-tabs {
+  display: flex;
+  gap: 0.3rem;
+  overflow-x: auto;
+  border-bottom: 1px solid rgba(27, 67, 50, 0.12);
+  scrollbar-width: none;
+}
+.ref-tabs::-webkit-scrollbar { display: none; }
+.ref-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.7rem 0.85rem;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.87rem;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.16s ease, border-color 0.16s ease;
+}
+.ref-tabs button:hover { color: var(--text-primary); }
+.ref-tabs button.is-active {
+  color: var(--green-900, #0f2318);
+  border-bottom-color: var(--primary-600);
+}
+.ref-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.32rem;
+  border-radius: 99px;
+  background: var(--primary-600);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+/* ---- Request / ask cards ------------------------------------------------- */
+.ref-ask-card,
+.ref-req-card,
+.ref-work-card { padding: 1.05rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.ref-ask-card.is-answered { opacity: 0.88; }
+
+.ref-ask-head { display: flex; align-items: center; gap: 0.75rem; }
+.ref-ask-head > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+.ref-ask-head strong { font-weight: 700; font-size: 0.95rem; }
+.ref-ask-head small { color: var(--text-muted); font-size: 0.78rem; }
+
+/* Says out loud that the other side is not identified yet. */
+.ref-anon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  padding: 0.2rem 0.55rem;
+  border-radius: 99px;
+  background: rgba(27, 67, 50, 0.08);
+  color: var(--green-800, #1b4332);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.ref-ask-jobs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.ref-ask-jobs li { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+.ref-ask-jobs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--green-800, #1b4332);
+  text-decoration: none;
+}
+.ref-ask-jobs a:hover { color: var(--primary-600); text-decoration: underline; }
+.ref-closed {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.3rem;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text-muted);
+}
+
+.ref-note {
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+  border-left: 2px solid rgba(27, 67, 50, 0.22);
+  background: var(--bg-secondary);
+  border-radius: 0 0.5rem 0.5rem 0;
+  font-size: 0.87rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.ref-ask-actions { display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap; }
+.ref-fineprint { margin: 0; font-size: 0.74rem; line-height: 1.5; color: var(--text-muted); }
+
+.ref-status {
+  flex-shrink: 0;
+  padding: 0.18rem 0.55rem;
+  border-radius: 99px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+.ref-status-open { background: rgba(232, 93, 4, 0.12); color: var(--primary-700); }
+.ref-status-matched { background: rgba(27, 67, 50, 0.12); color: var(--green-800, #1b4332); }
+.ref-status-closed,
+.ref-status-withdrawn { background: rgba(0, 0, 0, 0.06); color: var(--text-muted); }
+
+.ref-waiting { display: flex; align-items: center; gap: 0.35rem; margin: 0; }
+
+/* ---- Helpers, contact --------------------------------------------------- */
+.ref-helper-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.ref-helper-list h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--green-800, #1b4332);
+}
+.ref-helper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.7rem 0.85rem;
+  background: var(--bg-secondary);
+  border-radius: 0.65rem;
+}
+.ref-helper > div:first-child { display: flex; flex-direction: column; gap: 0.1rem; }
+.ref-helper strong { font-size: 0.9rem; font-weight: 700; }
+.ref-helper small { color: var(--text-muted); font-size: 0.78rem; }
+
+.ref-contact { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.ref-contact a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.32rem 0.6rem;
+  border: 1px solid rgba(27, 67, 50, 0.16);
+  border-radius: 0.55rem;
+  background: var(--bg-primary);
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+.ref-contact a:hover { border-color: var(--primary-600); color: var(--primary-700); }
+
+/* ---- Where I work ------------------------------------------------------- */
+.ref-privacy {
+  display: flex;
+  gap: 0.8rem;
+  padding: 1rem;
+  background: rgba(27, 67, 50, 0.05);
+  border-color: rgba(27, 67, 50, 0.16);
+}
+.ref-privacy svg { flex-shrink: 0; color: var(--green-800, #1b4332); margin-top: 0.1rem; }
+.ref-privacy strong { display: block; font-size: 0.88rem; margin-bottom: 0.2rem; }
+.ref-privacy p { margin: 0; font-size: 0.83rem; line-height: 1.6; color: var(--text-secondary); }
+
+.ref-toggle { display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer; }
+.ref-toggle input[type='checkbox'] {
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-top: 0.15rem;
+  accent-color: var(--green-700, #1b4332);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.ref-toggle input:disabled { cursor: not-allowed; opacity: 0.5; }
+.ref-toggle span { display: flex; flex-direction: column; gap: 0.1rem; }
+.ref-toggle strong { font-size: 0.86rem; font-weight: 650; }
+.ref-toggle small { color: var(--text-muted); font-size: 0.77rem; line-height: 1.5; }
+
+.ref-icon-btn {
+  flex-shrink: 0;
+  padding: 0.4rem;
+  background: none;
+  border: 0;
+  border-radius: 0.5rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.ref-icon-btn:hover { background: rgba(240, 73, 35, 0.09); color: var(--error-600); }
+.ref-icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.ref-work-add { padding: 1.05rem; display: flex; flex-direction: column; gap: 0.8rem; }
+.ref-work-add h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+}
+.ref-work-add .form-field { margin: 0; }
+
+/* ---- Form factors ------------------------------------------------------- */
+/* The bottom tab bar appears below 1024px (see .tabbar), and content clears it
+   with 4.5rem, so the sticky ask has to lift by the same amount at the same
+   breakpoint — not at the phone breakpoint, or it hides under the tab bar on a
+   tablet. */
+@media (max-width: 1023px) {
+  .ref-ask {
+    bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 640px) {
+  .ref-grid { grid-template-columns: 1fr; }
+  .ref-head { flex-direction: column; align-items: stretch; }
+  .ref-head .btn { width: 100%; justify-content: center; }
+  .ref-company-head { align-items: flex-start; }
+  .ref-ask-actions .btn { flex: 1; justify-content: center; }
+}

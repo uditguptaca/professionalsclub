@@ -3,7 +3,7 @@ import { withAnon, one } from '@/server/db';
 import { toDomainAll, toDomain } from '@/server/case';
 import type {
   Business, JobPosting, NewsArticle, TeamMember, DonationCampaign,
-  EBook, VideoWorkshop, ContentTemplate, CommunityEvent,
+  EBook, VideoWorkshop, ContentTemplate, CommunityEvent, Company,
 } from '@/types';
 
 /**
@@ -92,6 +92,7 @@ export interface PublicContentBundle {
   workshops: VideoWorkshop[];
   templates: ContentTemplate[];
   events: CommunityEvent[];
+  companies: Company[];
 }
 
 export async function loadPublicContent(): Promise<PublicContentBundle> {
@@ -143,7 +144,17 @@ export async function loadPublicContent(): Promise<PublicContentBundle> {
                  location, event_type, capacity, attendees, image, is_featured,
                  platform, rsvp_url, status, is_published, created_at
             from public.events order by event_date asc nulls last
-        ) t) as events
+        ) t) as events,
+        -- The employer directory. Read from company_helper_counts, never the
+        -- base tables: it carries a helper COUNT and no insider identity, which
+        -- is what makes it safe to hand an anonymous visitor.
+        (select coalesce(json_agg(t), '[]'::json) from (
+          select id, name, slug, logo, industry, size_range, city, province,
+                 website, careers_url, description_short, source_kind,
+                 open_jobs_count, jobs_synced_at, helper_count
+            from public.company_helper_counts
+           order by helper_count desc, open_jobs_count desc, name asc
+        ) t) as companies
     `;
 
     // RLS still decides what each subquery may see: app_anonymous only matches
@@ -159,6 +170,7 @@ export async function loadPublicContent(): Promise<PublicContentBundle> {
       workshops: toDomainAll<VideoWorkshop>(b.workshops),
       templates: toDomainAll<ContentTemplate>(b.templates),
       events: toDomainAll<CommunityEvent>(b.events),
+      companies: toDomainAll<Company>(b.companies),
     };
   });
 }

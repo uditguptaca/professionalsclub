@@ -3,7 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { getPublicContent } from '@/app/actions/public';
 import type {
   JobPosting, NewsArticle, TeamMember, DonationCampaign,
-  EBook, VideoWorkshop, ContentTemplate, CommunityEvent,
+  EBook, VideoWorkshop, ContentTemplate, CommunityEvent, Company,
 } from '@/types';
 
 /**
@@ -28,12 +28,14 @@ type PublicContent = {
   workshops: VideoWorkshop[];
   templates: ContentTemplate[];
   events: CommunityEvent[];
+  /** Employers, each with a helper count and no insider identity. */
+  companies: Company[];
   loading: boolean;
 };
 
 const EMPTY: PublicContent = {
   jobPostings: [], newsArticles: [], teamMembers: [], donationCampaigns: [],
-  ebooks: [], workshops: [], templates: [], events: [], loading: true,
+  ebooks: [], workshops: [], templates: [], events: [], companies: [], loading: true,
 };
 
 const PublicContentContext = createContext<PublicContent>(EMPTY);
@@ -45,7 +47,7 @@ function load(): Promise<Omit<PublicContent, 'loading'>> {
   if (cached && cached.expires > Date.now()) return cached.promise;
   const promise = getPublicContent().catch(() => ({
     jobPostings: [], newsArticles: [], teamMembers: [], donationCampaigns: [],
-    ebooks: [], workshops: [], templates: [], events: [],
+    ebooks: [], workshops: [], templates: [], events: [], companies: [],
   }));
   cached = { promise, expires: Date.now() + 60_000 };
   return promise;

@@ -13,6 +13,9 @@ npm run build    # next build (also the Vercel build command)
 npm run start    # serve the production build
 npm run lint     # eslint (flat config)
 npx tsc --noEmit # typecheck; the build does not fail on type errors alone
+
+node db/migrate.mjs           # apply pending migrations
+node db/verify-referrals.mjs  # assert the referral privacy boundary (33 checks)
 ```
 
 No test suite exists. Verify changes by running the dev server and exercising the
@@ -55,8 +58,12 @@ These are the ones that cause security bugs when broken.
 tables, and a table owner bypasses RLS. `withUser()` exists to drop into
 `app_authenticated` and publish the caller's id for `app.current_user_id()`; a
 stray `pool.query()` runs as the owner with RLS switched off and no visible
-symptom. `withElevated()` does this deliberately and has exactly one caller
-(creating a profile at signup).
+symptom. `withElevated()` does this deliberately and its callers are counted: creating a
+profile at signup, deleting your own account, the job-feed sync, and the email
+outbox drain. The last two are privileged because no user is in the loop — the
+cron fires them, they take no caller-supplied SQL shape, and the drain
+deliberately resolves other members' email addresses somewhere a member's own
+session cannot.
 
 **Every Server Action is a public HTTP endpoint.** Being exported from a
 `'use server'` file is not access control. Each action starts with
@@ -104,6 +111,14 @@ dates only.
 **Other members' matrimony listings only ever come from
 `matrimony_visible_profiles`.** The base table carries moderation columns and is
 restricted to your own row plus admins.
+
+**Who works where is not a question the database will answer.** `company_insiders`
+(0013) is readable only by the member themself and admins. The public gets
+`company_helper_counts`, which is a count with no identity. A referral request
+stays anonymous both ways until an insider accepts, and that is enforced by CASE
+expressions inside `referral_inbox` / `referral_helpers` — the identity columns
+are NULL, not hidden. `db/verify-referrals.mjs` asserts all of this against real
+`app_authenticated` connections; run it after touching any of those objects.
 
 ## Styling
 
