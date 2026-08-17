@@ -16,6 +16,8 @@ npx tsc --noEmit # typecheck; the build does not fail on type errors alone
 
 node db/migrate.mjs           # apply pending migrations
 node db/verify-referrals.mjs  # assert the referral privacy boundary (33 checks)
+node db/seed-demo.mjs         # demo data for showing the app (idempotent)
+node db/seed-demo.mjs --clean # remove it again
 ```
 
 No test suite exists. Verify changes by running the dev server and exercising the
