@@ -15,6 +15,8 @@ export default function AdminRequestDetailPage() {
   const { helpRequests, messages, updateRequestStatus, addInternalNote, sendMessage, volunteerApps, createAssignment } = usePortal();
   const [noteText, setNoteText] = useState('');
   const [assigning, setAssigning] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [actionError, setActionError] = useState('');
   const { profile } = useApp();
   const adminName = profile ? `${profile.firstName} ${profile.lastName}`.trim() || profile.email : 'Admin';
   const [msgToMember, setMsgToMember] = useState('');
@@ -29,9 +31,16 @@ export default function AdminRequestDetailPage() {
     return <div style={{ textAlign: 'center', padding: 80 }}><h2>Request not found</h2><Link href="/portal/admin/requests" className="btn btn-outline">Back</Link></div>;
   }
 
-  const handleStatusUpdate = () => {
-    if (newStatus) updateRequestStatus(requestId, newStatus as RequestStatus);
-    setNewStatus('');
+  // The context mutations return their ActionResult now, so a failed write can
+  // stop being invisible: keep the selection and say what went wrong.
+  const handleStatusUpdate = async () => {
+    if (!newStatus || busy) return;
+    setBusy('status');
+    setActionError('');
+    const result = await updateRequestStatus(requestId, newStatus as RequestStatus);
+    if (result.ok) setNewStatus('');
+    else setActionError(result.error);
+    setBusy(null);
   };
 
   // Was a dead button: it rendered, looked clickable, and did nothing.
@@ -51,10 +60,15 @@ export default function AdminRequestDetailPage() {
     setAssigning(null);
   };
 
-  const handleAddNote = () => {
-    if (!noteText.trim()) return;
-    addInternalNote(requestId, { authorId: '', authorName: '', body: noteText });
-    setNoteText('');
+  const handleAddNote = async () => {
+    if (!noteText.trim() || busy) return;
+    setBusy('note');
+    setActionError('');
+    // The draft survives a failure; clearing it first lost the admin's text.
+    const result = await addInternalNote(requestId, { authorId: '', authorName: '', body: noteText });
+    if (result.ok) setNoteText('');
+    else setActionError(result.error);
+    setBusy(null);
   };
 
   // recipientUserId is what the RLS select policy matches on
@@ -121,7 +135,7 @@ export default function AdminRequestDetailPage() {
                 <option value="">Select new status...</option>
                 {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
               </select>
-              <button className="btn btn-primary" onClick={handleStatusUpdate} disabled={!newStatus}>Update</button>
+              <button className="btn btn-primary" onClick={handleStatusUpdate} disabled={!newStatus || busy === 'status'}>{busy === 'status' ? 'Updating…' : 'Update'}</button>
             </div>
           </div>
 
@@ -205,8 +219,8 @@ export default function AdminRequestDetailPage() {
               </div>
             ))}
             <div style={{ display: 'flex', gap: 6 }}>
-              <input className="input" style={{ flex: 1, fontSize: '0.82rem' }} placeholder="Add internal note..." value={noteText} onChange={e => setNoteText(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddNote()} />
-              <button className="btn btn-outline btn-sm" onClick={handleAddNote} disabled={!noteText.trim()}>Add</button>
+              <input className="input" style={{ flex: 1, fontSize: '0.82rem' }} placeholder="Add internal note..." value={noteText} onChange={e => setNoteText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') void handleAddNote(); }} />
+              <button className="btn btn-outline btn-sm" onClick={handleAddNote} disabled={!noteText.trim() || busy === 'note'}>{busy === 'note' ? 'Adding…' : 'Add'}</button>
             </div>
           </div>
 

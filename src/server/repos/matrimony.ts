@@ -195,22 +195,48 @@ export async function deleteMine(userId: string): Promise<void> {
 
 export interface BrowseFilters {
   gender?: string;
+  age_min?: number;
+  age_max?: number;
+  height_min_cm?: number;
+  height_max_cm?: number;
   religion?: string[];
+  community?: string[];
   city?: string;
   province?: string;
   country?: string;
   residency_status?: string[];
   marital_status?: string[];
   mother_tongue?: string[];
+  /** Matches v.qualification. The UI labels the field "Education". */
+  education?: string[];
+  diet?: string[];
   verified_only?: boolean;
+  has_photo?: boolean;
+  recently_active?: boolean;
   exclude_gender?: string;
+  sort_by?: 'newest' | 'recently_active';
   limit?: number;
+  offset?: number;
 }
 
+export interface BrowsePage {
+  profiles: MatrimonyProfileCard[];
+  /** Rows matching the filters, ignoring limit/offset, so a client can page. */
+  total: number;
+}
+
+/** The list without the count, for callers that show everything they asked for. */
 export async function browse(
   userId: string,
   filters: BrowseFilters = {}
 ): Promise<MatrimonyProfileCard[]> {
+  return (await browsePaged(userId, filters)).profiles;
+}
+
+export async function browsePaged(
+  userId: string,
+  filters: BrowseFilters = {}
+): Promise<BrowsePage> {
   return withUser(userId, async (db) => {
     const where: string[] = ["v.status = 'approved'", 'v.is_hidden = false'];
     const values: unknown[] = [];
@@ -225,22 +251,43 @@ export async function browse(
     if (filters.province) add('v.province = ?', filters.province);
     if (filters.country) add('v.country = ?', filters.country);
     if (filters.religion?.length) add('v.religion = any(?)', filters.religion);
+    if (filters.community?.length) add('v.community = any(?)', filters.community);
     if (filters.residency_status?.length) add('v.residency_status = any(?)', filters.residency_status);
     if (filters.marital_status?.length) add('v.marital_status = any(?)', filters.marital_status);
     if (filters.mother_tongue?.length) add('v.mother_tongue = any(?)', filters.mother_tongue);
+    if (filters.education?.length) add('v.qualification = any(?)', filters.education);
+    if (filters.diet?.length) add('v.diet = any(?)', filters.diet);
+    if (filters.height_min_cm) add('v.height_cm >= ?', filters.height_min_cm);
+    if (filters.height_max_cm) add('v.height_cm <= ?', filters.height_max_cm);
     if (filters.verified_only) where.push('v.is_verified_id = true');
+    if (filters.recently_active) where.push("v.last_active_at >= now() - interval '3 days'");
+
+    // Age is stored as a date of birth, so the bounds become a dob range rather
+    // than a computed age: dob is comparable to an index, and the arithmetic is
+    // exact for whole-year ages. age >= n means born on or before today minus n
+    // years; age <= n means born after today minus (n + 1) years.
+    if (filters.age_min) add('v.dob <= current_date - make_interval(years => ?::int)', filters.age_min);
+    if (filters.age_max) add('v.dob > current_date - make_interval(years => ?::int + 1)', filters.age_max);
 
     // The view already excludes your own listing's counterparties by block, but
     // not you; filter self out here.
     values.push(userId);
     where.push(`v.user_id <> $${values.length}::uuid`);
 
+    // "With photo" means the same photo the card renders, so it is a condition on
+    // the lateral join below and not a separate exists() over all media.
+    if (filters.has_photo) where.push('m.url is not null');
+
     const limit = Math.min(Math.max(Number(filters.limit ?? 50), 1), 100);
+    const offset = Math.max(Math.trunc(Number(filters.offset) || 0), 0);
+    // Fixed expressions chosen by an allowlist, never caller text in the SQL.
+    const order = filters.sort_by === 'newest' ? 'v.created_at desc' : 'v.last_active_at desc';
 
     // The primary photo is joined here rather than fetched separately, and only
-    // when moderation has approved it.
+    // when moderation has approved it. count(*) over() is evaluated before the
+    // limit, so the page and its total arrive in one round trip.
     const rows = await db.run(
-      `select v.*, m.url as primary_photo_url
+      `select v.*, m.url as primary_photo_url, count(*) over() as total_count
          from public.matrimony_visible_profiles v
          left join lateral (
            select url from public.matrimony_media
@@ -249,12 +296,15 @@ export async function browse(
             limit 1
          ) m on true
         where ${where.join(' and ')}
-        order by v.last_active_at desc
-        limit ${limit}`,
+        order by ${order}
+        limit ${limit} offset ${offset}`,
       values.map((v) => v)
     );
 
-    return normAll<MatrimonyProfileCard>(rows);
+    return {
+      profiles: normAll<MatrimonyProfileCard>(rows.map(({ total_count: _t, ...card }) => card)),
+      total: rows.length > 0 ? Number(rows[0].total_count) : 0,
+    };
   });
 }
 

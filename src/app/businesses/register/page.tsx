@@ -3,10 +3,11 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   Building2, User, MapPin, Phone, Mail, Globe, Briefcase, Tag, Clock,
-  ShieldCheck, Star, Camera, FileText, CheckCircle, ArrowRight, ArrowLeft,
+  ShieldCheck, Star, Camera, CheckCircle, ArrowRight, ArrowLeft,
   Gift, Award, DollarSign,
-  MessageSquare, Megaphone, Upload, Heart, Link2, Hash, Video, AtSign,
+  MessageSquare, Megaphone, Heart, Link2, Hash, Video, AtSign,
 } from 'lucide-react';
+import { submitBusinessListing } from '@/app/actions/public';
 
 const STEPS = [
   { id: 1, label: 'Business Profile', icon: Building2 },
@@ -50,6 +51,8 @@ export default function BusinessSignupPage() {
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   React.useEffect(() => {
     setMounted(true);
@@ -142,22 +145,71 @@ export default function BusinessSignupPage() {
   const updateBenefit = (i: number, val: string) => setAdditionalBenefits(prev => prev.map((b, idx) => idx === i ? val : b));
   const removeBenefit = (i: number) => setAdditionalBenefits(prev => prev.filter((_, idx) => idx !== i));
 
-  const canProceed = () => {
-    switch (step) {
-      case 1: return businessName && category && descShort;
-      case 2: return contactPerson && phone && email && city && province;
+  const stepComplete = (s: number) => {
+    switch (s) {
+      case 1: return Boolean(businessName.trim() && category && descShort.trim());
+      case 2: return Boolean(contactPerson.trim() && phone.trim() && email.trim() && city.trim() && province);
       case 3: return services.filter(s => s.trim()).length > 0;
       case 4: return true; // optional
-      case 5: return offerDescription; // mandatory section
-      case 6: return businessHours && serviceMode;
+      case 5: return Boolean(offerDescription.trim()); // mandatory section
+      case 6: return Boolean(businessHours.trim() && serviceMode);
       case 7: return true; // optional
       case 8: return accuracyConfirm && adminReviewAgree && allowPublicListing && acceptTerms;
       default: return true;
     }
   };
 
-  const handleSubmit = () => {
-    setSubmitted(true);
+  const canProceed = () => stepComplete(step);
+
+  const handleSubmit = async () => {
+    // The step pills allow jumping back, so a required field can be cleared
+    // after its step was passed. Re-check every step before the server does.
+    const incomplete = STEPS.find(s => !stepComplete(s.id));
+    if (incomplete) {
+      setStep(incomplete.id);
+      setError(`Please complete the required fields in ${incomplete.label}.`);
+      return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+    try {
+      // Only the fields with a column on businesses are sent. The rest of the
+      // wizard has no home in the schema yet.
+      const result = await submitBusinessListing({
+        name: businessName.trim(),
+        category,
+        descriptionShort: descShort.trim() || undefined,
+        descriptionFull: descFull.trim() || undefined,
+        contactPerson: contactPerson.trim() || undefined,
+        phone: phone.trim() || undefined,
+        email: email.trim() || undefined,
+        website: website.trim() || undefined,
+        address: address.trim() || undefined,
+        city: city.trim() || undefined,
+        province: province || undefined,
+        postalCode: postalCode.trim() || undefined,
+        yearsInBusiness: Number.parseInt(yearsInBusiness, 10) || undefined,
+        services: services.map(s => s.trim()).filter(Boolean),
+        memberBenefits: additionalBenefits.map(b => b.trim()).filter(Boolean),
+        // member_rate_text is the copy shown on the listing card, which is what
+        // the offer description field promises. The discount is appended only
+        // when the description does not already state it.
+        memberRateText: offerDescription.trim() + (
+          discountPercent.trim() && !offerDescription.includes(discountPercent.trim())
+            ? ` (${discountPercent.trim()})`
+            : ''
+        ),
+      });
+      if (result.ok) setSubmitted(true);
+      else setError(result.error);
+    } catch {
+      // A dropped connection rejects the action call rather than returning
+      // { ok: false }, and would otherwise leave the button stuck on pending.
+      setError('Could not reach the server. Check your connection and submit again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -167,7 +219,7 @@ export default function BusinessSignupPage() {
           <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary-600), var(--primary-500))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', boxShadow: '0 8px 32px rgba(232,93,4,0.3)' }}>
             <CheckCircle size={40} color="white" />
           </div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 900, marginBottom: 12 }}>Application Submitted!</h1>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 900, marginBottom: 12 }}>Application Submitted</h1>
           <p style={{ fontSize: '1rem', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 8 }}>
             Your business listing for <strong>{businessName}</strong> has been submitted for admin review.
           </p>
@@ -179,7 +231,8 @@ export default function BusinessSignupPage() {
             </div>
           </div>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: 28 }}>
-            You&rsquo;ll receive an email at <strong>{email}</strong> once your listing is approved and live.
+            The admin team will contact you at <strong>{email}</strong> about your listing. There is no automatic
+            approval email, so keep an eye on that inbox.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
             <Link href="/businesses" className="btn btn-primary" style={{ padding: '12px 28px' }}>Browse Directory</Link>
@@ -315,14 +368,10 @@ export default function BusinessSignupPage() {
                   </div>
                 </div>
 
-                {/* Logo Upload */}
+                {/* No file storage is wired to this form, so there is no upload control. */}
                 <div>
                   <label style={labelStyle}>Business Logo</label>
-                  <div style={{ border: '2px dashed var(--gray-200)', borderRadius: 14, padding: '28px 20px', textAlign: 'center', cursor: 'pointer', background: 'var(--gray-50)' }}>
-                    <Upload size={28} style={{ color: 'var(--gray-400)', margin: '0 auto 8px' }} />
-                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Click to upload logo</div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>PNG, JPG or SVG. Max 2MB. Recommended: 400×400px</div>
-                  </div>
+                  <span style={hintStyle}>The admin team will ask you for your logo by email after reviewing this application.</span>
                 </div>
               </div>
             </div>
@@ -502,14 +551,9 @@ export default function BusinessSignupPage() {
                   </div>
                 </div>
 
-                {/* Document Upload */}
                 <div>
                   <label style={labelStyle}>Supporting Documents</label>
-                  <div style={{ border: '2px dashed var(--gray-200)', borderRadius: 14, padding: '24px 20px', textAlign: 'center', cursor: 'pointer', background: 'var(--gray-50)' }}>
-                    <FileText size={24} style={{ color: 'var(--gray-400)', margin: '0 auto 8px' }} />
-                    <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Upload certifications, licenses, or credentials</div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>PDF, JPG, PNG. Max 5MB each</div>
-                  </div>
+                  <span style={hintStyle}>The admin team will request copies of your certifications, licenses, or credentials by email after reviewing this application.</span>
                 </div>
               </div>
             </div>
@@ -605,14 +649,9 @@ export default function BusinessSignupPage() {
 
                 <div style={{ height: 1, background: 'var(--gray-100)', margin: '4px 0' }} />
 
-                {/* Image Upload */}
                 <div>
                   <label style={labelStyle}>Business Photos / Gallery</label>
-                  <div style={{ border: '2px dashed var(--gray-200)', borderRadius: 14, padding: '28px 20px', textAlign: 'center', cursor: 'pointer', background: 'var(--gray-50)' }}>
-                    <Camera size={28} style={{ color: 'var(--gray-400)', margin: '0 auto 8px' }} />
-                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Upload business photos</div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>Office, team, storefront, work samples. Max 5 images, 5MB each</div>
-                  </div>
+                  <span style={hintStyle}>The admin team will ask for photos of your office, team, or work samples by email after reviewing this application.</span>
                 </div>
 
                 <div style={{ height: 1, background: 'var(--gray-100)', margin: '4px 0' }} />
@@ -772,7 +811,7 @@ export default function BusinessSignupPage() {
                   <ol style={{ margin: 0, paddingLeft: 18, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
                     <li>Your application is stored as <strong>&ldquo;Pending Review&rdquo;</strong></li>
                     <li>Admin team verifies your business details and credentials</li>
-                    <li>You&rsquo;ll receive email confirmation within 2–3 business days</li>
+                    <li>Admin will email you for your logo, photos, and any supporting documents</li>
                     <li>Once approved, your listing goes live on the directory</li>
                     <li>Admin may contact you for additional verification if needed</li>
                   </ol>
@@ -781,10 +820,12 @@ export default function BusinessSignupPage() {
             </div>
           )}
 
+          {error && <p className="community-error" style={{ marginTop: 24 }}>{error}</p>}
+
           {/* Navigation */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 36, paddingTop: 24, borderTop: '1px solid var(--gray-100)' }}>
             {step > 1 ? (
-              <button type="button" onClick={() => setStep(s => s - 1)} className="btn btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem' }}>
+              <button type="button" onClick={() => setStep(s => s - 1)} disabled={submitting} className="btn btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem' }}>
                 <ArrowLeft size={16} /> Back
               </button>
             ) : (
@@ -794,12 +835,12 @@ export default function BusinessSignupPage() {
             )}
 
             {step < STEPS.length ? (
-              <button type="button" onClick={() => setStep(s => s + 1)} disabled={!canProceed()} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', opacity: canProceed() ? 1 : 0.5, cursor: canProceed() ? 'pointer' : 'not-allowed' }}>
+              <button type="button" onClick={() => { setError(null); setStep(s => s + 1); }} disabled={!canProceed()} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', opacity: canProceed() ? 1 : 0.5, cursor: canProceed() ? 'pointer' : 'not-allowed' }}>
                 Continue <ArrowRight size={16} />
               </button>
             ) : (
-              <button type="button" onClick={handleSubmit} disabled={!canProceed()} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.9rem', padding: '12px 28px', opacity: canProceed() ? 1 : 0.5, cursor: canProceed() ? 'pointer' : 'not-allowed', background: 'linear-gradient(135deg, var(--primary-600), var(--primary-500))', boxShadow: '0 8px 24px rgba(232,93,4,0.3)' }}>
-                <CheckCircle size={18} /> Submit Application
+              <button type="button" onClick={handleSubmit} disabled={!canProceed() || submitting} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.9rem', padding: '12px 28px', opacity: canProceed() && !submitting ? 1 : 0.5, cursor: canProceed() && !submitting ? 'pointer' : 'not-allowed', background: 'linear-gradient(135deg, var(--primary-600), var(--primary-500))', boxShadow: '0 8px 24px rgba(232,93,4,0.3)' }}>
+                <CheckCircle size={18} /> {submitting ? 'Submitting...' : 'Submit Application'}
               </button>
             )}
           </div>

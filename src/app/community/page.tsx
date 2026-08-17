@@ -2,7 +2,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
-import { Video, PlayCircle, BookOpen, MessageSquare, TrendingUp, HandHeart, ArrowRight, ExternalLink, Users } from 'lucide-react';
+import { Video, PlayCircle, BookOpen, MessageSquare, TrendingUp, HandHeart, ArrowRight } from 'lucide-react';
+
+/** Same channel the /youtube page subscribes to. */
+const YOUTUBE_CHANNEL = 'https://www.youtube.com/@professionalsclubca';
 
 export default function CommunityPage() {
   return (
@@ -42,26 +45,34 @@ export default function CommunityPage() {
               <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: 28 }}>
                 Watch our past workshops, tutorials, and settlement guidance sessions on our official YouTube channel.
               </p>
-              <div style={{ display: 'flex', gap: 12 }}>
-                <button className="btn" style={{ background: 'var(--primary-600)', color: 'white', border: 'none', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <a
+                  href={YOUTUBE_CHANNEL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn"
+                  style={{ background: 'var(--primary-600)', color: 'white', border: 'none', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 8 }}
+                >
                   <PlayCircle size={18} /> Subscribe on YouTube
-                </button>
-                <button className="btn btn-outline" style={{ background: 'var(--bg-primary)', padding: '14px 24px' }}>Browse Videos</button>
+                </a>
+                <Link href="/youtube" className="btn btn-outline" style={{ background: 'var(--bg-primary)', padding: '14px 24px' }}>Browse Videos</Link>
               </div>
             </div>
 
-            {/* Featured Video Embed */}
-            <div style={{ borderRadius: 20, overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.15)', position: 'relative', aspectRatio: '16/9', background: 'var(--text-primary)', cursor: 'pointer' }}>
-              <Image src="/events-meetup.png" alt="Video thumbnail" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.5 }} />
+            {/* Links to the video library rather than naming a single session: this
+                page is static, so a hardcoded title would go stale or, worse, name a
+                video that was never published. */}
+            <Link href="/youtube" style={{ borderRadius: 20, overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.15)', position: 'relative', aspectRatio: '16/9', background: 'var(--text-primary)', display: 'block' }}>
+              <Image src="/events-meetup.png" alt="Professionals Club workshop recording" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.5 }} />
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(12,12,14,0.7), transparent)' }} />
               <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 72, height: 72, borderRadius: '50%', background: 'var(--primary-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(232,93,4,0.4)' }}>
                 <PlayCircle size={36} style={{ color: 'white', marginLeft: 3 }} />
               </div>
               <div style={{ position: 'absolute', bottom: 20, left: 24, right: 24, zIndex: 2 }}>
-                <div style={{ color: 'white', fontWeight: 800, fontSize: '1.1rem' }}>Financial Literacy for Newcomers: Taxes 101</div>
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: 4 }}>Educational Workshop &#8226; 45 Mins</div>
+                <div style={{ color: 'white', fontWeight: 800, fontSize: '1.1rem' }}>Watch the recorded sessions</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: 4 }}>Workshops, tax clinics and licensing walkthroughs</div>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
       </section>
@@ -75,9 +86,11 @@ export default function CommunityPage() {
           </div>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {[
-              { icon: <TrendingUp size={28} />, title: 'Finance & Tax Guides', desc: 'Tutorials on building Canadian credit and filing your first tax return.', color: 'var(--primary-600)', link: '/resources' },
-              { icon: <HandHeart size={28} />, title: 'Cultural Adaptation Forums', desc: 'Engage with fellow newcomers and ask questions about daily life.', color: 'var(--text-primary)', link: '/portal/auth' },
-              { icon: <BookOpen size={28} />, title: 'Professional E-Books', desc: 'Download settlement checklists and e-books authored by mentors.', color: 'var(--primary-600)', link: '/resources' },
+              { icon: <TrendingUp size={28} />, title: 'Finance & Tax Guides', desc: 'Workshop recordings and templates on Canadian credit, banking and your first tax return.', color: 'var(--primary-600)', link: '/resources', cta: 'Explore' },
+              // The discussion feed lives at /portal/member/community and is members
+              // only by design, so a signed-out visitor is sent to sign up instead.
+              { icon: <HandHeart size={28} />, title: 'Member Discussion Feed', desc: 'Questions, answers and local groups. The feed is open to members, so create a free account to read and post.', color: 'var(--text-primary)', link: '/portal/auth', cta: 'Create an account' },
+              { icon: <BookOpen size={28} />, title: 'Newcomer E-Books', desc: 'Chapter guides covering the move and the first months here, plus new titles as our team publishes them.', color: 'var(--primary-600)', link: '/e-books', cta: 'Explore' },
             ].map((item, i) => (
               <div key={i} style={{ borderRadius: 20, padding: '36px 28px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', transition: 'box-shadow 0.2s' }}>
                 <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(232, 93, 4, 0.08)', border: '1px solid rgba(232, 93, 4, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, marginBottom: 20 }}>
@@ -86,7 +99,7 @@ export default function CommunityPage() {
                 <h3 style={{ fontWeight: 800, fontSize: '1.15rem', marginBottom: 10, fontFamily: 'var(--font-display)' }}>{item.title}</h3>
                 <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 20 }}>{item.desc}</p>
                 <Link href={item.link} style={{ fontWeight: 700, color: item.color, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
-                  Explore <ArrowRight size={14} />
+                  {item.cta} <ArrowRight size={14} />
                 </Link>
               </div>
             ))}

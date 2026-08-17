@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
+import { submitBusinessContactRequest } from '@/app/actions/portal';
 import {
   Search, ShieldCheck, Star, Tag, MapPin, Phone, Mail, Globe,
   ArrowRight, CheckCircle, X, ChevronDown, Building2, Bookmark,
@@ -10,8 +11,8 @@ import {
 import { BUSINESS_CATEGORIES, type BusinessContactHelpType } from '@/types';
 
 export default function MemberBusinessDirectory() {
-  const { businesses, addBusinessContactRequest } = usePortal();
-  const { currentUserId } = useApp();
+  const { businesses } = usePortal();
+  const { profile } = useApp();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [dealsOnly, setDealsOnly] = useState(false);
@@ -24,6 +25,8 @@ export default function MemberBusinessDirectory() {
   const [contactNotes, setContactNotes] = useState('');
   const [contactPref, setContactPref] = useState<'email' | 'phone' | 'portal'>('email');
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const publicBiz = businesses.filter(b => b.verificationStatus === 'verified');
 
@@ -42,21 +45,44 @@ export default function MemberBusinessDirectory() {
 
   const modalBiz = contactModal ? businesses.find(b => b.id === contactModal) : null;
 
-  const handleSubmitRequest = () => {
-    if (!modalBiz) return;
-    addBusinessContactRequest({
+  const closeContactModal = () => {
+    setContactModal(null);
+    setSubmitted(false);
+    setSubmitError('');
+  };
+
+  const handleSubmitRequest = async () => {
+    if (!modalBiz || sending) return;
+
+    setSending(true);
+    setSubmitError('');
+
+    // The action is called directly rather than through usePortal because the
+    // context helper returns void: there was no way to tell a rejected write from
+    // a successful one, so the success panel showed either way.
+    //
+    // member_id is stamped from the session server-side, which is why it is not
+    // in the payload. memberName used to be the literal string "Current Member",
+    // and that placeholder is what the admin queue displayed for every request.
+    const result = await submitBusinessContactRequest({
       businessId: modalBiz.id,
       businessName: modalBiz.name,
-      memberId: currentUserId || 'm1',
-      memberName: 'Current Member',
+      memberName: `${profile?.firstName ?? ''} ${profile?.lastName ?? ''}`.trim(),
       helpType: contactHelpType,
       preferredContact: contactPref,
       notes: contactNotes,
     });
+
+    setSending(false);
+
+    if (!result.ok) {
+      setSubmitError(result.error);
+      return;
+    }
+
     setSubmitted(true);
     setTimeout(() => {
-      setContactModal(null);
-      setSubmitted(false);
+      closeContactModal();
       setContactNotes('');
     }, 2000);
   };
@@ -138,12 +164,12 @@ export default function MemberBusinessDirectory() {
 
       {/* Contact Modal */}
       {contactModal && modalBiz && (
-        <div className="biz-contact-modal-overlay" onClick={() => { setContactModal(null); setSubmitted(false); }}>
+        <div className="biz-contact-modal-overlay" onClick={closeContactModal}>
           <div className="biz-contact-modal" onClick={e => e.stopPropagation()}>
             {submitted ? (
               <div style={{ textAlign: 'center', padding: '40px 0' }}>
                 <CheckCircle size={48} style={{ color: 'var(--success-600)', marginBottom: 16 }} />
-                <h2 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Request Sent!</h2>
+                <h2 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Request sent</h2>
                 <p>Our admin team will connect you with {modalBiz.name} shortly.</p>
               </div>
             ) : (
@@ -153,7 +179,7 @@ export default function MemberBusinessDirectory() {
                     <h2>Contact {modalBiz.name}</h2>
                     <p>Choose how you&rsquo;d like to connect.</p>
                   </div>
-                  <button type="button" onClick={() => setContactModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-400)' }}><X size={20} /></button>
+                  <button type="button" onClick={closeContactModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-400)' }}><X size={20} /></button>
                 </div>
 
                 {/* Path A: Direct */}
@@ -193,8 +219,11 @@ export default function MemberBusinessDirectory() {
                     <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--gray-700)' }}>Notes (optional)</label>
                     <textarea className="form-input form-textarea" placeholder="Tell us more about what you need..." value={contactNotes} onChange={e => setContactNotes(e.target.value)} rows={2} style={{ fontSize: '0.82rem' }} />
                   </div>
-                  <button type="button" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleSubmitRequest}>
-                    <CheckCircle size={16} /> Submit Request
+                  {submitError && (
+                    <p role="alert" className="community-error" style={{ marginBottom: 12 }}>{submitError}</p>
+                  )}
+                  <button type="button" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleSubmitRequest} disabled={sending}>
+                    <CheckCircle size={16} /> {sending ? 'Sending…' : 'Submit Request'}
                   </button>
                 </div>
               </>

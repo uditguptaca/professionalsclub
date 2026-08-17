@@ -108,7 +108,7 @@ function AuthForm() {
             <div className="input-group">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <label htmlFor="password" style={{ marginBottom: 0 }}>Password</label>
-                <Link href="/support" style={{ fontSize: '0.8rem', color: 'var(--primary-600)', fontWeight: 600 }}>Forgot password?</Link>
+                <Link href="/portal/forgot-password" style={{ fontSize: '0.8rem', color: 'var(--primary-600)', fontWeight: 600 }}>Forgot password?</Link>
               </div>
               <input
                 id="password"

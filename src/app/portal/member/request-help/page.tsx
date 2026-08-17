@@ -3,15 +3,17 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
+import { submitHelpRequest } from '@/app/actions/portal';
 import { SUPPORT_CATEGORIES } from '@/types';
 import { CheckCircle2, Upload, AlertCircle, ArrowLeft, ArrowRight, Shield } from 'lucide-react';
 
 export default function RequestHelpPage() {
   const router = useRouter();
   const { profile } = useApp();
-  const { addHelpRequest, error } = usePortal();
+  const { refresh } = usePortal();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   // Identity, prefilled from the signed-in member's profile. These used to be
   // hardcoded sample values, which meant every member saw the same stranger's
@@ -49,14 +51,18 @@ export default function RequestHelpPage() {
   const handleSubmit = async () => {
     if (!consent || isSubmitting) return;
     setIsSubmitting(true);
+    setSubmitError('');
 
+    // The action is called directly rather than through usePortal because the
+    // context helper returns void: this page used to navigate away regardless of
+    // the outcome, dropping the member on an empty list believing they had filed
+    // a request.
+    //
     // member_id is set server-side from the session; sending it from here would
-    // be ignored anyway. The artificial 1s delay this used to have is gone — the
-    // request now waits on the real write.
-    await addHelpRequest({
-      memberId: '',
+    // be ignored anyway.
+    const result = await submitHelpRequest({
       memberName: `${firstName} ${lastName}`.trim(),
-      category: category as any,
+      category,
       title,
       description,
       urgency,
@@ -70,7 +76,15 @@ export default function RequestHelpPage() {
       contactByAdminOnly: true,
     });
 
-    setIsSubmitting(false);
+    if (!result.ok) {
+      setSubmitError(result.error);
+      setIsSubmitting(false);
+      return;
+    }
+
+    // The list page renders from the portal snapshot, so re-read it before
+    // navigating: otherwise the request that was just written is missing.
+    await refresh();
     router.push('/portal/member/my-requests');
   };
 
@@ -248,10 +262,10 @@ export default function RequestHelpPage() {
               </label>
             </div>
 
-            {error && (
+            {submitError && (
               <div role="alert" style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(240,73,35,0.1)', color: 'var(--error-500)', fontSize: '0.85rem', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                 <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
-                <span>{error}</span>
+                <span>{submitError}</span>
               </div>
             )}
 

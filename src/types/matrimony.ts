@@ -363,7 +363,6 @@ export interface MatrimonyProfileCard {
   completeness_pct: number;
   status: MatrimonyProfileStatus;
   primary_photo_url?: string;
-  match_score?: number;
 }
 
 // ========== SEARCH FILTERS ==========
@@ -392,7 +391,9 @@ export interface MatrimonySearchFilters {
   verified_only?: boolean;
   has_photo?: boolean;
   recently_active?: boolean;
-  sort_by?: 'newest' | 'recently_active' | 'best_match';
+  // No match scoring exists anywhere in the module, so there is no "best match"
+  // to sort by. Both orderings below map to a real column.
+  sort_by?: 'newest' | 'recently_active';
 }
 
 // ========== WIZARD STEP DATA ==========

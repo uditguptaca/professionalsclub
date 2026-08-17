@@ -3,15 +3,17 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
+import { submitVolunteerApplication } from '@/app/actions/portal';
 import { SUPPORT_CATEGORIES } from '@/types';
 import { CheckCircle2, Upload, ArrowLeft, ArrowRight, Shield, HandHeart, Check } from 'lucide-react';
 
 export default function VolunteerApplicationPage() {
   const router = useRouter();
   const { profile, currentUserId } = useApp();
-  const { addVolunteerApp, volunteerApps, error } = usePortal();
+  const { volunteerApps, refresh } = usePortal();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   // Check if already applied
   const existingApp = volunteerApps.find(a => a.memberId === currentUserId);
@@ -84,15 +86,18 @@ export default function VolunteerApplicationPage() {
   const handleSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
+    setSubmitError('');
 
-    // member_id is stamped server-side from the session; the value here is
-    // ignored. Waits on the real write instead of a simulated delay.
-    await addVolunteerApp({
-      memberId: currentUserId,
-      memberName: `${firstName} ${lastName}`,
+    // The action is called directly rather than through usePortal because the
+    // context helper returns void: this page used to redirect to the volunteer
+    // dashboard whether or not the application was written.
+    //
+    // member_id is stamped server-side from the session; the value here is ignored.
+    const result = await submitVolunteerApplication({
+      memberName: `${firstName} ${lastName}`.trim(),
       email, phone, pcNumber, city, province,
       linkedinUrl, currentProfession: profession, organization, yearsExperience: experience,
-      expertiseAreas: areas as any, languages: languages.split(',').map(l => l.trim()),
+      expertiseAreas: areas, languages: languages.split(',').map(l => l.trim()),
       availability, maxCasesPerMonth: maxCases,
       mentorshipInterest: mentorship, referralSupportInterest: areas.includes('Job Referrals and Placement Assistance'),
       resumeReviewInterest: areas.includes('Resume and Cover Letter Review'),
@@ -104,7 +109,15 @@ export default function VolunteerApplicationPage() {
       agreedAdminMediated: agreedAdmin, consentToScreening: consentScreen,
     });
 
-    setIsSubmitting(false);
+    if (!result.ok) {
+      setSubmitError(result.error);
+      setIsSubmitting(false);
+      return;
+    }
+
+    // The dashboard renders from the portal snapshot, so re-read it before
+    // navigating: otherwise the application that was just written is missing.
+    await refresh();
     router.push('/portal/member/my-volunteer');
   };
 
@@ -230,9 +243,9 @@ export default function VolunteerApplicationPage() {
               ))}
             </div>
 
-            {error && (
+            {submitError && (
               <div role="alert" style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(240,73,35,0.1)', color: 'var(--error-500)', fontSize: '0.85rem' }}>
-                {error}
+                {submitError}
               </div>
             )}
 

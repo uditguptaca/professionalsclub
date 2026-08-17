@@ -7,23 +7,37 @@ export default function DonationsManagementPage() {
   const { donationCampaigns, updateDonationCampaign } = usePortal();
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string | number | boolean>>({});
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const openEdit = (item: typeof donationCampaigns[0]) => {
     setEditId(item.id);
+    setFormError(null);
     setForm({ title: item.title, description: item.description, goalAmount: item.goalAmount, raisedAmount: item.raisedAmount, isActive: item.isActive });
   };
-  const closeModal = () => { setEditId(null); setForm({}); };
+  const closeModal = () => { setEditId(null); setForm({}); setFormError(null); };
+  // Backdrop and X are inert mid-save, so a write in flight cannot be dismissed
+  // before its result is known.
+  const dismiss = () => { if (!saving) closeModal(); };
   const handleChange = (key: string, val: string | number | boolean) => setForm(prev => ({ ...prev, [key]: val }));
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!editId) return;
-    updateDonationCampaign(editId, {
+
+    setSaving(true);
+    setFormError(null);
+    const result = await updateDonationCampaign(editId, {
       title: String(form.title),
       description: String(form.description),
       goalAmount: Number(form.goalAmount),
       raisedAmount: Number(form.raisedAmount),
       isActive: Boolean(form.isActive),
     });
+    setSaving(false);
+
+    // Modal stays open on failure: closing it would look like the write landed
+    // and would throw away everything the admin typed.
+    if (!result.ok) { setFormError(result.error); return; }
     closeModal();
   };
 
@@ -78,11 +92,11 @@ export default function DonationsManagementPage() {
       </div>
 
       {editId && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }} onClick={closeModal}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }} onClick={dismiss}>
           <div style={{ background: 'var(--bg-card)', borderRadius: 16, padding: 32, width: 520, boxShadow: 'var(--shadow-xl)' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
               <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Edit Campaign</h3>
-              <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={20} /></button>
+              <button onClick={dismiss} disabled={saving} style={{ background: 'none', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', color: 'var(--text-muted)' }}><X size={20} /></button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div><label style={labelStyle}>Campaign Title</label><input style={inputStyle} value={String(form.title || '')} onChange={e => handleChange('title', e.target.value)} /></div>
@@ -95,7 +109,10 @@ export default function DonationsManagementPage() {
                 <input type="checkbox" checked={Boolean(form.isActive)} onChange={e => handleChange('isActive', e.target.checked)} />
                 <label style={{ fontSize: '0.9rem', fontWeight: 600 }}>Campaign is Active</label>
               </div>
-              <button className="btn btn-primary" style={{ marginTop: 8, width: '100%' }} onClick={handleSave}>Save Changes</button>
+              {formError && <p role="alert" className="community-error">{formError}</p>}
+              <button className="btn btn-primary" style={{ marginTop: 8, width: '100%' }} onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
             </div>
           </div>
         </div>

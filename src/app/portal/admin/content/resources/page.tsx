@@ -11,36 +11,67 @@ export default function ResourcesManagementPage() {
   const [modalType, setModalType] = useState<ModalType>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
 
-  const openAddModal = (type: ModalType) => { setModalType(type); setEditId(null); setForm({}); };
+  const openAddModal = (type: ModalType) => { setModalType(type); setEditId(null); setForm({}); setFormError(null); };
   const openEditModal = (type: ModalType, item: EBook | VideoWorkshop | ContentTemplate) => {
-    setModalType(type); setEditId(item.id);
+    setModalType(type); setEditId(item.id); setFormError(null);
     const f: Record<string, string> = {};
     Object.entries(item).forEach(([k, v]) => { if (typeof v === 'string' || typeof v === 'number') f[k] = String(v); });
     setForm(f);
   };
-  const closeModal = () => { setModalType(null); setEditId(null); setForm({}); };
+  const closeModal = () => { setModalType(null); setEditId(null); setForm({}); setFormError(null); };
+  // Backdrop and X are inert mid-save, so a write in flight cannot be dismissed
+  // before its result is known.
+  const dismiss = () => { if (!saving) closeModal(); };
   const handleChange = (key: string, val: string) => setForm(prev => ({ ...prev, [key]: val }));
 
-  const handleSave = () => {
-    if (modalType === 'ebook') {
-      if (editId) updateEBook(editId, { title: form.title, author: form.author, type: form.type || 'PDF', size: form.size, color: form.color || 'var(--primary-600)', image: form.image || '/finance_bg.png', downloadUrl: form.downloadUrl || '#' });
-      else addEBook({ title: form.title || 'New E-Book', author: form.author || 'Professionals Club', type: form.type || 'PDF', size: form.size || '1.0 MB', color: form.color || 'var(--primary-600)', image: form.image || '/finance_bg.png', downloadUrl: form.downloadUrl || '#' });
-    } else if (modalType === 'workshop') {
-      if (editId) updateWorkshop(editId, { title: form.title, duration: form.duration, recordedDate: form.recordedDate, platform: form.platform, thumbnailImage: form.thumbnailImage || '/meetup_bg.png', videoUrl: form.videoUrl || '#' });
-      else addWorkshop({ title: form.title || 'New Workshop', duration: form.duration || '60 mins', recordedDate: form.recordedDate || new Date().toLocaleDateString(), platform: form.platform || 'YouTube', thumbnailImage: form.thumbnailImage || '/meetup_bg.png', videoUrl: form.videoUrl || '#' });
-    } else if (modalType === 'template') {
-      if (editId) updateTemplate(editId, { title: form.title, fileType: form.fileType, category: form.category, image: form.image || '/hero-community.png', accessUrl: form.accessUrl || '#' });
-      else addTemplate({ title: form.title || 'New Template', fileType: form.fileType || 'PDF', category: form.category || 'Career', image: form.image || '/hero-community.png', accessUrl: form.accessUrl || '#' });
+  /** Each branch hands its result back so handleSave can decide whether to close. */
+  const saveItem = (type: Exclude<ModalType, null>) => {
+    if (type === 'ebook') {
+      return editId
+        ? updateEBook(editId, { title: form.title, author: form.author, type: form.type || 'PDF', size: form.size, color: form.color || 'var(--primary-600)', image: form.image || '/finance_bg.png', downloadUrl: form.downloadUrl || '#' })
+        : addEBook({ title: form.title || 'New E-Book', author: form.author || 'Professionals Club', type: form.type || 'PDF', size: form.size || '1.0 MB', color: form.color || 'var(--primary-600)', image: form.image || '/finance_bg.png', downloadUrl: form.downloadUrl || '#' });
     }
+    if (type === 'workshop') {
+      return editId
+        ? updateWorkshop(editId, { title: form.title, duration: form.duration, recordedDate: form.recordedDate, platform: form.platform, thumbnailImage: form.thumbnailImage || '/meetup_bg.png', videoUrl: form.videoUrl || '#' })
+        : addWorkshop({ title: form.title || 'New Workshop', duration: form.duration || '60 mins', recordedDate: form.recordedDate || new Date().toLocaleDateString(), platform: form.platform || 'YouTube', thumbnailImage: form.thumbnailImage || '/meetup_bg.png', videoUrl: form.videoUrl || '#' });
+    }
+    return editId
+      ? updateTemplate(editId, { title: form.title, fileType: form.fileType, category: form.category, image: form.image || '/hero-community.png', accessUrl: form.accessUrl || '#' })
+      : addTemplate({ title: form.title || 'New Template', fileType: form.fileType || 'PDF', category: form.category || 'Career', image: form.image || '/hero-community.png', accessUrl: form.accessUrl || '#' });
+  };
+
+  const handleSave = async () => {
+    if (!modalType) return;
+
+    setSaving(true);
+    setFormError(null);
+    const result = await saveItem(modalType);
+    setSaving(false);
+
+    // Modal stays open on failure: closing it would look like the write landed
+    // and would throw away everything the admin typed.
+    if (!result.ok) { setFormError(result.error); return; }
     closeModal();
   };
 
-  const handleDelete = (type: ModalType, id: string) => {
+  const handleDelete = async (type: Exclude<ModalType, null>, id: string) => {
     if (!confirm('Are you sure you want to delete this item?')) return;
-    if (type === 'ebook') deleteEBook(id);
-    else if (type === 'workshop') deleteWorkshop(id);
-    else if (type === 'template') deleteTemplate(id);
+
+    setListError(null);
+    setDeletingId(id);
+    const result = type === 'ebook'
+      ? await deleteEBook(id)
+      : type === 'workshop'
+        ? await deleteWorkshop(id)
+        : await deleteTemplate(id);
+    setDeletingId(null);
+    if (!result.ok) setListError(result.error);
   };
 
   const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-primary)' };
@@ -51,11 +82,11 @@ export default function ResourcesManagementPage() {
     const title = editId ? `Edit ${modalType === 'ebook' ? 'E-Book' : modalType === 'workshop' ? 'Workshop' : 'Template'}` : `Add ${modalType === 'ebook' ? 'E-Book' : modalType === 'workshop' ? 'Workshop' : 'Template'}`;
     
     return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }} onClick={closeModal}>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }} onClick={dismiss}>
         <div style={{ background: 'var(--bg-card)', borderRadius: 16, padding: 32, width: 520, maxHeight: '80vh', overflow: 'auto', boxShadow: 'var(--shadow-xl)' }} onClick={e => e.stopPropagation()}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>{title}</h3>
-            <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={20} /></button>
+            <button onClick={dismiss} disabled={saving} style={{ background: 'none', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', color: 'var(--text-muted)' }}><X size={20} /></button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div><label style={labelStyle}>Title</label><input style={inputStyle} value={form.title || ''} onChange={e => handleChange('title', e.target.value)} placeholder="Enter title" /></div>
@@ -68,6 +99,9 @@ export default function ResourcesManagementPage() {
                 </div>
                 <div><label style={labelStyle}>Image Path</label><input style={inputStyle} value={form.image || ''} onChange={e => handleChange('image', e.target.value)} placeholder="/finance_bg.png" /></div>
                 <div><label style={labelStyle}>Color</label><input style={inputStyle} value={form.color || ''} onChange={e => handleChange('color', e.target.value)} placeholder="var(--primary-600)" /></div>
+                {/* Without this the field fell through to '#' on save, which the
+                    public Resources page renders as the download link. */}
+                <div><label style={labelStyle}>Download URL</label><input style={inputStyle} value={form.downloadUrl || ''} onChange={e => handleChange('downloadUrl', e.target.value)} placeholder="https://example.com/guide.pdf" /></div>
               </>
             )}
             {modalType === 'workshop' && (
@@ -88,9 +122,15 @@ export default function ResourcesManagementPage() {
                   <div><label style={labelStyle}>Category</label><input style={inputStyle} value={form.category || ''} onChange={e => handleChange('category', e.target.value)} placeholder="Career" /></div>
                 </div>
                 <div><label style={labelStyle}>Image Path</label><input style={inputStyle} value={form.image || ''} onChange={e => handleChange('image', e.target.value)} placeholder="/hero-community.png" /></div>
+                {/* Same as the e-book download link: this used to default to '#',
+                    so every public Access Template link went nowhere. */}
+                <div><label style={labelStyle}>Access URL</label><input style={inputStyle} value={form.accessUrl || ''} onChange={e => handleChange('accessUrl', e.target.value)} placeholder="https://example.com/template.docx" /></div>
               </>
             )}
-            <button className="btn btn-primary" style={{ marginTop: 8, width: '100%' }} onClick={handleSave}>{editId ? 'Save Changes' : 'Add Item'}</button>
+            {formError && <p role="alert" className="community-error">{formError}</p>}
+            <button className="btn btn-primary" style={{ marginTop: 8, width: '100%' }} onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving...' : editId ? 'Save Changes' : 'Add Item'}
+            </button>
           </div>
         </div>
       </div>
@@ -105,6 +145,8 @@ export default function ResourcesManagementPage() {
     <>
       <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: 8 }}>Resources Manager</h1>
       <p style={{ color: 'var(--text-secondary)', marginBottom: 32 }}>Manage e-books, video workshops, and templates displayed on the public Resources page.</p>
+
+      {listError && <p role="alert" className="community-error" style={{ marginBottom: 24 }}>{listError}</p>}
 
       {/* E-Books Section */}
       <div className="card" style={{ marginBottom: 32, padding: 0, overflow: 'hidden' }}>
@@ -123,7 +165,7 @@ export default function ResourcesManagementPage() {
                 <td style={tableCellStyle}>{book.size}</td>
                 <td style={{ ...tableCellStyle, textAlign: 'right' }}>
                   <button style={actionBtnStyle} onClick={() => openEditModal('ebook', book)} title="Edit"><Pencil size={15} color="var(--primary-600)" /></button>
-                  <button style={actionBtnStyle} onClick={() => handleDelete('ebook', book.id)} title="Delete"><Trash2 size={15} color="var(--error-500)" /></button>
+                  <button style={actionBtnStyle} onClick={() => handleDelete('ebook', book.id)} disabled={deletingId === book.id} title="Delete"><Trash2 size={15} color="var(--error-500)" /></button>
                 </td>
               </tr>
             ))}
@@ -148,7 +190,7 @@ export default function ResourcesManagementPage() {
                 <td style={tableCellStyle}>{ws.recordedDate}</td>
                 <td style={{ ...tableCellStyle, textAlign: 'right' }}>
                   <button style={actionBtnStyle} onClick={() => openEditModal('workshop', ws)} title="Edit"><Pencil size={15} color="var(--primary-600)" /></button>
-                  <button style={actionBtnStyle} onClick={() => handleDelete('workshop', ws.id)} title="Delete"><Trash2 size={15} color="var(--error-500)" /></button>
+                  <button style={actionBtnStyle} onClick={() => handleDelete('workshop', ws.id)} disabled={deletingId === ws.id} title="Delete"><Trash2 size={15} color="var(--error-500)" /></button>
                 </td>
               </tr>
             ))}
@@ -172,7 +214,7 @@ export default function ResourcesManagementPage() {
                 <td style={tableCellStyle}><span style={{ padding: '2px 8px', background: 'var(--success-50)', color: 'var(--success-600)', borderRadius: 4, fontSize: '0.7rem', fontWeight: 700 }}>{tp.category}</span></td>
                 <td style={{ ...tableCellStyle, textAlign: 'right' }}>
                   <button style={actionBtnStyle} onClick={() => openEditModal('template', tp)} title="Edit"><Pencil size={15} color="var(--primary-600)" /></button>
-                  <button style={actionBtnStyle} onClick={() => handleDelete('template', tp.id)} title="Delete"><Trash2 size={15} color="var(--error-500)" /></button>
+                  <button style={actionBtnStyle} onClick={() => handleDelete('template', tp.id)} disabled={deletingId === tp.id} title="Delete"><Trash2 size={15} color="var(--error-500)" /></button>
                 </td>
               </tr>
             ))}

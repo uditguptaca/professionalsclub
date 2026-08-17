@@ -9,16 +9,23 @@ export default function NewsManagementPage() {
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
 
-  const openAdd = () => { setShowModal(true); setEditId(null); setForm({}); };
+  const openAdd = () => { setShowModal(true); setEditId(null); setForm({}); setFormError(null); };
   const openEdit = (item: NewsArticle) => {
-    setShowModal(true); setEditId(item.id);
+    setShowModal(true); setEditId(item.id); setFormError(null);
     setForm({ title: item.title, summary: item.summary, content: item.content, image: item.image, author: item.author, category: item.category, publishedAt: item.publishedAt });
   };
-  const closeModal = () => { setShowModal(false); setEditId(null); setForm({}); };
+  const closeModal = () => { setShowModal(false); setEditId(null); setForm({}); setFormError(null); };
+  // Backdrop and X are inert mid-save, so a write in flight cannot be dismissed
+  // before its result is known.
+  const dismiss = () => { if (!saving) closeModal(); };
   const handleChange = (key: string, val: string) => setForm(prev => ({ ...prev, [key]: val }));
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const data = {
       title: form.title || 'New Article',
       summary: form.summary || '',
@@ -28,14 +35,25 @@ export default function NewsManagementPage() {
       category: form.category || 'Announcement',
       publishedAt: form.publishedAt || new Date().toISOString(),
     };
-    if (editId) updateNewsArticle(editId, data);
-    else addNewsArticle(data);
+
+    setSaving(true);
+    setFormError(null);
+    const result = editId ? await updateNewsArticle(editId, data) : await addNewsArticle(data);
+    setSaving(false);
+
+    // Modal stays open on failure: closing it would look like the write landed
+    // and would throw away everything the admin typed.
+    if (!result.ok) { setFormError(result.error); return; }
     closeModal();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Delete this article?')) return;
-    deleteNewsArticle(id);
+    setListError(null);
+    setDeletingId(id);
+    const result = await deleteNewsArticle(id);
+    setDeletingId(null);
+    if (!result.ok) setListError(result.error);
   };
 
   const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-primary)' };
@@ -54,6 +72,8 @@ export default function NewsManagementPage() {
         <button className="btn btn-primary" onClick={openAdd}><Plus size={16} /> Add Article</button>
       </div>
 
+      {listError && <p role="alert" className="community-error" style={{ marginBottom: 24 }}>{listError}</p>}
+
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr><th style={tableHeaderStyle}>Title</th><th style={tableHeaderStyle}>Category</th><th style={tableHeaderStyle}>Author</th><th style={tableHeaderStyle}>Published</th><th style={{ ...tableHeaderStyle, textAlign: 'right' }}>Actions</th></tr></thead>
@@ -66,7 +86,7 @@ export default function NewsManagementPage() {
                 <td style={tableCellStyle}>{new Date(article.publishedAt).toLocaleDateString()}</td>
                 <td style={{ ...tableCellStyle, textAlign: 'right' }}>
                   <button style={actionBtnStyle} onClick={() => openEdit(article)} title="Edit"><Pencil size={15} color="var(--primary-600)" /></button>
-                  <button style={actionBtnStyle} onClick={() => handleDelete(article.id)} title="Delete"><Trash2 size={15} color="var(--error-500)" /></button>
+                  <button style={actionBtnStyle} onClick={() => handleDelete(article.id)} disabled={deletingId === article.id} title="Delete"><Trash2 size={15} color="var(--error-500)" /></button>
                 </td>
               </tr>
             ))}
@@ -75,11 +95,11 @@ export default function NewsManagementPage() {
       </div>
 
       {showModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }} onClick={closeModal}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }} onClick={dismiss}>
           <div style={{ background: 'var(--bg-card)', borderRadius: 16, padding: 32, width: 560, maxHeight: '80vh', overflow: 'auto', boxShadow: 'var(--shadow-xl)' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
               <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>{editId ? 'Edit Article' : 'Add Article'}</h3>
-              <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={20} /></button>
+              <button onClick={dismiss} disabled={saving} style={{ background: 'none', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', color: 'var(--text-muted)' }}><X size={20} /></button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div><label style={labelStyle}>Title</label><input style={inputStyle} value={form.title || ''} onChange={e => handleChange('title', e.target.value)} /></div>
@@ -90,7 +110,10 @@ export default function NewsManagementPage() {
                 <div><label style={labelStyle}>Author</label><input style={inputStyle} value={form.author || ''} onChange={e => handleChange('author', e.target.value)} /></div>
               </div>
               <div><label style={labelStyle}>Image Path</label><input style={inputStyle} value={form.image || ''} onChange={e => handleChange('image', e.target.value)} placeholder="/hero-community.png" /></div>
-              <button className="btn btn-primary" style={{ marginTop: 8, width: '100%' }} onClick={handleSave}>{editId ? 'Save Changes' : 'Publish Article'}</button>
+              {formError && <p role="alert" className="community-error">{formError}</p>}
+              <button className="btn btn-primary" style={{ marginTop: 8, width: '100%' }} onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving...' : editId ? 'Save Changes' : 'Publish Article'}
+              </button>
             </div>
           </div>
         </div>

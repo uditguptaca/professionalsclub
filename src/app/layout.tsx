@@ -6,7 +6,7 @@ import "./globals.css";
 import "./editorial.css";
 import { AppProvider } from "@/context/app-context";
 import { PortalProvider } from "@/context/portal-context";
-import { MatrimonyProvider } from "@/context/matrimony-context";
+import { PublicContentProvider } from "@/context/public-content";
 import { getCurrentProfile } from "@/server/auth";
 import CapacitorBridge from "@/components/shared/CapacitorBridge";
 
@@ -136,11 +136,11 @@ export default async function RootLayout({
         <CapacitorBridge />
 
         <AppProvider initialProfile={profile}>
-          <PortalProvider>
-            <MatrimonyProvider>
+          <PublicContentProvider>
+            <PortalProvider>
               {children}
-            </MatrimonyProvider>
-          </PortalProvider>
+            </PortalProvider>
+          </PublicContentProvider>
         </AppProvider>
       </body>
     </html>

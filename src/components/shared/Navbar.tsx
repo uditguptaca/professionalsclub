@@ -47,9 +47,9 @@ const GROUPS: MegaGroup[] = [
     href: '/jobs',
     items: [
       { href: '/jobs', label: 'Jobs board', desc: 'Openings shared by members weekly', icon: <Briefcase size={17} /> },
-      { href: '/companies', label: 'Referrals', desc: 'Someone inside puts your name forward', icon: <UserCheck size={17} /> },
+      { href: '/companies', label: 'Referrals', desc: 'We check for a member inside', icon: <UserCheck size={17} /> },
       { href: '/build-resume', label: 'Build a resume', desc: 'Canadian-format resume, free', icon: <FileText size={17} /> },
-      { href: '/recruit-firms', label: 'Recruitment firms', desc: 'Vetted agencies worth your time', icon: <Building size={17} /> },
+      { href: '/recruit-firms', label: 'Recruitment firms', desc: 'Agencies that hire newcomers', icon: <Building size={17} /> },
     ],
     cta: { href: '/portal/auth', label: 'Request career help' },
   },

@@ -26,14 +26,19 @@ export default function JobsManagementPage() {
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string | number | boolean>>({});
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
 
   const activeJobs = jobPostings.filter(j => j.isActive);
   const inactiveJobs = jobPostings.filter(j => !j.isActive);
 
-  const openAdd = () => { setShowModal(true); setEditId(null); setForm({ isActive: true, isFeatured: false, salaryPeriod: 'yearly', jobType: 'full_time', category: 'Developer' }); };
+  const openAdd = () => { setShowModal(true); setEditId(null); setFormError(null); setForm({ isActive: true, isFeatured: false, salaryPeriod: 'yearly', jobType: 'full_time', category: 'Developer' }); };
   const openEdit = (item: JobPosting) => {
     setShowModal(true);
     setEditId(item.id);
+    setFormError(null);
     setForm({
       title: item.title, company: item.company, companyLogo: item.companyLogo,
       location: item.location, province: item.province,
@@ -46,10 +51,13 @@ export default function JobsManagementPage() {
       postedAt: item.postedAt.split('T')[0], expiresAt: item.expiresAt.split('T')[0],
     });
   };
-  const closeModal = () => { setShowModal(false); setEditId(null); setForm({}); };
+  const closeModal = () => { setShowModal(false); setEditId(null); setForm({}); setFormError(null); };
+  // Backdrop and X are inert mid-save, so a write in flight cannot be dismissed
+  // before its result is known.
+  const dismiss = () => { if (!saving) closeModal(); };
   const handleChange = (key: string, val: string | number | boolean) => setForm(prev => ({ ...prev, [key]: val }));
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const tagsStr = String(form.tags || '');
     const data = {
       title: String(form.title || 'New Job'),
@@ -73,18 +81,32 @@ export default function JobsManagementPage() {
       postedAt: form.postedAt ? new Date(String(form.postedAt)).toISOString() : new Date().toISOString(),
       expiresAt: form.expiresAt ? new Date(String(form.expiresAt)).toISOString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     };
-    if (editId) updateJobPosting(editId, data);
-    else addJobPosting(data);
+    setSaving(true);
+    setFormError(null);
+    const result = editId ? await updateJobPosting(editId, data) : await addJobPosting(data);
+    setSaving(false);
+
+    // Modal stays open on failure: closing it would look like the write landed
+    // and would throw away everything the admin typed.
+    if (!result.ok) { setFormError(result.error); return; }
     closeModal();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Delete this job posting?')) return;
-    deleteJobPosting(id);
+    setListError(null);
+    setBusyId(id);
+    const result = await deleteJobPosting(id);
+    setBusyId(null);
+    if (!result.ok) setListError(result.error);
   };
 
-  const toggleActive = (id: string, current: boolean) => {
-    updateJobPosting(id, { isActive: !current });
+  const toggleActive = async (id: string, current: boolean) => {
+    setListError(null);
+    setBusyId(id);
+    const result = await updateJobPosting(id, { isActive: !current });
+    setBusyId(null);
+    if (!result.ok) setListError(result.error);
   };
 
   const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-primary)' };
@@ -155,11 +177,11 @@ export default function JobsManagementPage() {
                     </span>
                   </td>
                   <td style={{ ...tableCellStyle, textAlign: 'right' }}>
-                    <button style={actionBtnStyle} onClick={() => toggleActive(job.id, job.isActive)} title={job.isActive ? 'Deactivate' : 'Activate'}>
+                    <button style={actionBtnStyle} onClick={() => toggleActive(job.id, job.isActive)} disabled={busyId === job.id} title={job.isActive ? 'Deactivate' : 'Activate'}>
                       {job.isActive ? <Eye size={15} color="var(--success-600)" /> : <EyeOff size={15} color="var(--text-muted)" />}
                     </button>
                     <button style={actionBtnStyle} onClick={() => openEdit(job)} title="Edit"><Pencil size={15} color="var(--primary-600)" /></button>
-                    <button style={actionBtnStyle} onClick={() => handleDelete(job.id)} title="Delete"><Trash2 size={15} color="var(--error-500)" /></button>
+                    <button style={actionBtnStyle} onClick={() => handleDelete(job.id)} disabled={busyId === job.id} title="Delete"><Trash2 size={15} color="var(--error-500)" /></button>
                   </td>
                 </tr>
               );
@@ -190,16 +212,18 @@ export default function JobsManagementPage() {
         ))}
       </div>
 
+      {listError && <p role="alert" className="community-error" style={{ marginBottom: 24 }}>{listError}</p>}
+
       {renderTable('Active Jobs', activeJobs, 'var(--success-600)', true)}
       {inactiveJobs.length > 0 && renderTable('Inactive Jobs', inactiveJobs, 'var(--text-muted)')}
 
       {/* Add/Edit Modal */}
       {showModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }} onClick={closeModal}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }} onClick={dismiss}>
           <div style={{ background: 'var(--bg-card)', borderRadius: 16, padding: 32, width: 640, maxHeight: '85vh', overflow: 'auto', boxShadow: 'var(--shadow-xl)' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
               <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>{editId ? 'Edit Job Posting' : 'Add Job Posting'}</h3>
-              <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={20} /></button>
+              <button onClick={dismiss} disabled={saving} style={{ background: 'none', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', color: 'var(--text-muted)' }}><X size={20} /></button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -277,8 +301,9 @@ export default function JobsManagementPage() {
                 </label>
               </div>
 
-              <button className="btn btn-primary" style={{ marginTop: 8, width: '100%' }} onClick={handleSave}>
-                {editId ? 'Save Changes' : 'Add Job Posting'}
+              {formError && <p role="alert" className="community-error">{formError}</p>}
+              <button className="btn btn-primary" style={{ marginTop: 8, width: '100%' }} onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving...' : editId ? 'Save Changes' : 'Add Job Posting'}
               </button>
             </div>
           </div>

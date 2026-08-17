@@ -1,11 +1,12 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
+import ContentImage from '@/components/shared/ContentImage';
 import Link from 'next/link';
 import { Search, MapPin, Briefcase, ChevronRight, Code2, Calculator, Cpu, Stethoscope, Landmark, Tv2, UtensilsCrossed, GraduationCap, Heart, DollarSign, ArrowRight, Filter, Building2, Clock, ExternalLink, ChevronDown, Tag } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
-import { usePortal } from '@/context/portal-context';
+import { usePublicContent } from '@/context/public-content';
 import type { JobType } from '@/types';
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -47,7 +48,7 @@ function formatSalary(min: number, max: number, period: string) {
 type TabFilter = 'featured' | 'recent' | 'full_time' | 'part_time';
 
 export default function JobsPage() {
-  const { jobPostings } = usePortal();
+  const { jobPostings } = usePublicContent();
   const activeJobs = jobPostings.filter(j => j.isActive);
 
   // Search state
@@ -402,7 +403,7 @@ export default function JobsPage() {
                     <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                       {/* Company Logo */}
                       <div style={{ width: 56, height: 56, borderRadius: 12, overflow: 'hidden', position: 'relative', flexShrink: 0, border: '1px solid var(--border-color)' }}>
-                        <Image src={job.companyLogo} alt={job.company} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
+                        <ContentImage src={job.companyLogo} alt={job.company} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
                       </div>
 
                       {/* Job Info */}

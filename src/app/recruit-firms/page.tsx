@@ -4,6 +4,9 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { Briefcase, ExternalLink, Search } from 'lucide-react';
 
+// Publicly listed Canadian staffing and recruitment agencies, kept as a static
+// editorial list. There is no recruitment_firms table, and the club has not
+// vetted or partnered with any of these, so the copy stays descriptive.
 const firms = [
   "Randstad Canada", "Summit Search Group", "Impact Recruitment", "Hays Canada",
   "Goldbeck Recruiting", "Manpower", "Robert Half", "iSQill", "1 Point System LLC",
@@ -44,8 +47,11 @@ export default function RecruitFirmsPage() {
             <h1 style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 16 }}>
               Recruitment Firms in Canada
             </h1>
-            <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', maxWidth: 700, margin: '0 auto', marginBottom: 32 }}>
-              A curated directory of staffing and recruitment agencies to speed up your job search.
+            <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', maxWidth: 700, margin: '0 auto', marginBottom: 12 }}>
+              A reference list of staffing and recruitment agencies that hire in Canada. Each name opens a LinkedIn search so you can check the agency yourself.
+            </p>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: 700, margin: '0 auto', marginBottom: 32, lineHeight: 1.6 }}>
+              Listed for convenience only. Professionals Club has not vetted or endorsed these agencies, and none of them are partners.
             </p>
 
             <div style={{ position: 'relative', maxWidth: 500, margin: '0 auto' }}>
@@ -107,7 +113,7 @@ export default function RecruitFirmsPage() {
                   }}
                   className="hover:bg-sky-100 transition-colors"
                 >
-                  View LinkedIn <ExternalLink size={14} />
+                  Find on LinkedIn <ExternalLink size={14} />
                 </a>
               </div>
             ))}

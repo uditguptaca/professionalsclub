@@ -9,15 +9,22 @@ export default function TeamManagementPage() {
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string | number>>({});
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
 
   const sorted = [...teamMembers].sort((a, b) => a.order - b.order);
 
-  const openAdd = () => { setShowModal(true); setEditId(null); setForm({ order: teamMembers.length + 1 }); };
-  const openEdit = (item: TeamMember) => { setShowModal(true); setEditId(item.id); setForm({ ...item }); };
-  const closeModal = () => { setShowModal(false); setEditId(null); setForm({}); };
+  const openAdd = () => { setShowModal(true); setEditId(null); setForm({ order: teamMembers.length + 1 }); setFormError(null); };
+  const openEdit = (item: TeamMember) => { setShowModal(true); setEditId(item.id); setForm({ ...item }); setFormError(null); };
+  const closeModal = () => { setShowModal(false); setEditId(null); setForm({}); setFormError(null); };
+  // Backdrop and X are inert mid-save, so a write in flight cannot be dismissed
+  // before its result is known.
+  const dismiss = () => { if (!saving) closeModal(); };
   const handleChange = (key: string, val: string | number) => setForm(prev => ({ ...prev, [key]: val }));
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const data = {
       name: String(form.name || 'New Team Member'),
       role: String(form.role || 'Member'),
@@ -26,14 +33,25 @@ export default function TeamManagementPage() {
       linkedinUrl: String(form.linkedinUrl || '#'),
       order: Number(form.order) || teamMembers.length + 1,
     };
-    if (editId) updateTeamMember(editId, data);
-    else addTeamMember(data);
+
+    setSaving(true);
+    setFormError(null);
+    const result = editId ? await updateTeamMember(editId, data) : await addTeamMember(data);
+    setSaving(false);
+
+    // Modal stays open on failure: closing it would look like the write landed
+    // and would throw away everything the admin typed.
+    if (!result.ok) { setFormError(result.error); return; }
     closeModal();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Delete this team member?')) return;
-    deleteTeamMember(id);
+    setListError(null);
+    setDeletingId(id);
+    const result = await deleteTeamMember(id);
+    setDeletingId(null);
+    if (!result.ok) setListError(result.error);
   };
 
   const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-primary)' };
@@ -49,6 +67,8 @@ export default function TeamManagementPage() {
         <button className="btn btn-primary" onClick={openAdd}><Plus size={16} /> Add Member</button>
       </div>
 
+      {listError && <p role="alert" className="community-error" style={{ marginBottom: 24 }}>{listError}</p>}
+
       <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
         {sorted.map(member => (
           <div key={member.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -60,7 +80,7 @@ export default function TeamManagementPage() {
               </div>
               <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 4, zIndex: 5 }}>
                 <button onClick={() => openEdit(member)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: 6, cursor: 'pointer', backdropFilter: 'blur(4px)' }}><Pencil size={14} color="white" /></button>
-                <button onClick={() => handleDelete(member.id)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: 6, cursor: 'pointer', backdropFilter: 'blur(4px)' }}><Trash2 size={14} color="var(--error-400)" /></button>
+                <button onClick={() => handleDelete(member.id)} disabled={deletingId === member.id} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: 6, cursor: deletingId === member.id ? 'not-allowed' : 'pointer', backdropFilter: 'blur(4px)' }}><Trash2 size={14} color="var(--error-400)" /></button>
               </div>
             </div>
             <div style={{ padding: '16px 20px' }}>
@@ -72,11 +92,11 @@ export default function TeamManagementPage() {
       </div>
 
       {showModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }} onClick={closeModal}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }} onClick={dismiss}>
           <div style={{ background: 'var(--bg-card)', borderRadius: 16, padding: 32, width: 520, maxHeight: '80vh', overflow: 'auto', boxShadow: 'var(--shadow-xl)' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
               <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>{editId ? 'Edit Team Member' : 'Add Team Member'}</h3>
-              <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={20} /></button>
+              <button onClick={dismiss} disabled={saving} style={{ background: 'none', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', color: 'var(--text-muted)' }}><X size={20} /></button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div><label style={labelStyle}>Full Name</label><input style={inputStyle} value={String(form.name || '')} onChange={e => handleChange('name', e.target.value)} /></div>
@@ -87,7 +107,10 @@ export default function TeamManagementPage() {
                 <div><label style={labelStyle}>LinkedIn URL</label><input style={inputStyle} value={String(form.linkedinUrl || '')} onChange={e => handleChange('linkedinUrl', e.target.value)} /></div>
                 <div><label style={labelStyle}>Display Order</label><input type="number" style={inputStyle} value={String(form.order || '')} onChange={e => handleChange('order', Number(e.target.value))} /></div>
               </div>
-              <button className="btn btn-primary" style={{ marginTop: 8, width: '100%' }} onClick={handleSave}>{editId ? 'Save Changes' : 'Add Member'}</button>
+              {formError && <p role="alert" className="community-error">{formError}</p>}
+              <button className="btn btn-primary" style={{ marginTop: 8, width: '100%' }} onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving...' : editId ? 'Save Changes' : 'Add Member'}
+              </button>
             </div>
           </div>
         </div>

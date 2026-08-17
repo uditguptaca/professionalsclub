@@ -2,13 +2,23 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import ContentImage from '@/components/shared/ContentImage';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
-import { usePortal } from '@/context/portal-context';
+import { usePublicContent } from '@/context/public-content';
 import { BookOpen, Video, FileCheck, FileText, Download, ExternalLink, PlayCircle, GraduationCap, ArrowRight } from 'lucide-react';
 
+
+/**
+ * Admin-entered URLs are nullable and default to '#', so a card must not
+ * render a link that goes nowhere. Anything that is not a real destination
+ * shows a disabled state instead of a dead link.
+ */
+const hasUrl = (url: string | null | undefined): boolean =>
+  typeof url === 'string' && url.trim().length > 0 && url.trim() !== '#';
+
 export default function ResourcesPage() {
-  const { ebooks, workshops, templates } = usePortal();
+  const { ebooks, workshops, templates } = usePublicContent();
 
   return (
     <div style={{ background: 'var(--bg-secondary)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -50,7 +60,7 @@ export default function ResourcesPage() {
           <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
             {ebooks.map((book, idx) => (
               <div key={book.id} style={{ position: 'relative', height: 320, borderRadius: 24, overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} className="hover:-translate-y-1 hover:shadow-xl">
-                <Image src={book.image} alt={book.title} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
+                <ContentImage src={book.image} alt={book.title} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(12,12,14,0.95) 0%, rgba(12,12,14,0.6) 50%, rgba(12,12,14,0.3) 100%)' }} />
                 
                 <div style={{ position: 'absolute', top: 20, right: 20, width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -64,9 +74,25 @@ export default function ResourcesPage() {
                   </div>
                   <h3 style={{ fontWeight: 800, fontSize: '1.2rem', marginBottom: 8, color: 'white', lineHeight: 1.3, fontFamily: 'var(--font-display)' }}>{book.title}</h3>
                   <p style={{ fontSize: '0.8rem', color: 'var(--gray-400)', marginBottom: 20 }}>By {book.author}</p>
-                  <button className="btn" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)', fontSize: '0.85rem', padding: '12px 0' }}>
-                    <Download size={16} /> Download Guide
-                  </button>
+                  {hasUrl(book.downloadUrl) ? (
+                    <a
+                      href={book.downloadUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn"
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)', fontSize: '0.85rem', padding: '12px 0', textDecoration: 'none' }}
+                    >
+                      <Download size={16} /> Download Guide
+                    </a>
+                  ) : (
+                    <span
+                      className="btn"
+                      aria-disabled="true"
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.12)', fontSize: '0.85rem', padding: '12px 0', cursor: 'not-allowed' }}
+                    >
+                      <Download size={16} /> File coming soon
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
@@ -84,7 +110,7 @@ export default function ResourcesPage() {
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 24 }}>
             {workshops.map((video, idx) => (
               <div key={video.id} style={{ position: 'relative', height: 260, borderRadius: 24, overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} className="hover:-translate-y-1 hover:shadow-xl">
-                <Image src={video.thumbnailImage} alt={video.title} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
+                <ContentImage src={video.thumbnailImage} alt={video.title} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(12,12,14,0.95) 0%, rgba(12,12,14,0.7) 60%, rgba(12,12,14,0.3) 100%)' }} />
                 
                 <div style={{ position: 'absolute', inset: 0, padding: 32, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
@@ -102,9 +128,13 @@ export default function ResourcesPage() {
                       <span>&#8226;</span>
                       <span>Recorded {video.recordedDate}</span>
                     </div>
-                    <Link href={video.videoUrl} style={{ fontWeight: 700, color: 'var(--primary-400)', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
-                      Watch Session <ExternalLink size={16} />
-                    </Link>
+                    {hasUrl(video.videoUrl) ? (
+                      <a href={video.videoUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 700, color: 'var(--primary-400)', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
+                        Watch Session <ExternalLink size={16} />
+                      </a>
+                    ) : (
+                      <span style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.9rem' }}>Recording coming soon</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -123,16 +153,20 @@ export default function ResourcesPage() {
           <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
             {templates.map((temp, idx) => (
               <div key={temp.id} style={{ position: 'relative', height: 280, borderRadius: 24, overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} className="hover:-translate-y-1 hover:shadow-xl">
-                <Image src={temp.image} alt={temp.title} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
+                <ContentImage src={temp.image} alt={temp.title} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(12,12,14,0.95) 0%, rgba(12,12,14,0.7) 40%, rgba(12,12,14,0.4) 100%)' }} />
                 
                 <div style={{ position: 'absolute', inset: 0, padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
                   <span style={{ fontSize: '0.7rem', fontWeight: 800, padding: '4px 10px', borderRadius: 6, background: 'var(--primary-600)', color: 'white', marginBottom: 16, alignSelf: 'flex-start', backdropFilter: 'blur(4px)' }}>{temp.category}</span>
                   <h3 style={{ fontWeight: 800, fontSize: '1.15rem', marginBottom: 12, color: 'white', lineHeight: 1.3, fontFamily: 'var(--font-display)' }}>{temp.title}</h3>
                   <div style={{ fontSize: '0.8rem', color: 'var(--gray-400)', marginBottom: 20 }}>{temp.fileType} &#8226; Free Access</div>
-                  <Link href={temp.accessUrl} style={{ fontWeight: 700, color: 'var(--primary-400)', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+                  {hasUrl(temp.accessUrl) ? (
+                  <a href={temp.accessUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 700, color: 'var(--primary-400)', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
                     Access Template <ArrowRight size={16} />
-                  </Link>
+                  </a>
+                  ) : (
+                    <span style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.9rem' }}>File coming soon</span>
+                  )}
                 </div>
               </div>
             ))}

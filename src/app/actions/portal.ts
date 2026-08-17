@@ -212,3 +212,26 @@ export async function archiveOwnAccount(): Promise<ActionResult<null>> {
     return null;
   });
 }
+
+// ========== PUBLIC INQUIRIES ==========
+
+export async function fetchInquiries(
+  status: 'new' | 'in_progress' | 'closed'
+): Promise<ActionResult<repo.PublicInquiry[]>> {
+  return run('Loading enquiries', async () => repo.listInquiries(await requireAdminId(), status));
+}
+
+export async function fetchNewInquiryCount(): Promise<ActionResult<number>> {
+  return run('Counting enquiries', async () => repo.countNewInquiries(await requireAdminId()));
+}
+
+export async function updateInquiryStatus(input: {
+  id: string;
+  status: 'new' | 'in_progress' | 'closed';
+  note?: string;
+}): Promise<ActionResult<null>> {
+  return run('Updating the enquiry', async () => {
+    await repo.setInquiryStatus(await requireAdminId(), input);
+    return null;
+  });
+}

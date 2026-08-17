@@ -5,12 +5,31 @@ import {
   ShieldCheck, Star, Tag, MapPin, Building2, CheckCircle, XCircle,
   Eye, ToggleLeft, ToggleRight, Clock, AlertTriangle,
 } from 'lucide-react';
-import type { BusinessStatus } from '@/types';
+import type { Business, BusinessStatus } from '@/types';
+import type { ActionResult } from '@/app/actions/portal';
 
 export default function AdminBusinesses() {
   const { businesses, businessContactRequests, updateBusinessStatus, toggleBusinessFeatured } = usePortal();
   const [statusFilter, setStatusFilter] = useState('');
   const [catFilter, setCatFilter] = useState('');
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  /**
+   * Both row actions settle the same way: the row locks until the write returns,
+   * and a failure is shown rather than leaving the table looking updated when
+   * nothing was written.
+   */
+  const runRowAction = async (id: string, write: () => Promise<ActionResult<Business>>) => {
+    setActionError(null);
+    setBusyId(id);
+    const result = await write();
+    setBusyId(null);
+    if (!result.ok) setActionError(result.error);
+  };
+
+  const setStatus = (id: string, status: BusinessStatus) =>
+    runRowAction(id, () => updateBusinessStatus(id, status));
 
   const filtered = useMemo(() => {
     let result = [...businesses];
@@ -72,6 +91,8 @@ export default function AdminBusinesses() {
         <div className="biz-results-count">{filtered.length} listing{filtered.length !== 1 ? 's' : ''}</div>
       </div>
 
+      {actionError && <p role="alert" className="community-error">{actionError}</p>}
+
       {/* Table */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
@@ -105,8 +126,9 @@ export default function AdminBusinesses() {
                 <td style={{ padding: '14px 16px', textAlign: 'center' }}>
                   <button
                     type="button"
-                    onClick={() => toggleBusinessFeatured(biz.id)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: biz.isFeatured ? 'var(--accent-600)' : 'var(--gray-300)' }}
+                    onClick={() => runRowAction(biz.id, () => toggleBusinessFeatured(biz.id))}
+                    disabled={busyId === biz.id}
+                    style={{ background: 'none', border: 'none', cursor: busyId === biz.id ? 'not-allowed' : 'pointer', color: biz.isFeatured ? 'var(--accent-600)' : 'var(--gray-300)' }}
                   >
                     {biz.isFeatured ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}
                   </button>
@@ -118,21 +140,21 @@ export default function AdminBusinesses() {
                   <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                     {biz.verificationStatus === 'pending_review' && (
                       <>
-                        <button type="button" className="btn btn-primary" style={{ padding: '5px 12px', fontSize: '0.72rem' }} onClick={() => updateBusinessStatus(biz.id, 'verified')}>
+                        <button type="button" className="btn btn-primary" style={{ padding: '5px 12px', fontSize: '0.72rem' }} disabled={busyId === biz.id} onClick={() => setStatus(biz.id, 'verified')}>
                           <CheckCircle size={12} /> Verify
                         </button>
-                        <button type="button" className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: '0.72rem', color: 'var(--error-500)' }} onClick={() => updateBusinessStatus(biz.id, 'rejected')}>
+                        <button type="button" className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: '0.72rem', color: 'var(--error-500)' }} disabled={busyId === biz.id} onClick={() => setStatus(biz.id, 'rejected')}>
                           <XCircle size={12} /> Reject
                         </button>
                       </>
                     )}
                     {biz.verificationStatus === 'verified' && (
-                      <button type="button" className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: '0.72rem' }} onClick={() => updateBusinessStatus(biz.id, 'inactive')}>
+                      <button type="button" className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: '0.72rem' }} disabled={busyId === biz.id} onClick={() => setStatus(biz.id, 'inactive')}>
                         Deactivate
                       </button>
                     )}
                     {biz.verificationStatus === 'inactive' && (
-                      <button type="button" className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: '0.72rem' }} onClick={() => updateBusinessStatus(biz.id, 'verified')}>
+                      <button type="button" className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: '0.72rem' }} disabled={busyId === biz.id} onClick={() => setStatus(biz.id, 'verified')}>
                         Reactivate
                       </button>
                     )}

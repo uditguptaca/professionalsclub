@@ -79,6 +79,11 @@ export async function browseProfiles(filters: BrowseFilters = {}) {
   return run('Loading profiles', (uid) => repo.browse(uid, filters));
 }
 
+/** Same query, plus the unpaged total the browse page needs for its pager. */
+export async function browseProfilesPaged(filters: BrowseFilters = {}) {
+  return run('Loading profiles', (uid) => repo.browsePaged(uid, filters));
+}
+
 export async function getProfileDetail(profileId: string) {
   return run('Loading profile', (uid) => repo.getVisibleProfile(uid, profileId));
 }

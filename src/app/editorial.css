@@ -2909,3 +2909,76 @@ html { -webkit-text-size-adjust: 100%; }
 
 /* Old class kept for the moderation/report pages that still use .card */
 .community-page .card { border-radius: 0.9rem; }
+
+/* ---------------------------------------------------------------------------
+   Standalone auth screens (forgot / reset password)
+   --------------------------------------------------------------------------- */
+.auth-shell {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: clamp(1.5rem, 5vw, 3rem);
+  padding-top: calc(clamp(1.5rem, 5vw, 3rem) + env(safe-area-inset-top, 0px));
+  background: var(--bg-secondary);
+}
+.auth-card {
+  width: 100%;
+  max-width: 26rem;
+  padding: clamp(1.5rem, 4vw, 2.25rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  text-align: center;
+}
+.auth-card h1 { font-size: 1.45rem; margin: 0; letter-spacing: -0.01em; }
+.auth-card p { margin: 0; color: var(--text-secondary); font-size: 0.92rem; line-height: 1.55; }
+.auth-card .input-group { text-align: left; margin-top: 0.35rem; }
+.auth-card .btn { justify-content: center; margin-top: 0.35rem; }
+.auth-icon {
+  display: grid;
+  place-items: center;
+  width: 2.9rem;
+  height: 2.9rem;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: var(--green-50);
+  color: var(--green-700);
+}
+.auth-error {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--error-50);
+  color: var(--error-600);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+.auth-muted { font-size: 0.82rem; color: var(--text-muted); }
+.auth-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--green-700);
+  text-decoration: none;
+}
+.auth-back:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Admin enquiries queue */
+.inquiry-mail { color: var(--green-700); font-weight: 600; text-decoration: none; }
+.inquiry-mail:hover { text-decoration: underline; text-underline-offset: 3px; }
+.inquiry-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 0.55rem; }
+.inquiry-tags span {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  border: 1px solid rgba(27, 67, 50, 0.1);
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}

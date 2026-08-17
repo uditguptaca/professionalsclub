@@ -1,16 +1,31 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/app-context';
 import { getMyMatrimony, browseProfiles } from '@/app/actions/matrimony';
 import type { MatrimonyProfile, MatrimonyPreferences, MatrimonyProfileCard } from '@/types/matrimony';
 import { computeMatchScore } from '@/lib/matrimony/matching';
 import {
-  Heart, Sparkles, MapPin, Briefcase, Calendar, UserCheck, ShieldCheck, ArrowLeft,
-  ChevronRight, Smile, HeartHandshake, UserPlus, User
+  Sparkles, MapPin, Briefcase, Calendar, UserCheck, ArrowLeft,
+  ChevronRight, Smile, Users, User, SlidersHorizontal,
 } from 'lucide-react';
 
-type MatchTab = 'recommended' | 'mutual' | 'they-match-me' | 'newest';
+/**
+ * Matches: the visible profiles this member can see, ranked by how well they
+ * fit the member's own stated preferences.
+ *
+ * Only what the data supports is offered. Scoring is one-directional
+ * (my preferences against their listing), so there is no mutual-match tab: that
+ * needs the candidate's own preferences scored against my listing, which the
+ * browse view does not carry.
+ */
+
+type MatchTab = 'recommended' | 'all';
+
+/** A candidate is only "recommended" above this fit. */
+const RECOMMENDED_MIN = 60;
+
+type ScoredCandidate = MatrimonyProfileCard & { score: number | null };
 
 export default function MatchesPage() {
   const { currentUserId } = useApp();
@@ -20,7 +35,6 @@ export default function MatchesPage() {
   const [myProfile, setMyProfile] = useState<MatrimonyProfile | null>(null);
   const [myPrefs, setMyPrefs] = useState<MatrimonyPreferences | null>(null);
   const [candidates, setCandidates] = useState<MatrimonyProfileCard[]>([]);
-  const [scoredCandidates, setScoredCandidates] = useState<(MatrimonyProfileCard & { score: number })[]>([]);
 
   useEffect(() => {
     async function loadData() {
@@ -44,40 +58,19 @@ export default function MatchesPage() {
     loadData();
   }, [currentUserId]);
 
-  useEffect(() => {
-    if (!myProfile || candidates.length === 0) return;
+  // Without preferences there is nothing to score against, so candidates keep
+  // the order the view returned (most recently active first) and carry no score.
+  const scored = useMemo<ScoredCandidate[]>(() => {
+    if (!myPrefs) return candidates.map(c => ({ ...c, score: null }));
+    return candidates
+      .map(c => ({ ...c, score: Math.round(computeMatchScore(myPrefs, c)) }))
+      .sort((a, b) => b.score - a.score);
+  }, [candidates, myPrefs]);
 
-    // Calculate match scores
-    const scored = candidates.map(cand => {
-      const score = myPrefs ? Math.round(computeMatchScore(myPrefs, cand)) : 70;
-      return { ...cand, score };
-    });
-
-    // Sort by score desc
-    scored.sort((a, b) => b.score - a.score);
-    setScoredCandidates(scored);
-
-  }, [myProfile, myPrefs, candidates]);
-
-  const filteredCandidates = React.useMemo(() => {
-    if (activeTab === 'recommended') {
-      return scoredCandidates.filter(c => c.score >= 60);
-    }
-    if (activeTab === 'mutual') {
-      // In a real application, you'd fetch the candidate's preferences to check if you match them too.
-      // For this implementation, we simulate mutual match by returning candidates with score >= 75.
-      return scoredCandidates.filter(c => c.score >= 75);
-    }
-    if (activeTab === 'they-match-me') {
-      // Return candidates with score >= 65
-      return scoredCandidates.filter(c => c.score >= 65);
-    }
-    if (activeTab === 'newest') {
-      // Sort by newest instead of score
-      return [...scoredCandidates].sort((a, b) => b.id.localeCompare(a.id));
-    }
-    return scoredCandidates;
-  }, [activeTab, scoredCandidates]);
+  const visible = useMemo(
+    () => (activeTab === 'recommended' ? scored.filter(c => c.score !== null && c.score >= RECOMMENDED_MIN) : scored),
+    [activeTab, scored]
+  );
 
   function getAge(dob: string): number {
     const birthDate = new Date(dob);
@@ -134,50 +127,68 @@ export default function MatchesPage() {
           Your Compatible Matches
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          Find members matching your criteria, ranked by match score.
+          {myPrefs
+            ? 'Members you can see, scored against your partner preferences.'
+            : 'Members you can see, most recently active first.'}
         </p>
       </div>
 
-      {/* Tabs */}
-      <div style={{
-        display: 'flex', gap: 8, borderBottom: '1px solid var(--border-color)',
-        overflowX: 'auto', paddingBottom: 1
-      }}>
-        {[
-          { key: 'recommended', label: 'Recommended', icon: Sparkles },
-          { key: 'mutual', label: 'Mutual Matches', icon: HeartHandshake },
-          { key: 'they-match-me', label: 'They Match Me', icon: UserPlus },
-          { key: 'newest', label: 'New Profiles', icon: Heart },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key as MatchTab)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                padding: '12px 20px', background: 'none', border: 'none',
-                borderBottom: isActive ? '3px solid var(--primary-600)' : '3px solid transparent',
-                color: isActive ? 'var(--primary-600)' : 'var(--text-muted)',
-                fontWeight: isActive ? 700 : 500, fontSize: '0.85rem',
-                cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s'
-              }}
-            >
-              <Icon size={16} />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      {myPrefs ? (
+        /* Tabs — a threshold on the same score, nothing else */
+        <div style={{
+          display: 'flex', gap: 8, borderBottom: '1px solid var(--border-color)',
+          overflowX: 'auto', paddingBottom: 1
+        }}>
+          {([
+            { key: 'recommended', label: `Recommended (${RECOMMENDED_MIN}% and up)`, icon: Sparkles },
+            { key: 'all', label: 'All Profiles', icon: Users },
+          ] as { key: MatchTab; label: string; icon: React.ElementType }[]).map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '12px 20px', background: 'none', border: 'none',
+                  borderBottom: isActive ? '3px solid var(--primary-600)' : '3px solid transparent',
+                  color: isActive ? 'var(--primary-600)' : 'var(--text-muted)',
+                  fontWeight: isActive ? 700 : 500, fontSize: '0.85rem',
+                  cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s'
+                }}
+              >
+                <Icon size={16} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        /* No preferences saved: say so rather than showing an invented score */
+        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 20 }}>
+          <SlidersHorizontal size={20} style={{ color: 'var(--primary-600)', flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>No partner preferences yet</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              Match scores are calculated from your preferences. Set them to rank these profiles.
+            </div>
+          </div>
+          <Link href="/portal/member/matrimony/edit" className="btn btn-sm btn-outline" style={{ textDecoration: 'none', flexShrink: 0 }}>
+            Set Preferences
+          </Link>
+        </div>
+      )}
 
       {/* Matches Grid */}
-      {filteredCandidates.length === 0 ? (
+      {visible.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
           <Smile size={48} style={{ color: 'var(--text-muted)', marginBottom: 16, opacity: 0.4 }} />
-          <h3 style={{ fontWeight: 700, marginBottom: 8 }}>No matches found</h3>
+          <h3 style={{ fontWeight: 700, marginBottom: 8 }}>No matches yet</h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: 450, margin: '0 auto' }}>
-            We couldn&apos;t find anyone fitting this specific tab criteria at the moment. Try updating your Partner Preferences to expand your search.
+            {activeTab === 'recommended' && scored.length > 0
+              ? `Nobody currently scores ${RECOMMENDED_MIN}% or higher. Widening your partner preferences will bring more profiles in.`
+              : 'There are no approved profiles for you to see right now. New listings appear here once our team reviews them.'}
           </p>
           <Link href="/portal/member/matrimony/edit" className="btn btn-outline" style={{ display: 'inline-flex', alignSelf: 'center', marginTop: 20, textDecoration: 'none' }}>
             Adjust Preferences
@@ -187,28 +198,34 @@ export default function MatchesPage() {
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24
         }}>
-          {filteredCandidates.map((cand) => (
+          {visible.map((cand) => (
             <div key={cand.id} className="card card-clickable" style={{
               display: 'flex', flexDirection: 'column', height: '100%', padding: 24,
               border: '1px solid var(--border-color)', position: 'relative', overflow: 'hidden'
             }}>
-              {/* Match score bubble */}
-              <div style={{
-                position: 'absolute', top: 16, right: 16,
-                background: cand.score >= 80 ? 'rgba(0,168,107,0.1)' : cand.score >= 60 ? 'rgba(255,191,0,0.1)' : 'rgba(240,73,35,0.1)',
-                color: cand.score >= 80 ? 'var(--success-500)' : cand.score >= 60 ? '#b28500' : 'var(--error-500)',
-                padding: '4px 10px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 800
-              }}>
-                {cand.score}% match
-              </div>
+              {/* Match score bubble — only where a score exists */}
+              {cand.score !== null && (
+                <div style={{
+                  position: 'absolute', top: 16, right: 16,
+                  background: cand.score >= 80 ? 'rgba(0,168,107,0.1)' : cand.score >= 60 ? 'rgba(255,191,0,0.1)' : 'rgba(240,73,35,0.1)',
+                  color: cand.score >= 80 ? 'var(--success-500)' : cand.score >= 60 ? '#b28500' : 'var(--error-500)',
+                  padding: '4px 10px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 800
+                }}>
+                  {cand.score}% match
+                </div>
+              )}
 
-              {/* Avatar placeholder */}
+              {/* Photo, or the fallback mark when there is none to show */}
               <div style={{
-                width: 60, height: 60, borderRadius: 16,
+                width: 60, height: 60, borderRadius: 16, overflow: 'hidden',
                 background: `linear-gradient(135deg, ${cand.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)'}20, ${cand.gender === 'female' ? 'var(--accent-400)' : 'var(--primary-500)'}10)`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16
               }}>
-                <User size={30} style={{ color: cand.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
+                {cand.photo_visibility === 'all' && cand.primary_photo_url ? (
+                  <img src={cand.primary_photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <User size={30} style={{ color: cand.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
+                )}
               </div>
 
               {/* Profile Details */}
@@ -221,7 +238,9 @@ export default function MatchesPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Calendar size={14} /> {getAge(cand.dob)} yrs</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MapPin size={14} /> {cand.city}, {cand.province}</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Briefcase size={14} /> {cand.occupation || 'N/A'}</span>
+                  {cand.occupation && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Briefcase size={14} /> {cand.occupation}</span>
+                  )}
                 </div>
               </div>
 

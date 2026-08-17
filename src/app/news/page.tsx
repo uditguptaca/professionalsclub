@@ -1,9 +1,10 @@
 'use client';
 import React from 'react';
 import Image from 'next/image';
+import ContentImage from '@/components/shared/ContentImage';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
-import { usePortal } from '@/context/portal-context';
+import { usePublicContent } from '@/context/public-content';
 import { Newspaper, ArrowRight, Megaphone, Calendar, Handshake, BookOpen, Briefcase, Plane, TrendingUp, Building2, Target } from 'lucide-react';
 
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -32,7 +33,7 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
 
 
 export default function NewsPage() {
-  const { newsArticles } = usePortal();
+  const { newsArticles } = usePublicContent();
 
   // First 3 are featured, rest are regular
   const featured = newsArticles.slice(0, 3);
@@ -71,7 +72,7 @@ export default function NewsPage() {
               const cat = categoryColors[article.category] || { bg: 'var(--bg-secondary)', text: 'var(--text-primary)' };
               return (
                 <div key={article.id} style={{ position: 'relative', height: 380, borderRadius: 24, overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 10px 25px rgba(0,0,0,0.15)' }} className="hover:-translate-y-1 hover:shadow-xl">
-                  <Image src={article.image} alt={article.title} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
+                  <ContentImage src={article.image} alt={article.title} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(12,12,14,0.95) 0%, rgba(12,12,14,0.6) 50%, rgba(12,12,14,0.2) 100%)' }} />
                   
                   <div style={{ position: 'absolute', top: 24, left: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -108,7 +109,7 @@ export default function NewsPage() {
                 return (
                   <div key={article.id} style={{ display: 'flex', alignItems: 'center', gap: 24, padding: '20px 24px', borderRadius: 20, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', cursor: 'pointer', transition: 'box-shadow 0.2s, transform 0.2s' }} className="hover:-translate-y-1 hover:shadow-lg">
                     <div style={{ width: 80, height: 80, borderRadius: 16, overflow: 'hidden', position: 'relative', flexShrink: 0, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                      <Image src={article.image} alt={article.category} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
+                      <ContentImage src={article.image} alt={article.category} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
                       <div style={{ position: 'absolute', inset: 0, background: 'rgba(12,12,14,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <span style={{ color: 'white', opacity: 0.9 }}>
                           {React.cloneElement((categoryIcons[article.category] || <Newspaper />) as React.ReactElement<any>, { size: 28 })}

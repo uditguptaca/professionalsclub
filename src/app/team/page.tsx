@@ -1,14 +1,15 @@
 'use client';
 import React from 'react';
 import Image from 'next/image';
+import ContentImage from '@/components/shared/ContentImage';
 import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
-import { usePortal } from '@/context/portal-context';
+import { usePublicContent } from '@/context/public-content';
 import { Globe } from 'lucide-react';
 
 export default function TeamPage() {
-  const { teamMembers } = usePortal();
+  const { teamMembers } = usePublicContent();
   
   const sorted = [...teamMembers].sort((a, b) => a.order - b.order);
 
@@ -35,7 +36,7 @@ export default function TeamPage() {
             {sorted.map((member) => (
               <div key={member.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
                 <div style={{ width: 100, height: 100, borderRadius: '50%', overflow: 'hidden', marginBottom: 20, boxShadow: '0 8px 16px rgba(0,0,0,0.06)' }}>
-                  <Image src={member.image} alt={member.name} width={100} height={100} style={{ objectFit: 'cover' }} />
+                  <ContentImage src={member.image} alt={member.name} width={100} height={100} style={{ objectFit: 'cover' }} />
                 </div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>{member.name}</h3>
                 <div style={{ fontSize: '0.9rem', color: 'var(--primary-600)', fontWeight: 600, marginBottom: 12 }}>{member.role}</div>

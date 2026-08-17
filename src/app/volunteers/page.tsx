@@ -1,258 +1,252 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
-import { Search, MapPin, Building2, Globe, Phone, X, ArrowRight, UserCheck } from 'lucide-react';
+import { getPublicVolunteers } from '@/app/actions/public';
+import { Search, MapPin, Building2, Users, UserCheck, ShieldCheck, Clock, Languages } from 'lucide-react';
 
-const LinkedinIcon = ({ size = 20 }: { size?: number }) => (
-  <svg 
-    viewBox="0 0 24 24" 
-    width={size} 
-    height={size} 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round"
-  >
-    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-    <rect x="2" y="9" width="4" height="12" />
-    <circle cx="4" cy="4" r="2" />
-  </svg>
-);
+/** Derived from the action so the page never imports the server repository. */
+type Volunteer = Awaited<ReturnType<typeof getPublicVolunteers>>[number];
 
-interface Volunteer {
-  id: string;
-  name: string;
-  role: string;
-  company: string;
-  industry: string;
-  city: string;
-  province: string;
-  bio: string;
-  image: string;
-  linkedinUrl: string;
-  websiteUrl: string;
-  phone: string;
-  expertise: string[];
-  bannerGradient: string;
-  verified: boolean;
-}
+/**
+ * The six things the volunteer application actually asks about. Anything not
+ * ticked is not claimed on the volunteer's behalf.
+ */
+type HelpFlag =
+  | 'mentorshipInterest'
+  | 'referralSupportInterest'
+  | 'resumeReviewInterest'
+  | 'settlementSupportInterest'
+  | 'taxGuidanceInterest'
+  | 'immigrationGuidanceInterest';
 
-const mockVolunteers: Volunteer[] = [
-  {
-    id: 'vol-001',
-    name: 'Sarah Jenkins',
-    role: 'Senior UX Designer',
-    company: 'DesignCraft Studio',
-    industry: 'Design',
-    city: 'Toronto',
-    province: 'Ontario',
-    bio: 'Specializing in user research, wireframing, and interactive design. Excited to guide newcomers on entering the Canadian creative and product design industries.',
-    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=150&h=150',
-    linkedinUrl: 'https://linkedin.com',
-    websiteUrl: 'https://designcraft.ca',
-    phone: '+1-604-555-5679',
-    expertise: ['UX Design', 'User Research', 'Figma', 'Product Strategy', 'Creative Portfolio'],
-    bannerGradient: 'linear-gradient(135deg, #1e1e24 0%, var(--primary-600) 100%)',
-    verified: true
-  },
-  {
-    id: 'vol-002',
-    name: 'David Chen',
-    role: 'Senior Systems Architect',
-    company: 'TechFlow Solutions',
-    industry: 'Technology',
-    city: 'Calgary',
-    province: 'Alberta',
-    bio: 'Over 15 years designing scalable cloud infrastructure and enterprise software. Ready to help newcomers with cloud certification pathing and resume updates.',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150&h=150',
-    linkedinUrl: 'https://linkedin.com',
-    websiteUrl: 'https://techflow.ca',
-    phone: '+1-403-555-0199',
-    expertise: ['Cloud Infrastructure', 'System Architecture', 'AWS/Azure', 'DevOps', 'Tech Careers'],
-    bannerGradient: 'linear-gradient(135deg, var(--gray-900) 0%, var(--primary-500) 100%)',
-    verified: true
-  },
-  {
-    id: 'vol-003',
-    name: 'Amara Okafor',
-    role: 'Clinical Nurse Specialist',
-    company: 'CareFirst Health',
-    industry: 'Healthcare',
-    city: 'Ottawa',
-    province: 'Ontario',
-    bio: 'Passionate healthcare professional with a background in nursing education. Helping foreign-trained medical graduates navigate licensing and credential validation.',
-    image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=150&h=150',
-    linkedinUrl: 'https://linkedin.com',
-    websiteUrl: 'https://carefirsthealth.ca',
-    phone: '+1-613-555-0811',
-    expertise: ['Nursing Licensing', 'Credential Evaluation', 'Healthcare Navigation', 'Patient Care', 'Residency Prep'],
-    bannerGradient: 'linear-gradient(135deg, var(--gray-700) 0%, var(--success-400) 100%)',
-    verified: true
-  },
-  {
-    id: 'vol-004',
-    name: 'Jean-Pierre Dubois',
-    role: 'Corporate Legal Counsel',
-    company: 'Apex Legal Advisors',
-    industry: 'Legal',
-    city: 'Montreal',
-    province: 'Quebec',
-    bio: 'Bilingual legal counsel specializing in corporate governance and contract negotiation. Assisting newcomers in understanding business law and licensing.',
-    image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=150&h=150',
-    linkedinUrl: 'https://linkedin.com',
-    websiteUrl: 'https://apexlegal.ca',
-    phone: '+1-514-555-0123',
-    expertise: ['Corporate Governance', 'Contract Negotiation', 'Business Law', 'Regulatory Compliance', 'Legal Advising'],
-    bannerGradient: 'linear-gradient(135deg, #180828 0%, var(--primary-600) 100%)',
-    verified: true
-  },
-  {
-    id: 'vol-005',
-    name: 'Elena Rostova',
-    role: 'Principal Financial Analyst',
-    company: 'Maple Wealth Management',
-    industry: 'Finance',
-    city: 'Vancouver',
-    province: 'British Columbia',
-    bio: 'Chartered Financial Analyst advising high-net-worth clients. Assisting newcomers with Canadian personal finance, investment basics, and wealth planning.',
-    image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150&h=150',
-    linkedinUrl: 'https://linkedin.com',
-    websiteUrl: 'https://maplewealth.ca',
-    phone: '+1-604-555-0922',
-    expertise: ['CFA Pathways', 'Investment Planning', 'Wealth Management', 'Personal Finance', 'Tax Optimization'],
-    bannerGradient: 'linear-gradient(135deg, var(--text-primary) 0%, var(--primary-700) 100%)',
-    verified: true
-  },
-  {
-    id: 'vol-006',
-    name: 'Marcus Aurelius',
-    role: 'Construction Project Manager',
-    company: 'Nova Infrastructure',
-    industry: 'Engineering',
-    city: 'Halifax',
-    province: 'Nova Scotia',
-    bio: 'Civil engineer overseeing major highway and transit developments. Happy to counsel engineers on obtaining their P.Eng. designation in Canada.',
-    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150&h=150',
-    linkedinUrl: 'https://linkedin.com',
-    websiteUrl: 'https://novainfra.ca',
-    phone: '+1-902-555-0248',
-    expertise: ['Civil Engineering', 'Project Management', 'P.Eng Designation', 'Infrastructure Design', 'Safety Regulations'],
-    bannerGradient: 'linear-gradient(135deg, #1e3a8a 0%, #06b6d4 100%)',
-    verified: true
-  },
-  {
-    id: 'vol-007',
-    name: 'Priya Sharma',
-    role: 'Marketing Director',
-    company: 'Zenith Brand Co',
-    industry: 'Marketing',
-    city: 'Mississauga',
-    province: 'Ontario',
-    bio: 'Creative strategist building multi-channel advertising campaigns. Offering resume reviews and networking strategies for aspiring marketers.',
-    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150&h=150',
-    linkedinUrl: 'https://linkedin.com',
-    websiteUrl: 'https://zenithbrand.ca',
-    phone: '+1-905-555-0812',
-    expertise: ['Brand Strategy', 'Digital Marketing', 'Public Relations', 'Content Creation', 'Campaign Optimization'],
-    bannerGradient: 'linear-gradient(135deg, #022c22 0%, #14b8a6 100%)',
-    verified: true
-  },
-  {
-    id: 'vol-008',
-    name: 'Kenji Sato',
-    role: 'DevOps Engineer',
-    company: 'CloudScale Technologies',
-    industry: 'Technology',
-    city: 'Surrey',
-    province: 'British Columbia',
-    bio: 'Specialist in container orchestration, continuous integration, and Kubernetes pipelines. Assisting tech graduates in starting their Canadian DevOps careers.',
-    image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=150&h=150',
-    linkedinUrl: 'https://linkedin.com',
-    websiteUrl: 'https://cloudscale.ca',
-    phone: '+1-604-555-0723',
-    expertise: ['Kubernetes', 'CI/CD Pipelines', 'Docker', 'Automation', 'Infrastructure as Code'],
-    bannerGradient: 'linear-gradient(135deg, #4c0519 0%, var(--accent-600) 100%)',
-    verified: true
-  },
-  {
-    id: 'vol-009',
-    name: 'Chloe Dupont',
-    role: 'HR Specialist',
-    company: 'TalentPulse Consulting',
-    industry: 'HR & Recruitment',
-    city: 'Quebec City',
-    province: 'Quebec',
-    bio: 'Recruiter and HR professional helping companies scale. Offering invaluable feedback on resume templates, job hunt strategies, and interview conduct.',
-    image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150&h=150',
-    linkedinUrl: 'https://linkedin.com',
-    websiteUrl: 'https://talentpulse.ca',
-    phone: '+1-418-555-0404',
-    expertise: ['Resume Formatting', 'Interview Coaching', 'Job Hunt Strategies', 'Talent Acquisition', 'HR Policies'],
-    bannerGradient: 'linear-gradient(135deg, #062006 0%, #5e8a11 100%)',
-    verified: true
-  },
-  {
-    id: 'vol-010',
-    name: 'Mateo Rodriguez',
-    role: 'Operations Director',
-    company: 'Global Logistics',
-    industry: 'Operations',
-    city: 'Winnipeg',
-    province: 'Manitoba',
-    bio: 'Supply chain expert managing cross-border freight. Ready to advise professionals on supply chain logistics pathways and professional certifications.',
-    image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=150&h=150',
-    linkedinUrl: 'https://linkedin.com',
-    websiteUrl: 'https://globallogistics.ca',
-    phone: '+1-204-555-0505',
-    expertise: ['Supply Chain Management', 'Logistics Operations', 'Freight Management', 'Inventory Control', 'Process Optimization'],
-    bannerGradient: 'linear-gradient(135deg, var(--gray-700) 0%, #4b5563 100%)',
-    verified: true
-  }
+const HELP_AREAS: { key: HelpFlag; label: string }[] = [
+  { key: 'mentorshipInterest', label: 'Mentorship' },
+  { key: 'referralSupportInterest', label: 'Job referrals' },
+  { key: 'resumeReviewInterest', label: 'Resume review' },
+  { key: 'settlementSupportInterest', label: 'Settlement support' },
+  { key: 'taxGuidanceInterest', label: 'Tax guidance' },
+  { key: 'immigrationGuidanceInterest', label: 'Immigration guidance' },
 ];
 
+const initials = (name: string) =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0] ?? '')
+    .join('')
+    .toUpperCase() || '?';
+
+/** Same deterministic tonal set the community avatars use - variety, not rainbow. */
+const TONES = ['tone-moss', 'tone-clay', 'tone-pine', 'tone-fawn'];
+const toneFor = (id: string) => TONES[(id.charCodeAt(0) + id.charCodeAt(id.length - 1)) % TONES.length];
+
+const CHIP: React.CSSProperties = {
+  fontSize: '0.72rem',
+  fontWeight: 600,
+  padding: '4px 10px',
+  borderRadius: 8,
+  background: 'rgba(232,93,4,0.06)',
+  border: '1px solid rgba(232,93,4,0.12)',
+  color: 'var(--primary-700)',
+};
+
+const SELECT: React.CSSProperties = {
+  padding: '12px 20px',
+  borderRadius: 99,
+  border: '1.5px solid var(--border-color)',
+  background: 'white',
+  color: 'var(--text-primary)',
+  fontSize: '0.9rem',
+  cursor: 'pointer',
+  outline: 'none',
+};
+
+/** Stable identity while loading, so the facet memos do not rerun every render. */
+const NO_ROWS: Volunteer[] = [];
+
+/** Distinct, non-empty values for one facet, so a blank dropdown never renders. */
+function facet(rows: Volunteer[], pick: (v: Volunteer) => string | null): string[] {
+  const values = new Set<string>();
+  for (const row of rows) {
+    const value = pick(row)?.trim();
+    if (value) values.add(value);
+  }
+  return [...values].sort();
+}
+
+function VolunteerCard({ vol }: { vol: Volunteer }) {
+  const helps = HELP_AREAS.filter((area) => vol[area.key]);
+  const expertise = vol.expertiseAreas?.filter(Boolean) ?? [];
+  const languages = vol.languages?.filter(Boolean) ?? [];
+
+  return (
+    <article
+      className="card"
+      style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '24px 22px' }}
+    >
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+        <span className={`community-avatar ${toneFor(vol.id)}`} aria-hidden="true" style={{ width: '3rem', height: '3rem', fontSize: '0.95rem' }}>
+          {initials(vol.name)}
+        </span>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>{vol.name}</div>
+          {vol.role && (
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+              {vol.role}
+              {vol.company && (
+                <>
+                  {' at '}
+                  <span style={{ fontWeight: 700 }}>{vol.company}</span>
+                </>
+              )}
+            </div>
+          )}
+          {!vol.role && vol.company && (
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Building2 size={12} /> {vol.company}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Every row in this view is an approved application, so the claim holds. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.76rem', fontWeight: 700, color: 'var(--primary-700)' }}>
+        <ShieldCheck size={13} /> Approved volunteer
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+        {(vol.city || vol.province) && (
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <MapPin size={12} style={{ color: 'var(--primary-600)' }} />
+            {[vol.city, vol.province].filter(Boolean).join(', ')}
+          </span>
+        )}
+        {vol.yearsExperience !== null && (
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Clock size={12} style={{ color: 'var(--primary-600)' }} />
+            {vol.yearsExperience} {vol.yearsExperience === 1 ? 'year' : 'years'} experience
+          </span>
+        )}
+        {languages.length > 0 && (
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Languages size={12} style={{ color: 'var(--primary-600)' }} />
+            {languages.join(', ')}
+          </span>
+        )}
+      </div>
+
+      {helps.length > 0 && (
+        <div>
+          <div style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 8 }}>
+            Offers help with
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {helps.map((area) => (
+              <span key={area.key} style={CHIP}>{area.label}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {expertise.length > 0 && (
+        <div>
+          <div style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 8 }}>
+            Expertise
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {expertise.map((tag) => (
+              <span
+                key={tag}
+                style={{ fontSize: '0.72rem', fontWeight: 600, padding: '4px 10px', borderRadius: 8, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 6 }}>
+        <Link
+          href={`/volunteers/ask-help?volunteerId=${vol.id}`}
+          className="btn btn-primary"
+          style={{ width: '100%' }}
+        >
+          <UserCheck size={14} /> Ask for help
+        </Link>
+        {vol.linkedinUrl && (
+          <a
+            href={vol.linkedinUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'center', textDecoration: 'none' }}
+            className="hover:text-primary-600"
+          >
+            View LinkedIn profile
+          </a>
+        )}
+      </div>
+    </article>
+  );
+}
+
 export default function VolunteerDirectoryPage() {
+  const [volunteers, setVolunteers] = useState<Volunteer[] | null>(null);
+  const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
-  const [selectedIndustry, setSelectedIndustry] = useState('');
   const [selectedCompany, setSelectedCompany] = useState('');
-  const [dismissedVolunteers, setDismissedVolunteers] = useState<string[]>([]);
-  const [activeVolunteer, setActiveVolunteer] = useState<Volunteer | null>(null);
+  const [selectedHelp, setSelectedHelp] = useState('');
 
-  const cities = useMemo(() => [...new Set(mockVolunteers.map(v => v.city))].sort(), []);
-  const industries = useMemo(() => [...new Set(mockVolunteers.map(v => v.industry))].sort(), []);
-  const companies = useMemo(() => [...new Set(mockVolunteers.map(v => v.company))].sort(), []);
+  useEffect(() => {
+    let alive = true;
+    getPublicVolunteers()
+      .then((rows) => {
+        if (alive) setVolunteers(rows);
+      })
+      .catch(() => {
+        if (alive) {
+          setVolunteers([]);
+          setLoadError('The directory could not be loaded. Please refresh the page.');
+        }
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
-  const filteredVolunteers = useMemo(() => {
-    return mockVolunteers.filter(v => {
-      if (dismissedVolunteers.includes(v.id)) return false;
+  const rows = volunteers ?? NO_ROWS;
+  const cities = useMemo(() => facet(rows, (v) => v.city), [rows]);
+  const companies = useMemo(() => facet(rows, (v) => v.company), [rows]);
+  const helpOptions = useMemo(
+    () => HELP_AREAS.filter((area) => rows.some((v) => v[area.key])),
+    [rows]
+  );
 
-      const query = search.toLowerCase();
-      const matchesSearch = v.name.toLowerCase().includes(query) || 
-                            v.role.toLowerCase().includes(query) || 
-                            v.company.toLowerCase().includes(query) || 
-                            v.industry.toLowerCase().includes(query) ||
-                            v.expertise.some(e => e.toLowerCase().includes(query));
-      
-      const matchesCity = selectedCity ? v.city === selectedCity : true;
-      const matchesIndustry = selectedIndustry ? v.industry === selectedIndustry : true;
-      const matchesCompany = selectedCompany ? v.company === selectedCompany : true;
-
-      return matchesSearch && matchesCity && matchesIndustry && matchesCompany;
+  const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return rows.filter((v) => {
+      const haystack = [v.name, v.role, v.company, v.city, v.province, ...(v.expertiseAreas ?? []), ...(v.languages ?? [])]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      if (query && !haystack.includes(query)) return false;
+      if (selectedCity && v.city !== selectedCity) return false;
+      if (selectedCompany && v.company !== selectedCompany) return false;
+      if (selectedHelp && !v[selectedHelp as HelpFlag]) return false;
+      return true;
     });
-  }, [search, selectedCity, selectedIndustry, selectedCompany, dismissedVolunteers]);
+  }, [rows, search, selectedCity, selectedCompany, selectedHelp]);
 
-  const handleResetFilters = () => {
+  const hasFilters = Boolean(search || selectedCity || selectedCompany || selectedHelp);
+  const resetFilters = () => {
     setSearch('');
     setSelectedCity('');
-    setSelectedIndustry('');
     setSelectedCompany('');
-  };
-
-  const handleResetDismissed = () => {
-    setDismissedVolunteers([]);
+    setSelectedHelp('');
   };
 
   return (
@@ -261,11 +255,10 @@ export default function VolunteerDirectoryPage() {
 
       {/* Hero Section */}
       <section className="volunteers-hero-section" style={{ position: 'relative', paddingTop: 160, paddingBottom: 80, background: 'var(--text-primary)', overflow: 'hidden' }}>
-        {/* Background Animation (Volunteers) */}
         <div className="cinematic-bg-container">
-          <img 
-            src="/volunteer-help.png" 
-            alt="Volunteers background" 
+          <img
+            src="/volunteer-help.png"
+            alt="Volunteers background"
             className="cinematic-bg"
             style={{ opacity: 0.42 }}
           />
@@ -277,10 +270,11 @@ export default function VolunteerDirectoryPage() {
             <span style={{ color: 'var(--primary-400)', fontWeight: 700, fontSize: '0.82rem' }}>Community Mentors</span>
           </div>
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16, lineHeight: 1.15 }}>
-            Volunteer & Mentor <span style={{ color: 'var(--primary-600)' }}>Directory</span>
+            Volunteer &amp; Mentor <span style={{ color: 'var(--primary-600)' }}>Directory</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
-            Verified professionals ready to guide you as you build your future in Canada.
+            Members whose volunteer applications have been approved. Requests are relayed by our
+            admin team, so no one&apos;s contact details are published here.
           </p>
         </div>
       </section>
@@ -288,251 +282,110 @@ export default function VolunteerDirectoryPage() {
       {/* Directory Content */}
       <section style={{ paddingBottom: 100, background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
-          
-          {/* Filters Bar */}
-          <div className="biz-filter-bar" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', padding: '24px 0', borderBottom: '1px solid var(--border-color)', marginBottom: 40 }}>
-            <div style={{ flex: 1, minWidth: 260, position: 'relative' }}>
-              <Search size={16} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input
-                type="text"
-                placeholder="Search volunteers by name, company, role, or skill..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                style={{ width: '100%', padding: '12px 16px 12px 42px', borderRadius: 99, border: '1.5px solid var(--border-color)', background: 'white', color: 'var(--text-primary)', outline: 'none', fontSize: '0.9rem' }}
-              />
+
+          {/* Filters Bar - only useful once there is something to filter */}
+          {rows.length > 0 && (
+            <div className="biz-filter-bar" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', padding: '24px 0', borderBottom: '1px solid var(--border-color)', marginBottom: 40 }}>
+              <div style={{ flex: 1, minWidth: 260, position: 'relative' }}>
+                <Search size={16} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                <input
+                  type="text"
+                  placeholder="Search by name, role, organization, or skill"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  style={{ width: '100%', padding: '12px 16px 12px 42px', borderRadius: 99, border: '1.5px solid var(--border-color)', background: 'white', color: 'var(--text-primary)', outline: 'none', fontSize: '0.9rem' }}
+                />
+              </div>
+
+              {cities.length > 0 && (
+                <select value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)} style={SELECT} aria-label="Filter by city">
+                  <option value="">All cities</option>
+                  {cities.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              )}
+
+              {companies.length > 0 && (
+                <select value={selectedCompany} onChange={(e) => setSelectedCompany(e.target.value)} style={SELECT} aria-label="Filter by organization">
+                  <option value="">All organizations</option>
+                  {companies.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              )}
+
+              {helpOptions.length > 0 && (
+                <select value={selectedHelp} onChange={(e) => setSelectedHelp(e.target.value)} style={SELECT} aria-label="Filter by type of help">
+                  <option value="">Any kind of help</option>
+                  {helpOptions.map((area) => <option key={area.key} value={area.key}>{area.label}</option>)}
+                </select>
+              )}
+
+              {hasFilters && (
+                <button
+                  onClick={resetFilters}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 20px', borderRadius: 99, border: '1.5px solid var(--primary-600)', background: 'rgba(232, 93, 4, 0.05)', color: 'var(--primary-600)', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', outline: 'none' }}
+                >
+                  Reset
+                </button>
+              )}
+
+              <div className="biz-results-count" style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontWeight: 600, marginLeft: 'auto' }}>
+                {filtered.length} volunteer{filtered.length !== 1 ? 's' : ''} listed
+              </div>
             </div>
-            
-            <select
-              value={selectedCity}
-              onChange={e => setSelectedCity(e.target.value)}
-              style={{ padding: '12px 20px', borderRadius: 99, border: '1.5px solid var(--border-color)', background: 'white', color: 'var(--text-primary)', fontSize: '0.9rem', cursor: 'pointer', outline: 'none' }}
-            >
-              <option value="">All Cities</option>
-              {cities.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            
-            <select
-              value={selectedIndustry}
-              onChange={e => setSelectedIndustry(e.target.value)}
-              style={{ padding: '12px 20px', borderRadius: 99, border: '1.5px solid var(--border-color)', background: 'white', color: 'var(--text-primary)', fontSize: '0.9rem', cursor: 'pointer', outline: 'none' }}
-            >
-              <option value="">All Industries</option>
-              {industries.map(ind => <option key={ind} value={ind}>{ind}</option>)}
-            </select>
+          )}
 
-            <select
-              value={selectedCompany}
-              onChange={e => setSelectedCompany(e.target.value)}
-              style={{ padding: '12px 20px', borderRadius: 99, border: '1.5px solid var(--border-color)', background: 'white', color: 'var(--text-primary)', fontSize: '0.9rem', cursor: 'pointer', outline: 'none' }}
-            >
-              <option value="">All Companies</option>
-              {companies.map(comp => <option key={comp} value={comp}>{comp}</option>)}
-            </select>
+          {loadError && (
+            <p role="alert" className="community-error" style={{ marginTop: 40, marginBottom: 24 }}>{loadError}</p>
+          )}
 
-            {(search || selectedCity || selectedIndustry || selectedCompany) && (
-              <button
-                onClick={handleResetFilters}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 20px', borderRadius: 99, border: '1.5px solid var(--primary-600)', background: 'rgba(232, 93, 4, 0.05)', color: 'var(--primary-600)', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', outline: 'none', transition: 'background 0.2s' }}
-              >
-                Reset
-              </button>
-            )}
-
-            {dismissedVolunteers.length > 0 && (
-              <button
-                onClick={handleResetDismissed}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 20px', borderRadius: 99, border: '1.5px solid var(--gray-300)', background: 'white', color: 'var(--text-secondary)', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', outline: 'none', transition: 'background 0.2s' }}
-              >
-                Restore Hidden ({dismissedVolunteers.length})
-              </button>
-            )}
-
-            <div className="biz-results-count" style={{ fontSize: '0.88rem', color: 'var(--text-muted)', fontWeight: 600, marginLeft: 'auto' }}>
-              {filteredVolunteers.length} volunteer{filteredVolunteers.length !== 1 ? 's' : ''} found
+          {volunteers === null ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24, marginTop: 40 }} aria-hidden="true">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="skeleton skeleton-card" style={{ height: '17rem' }} />
+              ))}
             </div>
-          </div>
-
-          {/* Grid Layout */}
-          {filteredVolunteers.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--bg-secondary)', borderRadius: 20, border: '1px solid var(--border-color)' }}>
-              <h3 style={{ fontSize: '1.3rem', fontWeight: 800, marginBottom: 8 }}>No volunteers match your search criteria</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 16 }}>Try clearing some filters or restoring hidden profiles.</p>
-              <button
-                onClick={handleResetFilters}
-                style={{ padding: '10px 24px', background: 'var(--primary-600)', color: 'white', border: 'none', borderRadius: 99, fontWeight: 700, cursor: 'pointer' }}
-              >
-                Clear Search & Filters
-              </button>
+          ) : rows.length === 0 ? (
+            !loadError && (
+              <div className="empty-state" style={{ marginTop: 40 }}>
+                <div className="empty-icon"><Users size={24} /></div>
+                <h3>No volunteers listed yet</h3>
+                <p>
+                  Profiles appear here once an admin approves a volunteer application. If you can
+                  help newcomers with careers, settlement, taxes or paperwork, apply through the
+                  member portal.
+                </p>
+                <Link href="/portal/auth" className="btn btn-primary">Apply as a volunteer</Link>
+              </div>
+            )
+          ) : filtered.length === 0 ? (
+            <div className="empty-state">
+              <h3>No volunteers match these filters</h3>
+              <p>
+                The directory is still small, so a narrow filter can rule everyone out. Clear the
+                filters to see all {rows.length} listed volunteer{rows.length !== 1 ? 's' : ''}.
+              </p>
+              <button onClick={resetFilters} className="btn btn-outline">Clear filters</button>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
-              {filteredVolunteers.map(vol => (
-                <div 
-                  key={vol.id} 
-                  onClick={() => setActiveVolunteer(vol)}
-                  style={{ display: 'flex', flexDirection: 'column', background: 'white', border: '1px solid var(--border-color)', borderRadius: 16, overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: 'var(--shadow-sm)', position: 'relative', cursor: 'pointer' }} 
-                  className="hover:-translate-y-1 hover:shadow-md"
-                >
-                  
-                  {/* LinkedIn-style top banner */}
-                  <div style={{ height: 70, background: vol.bannerGradient, position: 'relative' }}>
-                    {/* Close / Dismiss Icon */}
-                    <button
-                      title="Hide recommendation"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDismissedVolunteers(prev => [...prev, vol.id]);
-                      }}
-                      style={{ position: 'absolute', top: 8, right: 8, width: 26, height: 26, borderRadius: '50%', background: 'rgba(0, 0, 0, 0.45)', color: 'white', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10, outline: 'none' }}
-                      className="hover:bg-black/60"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24, alignItems: 'stretch' }}>
+              {filtered.map((vol) => <VolunteerCard key={vol.id} vol={vol} />)}
+            </div>
+          )}
 
-                  {/* Avatar centered and overlapping */}
-                  <div style={{ position: 'relative', marginTop: -38, alignSelf: 'center', width: 76, height: 76, borderRadius: '50%', overflow: 'hidden', border: '3.5px solid white', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
-                    <img src={vol.image} alt={vol.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-
-                  <div style={{ padding: '16px 20px 20px', display: 'flex', flexDirection: 'column', flex: 1, alignItems: 'center', textAlign: 'center' }}>
-                    {/* Name & Verified check */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-                      <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>{vol.name}</div>
-                      {vol.verified && (
-                        <svg viewBox="0 0 24 24" width="15" height="15" fill="var(--primary-600)" style={{ flexShrink: 0 }}>
-                          <title>Verified Volunteer</title>
-                          <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                        </svg>
-                      )}
-                    </div>
-                    
-                    {/* Headline Role at Company */}
-                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.35, height: '2.4rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: 6 }}>
-                      {vol.role} at <span style={{ fontWeight: 700 }}>{vol.company}</span>
-                    </div>
-
-                    {/* Location */}
-                    <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 3, marginBottom: 12 }}>
-                      <MapPin size={12} style={{ color: 'var(--primary-600)' }} /> {vol.city}, {vol.province}
-                    </div>
-
-                    {/* Prominent LinkedIn-style Connect Button ("Ask for Help") */}
-                    <Link 
-                      href={`/volunteers/ask-help?volunteerId=${vol.id}`} 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                      }}
-                      className="btn hover:bg-primary-600 hover:text-white"
-                      style={{ 
-                        width: '100%', 
-                        padding: '8px 0', 
-                        fontSize: '0.84rem', 
-                        fontWeight: 700, 
-                        borderRadius: 20, 
-                        border: '1.5px solid var(--primary-600)', 
-                        background: 'white', 
-                        color: 'var(--primary-600)', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        gap: 6, 
-                        textDecoration: 'none',
-                        transition: 'all 0.2s',
-                        marginTop: 'auto'
-                      }}
-                    >
-                      <UserCheck size={14} /> Ask for Help
-                    </Link>
-                  </div>
-
-                </div>
-              ))}
+          {/* The roster is short; asking for more volunteers is the honest CTA. */}
+          {rows.length > 0 && (
+            <div className="card" style={{ marginTop: 40, display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '0 0 4px' }}>Can you help someone starting over?</h3>
+                <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  This directory grows as members volunteer. Applications are reviewed by an admin before they are listed.
+                </p>
+              </div>
+              <Link href="/portal/auth" className="btn btn-outline">Apply as a volunteer</Link>
             </div>
           )}
 
         </div>
       </section>
-
-      {/* Volunteer Profile Details Modal */}
-      {activeVolunteer && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(12,12,14,0.65)', backdropFilter: 'blur(4px)', padding: 16 }}>
-          <div style={{ background: 'white', borderRadius: 24, width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto', border: '1px solid var(--border-color)', boxShadow: '0 25px 50px rgba(0,0,0,0.25)', position: 'relative' }}>
-            
-            {/* Close Button */}
-            <button
-              onClick={() => setActiveVolunteer(null)}
-              style={{ position: 'absolute', top: 16, right: 16, border: 'none', cursor: 'pointer', color: 'white', zIndex: 10, width: 30, height: 30, borderRadius: '50%', background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <X size={18} />
-            </button>
-
-            {/* Profile Header Background */}
-            <div style={{ height: 110, background: activeVolunteer.bannerGradient }} />
-            
-            <div style={{ padding: '0 32px 32px' }}>
-              
-              {/* Avatar circle */}
-              <div style={{ marginTop: -55, width: 100, height: 100, borderRadius: '50%', overflow: 'hidden', border: '5px solid white', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', marginBottom: 16 }}>
-                <img src={activeVolunteer.image} alt={activeVolunteer.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              </div>
-
-              {/* Name & Verified Badge */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                <h2 style={{ fontSize: '1.8rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', margin: 0 }}>{activeVolunteer.name}</h2>
-                {activeVolunteer.verified && (
-                  <svg viewBox="0 0 24 24" width="22" height="22" fill="var(--primary-600)" style={{ flexShrink: 0 }}>
-                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                  </svg>
-                )}
-              </div>
-              
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', marginBottom: 20 }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{activeVolunteer.role} at {activeVolunteer.company}</span>
-                <span style={{ color: 'var(--gray-300)' }}>•</span>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={14} style={{ color: 'var(--primary-600)' }} /> {activeVolunteer.city}, {activeVolunteer.province}</span>
-              </div>
-
-              <div style={{ marginBottom: 24 }}>
-                <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 8 }}>About Me</h4>
-                <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>{activeVolunteer.bio}</p>
-              </div>
-
-              {/* Skills Tags */}
-              <div style={{ marginBottom: 32 }}>
-                <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 12 }}>Expertise & Help Areas</h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {activeVolunteer.expertise.map((tag, i) => (
-                    <span key={i} style={{ fontSize: '0.76rem', fontWeight: 600, padding: '6px 12px', borderRadius: 8, background: 'rgba(232,93,4,0.06)', border: '1px solid rgba(232,93,4,0.12)', color: 'var(--primary-700)' }}>{tag}</span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Modal Actions */}
-              <div style={{ display: 'flex', gap: 16, borderTop: '1px solid var(--border-color)', paddingTop: 24, alignItems: 'center' }}>
-                
-                {/* Socials */}
-                <div style={{ display: 'flex', gap: 16 }}>
-                  <a href={activeVolunteer.linkedinUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)' }} className="hover:text-primary-600"><LinkedinIcon size={20} /></a>
-                  <a href={activeVolunteer.websiteUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)' }} className="hover:text-primary-600"><Globe size={20} /></a>
-                  <a href={`tel:${activeVolunteer.phone}`} style={{ color: 'var(--text-muted)' }} className="hover:text-primary-600"><Phone size={20} /></a>
-                </div>
-
-                {/* Main Action */}
-                <Link 
-                  href={`/volunteers/ask-help?volunteerId=${activeVolunteer.id}`}
-                  className="btn btn-primary"
-                  style={{ flex: 1, padding: '14px 24px', fontSize: '0.9rem', fontWeight: 800, background: 'var(--primary-600)', border: 'none', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: 'white', textDecoration: 'none' }}
-                >
-                  Ask for Help <ArrowRight size={16} />
-                </Link>
-              </div>
-
-            </div>
-
-          </div>
-        </div>
-      )}
 
       <Footer />
     </>

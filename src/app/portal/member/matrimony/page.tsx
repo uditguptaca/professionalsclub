@@ -506,8 +506,10 @@ export default function MemberMatrimonyDashboard() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
             {[
               { href: '/portal/member/matrimony/browse', icon: Search, label: 'Browse Profiles', desc: 'Find compatible matches', color: 'var(--primary-600)' },
-              { href: '/portal/member/matrimony/edit', icon: FileEdit, label: 'Edit Profile', desc: 'Update your details', color: 'var(--success-500)' },
-              { href: '/portal/member/matrimony/preferences', icon: Settings, label: 'Partner Preferences', desc: 'Set your criteria', color: 'var(--accent-400)' },
+              // Partner preferences are the last step of the profile wizard, which
+              // /edit reuses. There is no separate preferences route.
+              { href: '/portal/member/matrimony/edit', icon: FileEdit, label: 'Edit Profile', desc: 'Update your details and partner preferences', color: 'var(--success-500)' },
+              { href: '/portal/member/matrimony/matches', icon: HeartHandshake, label: 'My Matches', desc: 'Profiles scored against your preferences', color: 'var(--accent-400)' },
               { href: '/portal/member/matrimony/shortlist', icon: Bookmark, label: 'My Shortlist', desc: 'View saved profiles', color: 'var(--primary-700)' },
             ].map((action) => {
               const Icon = action.icon;

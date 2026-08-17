@@ -1,9 +1,11 @@
 'use client';
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { upload } from '@vercel/blob/client';
 import { useApp } from '@/context/app-context';
 import { useRouter } from 'next/navigation';
 import { getMyMatrimony, saveMatrimonyProfile, saveMatrimonyPreferences, saveMatrimonyContact } from '@/app/actions/matrimony';
-import type { MatrimonyWizardData } from '@/types/matrimony';
+import { addMatrimonyPhoto, removeMatrimonyPhoto } from '@/app/actions/matrimony-media';
+import type { MatrimonyMedia, MatrimonyWizardData } from '@/types/matrimony';
 import {
   RELIGIONS, DENOMINATIONS, COMMUNITIES, MOTHER_TONGUES, LANGUAGES,
   COUNTRIES, CANADIAN_PROVINCES, INDIAN_STATES,
@@ -19,7 +21,7 @@ import {
 import {
   User, Heart, Star, MapPin, Briefcase, Users, Camera, Search,
   ChevronLeft, ChevronRight, Save, CheckCircle2, AlertCircle,
-  Sparkles, Shield, ChevronDown, ChevronUp, X, Plus, Loader2,
+  Sparkles, Shield, ChevronDown, ChevronUp, X, Plus, Loader2, ImagePlus,
 } from 'lucide-react';
 
 // ── Icon map for wizard steps ──────────────────────────────
@@ -96,13 +98,68 @@ const LABEL: Record<string, string> = {
 
 function labelFor(val: string): string { return LABEL[val] || val; }
 
+/**
+ * Reverse of LABEL, used to repair preferences saved by an earlier version of
+ * this wizard. Those rows stored the display label ('Never Married') where the
+ * profile columns hold the enum value ('never_married'), so they matched nobody.
+ * Reading them back through here fixes them on the next save.
+ */
+const VALUE_BY_LABEL: Record<string, string> = Object.fromEntries(
+  Object.entries(LABEL).map(([value, label]) => [label.toLowerCase(), value])
+);
+const toEnumValues = (values: string[] | undefined | null): string[] =>
+  (values ?? []).map(v => VALUE_BY_LABEL[v.toLowerCase()] ?? v);
+
+// Enum values for the partner-preference tags. They must be the values the
+// profile columns hold, not their labels, or computeMatchScore compares
+// 'Vegetarian' against 'veg' and scores every candidate zero on that field.
+const MARITAL_STATUS_VALUES = ['never_married', 'divorced', 'widowed', 'awaiting_divorce', 'separated'];
+const RESIDENCY_VALUES = ['citizen', 'pr', 'work_permit', 'study_permit', 'visitor', 'other'];
+const DIET_VALUES = ['veg', 'non_veg', 'eggetarian', 'vegan', 'jain'];
+
+/** Kept in step with MAX_PHOTOS in src/server/repos/matrimony-media.ts, which enforces it. */
+const MAX_PHOTOS = 6;
+
+/**
+ * Upload one photo and return its public URL.
+ *
+ * Twin of uploadMedia in src/components/portal/community.tsx: the browser hands
+ * the file straight to Blob storage, and falls back to the dev-only local-disk
+ * endpoint when no Blob store is configured. The duplication is two dozen lines
+ * against pulling the whole community module into the matrimony bundle; if a
+ * third caller appears, move it to a shared client helper.
+ */
+async function uploadPhoto(file: File): Promise<string> {
+  try {
+    const blob = await upload(file.name, file, {
+      access: 'public',
+      handleUploadUrl: '/api/community/upload',
+      clientPayload: 'image',
+    });
+    return blob.url;
+  } catch (error) {
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch('/api/community/upload-dev', { method: 'POST', body: form });
+    // The dev endpoint 404s in production, where the Blob error is the truth.
+    if (res.status === 404) throw error;
+    if (!res.ok) throw new Error('Upload failed');
+    const data = (await res.json()) as { url: string };
+    return data.url;
+  }
+}
+
 // ── Calculate completeness ─────────────────────────────────
-function calcCompleteness(d: MatrimonyWizardData): number {
+function calcCompleteness(d: MatrimonyWizardData, hasPhoto: boolean): number {
   const w = COMPLETENESS_WEIGHTS;
   let earned = 0, total = 0;
   for (const key of Object.keys(w)) {
     total += w[key];
-    if (key === 'photo') continue; // photos handled separately
+    if (key === 'photo') {
+      // Photos are rows in matrimony_media, not a wizard field.
+      if (hasPhoto) earned += w[key];
+      continue;
+    }
     if (key === 'preferences') {
       if (d.pref_age_min && d.pref_age_max) earned += w[key];
       continue;
@@ -136,7 +193,15 @@ export default function MatrimonyCreatePage() {
   const [astrologyOpen, setAstrologyOpen] = useState(false);
   const [animDir, setAnimDir] = useState<'right' | 'left'>('right');
 
-  const completeness = useMemo(() => calcCompleteness(data), [data]);
+  // Photos are rows in matrimony_media, saved as they are added rather than on
+  // submit, because a media row needs a profile to hang off.
+  const [photos, setPhotos] = useState<MatrimonyMedia[]>([]);
+  const [photoError, setPhotoError] = useState('');
+  const [uploading, setUploading] = useState(0);
+  const [removingPhoto, setRemovingPhoto] = useState<string | null>(null);
+  const [hasProfile, setHasProfile] = useState(false);
+
+  const completeness = useMemo(() => calcCompleteness(data, photos.length > 0), [data, photos.length]);
 
   // Load existing profile on mount
   useEffect(() => {
@@ -149,6 +214,8 @@ export default function MatrimonyCreatePage() {
         if (profile) {
           const prefs = existing.ok ? existing.data.preferences : null;
           const contact = existing.ok ? existing.data.contact : null;
+          setHasProfile(true);
+          setPhotos(existing.ok ? existing.data.media.filter(m => m.type === 'photo') : []);
 
           const loadedData: MatrimonyWizardData = {
             ...DEFAULT_DATA,
@@ -209,7 +276,7 @@ export default function MatrimonyCreatePage() {
             pref_age_max: prefs?.age_max ?? 35,
             pref_height_min_cm: prefs?.height_min_cm ?? undefined,
             pref_height_max_cm: prefs?.height_max_cm ?? undefined,
-            pref_marital_status: prefs?.marital_status || [],
+            pref_marital_status: toEnumValues(prefs?.marital_status),
             pref_religion: prefs?.religion || [],
             pref_denomination: prefs?.denomination || [],
             pref_community: prefs?.community || [],
@@ -217,11 +284,11 @@ export default function MatrimonyCreatePage() {
             pref_country: prefs?.country ?? undefined,
             pref_province: prefs?.province ?? undefined,
             pref_city: prefs?.city ?? undefined,
-            pref_residency_status: prefs?.residency_status || [],
+            pref_residency_status: toEnumValues(prefs?.residency_status),
             pref_education: prefs?.education || [],
             pref_profession: prefs?.profession || [],
             pref_income_range: prefs?.income_range ?? undefined,
-            pref_diet: prefs?.diet || [],
+            pref_diet: toEnumValues(prefs?.diet),
             pref_smoking: prefs?.smoking ?? undefined,
             pref_drinking: prefs?.drinking ?? undefined,
             pref_manglik: prefs?.manglik_pref ?? undefined,
@@ -306,6 +373,7 @@ export default function MatrimonyCreatePage() {
       const { user_id: _ignored, ...profilePayload } = buildProfilePayload(data, currentUserId, 'draft', completeness);
       const result = await saveMatrimonyProfile(profilePayload, 'draft');
       if (!result.ok) throw new Error(result.error);
+      setHasProfile(true);
       setDraftSavedMsg(true);
       setTimeout(() => setDraftSavedMsg(false), 3000);
     } catch (err) {
@@ -315,6 +383,56 @@ export default function MatrimonyCreatePage() {
       setSaving(false);
     }
   }, [data, currentUserId, completeness]);
+
+  // ── Photos ─────────────────────────────────────────────
+  const addPhotos = useCallback(async (files: FileList | null) => {
+    if (!files?.length) return;
+    setPhotoError('');
+
+    const room = MAX_PHOTOS - photos.length;
+    const chosen = Array.from(files).slice(0, Math.max(room, 0));
+    if (chosen.length === 0) {
+      setPhotoError(`You can add up to ${MAX_PHOTOS} photos.`);
+      return;
+    }
+
+    // A photo row needs a profile to reference. On a first visit there is none
+    // yet, so the listing is saved as a draft before the first upload.
+    if (!hasProfile) {
+      const { user_id: _ignored, ...profilePayload } = buildProfilePayload(data, currentUserId, 'draft', completeness);
+      const created = await saveMatrimonyProfile(profilePayload, 'draft');
+      if (!created.ok) {
+        setPhotoError(created.error);
+        return;
+      }
+      setHasProfile(true);
+    }
+
+    setUploading(n => n + chosen.length);
+    // Sequential, so the order the member picked is the order stored and the
+    // first photo becomes the primary one.
+    for (const file of chosen) {
+      try {
+        const url = await uploadPhoto(file);
+        const saved = await addMatrimonyPhoto(url);
+        if (saved.ok) setPhotos(p => [...p, saved.data]);
+        else setPhotoError(saved.error);
+      } catch {
+        setPhotoError('Upload failed. Use a JPG, PNG or WebP under 8 MB.');
+      } finally {
+        setUploading(n => n - 1);
+      }
+    }
+  }, [photos.length, hasProfile, data, currentUserId, completeness]);
+
+  const removePhoto = useCallback(async (mediaId: string) => {
+    setPhotoError('');
+    setRemovingPhoto(mediaId);
+    const result = await removeMatrimonyPhoto(mediaId);
+    if (result.ok) setPhotos(p => p.filter(m => m.id !== mediaId));
+    else setPhotoError(result.error);
+    setRemovingPhoto(null);
+  }, []);
 
   // ── Final Submit ───────────────────────────────────────
   const handleSubmit = useCallback(async () => {
@@ -532,7 +650,13 @@ export default function MatrimonyCreatePage() {
         {step === 3 && <StepLocation data={data} set={set} errors={errors} />}
         {step === 4 && <StepCareer data={data} set={set} errors={errors} />}
         {step === 5 && <StepFamily data={data} set={set} toggleMulti={toggleMulti} errors={errors} />}
-        {step === 6 && <StepAbout data={data} set={set} errors={errors} />}
+        {step === 6 && (
+          <StepAbout
+            data={data} set={set} errors={errors}
+            photos={photos} uploading={uploading} removingPhoto={removingPhoto}
+            photoError={photoError} onAddPhotos={addPhotos} onRemovePhoto={removePhoto}
+          />
+        )}
         {step === 7 && <StepPreferences data={data} set={set} toggleMulti={toggleMulti} errors={errors} />}
       </div>
 
@@ -622,8 +746,10 @@ interface MultiSelectProps {
   selected: string[];
   onToggle: (v: string) => void;
   max?: number;
+  /** Set where the stored value is an enum and the tag should read as a label. */
+  label?: (value: string) => string;
 }
-function MultiSelectTags({ options, selected, onToggle, max }: MultiSelectProps) {
+function MultiSelectTags({ options, selected, onToggle, max, label = (v) => v }: MultiSelectProps) {
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
       {options.map(opt => {
@@ -646,7 +772,7 @@ function MultiSelectTags({ options, selected, onToggle, max }: MultiSelectProps)
             }}
           >
             {active && <span style={{ marginRight: 4 }}>✓</span>}
-            {opt}
+            {label(opt)}
           </button>
         );
       })}
@@ -1022,8 +1148,21 @@ function StepFamily({ data, set, toggleMulti, errors }: StepWithMultiProps) {
 // ═══════════════════════════════════════════════════════════
 // STEP 7: ABOUT & MEDIA + CONTACTS + CONSENT
 // ═══════════════════════════════════════════════════════════
-function StepAbout({ data, set, errors }: StepProps) {
+interface StepAboutProps extends StepProps {
+  photos: MatrimonyMedia[];
+  uploading: number;
+  removingPhoto: string | null;
+  photoError: string;
+  onAddPhotos: (files: FileList | null) => void;
+  onRemovePhoto: (mediaId: string) => void;
+}
+
+function StepAbout({
+  data, set, errors, photos, uploading, removingPhoto, photoError, onAddPhotos, onRemovePhoto,
+}: StepAboutProps) {
   const aboutLen = data.about_me.length;
+  const fileInput = useRef<HTMLInputElement>(null);
+  const busy = uploading > 0 || removingPhoto !== null;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
       {/* About Me */}
@@ -1046,7 +1185,94 @@ function StepAbout({ data, set, errors }: StepProps) {
             <span>{aboutLen}/2000</span>
           </div>
         </Field>
-        <div style={{ marginTop: 16 }}>
+      </div>
+
+      {/* Photos */}
+      <div>
+        <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+          Photos
+        </h3>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Shield size={12} /> Photos are saved as you add them and reviewed by our team before other
+          members can see them. The first photo is the one shown on your listing.
+        </p>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+          {photos.map((photo, i) => (
+            <div key={photo.id} style={{
+              position: 'relative', width: 104, height: 104, borderRadius: 'var(--radius-lg)',
+              overflow: 'hidden', border: '1px solid var(--border-color)', background: 'var(--gray-100)',
+            }}>
+              <img src={photo.url} alt={`Photo ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <button
+                type="button"
+                aria-label={`Remove photo ${i + 1}`}
+                onClick={() => onRemovePhoto(photo.id)}
+                disabled={busy}
+                style={{
+                  position: 'absolute', top: 4, right: 4, width: 24, height: 24,
+                  borderRadius: '50%', border: 'none', cursor: busy ? 'default' : 'pointer',
+                  background: 'rgba(0,0,0,0.6)', color: 'white',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                {removingPhoto === photo.id ? <Loader2 size={13} className="animate-spin" /> : <X size={13} />}
+              </button>
+              {i === 0 && (
+                <span style={{
+                  position: 'absolute', bottom: 0, left: 0, right: 0,
+                  background: 'rgba(0,0,0,0.55)', color: 'white',
+                  fontSize: '10px', fontWeight: 700, textAlign: 'center', padding: '3px 0',
+                }}>
+                  Main photo
+                </span>
+              )}
+            </div>
+          ))}
+
+          {uploading > 0 && Array.from({ length: uploading }).map((_, i) => (
+            <div key={`uploading-${i}`} className="skeleton" style={{
+              width: 104, height: 104, borderRadius: 'var(--radius-lg)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Loader2 size={18} className="animate-spin" style={{ color: 'var(--text-muted)' }} />
+            </div>
+          ))}
+
+          {photos.length + uploading < MAX_PHOTOS && (
+            <button
+              type="button"
+              onClick={() => fileInput.current?.click()}
+              disabled={busy}
+              style={{
+                width: 104, height: 104, borderRadius: 'var(--radius-lg)',
+                border: '1.5px dashed var(--border-color)', background: 'var(--bg-glass)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                gap: 6, cursor: busy ? 'default' : 'pointer', color: 'var(--text-muted)',
+                fontSize: '11px', fontWeight: 600,
+              }}
+            >
+              <ImagePlus size={20} />
+              Add photo
+            </button>
+          )}
+        </div>
+
+        <input
+          ref={fileInput}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          hidden
+          onChange={e => { onAddPhotos(e.target.files); e.target.value = ''; }}
+        />
+
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 10 }}>
+          JPG, PNG or WebP, up to 8 MB each. {photos.length} of {MAX_PHOTOS} added.
+        </p>
+        {photoError && <p role="alert" className="community-error" style={{ marginTop: 8 }}>{photoError}</p>}
+
+        <div style={{ marginTop: 20 }}>
           <Field label="Photo Visibility" required error={errors.photo_visibility} hint="Control who sees your photos">
             <select className="input" value={data.photo_visibility} onChange={e => set('photo_visibility', e.target.value as MatrimonyWizardData['photo_visibility'])}>
               {['all', 'on_request', 'blurred'].map(v => <option key={v} value={v}>{labelFor(v)}</option>)}
@@ -1155,9 +1381,10 @@ function StepPreferences({ data, set, toggleMulti, errors }: StepWithMultiProps)
       {/* Multi-select preferences */}
       <Field label="Preferred Marital Status" error={errors.pref_marital_status} span={2}>
         <MultiSelectTags
-          options={['Never Married', 'Divorced', 'Widowed', 'Awaiting Divorce', 'Separated']}
+          options={MARITAL_STATUS_VALUES}
           selected={data.pref_marital_status}
           onToggle={v => toggleMulti('pref_marital_status', v)}
+          label={labelFor}
         />
       </Field>
 
@@ -1175,9 +1402,10 @@ function StepPreferences({ data, set, toggleMulti, errors }: StepWithMultiProps)
 
       <Field label="Preferred Residency Status" error={errors.pref_residency_status} span={2}>
         <MultiSelectTags
-          options={['Citizen', 'Permanent Resident', 'Work Permit', 'Study Permit']}
+          options={RESIDENCY_VALUES}
           selected={data.pref_residency_status}
           onToggle={v => toggleMulti('pref_residency_status', v)}
+          label={labelFor}
         />
       </Field>
 
@@ -1187,9 +1415,10 @@ function StepPreferences({ data, set, toggleMulti, errors }: StepWithMultiProps)
 
       <Field label="Preferred Diet" error={errors.pref_diet} span={2}>
         <MultiSelectTags
-          options={['Vegetarian', 'Non-Vegetarian', 'Eggetarian', 'Vegan', 'Jain']}
+          options={DIET_VALUES}
           selected={data.pref_diet}
           onToggle={v => toggleMulti('pref_diet', v)}
+          label={labelFor}
         />
       </Field>
 

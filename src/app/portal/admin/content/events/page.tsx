@@ -9,16 +9,23 @@ export default function EventsManagementPage() {
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string | number | boolean>>({});
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
 
   const upcomingEvents = events.filter(e => e.status === 'upcoming');
   const pastEvents = events.filter(e => e.status === 'past');
 
-  const openAdd = () => { setShowModal(true); setEditId(null); setForm({}); };
-  const openEdit = (item: CommunityEvent) => { setShowModal(true); setEditId(item.id); setForm({ ...item }); };
-  const closeModal = () => { setShowModal(false); setEditId(null); setForm({}); };
+  const openAdd = () => { setShowModal(true); setEditId(null); setForm({}); setFormError(null); };
+  const openEdit = (item: CommunityEvent) => { setShowModal(true); setEditId(item.id); setForm({ ...item }); setFormError(null); };
+  const closeModal = () => { setShowModal(false); setEditId(null); setForm({}); setFormError(null); };
+  // Backdrop and X are inert mid-save, so a write in flight cannot be dismissed
+  // before its result is known.
+  const dismiss = () => { if (!saving) closeModal(); };
   const handleChange = (key: string, val: string | number | boolean) => setForm(prev => ({ ...prev, [key]: val }));
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const data = {
       title: String(form.title || 'New Event'),
       description: String(form.description || ''),
@@ -34,14 +41,25 @@ export default function EventsManagementPage() {
       rsvpUrl: String(form.rsvpUrl || '#'),
       status: (form.status as EventStatus) || 'upcoming',
     };
-    if (editId) updateEvent(editId, data);
-    else addEvent(data);
+
+    setSaving(true);
+    setFormError(null);
+    const result = editId ? await updateEvent(editId, data) : await addEvent(data);
+    setSaving(false);
+
+    // Modal stays open on failure: closing it would look like the write landed
+    // and would throw away everything the admin typed.
+    if (!result.ok) { setFormError(result.error); return; }
     closeModal();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Delete this event?')) return;
-    deleteEvent(id);
+    setListError(null);
+    setDeletingId(id);
+    const result = await deleteEvent(id);
+    setDeletingId(null);
+    if (!result.ok) setListError(result.error);
   };
 
   const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-primary)' };
@@ -73,7 +91,7 @@ export default function EventsManagementPage() {
               <td style={tableCellStyle}><span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Users size={12} />{evt.attendees}/{evt.capacity}</span></td>
               <td style={{ ...tableCellStyle, textAlign: 'right' }}>
                 <button style={actionBtnStyle} onClick={() => openEdit(evt)} title="Edit"><Pencil size={15} color="var(--primary-600)" /></button>
-                <button style={actionBtnStyle} onClick={() => handleDelete(evt.id)} title="Delete"><Trash2 size={15} color="var(--error-500)" /></button>
+                <button style={actionBtnStyle} onClick={() => handleDelete(evt.id)} disabled={deletingId === evt.id} title="Delete"><Trash2 size={15} color="var(--error-500)" /></button>
               </td>
             </tr>
           ))}
@@ -87,15 +105,17 @@ export default function EventsManagementPage() {
       <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: 8 }}>Events Manager</h1>
       <p style={{ color: 'var(--text-secondary)', marginBottom: 32 }}>Manage upcoming and past events displayed on the public Events page.</p>
 
+      {listError && <p role="alert" className="community-error" style={{ marginBottom: 24 }}>{listError}</p>}
+
       {renderTable('Upcoming Events', upcomingEvents, 'var(--success-600)')}
       {renderTable('Past Events', pastEvents, 'var(--text-muted)')}
 
       {showModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }} onClick={closeModal}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }} onClick={dismiss}>
           <div style={{ background: 'var(--bg-card)', borderRadius: 16, padding: 32, width: 560, maxHeight: '80vh', overflow: 'auto', boxShadow: 'var(--shadow-xl)' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
               <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>{editId ? 'Edit Event' : 'Add Event'}</h3>
-              <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={20} /></button>
+              <button onClick={dismiss} disabled={saving} style={{ background: 'none', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', color: 'var(--text-muted)' }}><X size={20} /></button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div><label style={labelStyle}>Title</label><input style={inputStyle} value={String(form.title || '')} onChange={e => handleChange('title', e.target.value)} /></div>
@@ -129,7 +149,10 @@ export default function EventsManagementPage() {
                   <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Featured Event</label>
                 </div>
               </div>
-              <button className="btn btn-primary" style={{ marginTop: 8, width: '100%' }} onClick={handleSave}>{editId ? 'Save Changes' : 'Add Event'}</button>
+              {formError && <p role="alert" className="community-error">{formError}</p>}
+              <button className="btn btn-primary" style={{ marginTop: 8, width: '100%' }} onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving...' : editId ? 'Save Changes' : 'Add Event'}
+              </button>
             </div>
           </div>
         </div>

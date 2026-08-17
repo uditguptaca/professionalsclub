@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/app-context';
-import { getMyMatrimony, browseProfiles, saveSearch } from '@/app/actions/matrimony';
+import { getMyMatrimony, browseProfilesPaged, saveSearch } from '@/app/actions/matrimony';
 import type { MatrimonyProfileCard, MatrimonySearchFilters } from '@/types/matrimony';
 import {
   RELIGIONS, COMMUNITIES, MOTHER_TONGUES, QUALIFICATIONS, COUNTRIES,
@@ -11,7 +11,7 @@ import {
 import {
   Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, RotateCcw,
   Save, Shield, ShieldCheck, Camera, MapPin, Briefcase, GraduationCap,
-  Heart, Clock, User, Filter, ChevronDown, Sparkles, Loader2,
+  Heart, Clock, User, Filter, ChevronDown, Loader2,
 } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 12;
@@ -38,10 +38,11 @@ const DIET_OPTIONS = [
   { value: 'vegan', label: 'Vegan' },
   { value: 'jain', label: 'Jain' },
 ];
+// "Best Match" is absent on purpose: nothing in the module computes a match
+// score, so the option had no ordering behind it.
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest First' },
   { value: 'recently_active', label: 'Recently Active' },
-  { value: 'best_match', label: 'Best Match' },
 ];
 
 function getAge(dob: string): number {
@@ -118,6 +119,7 @@ export default function MatrimonyBrowsePage() {
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [filters, setFilters] = useState<MatrimonySearchFilters>({ ...emptyFilters });
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [myProfileId, setMyProfileId] = useState<string | null>(null);
@@ -136,46 +138,58 @@ export default function MatrimonyBrowsePage() {
     });
   }, [currentUserId]);
 
-  // Fetch profiles
+  // Every filter, the sort and the page are applied by the query, so the grid
+  // renders exactly what came back.
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
+    setError('');
 
-    const result = await browseProfiles({
+    const result = await browseProfilesPaged({
       gender: filters.gender || undefined,
+      age_min: filters.age_min || undefined,
+      age_max: filters.age_max || undefined,
+      height_min_cm: filters.height_min_cm || undefined,
+      height_max_cm: filters.height_max_cm || undefined,
       religion: filters.religion?.length ? filters.religion : undefined,
+      community: filters.community?.length ? filters.community : undefined,
       city: filters.city || undefined,
       province: filters.province || undefined,
       country: filters.country || undefined,
       residency_status: filters.residency_status?.length ? filters.residency_status : undefined,
       marital_status: filters.marital_status?.length ? filters.marital_status : undefined,
       mother_tongue: filters.mother_tongue?.length ? filters.mother_tongue : undefined,
+      education: filters.education?.length ? filters.education : undefined,
+      diet: filters.diet?.length ? filters.diet : undefined,
       verified_only: filters.verified_only || undefined,
-      limit: 100,
+      has_photo: filters.has_photo || undefined,
+      recently_active: filters.recently_active || undefined,
+      sort_by: filters.sort_by,
+      limit: ITEMS_PER_PAGE,
+      offset: (page - 1) * ITEMS_PER_PAGE,
     });
 
     if (!result.ok) {
-      console.error('Error fetching profiles:', result.error);
+      // Without this the grid would show "No profiles found", which reads as an
+      // empty member base rather than a failed request.
+      setError(result.error);
+      setProfiles([]);
+      setTotalCount(0);
       setLoading(false);
       return;
     }
 
-    // Age is derived from date of birth, so it is filtered here rather than in
-    // SQL. Everything else is applied by the query.
-    let rows = result.data;
-    if (filters.age_min || filters.age_max) {
-      rows = rows.filter((p) => {
-        if (!p.dob) return true;
-        const age = Math.floor((Date.now() - new Date(p.dob).getTime()) / 31557600000);
-        if (filters.age_min && age < filters.age_min) return false;
-        if (filters.age_max && age > filters.age_max) return false;
-        return true;
-      });
+    // A page past the end comes back empty, which would read as "no matches"
+    // rather than "that page is gone". Only reachable if the result set shrank
+    // between requests, since a filter change already resets to page 1.
+    if (result.data.profiles.length === 0 && page > 1) {
+      setPage(1);
+      return;
     }
 
-    setProfiles(rows);
-    setTotalCount(rows.length);
+    setProfiles(result.data.profiles);
+    setTotalCount(result.data.total);
     setLoading(false);
-  }, [filters]);
+  }, [filters, page]);
 
   useEffect(() => {
     fetchProfiles();
@@ -229,7 +243,7 @@ export default function MatrimonyBrowsePage() {
     try {
       const result = await saveSearch(saveSearchName.trim(), { ...filters }, true);
       if (!result.ok) throw new Error(result.error);
-      setSavedMsg('Search saved!');
+      setSavedMsg('Search saved');
       setShowSaveModal(false);
       setSaveSearchName('');
       setTimeout(() => setSavedMsg(''), 3000);
@@ -458,7 +472,7 @@ export default function MatrimonyBrowsePage() {
               className="input"
               style={{ paddingRight: 32, minWidth: 160 }}
               value={filters.sort_by || 'newest'}
-              onChange={e => handleFilterChange('sort_by', e.target.value as 'newest' | 'recently_active' | 'best_match')}
+              onChange={e => handleFilterChange('sort_by', e.target.value as 'newest' | 'recently_active')}
             >
               {SORT_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
@@ -541,7 +555,14 @@ export default function MatrimonyBrowsePage() {
 
         {/* Main Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          {loading ? (
+          {error ? (
+            <div className="card" style={{ padding: 40, textAlign: 'center' }}>
+              <p className="community-error" style={{ marginBottom: 16 }}>{error}</p>
+              <button className="btn btn-outline" onClick={() => void fetchProfiles()}>
+                <RotateCcw size={14} /> Try again
+              </button>
+            </div>
+          ) : loading ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: 80, flexDirection: 'column', alignItems: 'center', gap: 16 }}>
               <Loader2 size={36} style={{ color: 'var(--primary-600)', animation: 'spin 1s linear infinite' }} />
               <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading profiles...</span>
@@ -783,11 +804,6 @@ function ProfileCard({ profile, onClick, delay }: { profile: MatrimonyProfileCar
       <div style={{ padding: '16px 18px 18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>{displayName}</h3>
-          {profile.match_score !== undefined && (
-            <span className="badge badge-accent" style={{ fontWeight: 700 }}>
-              <Sparkles size={10} /> {profile.match_score}%
-            </span>
-          )}
         </div>
 
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 10 }}>

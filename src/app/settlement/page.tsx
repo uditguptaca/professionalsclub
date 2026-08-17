@@ -7,9 +7,8 @@ import {
   ArrowRight, 
   Download, 
   MapPin, 
-  FileText, 
-  CheckCircle, 
-  Home as HomeIcon, 
+  FileText,
+  Home as HomeIcon,
   Landmark, 
   ShieldCheck, 
   Globe, 
@@ -195,15 +194,17 @@ export default function SettlementPage() {
         <div className="container" style={{ position: 'relative', zIndex: 10 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24, alignItems: 'center' }}>
             <div>
-              <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--primary-600)', marginBottom: 16 }}>Free Download</div>
-              <h2 style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 24, lineHeight: 1.15, color: 'white' }}>The Ultimate Newcomer Checklist</h2>
+              <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--primary-600)', marginBottom: 16 }}>Free Guides</div>
+              <h2 style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 24, lineHeight: 1.15, color: 'white' }}>Your First Weeks, Step by Step</h2>
               <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', lineHeight: 1.8, marginBottom: 40 }}>
-                Download our free checklist for your first 30 days in Canada.
+                Start with the checklist beside this. Our free newcomer guides cover each step in detail, from the SIN application to your first health card.
               </p>
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 32px', fontSize: '1rem', background: 'var(--primary-600)', border: 'none', boxShadow: '0 8px 24px rgba(232,93,4,0.3)' }}>
-                  <Download size={20} /> Download PDF Guide
-                </button>
+                {/* Links to the e-books library rather than a single PDF: the guides are
+                    per-topic, and there is no combined checklist document to hand out. */}
+                <Link href="/e-books" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 32px', fontSize: '1rem', background: 'var(--primary-600)', border: 'none', boxShadow: '0 8px 24px rgba(232,93,4,0.3)' }}>
+                  <Download size={20} /> Browse Free Guides
+                </Link>
                 <Link href="/resources" className="btn" style={{ padding: '16px 32px', fontSize: '1rem', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}>View All Resources</Link>
               </div>
             </div>
@@ -212,17 +213,14 @@ export default function SettlementPage() {
                 <FileText size={24} style={{ color: 'var(--primary-600)' }} />
                 First 7 Days Checklist
               </h4>
-              {['Applied for SIN at Service Canada', 'Opened a Canadian Bank Account', 'Obtained a Canadian Phone Number', 'Applied for Provincial Health Card', 'Explored local transit routes', 'Registered with settlement agency'].map((item, i) => {
-                const isChecked = i === 1 || i === 2;
-                return (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0', borderBottom: i < 5 ? '1px solid var(--border-color)' : 'none' }}>
-                    <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${isChecked ? 'var(--primary-600)' : 'var(--border-color)'}`, flexShrink: 0, background: isChecked ? 'var(--primary-600)' : 'var(--bg-secondary)', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {isChecked && <CheckCircle size={14} style={{ color: 'white' }} />}
-                    </div>
-                    <span style={{ fontSize: '0.95rem', color: isChecked ? 'var(--text-muted)' : 'var(--text-primary)', fontWeight: 500, textDecoration: isChecked ? 'line-through' : 'none' }}>{item}</span>
-                  </div>
-                );
-              })}
+              {/* Every box starts empty. The page tracks nothing, so pre-ticked rows
+                  would be showing progress that does not belong to the reader. */}
+              {['Applied for SIN at Service Canada', 'Opened a Canadian Bank Account', 'Obtained a Canadian Phone Number', 'Applied for Provincial Health Card', 'Explored local transit routes', 'Registered with settlement agency'].map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0', borderBottom: i < 5 ? '1px solid var(--border-color)' : 'none' }}>
+                  <div style={{ width: 22, height: 22, borderRadius: 6, border: '2px solid var(--border-color)', flexShrink: 0, background: 'var(--bg-secondary)' }} />
+                  <span style={{ fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 500 }}>{item}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>

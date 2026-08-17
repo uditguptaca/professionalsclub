@@ -4,6 +4,9 @@ import React, { useState } from 'react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { Send, Mail, MapPin, Shield, CheckCircle } from 'lucide-react';
+import { submitContactMessage } from '@/app/actions/public';
+
+type FieldErrors = { name?: string; email?: string; message?: string };
 
 export default function ContactPage() {
   const [name, setName] = useState('');
@@ -11,12 +14,40 @@ export default function ContactPage() {
   const [subject, setSubject] = useState('General Support');
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (name && email && message) {
-      setSubmitted(true);
-    }
+
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    const trimmedMessage = message.trim();
+
+    // The form is noValidate, so these messages are the only validation surface
+    // and do not race the browser's own bubbles.
+    const next: FieldErrors = {};
+    if (!trimmedName) next.name = 'Enter your name.';
+    // Deliberately loose. This only catches obvious typos before the round trip;
+    // the database function is what actually decides whether the row is valid.
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmedEmail)) next.email = 'Enter a valid email address.';
+    if (!trimmedMessage) next.message = 'Tell us what you need help with.';
+    setFieldErrors(next);
+    if (Object.keys(next).length > 0) return;
+
+    setError('');
+    setPending(true);
+    const result = await submitContactMessage({
+      name: trimmedName,
+      email: trimmedEmail,
+      subject,
+      message: trimmedMessage,
+    });
+    setPending(false);
+
+    if (result.ok) setSubmitted(true);
+    else setError(result.error);
   };
 
   return (
@@ -44,17 +75,19 @@ export default function ContactPage() {
                   <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(0,168,107,0.1)', color: 'var(--success-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
                     <CheckCircle size={36} />
                   </div>
-                  <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 12 }}>Message Sent Successfully!</h3>
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 12 }}>Message received</h3>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.6, maxWidth: 400, margin: '0 auto 24px' }}>
-                    Thank you for reaching out, {name}. A member of our community admin team will review your message and get back to you shortly.
+                    Thanks for reaching out, {name}. Your message is with the support desk and a reply will come to {email}, usually within two business days.
                   </p>
-                  <button 
+                  <button
                     onClick={() => {
                       setName('');
                       setEmail('');
                       setMessage('');
+                      setError('');
+                      setFieldErrors({});
                       setSubmitted(false);
-                    }} 
+                    }}
                     className="btn btn-primary"
                     style={{ padding: '12px 24px' }}
                   >
@@ -62,29 +95,33 @@ export default function ContactPage() {
                   </button>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>Your Name *</label>
-                    <input 
-                      type="text" 
-                      required 
+                    <input
+                      type="text"
+                      required
                       value={name}
                       onChange={e => setName(e.target.value)}
                       placeholder="Enter your full name"
+                      aria-invalid={fieldErrors.name ? true : undefined}
                       style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border-color)', outline: 'none', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
                     />
+                    {fieldErrors.name && <p role="alert" className="community-error" style={{ marginTop: 8 }}>{fieldErrors.name}</p>}
                   </div>
 
                   <div>
                     <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>Email Address *</label>
-                    <input 
-                      type="email" 
-                      required 
+                    <input
+                      type="email"
+                      required
                       value={email}
                       onChange={e => setEmail(e.target.value)}
                       placeholder="Enter your email address"
+                      aria-invalid={fieldErrors.email ? true : undefined}
                       style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border-color)', outline: 'none', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
                     />
+                    {fieldErrors.email && <p role="alert" className="community-error" style={{ marginTop: 8 }}>{fieldErrors.email}</p>}
                   </div>
 
                   <div>
@@ -104,22 +141,27 @@ export default function ContactPage() {
 
                   <div>
                     <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>Message *</label>
-                    <textarea 
-                      required 
+                    <textarea
+                      required
                       rows={5}
                       value={message}
                       onChange={e => setMessage(e.target.value)}
                       placeholder="How can we help you?"
+                      aria-invalid={fieldErrors.message ? true : undefined}
                       style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border-color)', outline: 'none', background: 'var(--bg-secondary)', color: 'var(--text-primary)', resize: 'vertical' }}
                     />
+                    {fieldErrors.message && <p role="alert" className="community-error" style={{ marginTop: 8 }}>{fieldErrors.message}</p>}
                   </div>
 
-                  <button 
-                    type="submit" 
+                  {error && <p role="alert" className="community-error">{error}</p>}
+
+                  <button
+                    type="submit"
                     className="btn btn-primary"
-                    style={{ padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight: 700, border: 'none', cursor: 'pointer' }}
+                    disabled={pending}
+                    style={{ padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight: 700, border: 'none', cursor: pending ? 'not-allowed' : 'pointer', opacity: pending ? 0.65 : 1 }}
                   >
-                    <Send size={16} /> Send Message
+                    <Send size={16} /> {pending ? 'Sending...' : 'Send Message'}
                   </button>
                 </form>
               )}

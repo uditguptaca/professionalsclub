@@ -2,7 +2,10 @@
 import React from 'react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
-import { BookOpen, Plane, MapPin, Download, ExternalLink, GraduationCap, Building2, Car, CreditCard, ShieldCheck, Landmark, ThermometerSnowflake, Wifi, Smartphone, Briefcase, FileText } from 'lucide-react';
+import ContentImage from '@/components/shared/ContentImage';
+import { usePublicContent } from '@/context/public-content';
+import type { EBook } from '@/types';
+import { BookOpen, Plane, MapPin, Download, ExternalLink, Library, FileText } from 'lucide-react';
 
 // Enhanced Book Cover Component - Mimics the real PDF covers using zero-load CSS
 const DigitalCover = ({ title, chapter, color }: { title: string; chapter: string; color: string }) => {
@@ -93,7 +96,18 @@ const DigitalCover = ({ title, chapter, color }: { title: string; chapter: strin
   );
 };
 
-const CATEGORIES = [
+/** A guide whose PDF is committed to the repository and served over the CDN. */
+type StaticGuide = { name: string; chapter: string; url: string };
+
+const CATEGORIES: Array<{
+  id: string;
+  title: string;
+  highlight: string;
+  icon: React.ReactNode;
+  color: string;
+  description: string;
+  files: StaticGuide[];
+}> = [
   {
     id: 'before-moving',
     title: 'Before Moving To',
@@ -132,7 +146,7 @@ const CATEGORIES = [
   },
 ];
 
-const BookCard = ({ file, categoryColor }: { file: any; categoryColor: string }) => {
+const BookCard = ({ file, categoryColor }: { file: StaticGuide; categoryColor: string }) => {
   const nativeUrl = `https://raw.githack.com/uditguptaca/professionalsclub/main/${encodeURIComponent(file.url)}`;
   
   return (
@@ -226,7 +240,72 @@ const BookCard = ({ file, categoryColor }: { file: any; categoryColor: string })
   );
 };
 
+/**
+ * An admin can save an e-book row before the file itself exists, so the
+ * download column is routinely blank (and older rows carry a placeholder '#').
+ * Neither is a destination, so the card says so instead of offering a link
+ * that goes nowhere.
+ */
+const hasFile = (url: string | null | undefined) => {
+  const clean = (url ?? '').trim();
+  return clean.length > 0 && clean !== '#';
+};
+
+const LibraryCard = ({ book }: { book: EBook }) => (
+  <div style={{
+    background: 'var(--bg-primary)',
+    borderRadius: '20px',
+    border: '1px solid var(--border-color)',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+  }}>
+    <div style={{ position: 'relative', aspectRatio: '4 / 3', background: 'var(--bg-secondary)', overflow: 'hidden' }}>
+      <ContentImage src={book.image} alt={book.title} label={book.title} fill sizes="(max-width: 768px) 100vw, 33vw" style={{ objectFit: 'cover' }} />
+    </div>
+
+    <div style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ flex: 1 }}>
+        <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.4, margin: '0 0 6px', fontFamily: 'var(--font-display)' }}>
+          {book.title}
+        </h3>
+        {book.author && (
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>By {book.author}</p>
+        )}
+      </div>
+
+      {hasFile(book.downloadUrl) ? (
+        <a
+          href={book.downloadUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-primary"
+        >
+          Download E-Book <Download size={18} />
+        </a>
+      ) : (
+        <button type="button" className="btn btn-outline" disabled>
+          File coming soon
+        </button>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <FileText size={14} /> {book.type || 'PDF'}
+        </span>
+        {book.size && <span>{book.size}</span>}
+      </div>
+    </div>
+  </div>
+);
+
 export default function EBooksPage() {
+  // Anonymous reads are restricted to published rows by RLS, so whatever
+  // arrives here is already public.
+  const { ebooks, loading } = usePublicContent();
+
   return (
     <div style={{ background: 'var(--bg-secondary)', minHeight: '100vh' }}>
       <Navbar />
@@ -335,6 +414,40 @@ export default function EBooksPage() {
             </div>
           ))}
 
+          {/* Newer guides live in the ebooks table and are managed from the admin
+              portal, so they appear here without a code change. */}
+          <div style={{ marginBottom: '100px' }}>
+            <div style={{ marginBottom: '48px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ padding: '12px', background: 'var(--bg-primary)', borderRadius: '16px', color: 'var(--primary-600)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+                  <Library size={24} />
+                </div>
+                <h2 style={{ fontSize: '2.25rem', fontWeight: 900, color: 'var(--text-primary)', margin: 0, fontFamily: 'var(--font-display)' }}>
+                  From the <span style={{ color: 'var(--primary-600)' }}>Club Library</span>
+                </h2>
+              </div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '600px', margin: 0 }}>
+                Guides published by our team and volunteers. New titles are added here as they are written.
+              </p>
+            </div>
+
+            {loading ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '40px' }}>
+                {[0, 1, 2].map((i) => <div key={i} className="skeleton skeleton-card" style={{ height: '18rem' }} />)}
+              </div>
+            ) : ebooks.length === 0 ? (
+              <div className="empty-state">
+                <span className="empty-icon"><BookOpen size={24} /></span>
+                <h3>No library titles yet</h3>
+                <p>The chapter guides above are ready to download now. Anything our team publishes later shows up in this section.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '40px' }}>
+                {ebooks.map((book) => <LibraryCard key={book.id} book={book} />)}
+              </div>
+            )}
+          </div>
+
           {/* Contact CTA */}
           <div style={{ 
             marginTop: '40px', 
@@ -359,7 +472,7 @@ export default function EBooksPage() {
               Looking for something specific?
             </h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginBottom: '40px', maxWidth: '500px', margin: '0 auto 40px' }}>
-              We add new guides every week. Tell us what would help and we'll create it.
+              Tell us which topic you need covered and we will look at writing it next.
             </p>
             <a
               href="mailto:info@professionalsclub.ca"

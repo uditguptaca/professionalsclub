@@ -1,11 +1,14 @@
 'use client';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
+// The real create-form steps, so "what a listing contains" cannot drift away
+// from the wizard a member actually fills in.
+import { WIZARD_STEPS } from '@/lib/matrimony/constants';
 import {
   Heart, ShieldCheck, Lock, Eye, UserCheck, ArrowRight,
-  ChevronDown, ChevronUp, Sparkles, Star, Users, FileCheck, Fingerprint, HeartHandshake, Search, Send, Clock, Globe, MapPin
+  ChevronDown, ChevronUp, Sparkles, FileCheck, HeartHandshake, Search, Send, Clock, Globe
 } from 'lucide-react';
 
 
@@ -42,10 +45,13 @@ const trustBadges = [
   { icon: Eye, title: '100% Confidential', desc: 'Contact info visible only on consent', color: 'var(--primary-600)' },
 ];
 
-const stats = [
-  { value: '500+', label: 'Verified Profiles', icon: Users },
-  { value: '50+', label: 'Successful Matches', icon: Heart },
-  { value: '10+', label: 'Success Stories', icon: Star },
+// Claims about how the service is built, not counts. We do not publish member
+// numbers or match counts: nothing on this page has a source for them, and the
+// listing data itself is deliberately unreadable from the public site.
+const assurances = [
+  { value: 'Free', label: 'No fees and no premium tiers', icon: Sparkles },
+  { value: 'Reviewed', label: 'An admin checks every listing', icon: ShieldCheck },
+  { value: 'Private', label: 'Listings are never shown publicly', icon: Lock },
 ];
 
 const faqs = [
@@ -55,7 +61,7 @@ const faqs = [
   },
   {
     q: 'Is my profile visible to everyone?',
-    a: 'No. Your profile is only visible to other verified, approved members on the platform. Your contact details are never shown — they are shared only through our admin-mediated process after mutual interest.',
+    a: 'No. Your profile is only visible to approved members who have created a listing of their own, and it is never shown on the public website. Your contact details are separate again: they stay hidden until you accept an interest from someone.',
   },
   {
     q: 'How does the verification process work?',
@@ -63,7 +69,7 @@ const faqs = [
   },
   {
     q: 'Can I control who sees my photos?',
-    a: 'Absolutely. You can set your photo visibility to "Visible to all members", "Visible on request only", or "Blurred preview". You maintain complete control.',
+    a: 'Yes. Each photo can be set to "Visible to all members", "Visible on request only", or "Private", and you can change any of them later. Photos are also reviewed before they appear to anyone.',
   },
   {
     q: 'How do I express interest in someone?',
@@ -75,176 +81,47 @@ const faqs = [
   },
 ];
 
-const MOCK_MATRIMONY_PROFILES = [
+// The visibility rules below are the ones the database actually enforces, in
+// db/migrations/0002_matrimony_schema.sql and 0003_rls_policies.sql. Keep this
+// list in step with those policies: it is the page's central promise, so a claim
+// here that RLS does not back is a claim we cannot keep.
+const visibilityRules = [
   {
-    id: 'MI-1659382',
-    gender: 'female',
-    first_name: 'Preeti',
-    dob: '1995-06-15',
-    height_cm: 165,
-    religion: 'Sikh',
-    mother_tongue: 'Punjabi',
-    city: 'Toronto',
-    province: 'Ontario',
-    country: 'Canada',
-    nationality: 'British',
-    about_me: 'This profile is of my daughter who is a software engineer. She is simple and good looking, family-oriented.',
+    icon: Lock,
+    title: 'No public directory',
+    desc: 'No listing is published on this website, so there is no public page for anyone to read or for a search engine to index. Browsing happens only inside the member portal.',
   },
   {
-    id: 'MI-1658464',
-    gender: 'female',
-    first_name: 'Jasmin',
-    dob: '1997-08-20',
-    height_cm: 162,
-    religion: 'Christian',
-    mother_tongue: 'English',
-    city: 'Vancouver',
-    province: 'British Columbia',
-    country: 'Canada',
-    nationality: 'Canadian',
-    about_me: 'Chartered Accountant working with a Big 4 firm. Caring, family-oriented, settled in British Columbia.',
+    icon: UserCheck,
+    title: 'Browsing needs a listing of your own',
+    desc: 'You can only see other members once you have created a listing yourself. An account on its own is not enough, so nobody can sign up purely to read through the member base.',
   },
   {
-    id: 'MI-1645718',
-    gender: 'female',
-    first_name: 'Anjali',
-    dob: '1994-11-10',
-    height_cm: 168,
-    religion: 'Hindu',
-    mother_tongue: 'Hindi',
-    city: 'Hamilton',
-    province: 'Ontario',
-    country: 'Canada',
-    nationality: 'American',
-    about_me: 'This profile is of my sister who is simple and good looking. She is currently residing in Hamilton.',
+    icon: Eye,
+    title: 'Photos are a separate decision',
+    desc: 'Each photo you upload carries its own visibility setting: all members, on request only, or private. Photos are also reviewed before they appear, and you can change your mind at any time.',
   },
   {
-    id: 'MI-1632385',
-    gender: 'male',
-    first_name: 'Aman',
-    dob: '1992-04-12',
-    height_cm: 182,
-    religion: 'Sikh',
-    mother_tongue: 'Punjabi',
-    city: 'Toronto',
-    province: 'Ontario',
-    country: 'Canada',
-    nationality: 'Canadian',
-    about_me: 'IT professional settled in Toronto. Looking for an educated and understanding partner.',
+    icon: Send,
+    title: 'Contact details need your consent',
+    desc: 'Your phone number and email stay hidden until you accept an interest. Only the person receiving an interest can accept it, so a sender cannot unlock their own access.',
   },
-  {
-    id: 'MI-1321090',
-    gender: 'male',
-    first_name: 'Rohan',
-    dob: '1994-09-05',
-    height_cm: 177,
-    religion: 'Hindu',
-    mother_tongue: 'Gujarati',
-    city: 'Brampton',
-    province: 'Ontario',
-    country: 'Canada',
-    nationality: 'Australian',
-    about_me: 'Civil engineer working in Brampton. Looking for a companion who shares similar family values.',
-  },
-  {
-    id: 'MI-1283940',
-    gender: 'male',
-    first_name: 'Kabir',
-    dob: '1996-01-25',
-    height_cm: 175,
-    religion: 'Muslim',
-    mother_tongue: 'Urdu',
-    city: 'Surrey',
-    province: 'British Columbia',
-    country: 'Canada',
-    nationality: 'Canadian',
-    about_me: 'Business analyst working in Surrey. Family-oriented, progressive, settled in BC.',
-  }
 ];
 
-const calculateAge = (dobString: string) => {
-  if (!dobString) return 29;
-  const birthDate = new Date(dobString);
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const m = today.getMonth() - birthDate.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-  return age;
-};
-
-const cmToFeetInches = (cm: number) => {
-  if (!cm) return "5' 5\"";
-  const realInches = cm / 2.54;
-  const feet = Math.floor(realInches / 12);
-  const inches = Math.round(realInches % 12);
-  return `${feet}' ${inches}"`;
-};
+const moderationPromises = [
+  'Every listing is reviewed by an admin before it becomes visible to anyone.',
+  'Members cannot approve their own listing, and cannot grant themselves a verified badge.',
+  'You can hide your listing, block another member, or report a listing at any time.',
+  'Blocking works in both directions, so a blocked member disappears from your results and you from theirs.',
+];
 
 export default function MatrimonyLandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  // Profile data state
-  const [dbProfiles, setDbProfiles] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // Search Filter State (strictly Canada only)
-  const [searchGender, setSearchGender] = useState<string>('female');
-  const [searchReligion, setSearchReligion] = useState<string>('any');
-  const [searchNationality, setSearchNationality] = useState<string>('any');
-  const [minAge, setMinAge] = useState<number>(18);
-  const [maxAge, setMaxAge] = useState<number>(50);
-
-  // Active Grid Tab (either brides or grooms)
-  const [activeTab, setActiveTab] = useState<'brides' | 'grooms'>('brides');
-
-  // Illustrative sample cards only.
-  //
-  // This is a signed-out marketing page, and the page's own FAQ promises that
-  // profiles are visible only to verified members. It therefore does not query
-  // matrimony_profiles: doing so would let anyone enumerate the real member
-  // base. Signed-in browsing lives at /portal/member/matrimony/browse, behind
-  // the gated view.
-  useEffect(() => {
-    setDbProfiles(MOCK_MATRIMONY_PROFILES);
-    setLoading(false);
-  }, []);
-
-  // Filter Profiles
-  const filteredProfiles = useMemo(() => {
-    return dbProfiles.filter(profile => {
-      // 1. Gender filter (either brides or grooms)
-      const targetGender = activeTab === 'grooms' ? 'male' : 'female';
-      if (profile.gender !== targetGender) {
-        return false;
-      }
-      
-      // 2. Nationality filter
-      if (searchNationality !== 'any' && profile.nationality?.toLowerCase() !== searchNationality.toLowerCase()) {
-        return false;
-      }
-
-      // 3. Religion filter
-      if (searchReligion !== 'any' && profile.religion?.toLowerCase() !== searchReligion.toLowerCase()) {
-        return false;
-      }
-
-      // 4. Age filter
-      const age = calculateAge(profile.dob);
-      if (age < minAge || age > maxAge) {
-        return false;
-      }
-
-      // 5. Canada Only filter (Enforcing user constraint)
-      if (profile.country?.toLowerCase() !== 'canada') {
-        return false;
-      }
-
-      return true;
-    });
-  }, [dbProfiles, activeTab, searchNationality, searchReligion, minAge, maxAge]);
-
+  // There is deliberately no profile state here. This page is served to signed-out
+  // visitors, and matrimony listings are readable only through
+  // matrimony_visible_profiles, which requires a session and a listing of the
+  // caller's own. Browsing lives at /portal/member/matrimony/browse instead.
 
   return (
     <div style={{ background: 'var(--bg-secondary)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -323,17 +200,17 @@ export default function MatrimonyLandingPage() {
               </Link>
             </div>
 
-            {/* Inline stats */}
+            {/* Inline assurances */}
             <div className="animate-fade-in-up" style={{
               display: 'flex', gap: 48, justifyContent: 'center', marginTop: 64, flexWrap: 'wrap',
             }}>
-              {stats.map((s) => (
-                <div key={s.label} style={{ textAlign: 'center' }}>
+              {assurances.map((a) => (
+                <div key={a.label} style={{ textAlign: 'center' }}>
                   <div style={{
                     fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 800, color: 'white',
-                  }}>{s.value}</div>
+                  }}>{a.value}</div>
                   <div style={{ fontSize: '0.85rem', color: 'var(--gray-400)', marginTop: 4 }}>
-                    {s.label}
+                    {a.label}
                   </div>
                 </div>
               ))}
@@ -342,7 +219,7 @@ export default function MatrimonyLandingPage() {
         </div>
       </section>
 
-      {/* ═══════ SEARCH WIDGET ═══════ */}
+      {/* ═══════ NO PUBLIC DIRECTORY ═══════ */}
       <section style={{
         marginTop: '-50px',
         position: 'relative',
@@ -355,478 +232,192 @@ export default function MatrimonyLandingPage() {
             borderRadius: 20,
             boxShadow: '0 12px 40px rgba(0, 0, 0, 0.08)',
             border: '1px solid var(--border-color)',
-            padding: '24px 32px',
+            padding: 32,
+            display: 'flex',
+            gap: 24,
+            flexWrap: 'wrap',
+            alignItems: 'flex-start',
           }}>
             <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 20,
-              flexWrap: 'wrap',
-              gap: 12,
+              width: 56, height: 56, borderRadius: 16, flexShrink: 0,
+              background: 'var(--primary-50)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <h3 style={{
-                fontSize: '1.25rem',
-                fontWeight: 800,
-                color: 'var(--text-primary)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                margin: 0,
+              <Lock size={26} style={{ color: 'var(--primary-600)' }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 280 }}>
+              <h2 style={{
+                fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 800,
+                marginBottom: 10, color: 'var(--text-primary)',
               }}>
-                <Search size={20} style={{ color: 'var(--primary-600)' }} /> Search for Life Partner in Canada
-              </h3>
-              <button 
-                onClick={() => {
-                  setSearchGender('female');
-                  setSearchReligion('any');
-                  setSearchNationality('any');
-                  setMinAge(18);
-                  setMaxAge(50);
-                  setActiveTab('brides');
-                }}
-                style={{
-                  background: 'rgba(232, 93, 4, 0.08)',
-                  border: '1px solid rgba(232, 93, 4, 0.2)',
-                  color: 'var(--primary-600)',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  padding: '6px 12px',
-                  borderRadius: 6,
-                  transition: 'all 0.2s',
-                }}
-                className="clear-filters-btn"
-              >
-                Clear Filters
-              </button>
-            </div>
-            
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-              gap: 20,
-              alignItems: 'flex-end',
-            }}>
-              {/* Looking for */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Looking For</label>
-                <select 
-                  value={searchGender}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setSearchGender(val);
-                    setActiveTab(val === 'male' ? 'grooms' : 'brides');
-                  }}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: 10,
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--bg-secondary)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.9rem',
-                    outline: 'none',
-                  }}
-                >
-                  <option value="female">Female (Bride)</option>
-                  <option value="male">Male (Groom)</option>
-                </select>
+                There are no member listings on this page
+              </h2>
+              <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 20 }}>
+                That is the whole idea. Listings live inside the member portal, and the
+                database will not release one unless you are signed in and have created a
+                listing of your own. Nothing is on display here to be screenshotted,
+                forwarded, or turned up by a search engine.
+              </p>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <Link href="/portal/signup" className="btn btn-primary" style={{ textDecoration: 'none' }}>
+                  <Heart size={18} /> Create your listing
+                </Link>
+                <Link href="/portal/auth" className="btn btn-outline" style={{ textDecoration: 'none' }}>
+                  Sign in to browse
+                </Link>
               </div>
-
-              {/* Age Range */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Age Range</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <select 
-                    value={minAge}
-                    onChange={(e) => setMinAge(Number(e.target.value))}
-                    style={{
-                      flex: 1,
-                      padding: '12px 10px',
-                      borderRadius: 10,
-                      border: '1px solid var(--border-color)',
-                      background: 'var(--bg-secondary)',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.9rem',
-                      outline: 'none',
-                    }}
-                  >
-                    {Array.from({ length: 33 }, (_, i) => 18 + i).map(age => (
-                      <option key={age} value={age}>{age}</option>
-                    ))}
-                  </select>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>to</span>
-                  <select 
-                    value={maxAge}
-                    onChange={(e) => setMaxAge(Number(e.target.value))}
-                    style={{
-                      flex: 1,
-                      padding: '12px 10px',
-                      borderRadius: 10,
-                      border: '1px solid var(--border-color)',
-                      background: 'var(--bg-secondary)',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.9rem',
-                      outline: 'none',
-                    }}
-                  >
-                    {Array.from({ length: 33 }, (_, i) => 18 + i).map(age => (
-                      <option key={age} value={age}>{age}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Religion */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Religion</label>
-                <select 
-                  value={searchReligion}
-                  onChange={(e) => setSearchReligion(e.target.value)}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: 10,
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--bg-secondary)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.9rem',
-                    outline: 'none',
-                  }}
-                >
-                  <option value="any">Any Religion</option>
-                  <option value="Sikh">Sikh</option>
-                  <option value="Hindu">Hindu</option>
-                  <option value="Christian">Christian</option>
-                  <option value="Muslim">Muslim</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-
-              {/* Nationality */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Nationality</label>
-                <select 
-                  value={searchNationality}
-                  onChange={(e) => setSearchNationality(e.target.value)}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: 10,
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--bg-secondary)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.9rem',
-                    outline: 'none',
-                  }}
-                >
-                  <option value="any">Any Nationality</option>
-                  <option value="Canadian">Canadian</option>
-                  <option value="British">British</option>
-                  <option value="American">American</option>
-                  <option value="Australian">Australian</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-
-
-            </div>
-            <div style={{ marginTop: 12, fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <Globe size={12} /> Strictly displaying profiles residing in <strong>Canada</strong>.
             </div>
           </div>
         </div>
       </section>
 
-      {/* ═══════ PROFILES LISTING GRID ═══════ */}
-      <section style={{ padding: '40px 0 80px', background: 'var(--bg-secondary)' }}>
-        <div className="container" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 20px' }}>
-          
-          {/* Tabs */}
+      {/* ═══════ PRIVACY MODEL ═══════ */}
+      <section style={{ padding: '60px 0 80px', background: 'var(--bg-secondary)' }}>
+        <div className="container" style={{ maxWidth: 1280 }}>
+          <div className="section-header">
+            <div className="overline" style={{ color: 'var(--primary-600)' }}>Privacy Model</div>
+            <h2>Who Can See What</h2>
+            <p>Four rules decide who ever sees your listing. Each one is enforced by the database, so it holds even if something in the interface goes wrong.</p>
+          </div>
+
+          {/* 420px holds two per row inside the 1100 container, so four rules land as a
+              clean 2x2 rather than 3 with an orphan. The min() is load bearing: a bare
+              minmax(420px, ...) cannot shrink below 420 on a phone and overflows the
+              viewport instead of collapsing to one column. */}
           <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: 16,
-            marginBottom: 40,
-            borderBottom: '2px solid var(--border-color)',
-            paddingBottom: 16,
+            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(420px, 100%), 1fr))',
+            gap: 24, maxWidth: 1100, margin: '0 auto 64px',
           }}>
-            <button
-              onClick={() => {
-                setActiveTab('brides');
-                setSearchGender('female');
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                padding: '8px 24px',
-                fontSize: '1rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                color: activeTab === 'brides' ? 'var(--primary-600)' : 'var(--text-muted)',
-                borderBottom: activeTab === 'brides' ? '3px solid var(--primary-600)' : '3px solid transparent',
-                marginBottom: '-19px',
-                transition: 'all 0.2s',
-              }}
-            >
-              Show All Brides
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('grooms');
-                setSearchGender('male');
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                padding: '8px 24px',
-                fontSize: '1rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                color: activeTab === 'grooms' ? 'var(--primary-600)' : 'var(--text-muted)',
-                borderBottom: activeTab === 'grooms' ? '3px solid var(--primary-600)' : '3px solid transparent',
-                marginBottom: '-19px',
-                transition: 'all 0.2s',
-              }}
-            >
-              Show All Grooms
-            </button>
+            {visibilityRules.map((rule, i) => {
+              const Icon = rule.icon;
+              return (
+                <div key={rule.title} className="animate-fade-in-up" style={{
+                  background: 'var(--bg-primary)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 20, padding: 28, position: 'relative',
+                }}>
+                  <div style={{
+                    position: 'absolute', top: 20, right: 24,
+                    fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)',
+                    color: 'var(--primary-600)', opacity: 0.1, lineHeight: 1,
+                  }}>
+                    {i + 1}
+                  </div>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: 14,
+                    background: 'var(--primary-50)', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center', marginBottom: 18,
+                  }}>
+                    <Icon size={24} style={{ color: 'var(--primary-600)' }} />
+                  </div>
+                  <h3 style={{
+                    fontSize: '1.05rem', fontWeight: 700, fontFamily: 'var(--font-display)',
+                    marginBottom: 10, paddingRight: 32,
+                  }}>
+                    {rule.title}
+                  </h3>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+                    {rule.desc}
+                  </p>
+                </div>
+              );
+            })}
           </div>
 
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 320px',
-            gap: 32,
-          }} className="matrimony-grid-container">
-            
-            {/* Grid listings */}
-            <div>
-              {loading ? (
-                <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
-                  Loading profiles...
-                </div>
-              ) : filteredProfiles.length === 0 ? (
-                <div style={{
-                  textAlign: 'center',
-                  padding: '60px 24px',
-                  background: 'var(--bg-primary)',
-                  borderRadius: 16,
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-secondary)',
-                }}>
-                  <p style={{ fontWeight: 600, fontSize: '1.1rem', marginBottom: 8 }}>No Matching Profiles Found</p>
-                  <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Try adjusting your search criteria or religion filters.</p>
-                </div>
-              ) : (
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                  gap: 24,
-                }}>
-                  {filteredProfiles.map((profile) => (
-                    <div 
-                      key={profile.id}
-                      style={{
-                        background: 'var(--bg-primary)',
-                        borderRadius: 16,
-                        border: '1px solid var(--border-color)',
-                        overflow: 'hidden',
-                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)',
-                        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                      }}
-                      className="profile-card-hover"
-                    >
-                      {/* Blurred Image / Avatar Header */}
-                      <div style={{
-                        height: 220,
-                        position: 'relative',
-                        background: 'var(--gray-800)',
-                        overflow: 'hidden',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}>
-                        {/* Simulated photo with heavy blur */}
-                        <div style={{
-                          position: 'absolute',
-                          width: '120%',
-                          height: '120%',
-                          backgroundImage: `url(${profile.gender === 'female' 
-                            ? 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300' 
-                            : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300'})`,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                          filter: 'blur(20px) grayscale(20%)',
-                          opacity: 0.7,
-                        }} />
-                        {/* Lock Overlay */}
-                        <div style={{
-                          position: 'relative',
-                          zIndex: 2,
-                          textAlign: 'center',
-                          padding: 16,
-                          background: 'rgba(0, 0, 0, 0.5)',
-                          borderRadius: 12,
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
-                          backdropFilter: 'blur(10px)',
-                          maxWidth: '80%',
-                        }}>
-                          <Lock size={20} style={{ color: 'white', margin: '0 auto 8px' }} />
-                          <div style={{ color: 'white', fontSize: '0.82rem', fontWeight: 600 }}>Photo Blurred for Privacy</div>
-                          <div style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.7rem', marginTop: 4 }}>Visible to approved members</div>
-                        </div>
-                        {/* Floating Gender Badge */}
-                        <div style={{
-                          position: 'absolute',
-                          top: 16,
-                          left: 16,
-                          zIndex: 3,
-                          background: profile.gender === 'female' ? 'var(--accent-100)' : 'var(--primary-50)',
-                          color: profile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-700)',
-                          border: `1px solid ${profile.gender === 'female' ? 'var(--accent-200)' : 'var(--primary-200)'}`,
-                          padding: '4px 10px',
-                          borderRadius: 99,
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          textTransform: 'uppercase',
-                        }}>
-                          {profile.gender === 'female' ? 'Bride' : 'Groom'}
-                        </div>
-                      </div>
-
-                      {/* Info Card Content */}
-                      <div style={{ padding: 24 }}>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--primary-600)', fontWeight: 800, textTransform: 'uppercase', marginBottom: 4 }}>
-                          Matrimony ID: {profile.id}
-                        </div>
-                        <h4 style={{ fontSize: '1.15rem', fontWeight: 800, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-primary)' }}>
-                          {profile.first_name || 'Verified Member'} <span style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-muted)' }}>({calculateAge(profile.dob)} Yrs)</span>
-                        </h4>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-                          <div style={{ display: 'flex', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                            <span style={{ width: 100, fontWeight: 600 }}>Height:</span>
-                            <span>{cmToFeetInches(profile.height_cm)} ({profile.height_cm} cm)</span>
-                          </div>
-                          <div style={{ display: 'flex', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                            <span style={{ width: 100, fontWeight: 600 }}>Religion:</span>
-                            <span>{profile.religion || 'No Bar'}</span>
-                          </div>
-                          <div style={{ display: 'flex', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                            <span style={{ width: 100, fontWeight: 600 }}>Nationality:</span>
-                            <span>{profile.nationality || 'Canadian'}</span>
-                          </div>
-                          <div style={{ display: 'flex', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                            <span style={{ width: 100, fontWeight: 600 }}>Mother Tongue:</span>
-                            <span>{profile.mother_tongue || 'English'}</span>
-                          </div>
-                          <div style={{ display: 'flex', fontSize: '0.85rem', color: 'var(--text-secondary)', alignItems: 'center', gap: 4 }}>
-                            <span style={{ width: 100, fontWeight: 600 }}>Residency:</span>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <MapPin size={14} style={{ color: 'var(--primary-600)' }} /> {profile.city}, {profile.province}, Canada
-                            </span>
-                          </div>
-                        </div>
-
-                        <p style={{
-                          fontSize: '0.85rem',
-                          color: 'var(--text-muted)',
-                          lineHeight: 1.6,
-                          borderTop: '1px solid var(--border-color)',
-                          paddingTop: 12,
-                          marginBottom: 20,
-                          height: 64,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 3,
-                          WebkitBoxOrient: 'vertical',
-                        }}>
-                          {profile.about_me || 'No description provided by user.'}
-                        </p>
-
-                        <Link 
-                          href={`/portal/member/matrimony/profile/${profile.id}`}
-                          style={{
-                            display: 'block',
-                            width: '100%',
-                            textAlign: 'center',
-                            background: 'var(--primary-600)',
-                            color: 'white',
-                            textDecoration: 'none',
-                            padding: '12px',
-                            borderRadius: 10,
-                            fontWeight: 700,
-                            fontSize: '0.88rem',
-                            boxShadow: '0 4px 12px rgba(232, 93, 4, 0.15)',
-                            transition: 'all 0.2s',
-                          }}
-                        >
-                          Request Full Details
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Sidebar */}
-            <div>
-              {/* Free Platform Card */}
-              <div style={{
-                background: 'linear-gradient(135deg, var(--gray-900), var(--gray-700))',
-                borderRadius: 20,
-                padding: 28,
-                color: 'white',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                marginBottom: 24,
-                boxShadow: '0 8px 30px rgba(0, 0, 0, 0.15)',
-              }}>
-                <Sparkles size={32} style={{ color: 'var(--primary-400)', marginBottom: 16 }} />
-                <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 800, color: 'white', marginBottom: 12 }}>
-                  100% Free Platform
-                </h4>
-                <p style={{ fontSize: '0.82rem', color: 'rgba(255, 255, 255, 0.75)', lineHeight: 1.6, marginBottom: 20 }}>
-                  Completely free — no premium tiers, no fees, no hidden charges. A genuine community service.
-                </p>
-                <Link 
-                  href="/portal/member/matrimony/create" 
-                  style={{
-                    display: 'block',
-                    textAlign: 'center',
-                    background: 'var(--primary-600)',
-                    color: 'white',
-                    padding: '12px',
-                    borderRadius: 10,
-                    fontWeight: 700,
-                    fontSize: '0.85rem',
-                    textDecoration: 'none',
-                  }}
-                >
-                  Create Your Free Profile
-                </Link>
+            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(340px, 100%), 1fr))',
+            gap: 24, maxWidth: 1100, margin: '0 auto',
+          }}>
+            {/* What a listing contains */}
+            <div style={{
+              background: 'var(--bg-primary)', border: '1px solid var(--border-color)',
+              borderRadius: 20, padding: 28,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                <FileCheck size={22} style={{ color: 'var(--primary-600)' }} />
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, fontFamily: 'var(--font-display)', margin: 0 }}>
+                  What a listing contains
+                </h3>
               </div>
-
-              {/* Safety guidelines */}
-              <div style={{
-                background: 'var(--bg-primary)',
-                borderRadius: 20,
-                padding: 24,
-                border: '1px solid var(--border-color)',
-              }}>
-                <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 800, marginBottom: 14, color: 'var(--text-primary)' }}>
-                  Matrimony Guidelines
-                </h4>
-                <ul style={{ paddingLeft: 20, margin: 0, display: 'flex', flexDirection: 'column', gap: 10, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  <li>All members are verified by Professionals Club admins.</li>
-                  <li>Photos are blurred by default for maximum privacy.</li>
-                  <li>Contact details are shared only upon mutual consent.</li>
-                  <li>This service is strictly for verified residents in Canada.</li>
-                </ul>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 18 }}>
+                The form is a guided wizard, one section at a time. Optional fields can stay
+                blank and be filled in later, and a completeness score tracks how much you
+                have filled in.
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {WIZARD_STEPS.map((s, i) => (
+                  <span key={s.id} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '6px 12px', borderRadius: 99,
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-color)',
+                    fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)',
+                  }}>
+                    <span style={{ color: 'var(--primary-600)', fontWeight: 800 }}>{i + 1}</span>
+                    {s.label}
+                  </span>
+                ))}
               </div>
             </div>
 
+            {/* Moderation */}
+            <div style={{
+              background: 'var(--bg-primary)', border: '1px solid var(--border-color)',
+              borderRadius: 20, padding: 28,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                <ShieldCheck size={22} style={{ color: 'var(--primary-600)' }} />
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, fontFamily: 'var(--font-display)', margin: 0 }}>
+                  Moderation guarantees
+                </h3>
+              </div>
+              <ul style={{
+                margin: 0, paddingLeft: 0, listStyle: 'none',
+                display: 'flex', flexDirection: 'column', gap: 14,
+              }}>
+                {moderationPromises.map((promise) => (
+                  <li key={promise} style={{
+                    display: 'flex', gap: 10, alignItems: 'flex-start',
+                    fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.7,
+                  }}>
+                    <ShieldCheck size={16} style={{ color: 'var(--primary-600)', flexShrink: 0, marginTop: 4 }} />
+                    <span>{promise}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
+          {/* Free platform */}
+          <div style={{
+            maxWidth: 1100, margin: '24px auto 0',
+            background: 'linear-gradient(135deg, var(--gray-900), var(--gray-700))',
+            borderRadius: 20, padding: 32, color: 'white',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.15)',
+            display: 'flex', gap: 24, flexWrap: 'wrap',
+            alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <div style={{ flex: 1, minWidth: 280 }}>
+              <Sparkles size={28} style={{ color: 'var(--primary-400)', marginBottom: 14 }} />
+              <h3 style={{
+                fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800,
+                color: 'white', marginBottom: 10,
+              }}>
+                Free, with nothing held back for a paid tier
+              </h3>
+              <p style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.75)', lineHeight: 1.7, margin: 0 }}>
+                No fees, no premium plan, and no paywall on sending an interest or on
+                messaging once one is accepted. The Professionals Club runs this as a
+                community service.
+              </p>
+            </div>
+            <Link href="/portal/signup" className="btn btn-primary" style={{
+              textDecoration: 'none', flexShrink: 0,
+            }}>
+              Get started <ArrowRight size={18} />
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -971,7 +562,7 @@ export default function MatrimonyLandingPage() {
         </div>
       </section>
 
-      {/* ═══════ STATS BANNER ═══════ */}
+      {/* ═══════ ASSURANCES BANNER ═══════ */}
       <section style={{
         padding: '80px 0',
         background: 'linear-gradient(135deg, var(--primary-600), var(--primary-500))',
@@ -981,16 +572,16 @@ export default function MatrimonyLandingPage() {
           <div style={{
             display: 'flex', justifyContent: 'center', gap: 80, flexWrap: 'wrap',
           }}>
-            {stats.map((s) => {
-              const Icon = s.icon;
+            {assurances.map((a) => {
+              const Icon = a.icon;
               return (
-                <div key={s.label} style={{ textAlign: 'center' }}>
+                <div key={a.label} style={{ textAlign: 'center' }}>
                   <Icon size={32} style={{ marginBottom: 12, opacity: 0.8 }} />
                   <div style={{
                     fontFamily: 'var(--font-display)', fontSize: '2.5rem',
                     fontWeight: 900, marginBottom: 4,
-                  }}>{s.value}</div>
-                  <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>{s.label}</div>
+                  }}>{a.value}</div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>{a.label}</div>
                 </div>
               );
             })}
@@ -1037,7 +628,7 @@ export default function MatrimonyLandingPage() {
           </div>
 
           <div style={{ textAlign: 'center', marginTop: 32 }}>
-            <Link href="/matrimony/faq" style={{
+            <Link href="/faq" style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               color: 'var(--primary-600)', fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none',
             }}>
@@ -1070,7 +661,8 @@ export default function MatrimonyLandingPage() {
             fontSize: '1.1rem', color: 'var(--gray-400)',
             maxWidth: 500, margin: '0 auto 36px', lineHeight: 1.7,
           }}>
-            Join hundreds of verified professionals on their journey to meaningful connections.
+            Create your listing, and the only people who will ever see it are members with
+            a reviewed listing of their own.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/portal/member/matrimony/create" className="btn btn-lg" style={{
@@ -1080,13 +672,13 @@ export default function MatrimonyLandingPage() {
             }}>
               <Heart size={20} /> Create Your Profile
             </Link>
-            <Link href="/matrimony/success-stories" style={{
+            <Link href="/portal/auth" style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               padding: '16px 32px', fontSize: '1rem', borderRadius: 14,
               background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
               color: 'white', fontWeight: 600, textDecoration: 'none',
             }}>
-              <Star size={18} /> Success Stories
+              Sign In <ArrowRight size={18} />
             </Link>
           </div>
         </div>

@@ -18,7 +18,11 @@ import { auth } from '@/lib/auth/server';
 // /portal/verify is where the emailed verification link lands, and the user
 // arriving there has no session yet — gating it would bounce them straight back
 // to sign-in and strand the flow.
-const PUBLIC_PORTAL_PATHS = ['/portal/auth', '/portal/signup', '/portal/verify'];
+const PUBLIC_PORTAL_PATHS = [
+  '/portal/auth', '/portal/signup', '/portal/verify',
+  // A locked-out member has no session by definition.
+  '/portal/forgot-password', '/portal/reset-password',
+];
 
 const isPublicPortalPath = (pathname: string) =>
   PUBLIC_PORTAL_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));

@@ -9,7 +9,7 @@ import {
   Home, HelpCircle, HandHeart, FileText, ClipboardList, MessageSquare,
   LogOut, BarChart3, Users, FolderKanban, Shield, ScrollText,
   UserCircle, Building2, Inbox, BookOpen, Calendar,
-  UsersRound, Newspaper, Heart, Briefcase, X, LayoutGrid, ChevronRight, Megaphone,
+  UsersRound, Newspaper, Heart, Briefcase, X, LayoutGrid, ChevronRight, Megaphone, Mail,
 } from 'lucide-react';
 
 /**
@@ -96,6 +96,7 @@ export default function PortalShell({
     { label: 'Members', href: '/portal/admin/members', icon: Users },
     { label: 'Message Center', href: '/portal/admin/messages', icon: MessageSquare },
     { label: 'Community Reports', href: '/portal/admin/community', icon: Megaphone },
+    { label: 'Enquiries', href: '/portal/admin/inquiries', icon: Mail },
     { label: 'Audit Logs', href: '/portal/admin/audit', icon: ScrollText },
     { label: 'Businesses', href: '/portal/admin/businesses', icon: Building2 },
     { label: 'Biz Requests', href: '/portal/admin/business-requests', icon: Inbox },

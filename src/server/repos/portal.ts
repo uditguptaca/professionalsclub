@@ -470,3 +470,71 @@ export async function archiveOwnAccount(userId: string): Promise<void> {
     await db`update public.profiles set account_status = 'archived' where id = ${userId}::uuid`;
   });
 }
+
+// ========== PUBLIC INQUIRIES (contact form + volunteer help relay) ==========
+
+/**
+ * Submissions from the public forms.
+ *
+ * RLS on public_inquiries restricts select and update to admins, so these run
+ * under the caller's own transaction with no role branching here. The table is
+ * written only by the SECURITY DEFINER submit_inquiry() function (0007), which
+ * is why nothing in this file inserts.
+ */
+export interface PublicInquiry {
+  id: string;
+  kind: 'contact' | 'volunteer_help';
+  name: string;
+  email: string;
+  phone: string | null;
+  subject: string | null;
+  message: string;
+  requestedFor: string | null;
+  category: string | null;
+  status: 'new' | 'in_progress' | 'closed';
+  adminNote: string | null;
+  handledAt: string | null;
+  createdAt: string;
+}
+
+export async function listInquiries(
+  adminId: string,
+  status: 'new' | 'in_progress' | 'closed'
+): Promise<PublicInquiry[]> {
+  return withUserRead(adminId, async (db) => {
+    const rows = await db`
+      select id, kind, name, email, phone, subject, message,
+             requested_for, category, status, admin_note, handled_at, created_at
+        from public.public_inquiries
+       where status = ${status}
+       order by created_at desc
+       limit 200
+    `;
+    return toDomainAll<PublicInquiry>(rows);
+  });
+}
+
+export async function countNewInquiries(adminId: string): Promise<number> {
+  return withUserRead(adminId, async (db) => {
+    const rows = await db`
+      select count(*)::int as n from public.public_inquiries where status = 'new'
+    `;
+    return (rows[0] as { n: number } | undefined)?.n ?? 0;
+  });
+}
+
+export async function setInquiryStatus(
+  adminId: string,
+  input: { id: string; status: 'new' | 'in_progress' | 'closed'; note?: string }
+): Promise<void> {
+  await withUser(adminId, async (db) => {
+    await db`
+      update public.public_inquiries
+         set status = ${input.status},
+             admin_note = coalesce(${input.note ?? null}, admin_note),
+             handled_by = ${adminId}::uuid,
+             handled_at = now()
+       where id = ${input.id}::uuid
+    `;
+  });
+}

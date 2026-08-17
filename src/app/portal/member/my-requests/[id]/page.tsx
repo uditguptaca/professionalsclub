@@ -3,15 +3,18 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
+import { sendMessage } from '@/app/actions/portal';
 import { ArrowLeft, Clock, CheckCircle, FileText, Send, MessageSquare, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function RequestDetailPage() {
   const params = useParams();
   const requestId = params.id as string;
-  const { helpRequests, messages, sendMessage, markMessageRead } = usePortal();
+  const { helpRequests, messages, markMessageRead, refresh } = usePortal();
   const { currentUserId } = useApp();
   const [replyText, setReplyText] = useState('');
+  const [sending, setSending] = useState(false);
+  const [replyError, setReplyError] = useState('');
 
   const request = helpRequests.find(r => r.id === requestId);
   const caseMessages = messages.filter(m => m.caseId === requestId && (m.visibilityScope === 'member_only' || m.senderUserId === currentUserId));
@@ -35,17 +38,25 @@ export default function RequestDetailPage() {
     );
   }
 
-  const handleReply = () => {
-    if (!replyText.trim()) return;
+  const handleReply = async () => {
+    if (!replyText.trim() || sending) return;
+
+    setSending(true);
+    setReplyError('');
+
+    // The action is called directly rather than through usePortal because the
+    // context helper returns void, so a rejected send cleared the box exactly
+    // like an accepted one. sender_user_id is stamped from the session, so it is
+    // not in the payload.
+    //
     // visibilityScope is 'all' rather than 'admin_only': the select policy hides
     // admin_only from non-admins, so marking your own reply that way would make
     // it vanish from your own thread. The routing guard forces this value for
     // non-admins anyway.
-    sendMessage({
+    const result = await sendMessage({
       caseId: requestId,
       caseTitle: request.title,
       senderRole: 'member',
-      senderUserId: currentUserId,
       senderName: request.memberName,
       recipientRole: 'admin',
       moderatedFlag: false,
@@ -53,7 +64,19 @@ export default function RequestDetailPage() {
       body: replyText,
       attachments: [],
     });
+
+    setSending(false);
+
+    if (!result.ok) {
+      // The draft stays in the box: a failed send must not eat the reply.
+      setReplyError(result.error);
+      return;
+    }
+
     setReplyText('');
+    // The thread renders from the portal snapshot, so it has to be re-read for
+    // the sent message to appear.
+    await refresh();
   };
 
   return (
@@ -150,18 +173,24 @@ export default function RequestDetailPage() {
 
         {/* Reply Box */}
         {!['resolved', 'closed', 'rejected', 'archived'].includes(request.status) && (
-          <div style={{ display: 'flex', gap: 8, borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
-            <input
-              className="input"
-              style={{ flex: 1 }}
-              placeholder="Reply to admin..."
-              value={replyText}
-              onChange={e => setReplyText(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleReply()}
-            />
-            <button className="btn btn-primary" onClick={handleReply} disabled={!replyText.trim()}>
-              <Send size={16} />
-            </button>
+          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                className="input"
+                style={{ flex: 1 }}
+                placeholder="Reply to admin..."
+                value={replyText}
+                onChange={e => setReplyText(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') void handleReply(); }}
+                disabled={sending}
+              />
+              <button className="btn btn-primary" onClick={handleReply} disabled={sending || !replyText.trim()}>
+                <Send size={16} />
+              </button>
+            </div>
+            {replyError && (
+              <p role="alert" className="community-error" style={{ marginTop: 12 }}>{replyError}</p>
+            )}
           </div>
         )}
       </div>

@@ -29,6 +29,15 @@ const EMPTY_STATS: HelpDeskStats = {
   avgResolutionDays: 0, escalations: 0, categoryCounts: {},
 };
 
+/**
+ * Every mutation hands back the action's own result.
+ *
+ * The shared `error` field below is for display only. It cannot be used for
+ * control flow: the copy a component destructured at render time is captured in
+ * the handler's closure, so reading it after an `await` yields the previous
+ * render's value, and a stale message from an earlier failure is
+ * indistinguishable from a fresh one. Callers branch on the returned `ok`.
+ */
 interface HelpDeskContextType {
   loading: boolean;
   error: string | null;
@@ -44,59 +53,60 @@ interface HelpDeskContextType {
 
   businesses: Business[];
   businessContactRequests: BusinessContactRequest[];
-  addBusinessContactRequest: (req: Omit<BusinessContactRequest, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateBusinessStatus: (id: string, status: BusinessStatus) => Promise<void>;
-  toggleBusinessFeatured: (id: string) => Promise<void>;
+  addBusinessContactRequest: (req: Omit<BusinessContactRequest, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => Promise<ActionResult<BusinessContactRequest>>;
+  updateBusinessStatus: (id: string, status: BusinessStatus) => Promise<ActionResult<Business>>;
+  toggleBusinessFeatured: (id: string) => Promise<ActionResult<Business>>;
 
-  addHelpRequest: (req: Omit<HelpRequest, 'id' | 'reference' | 'status' | 'createdAt' | 'updatedAt' | 'timeline' | 'internalNotes'>) => Promise<void>;
-  updateRequestStatus: (id: string, status: RequestStatus) => Promise<void>;
-  addInternalNote: (requestId: string, note: { authorId: string; authorName: string; body: string }) => Promise<void>;
+  addHelpRequest: (req: Omit<HelpRequest, 'id' | 'reference' | 'status' | 'createdAt' | 'updatedAt' | 'timeline' | 'internalNotes'>) => Promise<ActionResult<HelpRequest>>;
+  updateRequestStatus: (id: string, status: RequestStatus) => Promise<ActionResult<HelpRequest>>;
+  addInternalNote: (requestId: string, note: { authorId: string; authorName: string; body: string }) => Promise<ActionResult<HelpRequest>>;
 
-  addVolunteerApp: (app: Omit<VolunteerApplication, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateVolunteerStatus: (id: string, status: VolunteerStatus, notes?: string) => Promise<void>;
+  addVolunteerApp: (app: Omit<VolunteerApplication, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => Promise<ActionResult<VolunteerApplication>>;
+  updateVolunteerStatus: (id: string, status: VolunteerStatus, notes?: string) => Promise<ActionResult<VolunteerApplication>>;
 
-  createAssignment: (assignment: Omit<CaseAssignment, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  sendMessage: (msg: Omit<AdminMessage, 'id' | 'createdAt' | 'read'>) => Promise<void>;
-  markMessageRead: (id: string) => Promise<void>;
+  createAssignment: (assignment: Omit<CaseAssignment, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => Promise<ActionResult<{ assignment: CaseAssignment; request: HelpRequest }>>;
+  sendMessage: (msg: Omit<AdminMessage, 'id' | 'createdAt' | 'read'>) => Promise<ActionResult<AdminMessage>>;
+  markMessageRead: (id: string) => Promise<ActionResult<null>>;
+  // Not a mutation from here: the server writes audit entries itself. Stays void.
   logAction: (entry: Omit<AuditLogEntry, 'id' | 'timestamp' | 'actorId' | 'actorName' | 'actorRole'>) => Promise<void>;
 
   ebooks: EBook[];
-  addEBook: (item: Omit<EBook, 'id' | 'createdAt'>) => Promise<void>;
-  updateEBook: (id: string, item: Partial<EBook>) => Promise<void>;
-  deleteEBook: (id: string) => Promise<void>;
+  addEBook: (item: Omit<EBook, 'id' | 'createdAt'>) => Promise<ActionResult<EBook>>;
+  updateEBook: (id: string, item: Partial<EBook>) => Promise<ActionResult<EBook>>;
+  deleteEBook: (id: string) => Promise<ActionResult<null>>;
 
   workshops: VideoWorkshop[];
-  addWorkshop: (item: Omit<VideoWorkshop, 'id' | 'createdAt'>) => Promise<void>;
-  updateWorkshop: (id: string, item: Partial<VideoWorkshop>) => Promise<void>;
-  deleteWorkshop: (id: string) => Promise<void>;
+  addWorkshop: (item: Omit<VideoWorkshop, 'id' | 'createdAt'>) => Promise<ActionResult<VideoWorkshop>>;
+  updateWorkshop: (id: string, item: Partial<VideoWorkshop>) => Promise<ActionResult<VideoWorkshop>>;
+  deleteWorkshop: (id: string) => Promise<ActionResult<null>>;
 
   templates: ContentTemplate[];
-  addTemplate: (item: Omit<ContentTemplate, 'id' | 'createdAt'>) => Promise<void>;
-  updateTemplate: (id: string, item: Partial<ContentTemplate>) => Promise<void>;
-  deleteTemplate: (id: string) => Promise<void>;
+  addTemplate: (item: Omit<ContentTemplate, 'id' | 'createdAt'>) => Promise<ActionResult<ContentTemplate>>;
+  updateTemplate: (id: string, item: Partial<ContentTemplate>) => Promise<ActionResult<ContentTemplate>>;
+  deleteTemplate: (id: string) => Promise<ActionResult<null>>;
 
   events: CommunityEvent[];
-  addEvent: (item: Omit<CommunityEvent, 'id' | 'createdAt'>) => Promise<void>;
-  updateEvent: (id: string, item: Partial<CommunityEvent>) => Promise<void>;
-  deleteEvent: (id: string) => Promise<void>;
+  addEvent: (item: Omit<CommunityEvent, 'id' | 'createdAt'>) => Promise<ActionResult<CommunityEvent>>;
+  updateEvent: (id: string, item: Partial<CommunityEvent>) => Promise<ActionResult<CommunityEvent>>;
+  deleteEvent: (id: string) => Promise<ActionResult<null>>;
 
   teamMembers: TeamMember[];
-  addTeamMember: (item: Omit<TeamMember, 'id' | 'createdAt'>) => Promise<void>;
-  updateTeamMember: (id: string, item: Partial<TeamMember>) => Promise<void>;
-  deleteTeamMember: (id: string) => Promise<void>;
+  addTeamMember: (item: Omit<TeamMember, 'id' | 'createdAt'>) => Promise<ActionResult<TeamMember>>;
+  updateTeamMember: (id: string, item: Partial<TeamMember>) => Promise<ActionResult<TeamMember>>;
+  deleteTeamMember: (id: string) => Promise<ActionResult<null>>;
 
   newsArticles: NewsArticle[];
-  addNewsArticle: (item: Omit<NewsArticle, 'id' | 'createdAt'>) => Promise<void>;
-  updateNewsArticle: (id: string, item: Partial<NewsArticle>) => Promise<void>;
-  deleteNewsArticle: (id: string) => Promise<void>;
+  addNewsArticle: (item: Omit<NewsArticle, 'id' | 'createdAt'>) => Promise<ActionResult<NewsArticle>>;
+  updateNewsArticle: (id: string, item: Partial<NewsArticle>) => Promise<ActionResult<NewsArticle>>;
+  deleteNewsArticle: (id: string) => Promise<ActionResult<null>>;
 
   donationCampaigns: DonationCampaign[];
-  updateDonationCampaign: (id: string, item: Partial<DonationCampaign>) => Promise<void>;
+  updateDonationCampaign: (id: string, item: Partial<DonationCampaign>) => Promise<ActionResult<DonationCampaign>>;
 
   jobPostings: JobPosting[];
-  addJobPosting: (item: Omit<JobPosting, 'id' | 'createdAt'>) => Promise<void>;
-  updateJobPosting: (id: string, item: Partial<JobPosting>) => Promise<void>;
-  deleteJobPosting: (id: string) => Promise<void>;
+  addJobPosting: (item: Omit<JobPosting, 'id' | 'createdAt'>) => Promise<ActionResult<JobPosting>>;
+  updateJobPosting: (id: string, item: Partial<JobPosting>) => Promise<ActionResult<JobPosting>>;
+  deleteJobPosting: (id: string) => Promise<ActionResult<null>>;
 }
 
 const HelpDeskContext = createContext<HelpDeskContextType | undefined>(undefined);
@@ -125,13 +135,15 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
   const [donationCampaigns, setDonationCampaigns] = useState<DonationCampaign[]>([]);
   const [jobPostings, setJobPostings] = useState<JobPosting[]>([]);
 
-  /** Unwraps an action result, recording the message on failure. */
-  const unwrap = useCallback(<T,>(result: ActionResult<T>): T | null => {
-    if (result.ok) return result.data;
+  /**
+   * Records the message on failure and passes the result straight through, so
+   * the caller still gets the `ok` flag it needs to decide what to do.
+   */
+  const track = useCallback(<T,>(result: ActionResult<T>): ActionResult<T> => {
     // Surfaced rather than swallowed: a silently failing write is how the old
     // version looked like it worked while saving nothing.
-    setError(result.error);
-    return null;
+    if (!result.ok) setError(result.error);
+    return result;
   }, []);
 
   const refresh = useCallback(async () => {
@@ -145,9 +157,10 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     setError(null);
 
-    const snapshot = unwrap(await actions.loadPortal());
+    const loaded = track(await actions.loadPortal());
 
-    if (snapshot) {
+    if (loaded.ok) {
+      const snapshot = loaded.data;
       setMembers(snapshot.members);
       setHelpRequests(snapshot.helpRequests);
       setVolunteerApps(snapshot.volunteerApps);
@@ -168,7 +181,7 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
     }
 
     setLoading(false);
-  }, [isAuthenticated, unwrap]);
+  }, [isAuthenticated, track]);
 
   // The snapshot is heavy (every help-desk slice in one query). Load it only
   // on portal routes that actually render from it — not on the public site,
@@ -190,56 +203,65 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
   // ========== HELP REQUESTS ==========
 
   const addHelpRequest: HelpDeskContextType['addHelpRequest'] = async (req) => {
-    const saved = unwrap(await actions.submitHelpRequest(req));
-    if (saved) setHelpRequests((prev) => [saved, ...prev]);
+    const result = track(await actions.submitHelpRequest(req));
+    if (result.ok) setHelpRequests((prev) => [result.data, ...prev]);
+    return result;
   };
 
   const updateRequestStatus: HelpDeskContextType['updateRequestStatus'] = async (id, status) => {
-    const saved = unwrap(await actions.updateRequestStatus(id, status));
-    if (saved) setHelpRequests((prev) => prev.map((r) => (r.id === id ? saved : r)));
+    const result = track(await actions.updateRequestStatus(id, status));
+    if (result.ok) setHelpRequests((prev) => prev.map((r) => (r.id === id ? result.data : r)));
+    return result;
   };
 
   const addInternalNote: HelpDeskContextType['addInternalNote'] = async (requestId, note) => {
     // authorId and authorName are stamped server-side from the session; only the
     // body is taken from the caller.
-    const saved = unwrap(await actions.addInternalNote(requestId, note.body));
-    if (saved) setHelpRequests((prev) => prev.map((r) => (r.id === requestId ? saved : r)));
+    const result = track(await actions.addInternalNote(requestId, note.body));
+    if (result.ok) setHelpRequests((prev) => prev.map((r) => (r.id === requestId ? result.data : r)));
+    return result;
   };
 
   // ========== VOLUNTEERS ==========
 
   const addVolunteerApp: HelpDeskContextType['addVolunteerApp'] = async (app) => {
-    const saved = unwrap(await actions.submitVolunteerApplication(app));
-    if (saved) setVolunteerApps((prev) => [saved, ...prev]);
+    const result = track(await actions.submitVolunteerApplication(app));
+    if (result.ok) setVolunteerApps((prev) => [result.data, ...prev]);
+    return result;
   };
 
   const updateVolunteerStatus: HelpDeskContextType['updateVolunteerStatus'] = async (id, status, notes) => {
-    const saved = unwrap(await actions.updateVolunteerStatus(id, status, notes));
-    if (saved) setVolunteerApps((prev) => prev.map((a) => (a.id === id ? saved : a)));
+    const result = track(await actions.updateVolunteerStatus(id, status, notes));
+    if (result.ok) setVolunteerApps((prev) => prev.map((a) => (a.id === id ? result.data : a)));
+    return result;
   };
 
   // ========== ASSIGNMENTS ==========
 
   const createAssignment: HelpDeskContextType['createAssignment'] = async (assignment) => {
-    const saved = unwrap(await actions.createAssignment(assignment));
-    if (!saved) return;
-    // The request is stamped with the volunteer in the same transaction, so both
-    // slices are refreshed together.
-    setAssignments((prev) => [saved.assignment, ...prev]);
-    setHelpRequests((prev) => prev.map((r) => (r.id === saved.request.id ? saved.request : r)));
+    const result = track(await actions.createAssignment(assignment));
+    if (result.ok) {
+      // The request is stamped with the volunteer in the same transaction, so both
+      // slices are refreshed together.
+      const { assignment: saved, request } = result.data;
+      setAssignments((prev) => [saved, ...prev]);
+      setHelpRequests((prev) => prev.map((r) => (r.id === request.id ? request : r)));
+    }
+    return result;
   };
 
   // ========== MESSAGES ==========
 
   const sendMessage: HelpDeskContextType['sendMessage'] = async (msg) => {
-    const saved = unwrap(await actions.sendMessage(msg));
-    if (saved) setMessages((prev) => [saved, ...prev]);
+    const result = track(await actions.sendMessage(msg));
+    if (result.ok) setMessages((prev) => [result.data, ...prev]);
+    return result;
   };
 
   const markMessageRead: HelpDeskContextType['markMessageRead'] = async (id) => {
-    const result = await actions.markMessageRead(id);
+    const result = track(await actions.markMessageRead(id));
     if (result.ok) setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, read: true } : m)));
-    else setError(result.error);
+    return result;
   };
 
   /**
@@ -252,18 +274,21 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
   // ========== BUSINESSES ==========
 
   const addBusinessContactRequest: HelpDeskContextType['addBusinessContactRequest'] = async (req) => {
-    const saved = unwrap(await actions.submitBusinessContactRequest(req));
-    if (saved) setBusinessContactRequests((prev) => [saved, ...prev]);
+    const result = track(await actions.submitBusinessContactRequest(req));
+    if (result.ok) setBusinessContactRequests((prev) => [result.data, ...prev]);
+    return result;
   };
 
   const updateBusinessStatus: HelpDeskContextType['updateBusinessStatus'] = async (id, status) => {
-    const saved = unwrap(await actions.updateBusinessStatus(id, status));
-    if (saved) setBusinesses((prev) => prev.map((b) => (b.id === id ? saved : b)));
+    const result = track(await actions.updateBusinessStatus(id, status));
+    if (result.ok) setBusinesses((prev) => prev.map((b) => (b.id === id ? result.data : b)));
+    return result;
   };
 
   const toggleBusinessFeatured: HelpDeskContextType['toggleBusinessFeatured'] = async (id) => {
-    const saved = unwrap(await actions.toggleBusinessFeatured(id));
-    if (saved) setBusinesses((prev) => prev.map((b) => (b.id === id ? saved : b)));
+    const result = track(await actions.toggleBusinessFeatured(id));
+    if (result.ok) setBusinesses((prev) => prev.map((b) => (b.id === id ? result.data : b)));
+    return result;
   };
 
   // ========== CONTENT CRUD ==========
@@ -280,18 +305,20 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
     const applySort = (rows: T[]) => (sort ? [...rows].sort(sort) : rows);
 
     return {
-      add: async (item: Partial<T>) => {
-        const saved = unwrap(await actions.createContent<T>(entity, item as Record<string, unknown>));
-        if (saved) setter((prev) => applySort([saved, ...prev]));
+      add: async (item: Partial<T>): Promise<ActionResult<T>> => {
+        const result = track(await actions.createContent<T>(entity, item as Record<string, unknown>));
+        if (result.ok) setter((prev) => applySort([result.data, ...prev]));
+        return result;
       },
-      update: async (id: string, item: Partial<T>) => {
-        const saved = unwrap(await actions.updateContent<T>(entity, id, item as Record<string, unknown>));
-        if (saved) setter((prev) => applySort(prev.map((row) => (row.id === id ? saved : row))));
+      update: async (id: string, item: Partial<T>): Promise<ActionResult<T>> => {
+        const result = track(await actions.updateContent<T>(entity, id, item as Record<string, unknown>));
+        if (result.ok) setter((prev) => applySort(prev.map((row) => (row.id === id ? result.data : row))));
+        return result;
       },
-      remove: async (id: string) => {
-        const result = await actions.deleteContent(entity, id);
+      remove: async (id: string): Promise<ActionResult<null>> => {
+        const result = track(await actions.deleteContent(entity, id));
         if (result.ok) setter((prev) => prev.filter((row) => row.id !== id));
-        else setError(result.error);
+        return result;
       },
     };
   }

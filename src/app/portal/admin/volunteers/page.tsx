@@ -13,8 +13,18 @@ export default function AdminVolunteersPage() {
     .filter(a => filter === 'all' || a.status === filter)
     .filter(a => !search || a.memberName.toLowerCase().includes(search.toLowerCase()));
 
-  const handleAction = (id: string, status: VolunteerStatus) => {
-    updateVolunteerStatus(id, status);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState('');
+
+  // Approving a volunteer flips profiles.is_volunteer through a trigger, so a
+  // silent failure here left the roster wrong with no sign of it.
+  const handleAction = async (id: string, status: VolunteerStatus) => {
+    if (busyId) return;
+    setBusyId(id);
+    setActionError('');
+    const result = await updateVolunteerStatus(id, status);
+    if (!result.ok) setActionError(result.error);
+    setBusyId(null);
   };
 
   return (
@@ -22,6 +32,7 @@ export default function AdminVolunteersPage() {
       <div style={{ marginBottom: 24 }}>
         <h1 className="text-3xl font-display font-bold mb-2">Volunteer Applications</h1>
         <p className="text-secondary">Review and manage volunteer and mentor applications.</p>
+        {actionError && <p role="alert" className="community-error" style={{ marginTop: 12 }}>{actionError}</p>}
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
