@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/app-context';
-import { getMatrimonyDashboard } from '@/app/actions/matrimony';
-import type { MatrimonyProfile, MatrimonyProfileCard, MatrimonyInterest, MatrimonyShortlist, MatrimonyProfileView } from '@/types/matrimony';
+import { getMatrimonyDashboard, markNotificationRead } from '@/app/actions/matrimony';
+import type { MatrimonyProfile, MatrimonyProfileCard, MatrimonyInterest, MatrimonyShortlist, MatrimonyProfileView, InAppNotification } from '@/types/matrimony';
 import {
   Heart, User, Search, Star, MessageCircle, Settings, ArrowRight,
   Eye, Send, Inbox, UserCheck, ShieldCheck, AlertCircle, Clock,
@@ -45,17 +45,22 @@ export default function MemberMatrimonyDashboard() {
   const [shortlistedBy, setShortlistedBy] = useState(0);
   const [recommendations, setRecommendations] = useState<MatrimonyProfileCard[]>([]);
   const [recentActivity, setRecentActivity] = useState<{ type: string; text: string; time: string; icon: React.ElementType }[]>([]);
+  const [notifications, setNotifications] = useState<InAppNotification[]>([]);
+  const [notifBusyId, setNotifBusyId] = useState<string | null>(null);
+  const [notifError, setNotifError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
       if (!currentUserId) { setLoading(false); return; }
       setLoading(true);
-      // One action returns the listing, the four counters, recommendations and
-      // the activity feed — the counts are aggregated in SQL rather than by
-      // four separate head-count round trips.
+      // One action returns everything this page shows: the listing, the four
+      // counters, recommendations, the activity feed and the notifications.
+      // Two actions would not overlap — Next runs Server Action calls one at a
+      // time per client — so the second call cost a whole round trip.
       const result = await getMatrimonyDashboard();
 
       if (!result.ok) {
+        setNotifError(result.error);
         console.error('Error fetching matrimony data:', result.error);
         setLoading(false);
         return;
@@ -64,6 +69,7 @@ export default function MemberMatrimonyDashboard() {
       const data = result.data;
 
       if (data) {
+        setNotifications(data.notifications);
         setProfile(data.profile);
         setInterestsReceived(data.counts.interestsReceived);
         setInterestsSent(data.counts.interestsSent);
@@ -100,6 +106,23 @@ export default function MemberMatrimonyDashboard() {
     }
     fetchData();
   }, [currentUserId]);
+
+  // Read state is only ever changed by this explicit click: opening the
+  // dashboard should not silently clear the notifications a member has not seen.
+  async function handleMarkRead(id: string) {
+    if (notifBusyId) return;
+    setNotifBusyId(id);
+    setNotifError(null);
+
+    const result = await markNotificationRead(id);
+    if (result.ok) {
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
+    } else {
+      setNotifError(result.error);
+    }
+
+    setNotifBusyId(null);
+  }
 
   function formatTimeAgo(dateStr: string) {
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -233,6 +256,17 @@ export default function MemberMatrimonyDashboard() {
   // ═══════ HAS PROFILE — Full Dashboard ═══════
   const status = statusConfig[profile.status] || statusConfig.draft;
   const StatusIcon = status.icon;
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
+
+  // Interests have a page of their own. Nothing lists who viewed or shortlisted
+  // you, so those two are counters rather than links to a route that does not
+  // exist.
+  const statCards: { label: string; value: number; icon: React.ElementType; color: string; link?: string }[] = [
+    { label: 'Interests Received', value: interestsReceived, icon: Inbox, color: 'var(--error-500)', link: '/portal/member/matrimony/interests' },
+    { label: 'Interests Sent', value: interestsSent, icon: Send, color: 'var(--primary-600)', link: '/portal/member/matrimony/interests' },
+    { label: 'Profile Views', value: profileViews, icon: Eye, color: 'var(--success-500)' },
+    { label: 'Shortlisted By', value: shortlistedBy, icon: Bookmark, color: 'var(--accent-400)' },
+  ];
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in">
@@ -346,39 +380,36 @@ export default function MemberMatrimonyDashboard() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           {/* Quick Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
-            {[
-              { label: 'Interests Received', value: interestsReceived, icon: Inbox, color: 'var(--error-500)', link: '/portal/member/matrimony/interests' },
-              { label: 'Interests Sent', value: interestsSent, icon: Send, color: 'var(--primary-600)', link: '/portal/member/matrimony/interests' },
-              { label: 'Profile Views', value: profileViews, icon: Eye, color: 'var(--success-500)', link: '#' },
-              { label: 'Shortlisted By', value: shortlistedBy, icon: Bookmark, color: 'var(--accent-400)', link: '#' },
-            ].map((stat) => {
+            {statCards.map((stat) => {
               const Icon = stat.icon;
-              return (
-                <Link key={stat.label} href={stat.link} style={{ textDecoration: 'none' }}>
-                  <div className="card-stat" style={{ cursor: 'pointer', transition: 'transform 0.2s' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{
-                        width: 44, height: 44, borderRadius: 12,
-                        background: `${stat.color}14`, display: 'flex',
-                        alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <Icon size={20} style={{ color: stat.color }} />
+              const card = (
+                <div className="card-stat" style={stat.link ? { cursor: 'pointer', transition: 'transform 0.2s' } : undefined}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{
+                      width: 44, height: 44, borderRadius: 12,
+                      background: `${stat.color}14`, display: 'flex',
+                      alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Icon size={20} style={{ color: stat.color }} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                        {stat.value}
                       </div>
-                      <div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                          {stat.value}
-                        </div>
-                        <div style={{
-                          fontSize: '0.7rem', color: 'var(--text-muted)',
-                          fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
-                        }}>
-                          {stat.label}
-                        </div>
+                      <div style={{
+                        fontSize: '0.7rem', color: 'var(--text-muted)',
+                        fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
+                      }}>
+                        {stat.label}
                       </div>
                     </div>
                   </div>
-                </Link>
+                </div>
               );
+
+              return stat.link
+                ? <Link key={stat.label} href={stat.link} style={{ textDecoration: 'none' }}>{card}</Link>
+                : <div key={stat.label}>{card}</div>;
             })}
           </div>
 
@@ -406,7 +437,7 @@ export default function MemberMatrimonyDashboard() {
                   <Users size={40} style={{ color: 'var(--text-muted)', marginBottom: 12, opacity: 0.4 }} />
                   <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                     {profile.status === 'approved'
-                      ? 'No recommendations yet. Check back soon!'
+                      ? 'No recommendations yet.'
                       : 'Recommendations will appear once your profile is approved.'}
                   </p>
                 </div>
@@ -500,6 +531,80 @@ export default function MemberMatrimonyDashboard() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Notifications */}
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{
+              padding: '20px 24px', borderBottom: '1px solid var(--border-color)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Bell size={18} style={{ color: 'var(--primary-600)' }} />
+                <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>Notifications</span>
+              </div>
+              {unreadCount > 0 && (
+                <span className="badge badge-primary">{unreadCount} unread</span>
+              )}
+            </div>
+
+            {notifError && (
+              <p role="alert" className="community-error" style={{ margin: '16px 24px 0' }}>{notifError}</p>
+            )}
+
+            {notifications.length === 0 ? (
+              <div style={{ padding: 40, textAlign: 'center' }}>
+                <Bell size={36} style={{ color: 'var(--text-muted)', marginBottom: 12, opacity: 0.4 }} />
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                  You have no notifications. Interests, messages and review decisions will appear here.
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', maxHeight: 340, overflowY: 'auto' }}>
+                {notifications.map((n, idx) => (
+                  <div key={n.id} style={{
+                    padding: '14px 24px',
+                    borderBottom: idx < notifications.length - 1 ? '1px solid var(--border-color)' : 'none',
+                    display: 'flex', alignItems: 'flex-start', gap: 12,
+                    background: n.is_read ? 'transparent' : 'rgba(232, 93, 4, 0.04)',
+                  }}>
+                    <CircleDot size={14} style={{
+                      marginTop: 4, flexShrink: 0,
+                      color: n.is_read ? 'var(--text-muted)' : 'var(--primary-600)',
+                      opacity: n.is_read ? 0.4 : 1,
+                    }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.85rem', fontWeight: n.is_read ? 500 : 700 }}>{n.title}</div>
+                      {n.body && (
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: 2, lineHeight: 1.5 }}>
+                          {n.body}
+                        </div>
+                      )}
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                        {formatTimeAgo(n.created_at)}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                      {n.link && (
+                        <Link href={n.link} className="btn btn-sm btn-ghost" style={{ textDecoration: 'none', fontSize: '0.72rem' }}>
+                          Open
+                        </Link>
+                      )}
+                      {!n.is_read && (
+                        <button
+                          className="btn btn-sm btn-outline"
+                          onClick={() => handleMarkRead(n.id)}
+                          disabled={notifBusyId !== null}
+                          style={{ fontSize: '0.72rem' }}
+                        >
+                          {notifBusyId === n.id ? 'Saving...' : 'Mark read'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Quick Actions */}

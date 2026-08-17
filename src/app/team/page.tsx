@@ -17,7 +17,7 @@ export default function TeamPage() {
     <div style={{ background: 'var(--bg-secondary)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
 
-      <main style={{ flex: 1, padding: '40px 0' }}>
+      <main id="main" style={{ flex: 1, padding: '40px 0' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           
           {/* Header */}

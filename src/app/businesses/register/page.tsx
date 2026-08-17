@@ -200,6 +200,52 @@ export default function BusinessSignupPage() {
             ? ` (${discountPercent.trim()})`
             : ''
         ),
+        // 0011 gave these eight real columns, so the wizard stops dropping them.
+        subcategory: subcategory.trim() || undefined,
+        serviceArea: serviceArea.trim() || undefined,
+        businessHours: businessHours.trim() || undefined,
+        pricingSummary: pricingSummary.trim() || undefined,
+        offerBadge: offerType.trim() || undefined,
+        socialLinks: Object.fromEntries(
+          Object.entries({
+            linkedin: linkedinUrl,
+            instagram: instagramUrl,
+            facebook: facebookUrl,
+            youtube: youtubeUrl,
+            twitter: twitterUrl,
+            googleReviews: googleReviewUrl,
+          })
+            .map(([k, v]) => [k, v.trim()])
+            .filter(([, v]) => v.length > 0)
+        ),
+        // Everything the applicant answered that has no column of its own.
+        // Kept whole so the reviewing admin sees the full application instead
+        // of a form that quietly forgot half of itself.
+        submissionDetails: Object.fromEntries(
+          Object.entries({
+            tagline: tagline.trim(),
+            targetAudience: targetAudience.filter(Boolean).join(', '),
+            yearEstablished: yearEstablished.trim(),
+            contactTitle: contactTitle.trim(),
+            consultationType: consultationType.trim(),
+            consultationFee: consultationFee.trim(),
+            certifications: certifications.trim(),
+            credentials: credentials.trim(),
+            teamSize: teamSize.trim(),
+            clientsServed: clientsServed.trim(),
+            languages: languages.filter(Boolean).join(', '),
+            offerExpiry: offerExpiry.trim(),
+            serviceMode: serviceMode.trim(),
+            promotionInterests: promotionInterests.filter(Boolean).join(', '),
+            consents: [
+              accuracyConfirm && 'details are accurate',
+              adminReviewAgree && 'agreed to admin review',
+              allowPublicListing && 'allows public listing',
+              allowDirectContact && 'allows direct member contact',
+              acceptTerms && 'accepted terms',
+            ].filter(Boolean).join('; '),
+          }).filter(([, v]) => typeof v === 'string' && v.length > 0)
+        ),
       });
       if (result.ok) setSubmitted(true);
       else setError(result.error);
@@ -252,7 +298,7 @@ export default function BusinessSignupPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, var(--bg-primary), var(--bg-secondary))' }}>
+    <main id="main" style={{ minHeight: '100vh', background: 'linear-gradient(135deg, var(--bg-primary), var(--bg-secondary))' }}>
       {/* Header */}
       <div style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-color)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 20 }}>
         <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -846,7 +892,7 @@ export default function BusinessSignupPage() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 

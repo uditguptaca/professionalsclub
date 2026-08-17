@@ -3,8 +3,9 @@ import React from 'react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import Image from 'next/image';
-import { Briefcase, DollarSign, ShieldCheck, Globe, PlayCircle, ExternalLink, ChevronDown, ChevronUp, MoreVertical } from 'lucide-react';
+import { Briefcase, DollarSign, ShieldCheck, Globe, PlayCircle, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import { getPublicVideos } from '@/app/actions/public';
+import type { PublicVideo } from '@/server/repos/public-content';
 
 const CATEGORY_CONFIG: Record<string, { icon: React.ReactNode; color: string; bgColor: string; borderColor: string; description: string }> = {
   'Career & Job Search': {
@@ -65,6 +66,13 @@ const getYoutubeId = (url: string) => {
   return (match && match[2].length === 11) ? match[2] : null;
 };
 
+// duration, views and recorded_date are all optional free text on the row. Only
+// the ones an admin actually filled in get rendered; nothing is substituted.
+const metaFields = (video: PublicVideo) =>
+  [video.category, video.duration, video.recorded_date, video.views].filter(
+    (v): v is string => Boolean(v && v.trim())
+  );
+
 const getYoutubeThumbnail = (url: string) => {
   const id = getYoutubeId(url);
   return id ? `https://i.ytimg.com/vi/${id}/mqdefault.jpg` : 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=300';
@@ -72,7 +80,7 @@ const getYoutubeThumbnail = (url: string) => {
 
 
 export default function YouTubePage() {
-  const [videos, setVideos] = React.useState<any[]>([]);
+  const [videos, setVideos] = React.useState<PublicVideo[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [expandedSection, setExpandedSection] = React.useState<string | null>(null);
 
@@ -90,8 +98,19 @@ export default function YouTubePage() {
     void fetchVideos();
   }, []);
 
+  // youtube_videos has no "featured" column. listVideos() orders by
+  // display_order, so the first row is whatever the admin put at the top; skip
+  // any row whose URL we cannot turn into an embed id.
+  const featured = React.useMemo(() => {
+    for (const video of videos) {
+      const embedId = getYoutubeId(video.video_url);
+      if (embedId) return { video, embedId };
+    }
+    return null;
+  }, [videos]);
+
   const groupedVideos = React.useMemo(() => {
-    const groups: Record<string, any[]> = {};
+    const groups: Record<string, PublicVideo[]> = {};
     videos.forEach(v => {
       const cat = v.category || 'Other';
       if (!groups[cat]) groups[cat] = [];
@@ -111,6 +130,8 @@ export default function YouTubePage() {
   return (
     <>
       <Navbar />
+
+      <main id="main">
 
       {/* Hero */}
       <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: 'var(--text-primary)', overflow: 'hidden' }}>
@@ -136,122 +157,108 @@ export default function YouTubePage() {
       <section style={{ padding: '48px 0 60px', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ maxWidth: 900 }}>
 
-          {/* Featured Video Section */}
-          <div style={{
-            background: 'var(--bg-primary)',
-            borderRadius: 20,
-            border: '1px solid var(--border-color)',
-            overflow: 'hidden',
-            marginBottom: 40,
-            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.04)',
-          }}>
+          {/* Featured Video Section. The table stores no description or author,
+              so the block shows only the fields that exist and are filled in. */}
+          {featured && (
             <div style={{
-              padding: '24px 32px',
-              borderBottom: '1px solid var(--border-color)',
-              background: 'linear-gradient(135deg, rgba(232, 93, 4, 0.03), transparent)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: 16,
+              background: 'var(--bg-primary)',
+              borderRadius: 20,
+              border: '1px solid var(--border-color)',
+              overflow: 'hidden',
+              marginBottom: 40,
+              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.04)',
             }}>
-              <div>
-                <span style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 800,
-                  textTransform: 'uppercase',
-                  color: 'var(--primary-600)',
-                  letterSpacing: '0.05em',
-                  display: 'block',
-                  marginBottom: 4
-                }}>
-                  Featured Session
-                </span>
-                <h2 style={{
-                  fontFamily: 'var(--font-display)',
-                  fontSize: '1.4rem',
-                  fontWeight: 800,
-                  margin: 0,
-                  color: 'var(--text-primary)'
-                }}>
-                  Learn Canadian Individual Taxes | Lesson 1
-                </h2>
-              </div>
-              <a 
-                href="https://www.youtube.com/watch?v=BscKxIUNxHs"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  background: 'var(--primary-600)',
-                  color: 'white',
-                  padding: '10px 20px',
-                  borderRadius: 10,
-                  fontWeight: 700,
-                  fontSize: '0.85rem',
-                  textDecoration: 'none',
-                  boxShadow: '0 4px 12px rgba(232, 93, 4, 0.2)',
-                }}
-              >
-                Watch on YouTube <ExternalLink size={14} />
-              </a>
-            </div>
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: 24,
-              padding: 32,
-            }}>
-              {/* Embedded Player */}
               <div style={{
-                position: 'relative',
-                paddingBottom: '56.25%', // 16:9 ratio
-                height: 0,
-                borderRadius: 12,
-                overflow: 'hidden',
-                border: '1px solid var(--border-color)',
-                boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+                padding: '24px 32px',
+                borderBottom: '1px solid var(--border-color)',
+                background: 'linear-gradient(135deg, rgba(232, 93, 4, 0.03), transparent)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: 16,
               }}>
-                <iframe
-                  src="https://www.youtube.com/embed/BscKxIUNxHs"
-                  title="Learn Canadian Individual Taxes | Canada Tax Series | Lesson 1"
+                <div>
+                  <span style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    color: 'var(--primary-600)',
+                    letterSpacing: '0.05em',
+                    display: 'block',
+                    marginBottom: 4
+                  }}>
+                    Featured Session
+                  </span>
+                  <h2 style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: '1.4rem',
+                    fontWeight: 800,
+                    margin: 0,
+                    color: 'var(--text-primary)'
+                  }}>
+                    {featured.video.title}
+                  </h2>
+                </div>
+                <a
+                  href={featured.video.video_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    border: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    background: 'var(--primary-600)',
+                    color: 'white',
+                    padding: '10px 20px',
+                    borderRadius: 10,
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    textDecoration: 'none',
+                    boxShadow: '0 4px 12px rgba(232, 93, 4, 0.2)',
                   }}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
+                >
+                  Watch on YouTube <ExternalLink size={14} />
+                </a>
               </div>
 
-              {/* Video Info / description */}
-              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <p style={{
-                  fontSize: '0.92rem',
-                  color: 'var(--text-secondary)',
-                  lineHeight: 1.7,
-                  margin: '0 0 20px',
+              <div style={{ padding: 32 }}>
+                {/* Embedded Player */}
+                <div style={{
+                  position: 'relative',
+                  paddingBottom: '56.25%', // 16:9 ratio
+                  height: 0,
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  border: '1px solid var(--border-color)',
+                  boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
                 }}>
-                  Join CA Azhar Sakrivala (CPA Canada) as he walks through the fundamentals of the Canadian individual tax system. Learn about tax residency, filing requirements, capital gains rules, tax planning accounts (RRSP, TFSA, FHSA), and compliance checklists for newcomers.
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-                  <div style={{ background: 'var(--bg-secondary)', padding: '6px 12px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    ⏱️ 57 Minutes
-                  </div>
-                  <div style={{ background: 'var(--bg-secondary)', padding: '6px 12px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    👤 By Azhar Sakrivala, CPA
-                  </div>
+                  <iframe
+                    src={`https://www.youtube.com/embed/${featured.embedId}`}
+                    title={featured.video.title}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      border: 'none',
+                    }}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 20 }}>
+                  {metaFields(featured.video).map(field => (
+                    <div key={field} style={{ background: 'var(--bg-secondary)', padding: '6px 12px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      {field}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {loading && (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-secondary)', fontWeight: 600 }}>Loading videos...</div>
@@ -337,7 +344,7 @@ export default function YouTubePage() {
                         {categoryVideos.map((video) => (
                           <a
                             key={video.id}
-                            href={video.video_url || '#'}
+                            href={video.video_url}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
@@ -377,20 +384,22 @@ export default function YouTubePage() {
                                 }}
                               />
                               
-                              {/* Duration Badge */}
-                              <div style={{
-                                position: 'absolute',
-                                bottom: 8,
-                                right: 8,
-                                background: 'rgba(0,0,0,0.85)',
-                                color: 'white',
-                                padding: '2px 6px',
-                                borderRadius: 4,
-                                fontSize: '0.72rem',
-                                fontWeight: 700,
-                              }}>
-                                {video.duration || '24:00'}
-                              </div>
+                              {/* Duration Badge, only when the row carries one */}
+                              {video.duration && (
+                                <div style={{
+                                  position: 'absolute',
+                                  bottom: 8,
+                                  right: 8,
+                                  background: 'rgba(0,0,0,0.85)',
+                                  color: 'white',
+                                  padding: '2px 6px',
+                                  borderRadius: 4,
+                                  fontSize: '0.72rem',
+                                  fontWeight: 700,
+                                }}>
+                                  {video.duration}
+                                </div>
+                              )}
 
                               {/* Hover Play Overlay */}
                               <div className="play-overlay" style={{
@@ -408,8 +417,8 @@ export default function YouTubePage() {
                             </div>
 
                             {/* Details area */}
-                            <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between', padding: '0 4px' }}>
-                              <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ padding: '0 4px' }}>
+                              <div style={{ minWidth: 0 }}>
                                 <h4 style={{
                                   fontWeight: 700,
                                   fontSize: '0.85rem',
@@ -425,12 +434,11 @@ export default function YouTubePage() {
                                 }}>
                                   {video.title}
                                 </h4>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-                                  {video.views || '150 views'} · {video.recorded_date || '1 year ago'}
-                                </div>
-                              </div>
-                              <div style={{ color: 'var(--text-muted)', cursor: 'pointer', padding: 2 }} title="Options">
-                                <MoreVertical size={16} />
+                                {(video.views || video.recorded_date) && (
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                                    {[video.views, video.recorded_date].filter(Boolean).join(' · ')}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </a>
@@ -465,6 +473,8 @@ export default function YouTubePage() {
           )}
         </div>
       </section>
+
+      </main>
 
       <Footer />
     </>

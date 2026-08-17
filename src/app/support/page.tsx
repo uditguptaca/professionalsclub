@@ -16,7 +16,7 @@ export default function SupportPage() {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-secondary)' }}>
       <Navbar />
 
-      <main style={{ flex: 1, padding: '120px 0 100px 0' }}>
+      <main id="main" style={{ flex: 1, padding: '120px 0 100px 0' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
 
           <div style={{ textAlign: 'center', marginBottom: 32 }}>

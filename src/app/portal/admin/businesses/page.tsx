@@ -1,9 +1,10 @@
 'use client';
 import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { usePortal } from '@/context/portal-context';
 import {
   ShieldCheck, Star, Tag, MapPin, Building2, CheckCircle, XCircle,
-  Eye, ToggleLeft, ToggleRight, Clock, AlertTriangle,
+  ToggleLeft, ToggleRight, Clock, AlertTriangle,
 } from 'lucide-react';
 import type { Business, BusinessStatus } from '@/types';
 import type { ActionResult } from '@/app/actions/portal';
@@ -51,7 +52,11 @@ export default function AdminBusinesses() {
     <div className="animate-fade-in flex flex-col gap-8">
       <div>
         <h1 className="text-3xl font-display font-bold mb-2">Business Directory Management</h1>
-        <p className="text-secondary">Manage verified businesses, approve listings, and configure member rates.</p>
+        <p className="text-secondary">
+          Verify, feature, and deactivate listings. Businesses submit their own details through the{' '}
+          <Link href="/businesses/register" style={{ color: 'var(--primary-600)', fontWeight: 600 }}>listing form</Link>,
+          so admins review submissions here rather than write them.
+        </p>
       </div>
 
       {/* Stats */}
@@ -103,7 +108,7 @@ export default function AdminBusinesses() {
               <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>City</th>
               <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>Status</th>
               <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>Featured</th>
-              <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>Deal</th>
+              <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>Member Rate</th>
               <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>Actions</th>
             </tr>
           </thead>
@@ -162,9 +167,21 @@ export default function AdminBusinesses() {
                 </td>
               </tr>
             ))}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={7} style={{ padding: 28, textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  {businesses.length === 0 ? 'No businesses have been submitted yet.' : 'No listings match these filters.'}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
+
+      <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+        Listing fields, including the member rate, come from what the business submitted. Verification, featuring,
+        and deactivation are the changes admins can make here.
+      </p>
 
       {/* Pending Contact Requests Alert */}
       {pendingRequests > 0 && (

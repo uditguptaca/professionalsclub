@@ -1,11 +1,13 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
 import { submitHelpRequest } from '@/app/actions/portal';
+import { AttachmentField, type Attachment } from '@/components/portal/AttachmentField';
 import { SUPPORT_CATEGORIES } from '@/types';
-import { CheckCircle2, Upload, AlertCircle, ArrowLeft, ArrowRight, Shield } from 'lucide-react';
+import { CheckCircle2, AlertCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 
 export default function RequestHelpPage() {
   const router = useRouter();
@@ -15,16 +17,12 @@ export default function RequestHelpPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  // Identity, prefilled from the signed-in member's profile. These used to be
-  // hardcoded sample values, which meant every member saw the same stranger's
-  // name and phone number on this form.
+  // The name is the only identity field this form writes (help_requests.member_name),
+  // so it is the only one that is editable. Email, phone, PC number and city are
+  // read straight off the profile below: the table has no columns for them, and
+  // showing editable inputs for values that are dropped on submit was a lie.
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [pcNumber, setPcNumber] = useState('');
-  const [city, setCity] = useState('');
-  const [province, setProvince] = useState('');
   const [category, setCategory] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -33,23 +31,21 @@ export default function RequestHelpPage() {
   const [supportType, setSupportType] = useState<'one_time' | 'ongoing_mentorship'>('one_time');
   const [openToGroup, setOpenToGroup] = useState(false);
   const [consent, setConsent] = useState(false);
+  const [documents, setDocuments] = useState<Attachment[]>([]);
+  const [uploading, setUploading] = useState(0);
 
   const totalSteps = 4;
 
-  // The profile arrives from the server on first render; seed the form once it does.
+  // The profile arrives from the server on first render; seed the name once it does.
   useEffect(() => {
     if (!profile) return;
     setFirstName(profile.firstName ?? '');
     setLastName(profile.lastName ?? '');
-    setEmail(profile.email ?? '');
-    setPhone(profile.phone ?? '');
-    setPcNumber(profile.pcNumber ?? '');
-    setCity(profile.city ?? '');
-    setProvince(profile.province ?? '');
   }, [profile]);
 
   const handleSubmit = async () => {
-    if (!consent || isSubmitting) return;
+    // Submitting mid-upload would drop the attachment that is still in flight.
+    if (!consent || isSubmitting || uploading > 0) return;
     setIsSubmitting(true);
     setSubmitError('');
 
@@ -69,7 +65,7 @@ export default function RequestHelpPage() {
       preferredTimeline: timeline,
       previouslyRequested: false,
       documentsRequired: false,
-      documents: [],
+      documents: documents.map(d => d.url),
       consentGiven: true,
       supportType,
       openToGroupResources: openToGroup,
@@ -124,13 +120,38 @@ export default function RequestHelpPage() {
             <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div className="input-group"><label>First Name</label><input className="input" value={firstName} onChange={e => setFirstName(e.target.value)} /></div>
               <div className="input-group"><label>Last Name</label><input className="input" value={lastName} onChange={e => setLastName(e.target.value)} /></div>
-              <div className="input-group"><label>Email</label><input className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} /></div>
-              <div className="input-group"><label>Phone</label><input className="input" value={phone} onChange={e => setPhone(e.target.value)} /></div>
-              <div className="input-group"><label>PC Member Number (optional)</label><input className="input" value={pcNumber} onChange={e => setPcNumber(e.target.value)} /></div>
-              <div className="input-group"><label>City</label><input className="input" value={city} onChange={e => setCity(e.target.value)} /></div>
             </div>
+
+            <div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>
+                Contact details from your profile
+              </div>
+              <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                {[
+                  { label: 'Email', value: profile?.email },
+                  { label: 'Phone', value: profile?.phone },
+                  { label: 'PC Member Number', value: profile?.pcNumber },
+                  { label: 'City', value: profile?.city },
+                ].map(field => (
+                  <div key={field.label} style={{ padding: 16, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{field.label}</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.85rem', color: field.value ? undefined : 'var(--text-muted)' }}>
+                      {field.value || 'Not on file'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 10 }}>
+                The reviewing admin reads these from your member record.{' '}
+                <Link href="/portal/member/profile" style={{ color: 'var(--primary-600)', fontWeight: 600 }}>
+                  Update your profile
+                </Link>{' '}
+                to change them.
+              </p>
+            </div>
+
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button className="btn btn-primary" onClick={() => setStep(2)} disabled={!firstName || !lastName || !email}>
+              <button className="btn btn-primary" onClick={() => setStep(2)} disabled={!firstName || !lastName}>
                 Continue <ArrowRight size={16} />
               </button>
             </div>
@@ -205,15 +226,17 @@ export default function RequestHelpPage() {
               <input type="checkbox" id="group" checked={openToGroup} onChange={() => setOpenToGroup(!openToGroup)} />
               <label htmlFor="group" style={{ fontSize: '0.85rem', cursor: 'pointer' }}>I am open to group resources instead of 1:1 support</label>
             </div>
-            {/* Upload area */}
-            <div style={{ border: '2px dashed var(--gray-300)', borderRadius: 12, padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, background: 'var(--bg-secondary)' }}>
-              <Upload size={24} style={{ color: 'var(--text-muted)' }} />
-              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Upload supporting documents (optional)</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>PDF, DOC, or image files up to 10MB</div>
-            </div>
+            <AttachmentField
+              label="Upload supporting documents (optional)"
+              maxFiles={5}
+              files={documents}
+              setFiles={setDocuments}
+              pending={uploading}
+              setPending={setUploading}
+            />
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <button className="btn btn-outline" onClick={() => setStep(2)}><ArrowLeft size={16} /> Back</button>
-              <button className="btn btn-primary" onClick={() => setStep(4)} disabled={!title || description.length < 20}>Review <ArrowRight size={16} /></button>
+              <button className="btn btn-primary" onClick={() => setStep(4)} disabled={!title || description.length < 20 || uploading > 0}>Review <ArrowRight size={16} /></button>
             </div>
           </div>
         )}
@@ -244,6 +267,12 @@ export default function RequestHelpPage() {
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Support Type</div>
                 <div style={{ fontWeight: 600 }}>{supportType === 'one_time' ? 'One-time' : 'Ongoing Mentorship'}</div>
               </div>
+              {documents.length > 0 && (
+                <div style={{ padding: 16, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', gridColumn: '1 / -1' }}>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Attachments</div>
+                  <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{documents.map(d => d.name).join(', ')}</div>
+                </div>
+              )}
             </div>
 
             {/* Disclaimers */}
@@ -271,7 +300,7 @@ export default function RequestHelpPage() {
 
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <button className="btn btn-outline" onClick={() => setStep(3)}><ArrowLeft size={16} /> Edit</button>
-              <button className="btn btn-primary btn-lg" onClick={handleSubmit} disabled={isSubmitting || !consent}>
+              <button className="btn btn-primary btn-lg" onClick={handleSubmit} disabled={isSubmitting || !consent || uploading > 0}>
                 {isSubmitting ? 'Submitting…' : 'Submit Request'}
               </button>
             </div>

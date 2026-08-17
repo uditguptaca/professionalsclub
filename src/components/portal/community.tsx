@@ -8,7 +8,7 @@ import {
   fetchFeed, publishPost, removeOwnPost, likePost,
   fetchComments, publishComment, removeOwnComment,
   reportCommunityContent, blockCommunityMember, fetchGroups,
-  joinCommunityGroup,
+  joinCommunityGroup, fetchCommunityHome,
 } from '@/app/actions/community';
 import {
   Heart, MessageCircle, Send, Trash2, Flag, UserX, Loader2,
@@ -73,17 +73,38 @@ async function uploadMedia(file: File, kind: 'image' | 'video'): Promise<string>
 
 type Draft = { media: CommunityMedia; previewUrl: string };
 
+type Home = { groups: CommunityGroup[]; posts: CommunityPost[] };
+
 /**
- * The rail and the desktop aside mount together and both need the group
- * list — share one in-flight request and reuse it for 30 seconds instead of
- * paying two identical action calls per page view.
+ * The rail, the desktop aside and the feed all mount in the same tick, and
+ * Next runs Server Action calls one at a time per client — so three components
+ * asking separately cost three sequential round trips. They share one request
+ * here instead, reused for 30 seconds.
+ *
+ * Groups do not vary by group id, so whichever component asks first starts the
+ * request and the others read their slice of it.
  */
-let groupsInFlight: { promise: Promise<CommunityGroup[]>; expires: number } | null = null;
-function sharedGroups(): Promise<CommunityGroup[]> {
-  if (groupsInFlight && groupsInFlight.expires > Date.now()) return groupsInFlight.promise;
-  const promise = fetchGroups().then((r) => (r.ok ? r.data : []));
-  groupsInFlight = { promise, expires: Date.now() + 30_000 };
+let homeInFlight: { key: string; promise: Promise<Home>; expires: number } | null = null;
+
+function sharedHome(groupId?: string | null): Promise<Home> {
+  const key = groupId === undefined ? 'home' : String(groupId);
+  const live = homeInFlight && homeInFlight.expires > Date.now() ? homeInFlight : null;
+  // Any live request carries the group list, so the rail never starts a second
+  // one just because the feed is scoped to a group.
+  if (live && (live.key === key || groupId === undefined)) return live.promise;
+
+  const promise = fetchCommunityHome({ groupId }).then((r) =>
+    r.ok ? r.data : { groups: [], posts: [] }
+  );
+  homeInFlight = { key, promise, expires: Date.now() + 30_000 };
   return promise;
+}
+
+const sharedGroups = (): Promise<CommunityGroup[]> => sharedHome().then((h) => h.groups);
+
+/** After a write, the shared snapshot is stale. */
+function invalidateHome(): void {
+  homeInFlight = null;
 }
 
 // ============================================================ Composer
@@ -682,6 +703,7 @@ export function CommunityAside() {
 
   const join = async (id: string) => {
     const r = await joinCommunityGroup(id);
+    invalidateHome();  // membership changed; the shared snapshot is stale
     if (r.ok) {
       setGroups((gs) =>
         (gs ?? []).map((g) =>
@@ -779,7 +801,17 @@ export function CommunityFeed({
     }
   }, [groupId]);
 
-  useEffect(() => { load(); }, [load]);
+  // Mount reads the shared snapshot (one round trip for rail + aside + feed);
+  // refreshes and pagination go straight to the feed action.
+  useEffect(() => {
+    let alive = true;
+    sharedHome(groupId).then((h) => {
+      if (!alive) return;
+      setPosts(h.posts);
+      setExhausted(h.posts.length < 25);
+    });
+    return () => { alive = false; };
+  }, [groupId]);
 
   const loadMore = async () => {
     if (!posts?.length) return;
@@ -800,7 +832,7 @@ export function CommunityFeed({
         <PostComposer
           groupId={groupId ?? null}
           placeholder={composerPlaceholder}
-          onPosted={(post) => setPosts((p) => [post, ...(p ?? [])])}
+          onPosted={(post) => { invalidateHome(); setPosts((p) => [post, ...(p ?? [])]); }}
         />
       )}
 

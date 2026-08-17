@@ -4,8 +4,9 @@ import { useRouter } from 'next/navigation';
 import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
 import { submitVolunteerApplication } from '@/app/actions/portal';
+import { AttachmentField, type Attachment } from '@/components/portal/AttachmentField';
 import { SUPPORT_CATEGORIES } from '@/types';
-import { CheckCircle2, Upload, ArrowLeft, ArrowRight, Shield, HandHeart, Check } from 'lucide-react';
+import { CheckCircle2, ArrowLeft, ArrowRight, Shield, HandHeart, Check } from 'lucide-react';
 
 export default function VolunteerApplicationPage() {
   const router = useRouter();
@@ -38,6 +39,8 @@ export default function VolunteerApplicationPage() {
   const [mentorship, setMentorship] = useState(false);
   const [motivation, setMotivation] = useState('');
   const [expSummary, setExpSummary] = useState('');
+  const [documents, setDocuments] = useState<Attachment[]>([]);
+  const [uploading, setUploading] = useState(0);
   const [agreedRules, setAgreedRules] = useState(false);
   const [agreedNoContact, setAgreedNoContact] = useState(false);
   const [agreedAdmin, setAgreedAdmin] = useState(false);
@@ -84,7 +87,8 @@ export default function VolunteerApplicationPage() {
   };
 
   const handleSubmit = async () => {
-    if (isSubmitting) return;
+    // Submitting mid-upload would drop the CV that is still in flight.
+    if (isSubmitting || uploading > 0) return;
     setIsSubmitting(true);
     setSubmitError('');
 
@@ -105,7 +109,8 @@ export default function VolunteerApplicationPage() {
       taxGuidanceInterest: areas.includes('Tax Consultation'),
       immigrationGuidanceInterest: areas.includes('Immigration Queries'),
       motivation, experienceSummary: expSummary,
-      documents: [], agreedToRules: agreedRules, agreedNoDirectContact: agreedNoContact,
+      documents: documents.map(d => d.url),
+      agreedToRules: agreedRules, agreedNoDirectContact: agreedNoContact,
       agreedAdminMediated: agreedAdmin, consentToScreening: consentScreen,
     });
 
@@ -201,13 +206,17 @@ export default function VolunteerApplicationPage() {
               <label>Relevant Experience Summary</label>
               <textarea className="input" rows={3} placeholder="Summarize your relevant experience..." value={expSummary} onChange={e => setExpSummary(e.target.value)} />
             </div>
-            {/* Upload */}
-            <div style={{ border: '2px dashed var(--gray-300)', borderRadius: 12, padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: 'var(--bg-secondary)' }}>
-              <Upload size={20} style={{ color: 'var(--text-muted)' }} /><div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Upload CV / credentials (optional)</div>
-            </div>
+            <AttachmentField
+              label="Upload CV or credentials (optional)"
+              maxFiles={3}
+              files={documents}
+              setFiles={setDocuments}
+              pending={uploading}
+              setPending={setUploading}
+            />
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <button className="btn btn-outline" onClick={() => setStep(1)}><ArrowLeft size={16} /> Back</button>
-              <button className="btn btn-primary" onClick={() => setStep(3)} disabled={areas.length === 0 || !motivation}>Review <ArrowRight size={16} /></button>
+              <button className="btn btn-primary" onClick={() => setStep(3)} disabled={areas.length === 0 || !motivation || uploading > 0}>Review <ArrowRight size={16} /></button>
             </div>
           </div>
         )}
@@ -251,7 +260,7 @@ export default function VolunteerApplicationPage() {
 
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <button className="btn btn-outline" onClick={() => setStep(2)}><ArrowLeft size={16} /> Back</button>
-              <button className="btn btn-primary btn-lg" onClick={handleSubmit} disabled={isSubmitting || !allAgreed} style={{ background: allAgreed ? 'linear-gradient(135deg, var(--success-600), var(--success-400))' : undefined }}>
+              <button className="btn btn-primary btn-lg" onClick={handleSubmit} disabled={isSubmitting || !allAgreed || uploading > 0} style={{ background: allAgreed ? 'linear-gradient(135deg, var(--success-600), var(--success-400))' : undefined }}>
                 {isSubmitting ? 'Submitting…' : 'Submit Application'}
               </button>
             </div>

@@ -41,7 +41,7 @@ export default function FAQPage() {
     <div style={{ background: 'var(--bg-secondary)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
 
-      <main style={{ flex: 1, paddingTop: 120, paddingBottom: 80 }}>
+      <main id="main" style={{ flex: 1, paddingTop: 120, paddingBottom: 80 }}>
         <div className="container" style={{ maxWidth: 1000 }}>
           
           <div style={{ textAlign: 'center', marginBottom: 40 }}>

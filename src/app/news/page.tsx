@@ -43,6 +43,8 @@ export default function NewsPage() {
     <>
       <Navbar />
 
+      <main id="main">
+
       {/* Hero */}
       <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: 'var(--text-primary)', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
@@ -131,6 +133,8 @@ export default function NewsPage() {
           </div>
         </section>
       )}
+
+      </main>
 
       <Footer />
     </>

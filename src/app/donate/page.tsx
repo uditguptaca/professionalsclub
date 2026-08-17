@@ -79,7 +79,7 @@ export default function DonatePage() {
         </div>
       </section>
 
-      <main style={{ flex: 1, padding: '40px 0', background: 'var(--bg-secondary)' }}>
+      <main id="main" style={{ flex: 1, padding: '40px 0', background: 'var(--bg-secondary)' }}>
         <div className="container">
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
 

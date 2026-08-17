@@ -168,6 +168,8 @@ export default function GroupsPage() {
     <>
       <Navbar />
 
+      <main id="main">
+
       {/* ─── HERO ─── */}
       <section className="groups-hero-section" style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: 'var(--text-primary)' }}>
         {/* Background Animation (WhatsApp Communities) */}
@@ -434,6 +436,8 @@ export default function GroupsPage() {
           </p>
         </div>
       </section>
+
+      </main>
 
       <Footer />
     </>

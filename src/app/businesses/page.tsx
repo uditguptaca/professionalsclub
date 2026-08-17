@@ -2,6 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
+import Footer from '@/components/shared/Footer';
 import { Search, ShieldCheck, Star, Tag, MapPin, Clock, CheckCircle, ArrowRight, Building2 } from 'lucide-react';
 import { getVerifiedBusinesses } from '@/app/actions/public';
 import { BUSINESS_CATEGORIES, type Business } from '@/types';
@@ -47,6 +48,8 @@ export default function BusinessDirectoryPage() {
   return (
     <>
       <Navbar />
+
+      <main id="main">
 
       {/* Hero */}
       <section className="biz-hero" style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: 'var(--text-primary)' }}>
@@ -182,6 +185,9 @@ export default function BusinessDirectoryPage() {
           </div>
         )}
       </div>
+      </main>
+
+      <Footer />
     </>
   );
 }

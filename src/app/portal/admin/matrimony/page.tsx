@@ -1,14 +1,19 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
 import { adminMatrimonyOverview } from '@/app/actions/matrimony';
+import {
+  fetchPendingMatrimonyPhotos, updateMatrimonyPhotoApproval,
+  resolveMatrimonyReport, resolveMatrimonyVerification,
+} from '@/app/actions/portal';
 import { useApp } from '@/context/app-context';
 import Link from 'next/link';
 import {
   Users, Clock, CheckCircle, XCircle, Ban, AlertTriangle,
   ShieldCheck, Search, Filter, ChevronRight, Eye,
   BarChart3, PieChart, TrendingUp, FileText, Loader2,
-  RefreshCw, Calendar, User, MapPin, Heart
+  RefreshCw, Calendar, User, MapPin, Heart, Image as ImageIcon
 } from 'lucide-react';
+import type { PendingPhoto } from '@/server/repos/portal';
 import type {
   MatrimonyProfile,
   MatrimonyReport,
@@ -126,7 +131,7 @@ function SimplePieChart({ data }: { data: { label: string; value: number; color:
 }
 
 // ========== TAB TYPES ==========
-type TabId = 'pending' | 'all' | 'reports' | 'verifications' | 'audit' | 'analytics';
+type TabId = 'pending' | 'all' | 'photos' | 'reports' | 'verifications' | 'audit' | 'analytics';
 
 // ========== MAIN PAGE ==========
 export default function AdminMatrimonyPage() {
@@ -142,16 +147,28 @@ export default function AdminMatrimonyPage() {
   const [reports, setReports] = useState<MatrimonyReport[]>([]);
   const [verifications, setVerifications] = useState<MatrimonyVerification[]>([]);
   const [auditLog, setAuditLog] = useState<MatrimonyAdminAudit[]>([]);
+  const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Photo queue
+  const [photoBusyId, setPhotoBusyId] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+
+  // Report and verification queues
+  const [queueBusyId, setQueueBusyId] = useState<string | null>(null);
+  const [queueError, setQueueError] = useState<string | null>(null);
+
   // ===== FETCH DATA =====
   const fetchData = async () => {
-    // Admin-only at both layers: requireAdminId() in the action, and the RLS
+    // Admin-only at both layers: requireAdminId() in the actions, and the RLS
     // policies on these tables.
-    const result = await adminMatrimonyOverview();
+    const [result, photos] = await Promise.all([
+      adminMatrimonyOverview(),
+      fetchPendingMatrimonyPhotos(),
+    ]);
 
     if (result.ok) {
       setProfiles(result.data.profiles);
@@ -162,8 +179,74 @@ export default function AdminMatrimonyPage() {
       console.error('Error fetching matrimony admin data:', result.error);
     }
 
+    if (photos.ok) setPendingPhotos(photos.data);
+    setPhotoError(photos.ok ? null : photos.error);
+
     setLoading(false);
     setRefreshing(false);
+  };
+
+  /**
+   * Nothing else in the app sets matrimony_media.is_approved, so an uploaded
+   * photo stays invisible to other members until it is approved here.
+   *
+   * Migration 0012 gave matrimony_media a three-state moderation_status, so a
+   * rejection now sticks and the photo leaves this queue for good instead of
+   * reappearing on the next refresh.
+   */
+  const handlePhotoDecision = async (mediaId: string, approved: boolean) => {
+    if (photoBusyId) return;
+    setPhotoBusyId(mediaId);
+    setPhotoError(null);
+
+    const result = await updateMatrimonyPhotoApproval({
+      mediaId,
+      decision: approved ? 'approved' : 'rejected',
+    });
+    if (result.ok) setPendingPhotos((prev) => prev.filter((p) => p.id !== mediaId));
+    else setPhotoError(result.error);
+
+    setPhotoBusyId(null);
+  };
+
+  /**
+   * Close a report. The row keeps its history; only status, reviewer and
+   * timestamp change, so the audit trail survives the decision.
+   */
+  const handleReportDecision = async (
+    reportId: string,
+    status: 'reviewed' | 'actioned' | 'dismissed'
+  ) => {
+    if (queueBusyId) return;
+    setQueueBusyId(reportId);
+    setQueueError(null);
+
+    const result = await resolveMatrimonyReport({ reportId, status });
+    if (result.ok) {
+      setReports((prev) => prev.map((r) => (r.id === reportId ? { ...r, status } : r)));
+    } else {
+      setQueueError(result.error);
+    }
+    setQueueBusyId(null);
+  };
+
+  const handleVerificationDecision = async (
+    verificationId: string,
+    status: 'approved' | 'rejected'
+  ) => {
+    if (queueBusyId) return;
+    setQueueBusyId(verificationId);
+    setQueueError(null);
+
+    const result = await resolveMatrimonyVerification({ verificationId, status });
+    if (result.ok) {
+      setVerifications((prev) =>
+        prev.map((v) => (v.id === verificationId ? { ...v, status } : v))
+      );
+    } else {
+      setQueueError(result.error);
+    }
+    setQueueBusyId(null);
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -238,6 +321,7 @@ export default function AdminMatrimonyPage() {
   const tabs: { id: TabId; label: string; icon: React.ReactNode; count?: number }[] = [
     { id: 'pending', label: 'Pending Queue', icon: <Clock size={15} />, count: stats.pending },
     { id: 'all', label: 'All Profiles', icon: <Users size={15} />, count: stats.total },
+    { id: 'photos', label: 'Photo Approvals', icon: <ImageIcon size={15} />, count: pendingPhotos.length },
     { id: 'reports', label: 'Reports', icon: <AlertTriangle size={15} />, count: stats.openReports },
     { id: 'verifications', label: 'Verifications', icon: <ShieldCheck size={15} />, count: stats.pendingVerifications },
     { id: 'audit', label: 'Audit Log', icon: <FileText size={15} /> },
@@ -255,7 +339,7 @@ export default function AdminMatrimonyPage() {
             Matrimony Admin
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-            Moderate profiles, review verifications, and manage reports
+            Moderate profiles, approve member photos, and triage reports and verification requests
           </p>
         </div>
         <button className="btn btn-outline" onClick={handleRefresh} disabled={refreshing} style={{ gap: 6 }}>
@@ -336,7 +420,7 @@ export default function AdminMatrimonyPage() {
           ) : pendingProfiles.length === 0 ? (
             <div style={{ padding: 60, textAlign: 'center' }}>
               <CheckCircle size={48} style={{ color: 'var(--success-400)', margin: '0 auto 12px' }} />
-              <p style={{ fontWeight: 600, fontSize: 'var(--text-lg)', marginBottom: 4 }}>All caught up!</p>
+              <p style={{ fontWeight: 600, fontSize: 'var(--text-lg)', marginBottom: 4 }}>All caught up</p>
               <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>No profiles pending review.</p>
             </div>
           ) : (
@@ -487,22 +571,117 @@ export default function AdminMatrimonyPage() {
         </div>
       )}
 
+      {/* --- PHOTO APPROVALS --- */}
+      {activeTab === 'photos' && (
+        <div className="card" style={{ padding: 0 }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div>
+              <h3 style={{ fontWeight: 700, fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <ImageIcon size={16} style={{ color: 'var(--primary-600)' }} /> Photo Approvals
+              </h3>
+              <p className="community-muted" style={{ margin: '4px 0 0' }}>
+                A photo stays hidden from other members until it is approved here. A rejection is
+                recorded too, so a rejected photo does not come back into this queue.
+              </p>
+            </div>
+            <span className="badge badge-primary">{pendingPhotos.length} awaiting</span>
+          </div>
+
+          {photoError && (
+            <p role="alert" className="community-error" style={{ margin: '16px 20px 0' }}>{photoError}</p>
+          )}
+
+          {loading ? (
+            <div style={{ padding: '0 20px' }}>{[...Array(3)].map((_, i) => <SkeletonRow key={i} />)}</div>
+          ) : pendingPhotos.length === 0 ? (
+            <div style={{ padding: 60, textAlign: 'center' }}>
+              <ImageIcon size={48} style={{ color: 'var(--gray-300)', margin: '0 auto 12px' }} />
+              <p style={{ fontWeight: 600, marginBottom: 4 }}>No photos awaiting approval</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+                Photos uploaded by members will appear here.
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 16, padding: 20 }}>
+              {pendingPhotos.map((photo) => {
+                const busy = photoBusyId === photo.id;
+                return (
+                  <div key={photo.id} style={{
+                    border: '1px solid var(--border-color)', borderRadius: 12, overflow: 'hidden',
+                    display: 'flex', flexDirection: 'column', opacity: busy ? 0.6 : 1,
+                  }}>
+                    <img
+                      src={photo.url}
+                      alt="Member photo awaiting approval"
+                      style={{ width: '100%', height: 150, objectFit: 'cover', background: 'var(--gray-100)', display: 'block' }}
+                    />
+                    <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <Link
+                          href={`/portal/admin/matrimony/${photo.profileId}`}
+                          style={{ fontSize: '0.68rem', fontFamily: 'monospace', color: 'var(--primary-600)' }}
+                        >
+                          {photo.profileId.slice(0, 8)}...
+                        </Link>
+                        {photo.isPrimary && (
+                          <span className="badge badge-primary" style={{ fontSize: '0.62rem' }}>Primary</span>
+                        )}
+                      </div>
+                      <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                        Uploaded {timeAgo(photo.createdAt)}
+                      </span>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          className="btn btn-sm"
+                          onClick={() => handlePhotoDecision(photo.id, true)}
+                          disabled={photoBusyId !== null}
+                          style={{ background: 'var(--success-500)', color: 'white', border: 'none', fontSize: '0.72rem', flex: 1 }}
+                        >
+                          {busy ? '...' : <><CheckCircle size={13} /> Approve</>}
+                        </button>
+                        <button
+                          className="btn btn-sm btn-outline"
+                          onClick={() => handlePhotoDecision(photo.id, false)}
+                          disabled={photoBusyId !== null}
+                          style={{ borderColor: 'var(--error-500)', color: 'var(--error-500)', fontSize: '0.72rem', flex: 1 }}
+                        >
+                          <XCircle size={13} /> Reject
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* --- REPORTS --- */}
       {activeTab === 'reports' && (
         <div className="card" style={{ padding: 0 }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ fontWeight: 700, fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <AlertTriangle size={16} style={{ color: 'var(--primary-500)' }} /> Open Reports
-            </h3>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div>
+              <h3 style={{ fontWeight: 700, fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <AlertTriangle size={16} style={{ color: 'var(--primary-500)' }} /> Open Reports
+              </h3>
+              <p className="community-muted" style={{ margin: '4px 0 0' }}>
+                Dismiss a report you judge unfounded, or mark it actioned once you have dealt with
+                the listing. Either way it leaves this queue and the decision is recorded.
+              </p>
+            </div>
             <span className="badge badge-error">{openReports.length} open</span>
           </div>
+          {queueError && (
+            <p role="alert" className="community-error" style={{ margin: '16px 20px 0' }}>{queueError}</p>
+          )}
           {loading ? (
             <div style={{ padding: '0 20px' }}>{[...Array(3)].map((_, i) => <SkeletonRow key={i} />)}</div>
           ) : openReports.length === 0 ? (
             <div style={{ padding: 60, textAlign: 'center' }}>
               <CheckCircle size={48} style={{ color: 'var(--success-400)', margin: '0 auto 12px' }} />
               <p style={{ fontWeight: 600, marginBottom: 4 }}>No open reports</p>
-              <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>All reports have been reviewed.</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Profiles reported by members will appear here.</p>
             </div>
           ) : (
             <div>
@@ -528,9 +707,29 @@ export default function AdminMatrimonyPage() {
                       <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: 4, lineHeight: 1.5 }}>{report.details}</p>
                     )}
                   </div>
-                  <Link href={`/portal/admin/matrimony/${report.reported_profile_id}`} className="btn btn-outline btn-sm" style={{ fontSize: '0.72rem', flexShrink: 0 }}>
-                    Review Profile
-                  </Link>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <Link href={`/portal/admin/matrimony/${report.reported_profile_id}`} className="btn btn-outline btn-sm" style={{ fontSize: '0.72rem' }}>
+                      Review Profile
+                    </Link>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      style={{ fontSize: '0.72rem' }}
+                      disabled={queueBusyId !== null}
+                      onClick={() => handleReportDecision(report.id, 'dismissed')}
+                    >
+                      {queueBusyId === report.id ? <Loader2 size={13} className="spin" /> : 'Dismiss'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      style={{ fontSize: '0.72rem' }}
+                      disabled={queueBusyId !== null}
+                      onClick={() => handleReportDecision(report.id, 'actioned')}
+                    >
+                      Actioned
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -541,19 +740,28 @@ export default function AdminMatrimonyPage() {
       {/* --- VERIFICATIONS --- */}
       {activeTab === 'verifications' && (
         <div className="card" style={{ padding: 0 }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ fontWeight: 700, fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <ShieldCheck size={16} style={{ color: 'var(--primary-700)' }} /> Pending Verifications
-            </h3>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div>
+              <h3 style={{ fontWeight: 700, fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <ShieldCheck size={16} style={{ color: 'var(--primary-700)' }} /> Pending Verifications
+              </h3>
+              <p className="community-muted" style={{ margin: '4px 0 0' }}>
+                Check the submitted document, then approve or reject the request. The badges
+                themselves are still set on the profile review screen.
+              </p>
+            </div>
             <span className="badge badge-primary">{pendingVerifs.length} pending</span>
           </div>
+          {queueError && (
+            <p role="alert" className="community-error" style={{ margin: '16px 20px 0' }}>{queueError}</p>
+          )}
           {loading ? (
             <div style={{ padding: '0 20px' }}>{[...Array(3)].map((_, i) => <SkeletonRow key={i} />)}</div>
           ) : pendingVerifs.length === 0 ? (
             <div style={{ padding: 60, textAlign: 'center' }}>
               <ShieldCheck size={48} style={{ color: 'var(--success-400)', margin: '0 auto 12px' }} />
               <p style={{ fontWeight: 600, marginBottom: 4 }}>No pending verifications</p>
-              <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>All verification requests have been processed.</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Verification requests from members will appear here.</p>
             </div>
           ) : (
             <div>
@@ -583,9 +791,29 @@ export default function AdminMatrimonyPage() {
                       View Doc
                     </a>
                   )}
-                  <Link href={`/portal/admin/matrimony/${v.profile_id}`} className="btn btn-outline btn-sm" style={{ fontSize: '0.72rem', flexShrink: 0 }}>
-                    Review
-                  </Link>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <Link href={`/portal/admin/matrimony/${v.profile_id}`} className="btn btn-outline btn-sm" style={{ fontSize: '0.72rem' }}>
+                      Open Profile
+                    </Link>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      style={{ fontSize: '0.72rem' }}
+                      disabled={queueBusyId !== null}
+                      onClick={() => handleVerificationDecision(v.id, 'rejected')}
+                    >
+                      {queueBusyId === v.id ? <Loader2 size={13} className="spin" /> : 'Reject'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      style={{ fontSize: '0.72rem' }}
+                      disabled={queueBusyId !== null}
+                      onClick={() => handleVerificationDecision(v.id, 'approved')}
+                    >
+                      Approve
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

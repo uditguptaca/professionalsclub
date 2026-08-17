@@ -53,22 +53,33 @@ function load(): Promise<Omit<PublicContent, 'loading'>> {
 
 export function PublicContentProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<PublicContent>(EMPTY);
+  const [wanted, setWanted] = useState(false);
 
+  // Fetched on first consumer, not on mount. The provider sits in the root
+  // layout, so an eager fetch made every portal route wait on marketing
+  // content it never renders. No portal page calls usePublicContent().
   useEffect(() => {
+    if (!wanted) return;
     let alive = true;
     load().then((data) => {
       if (alive) setState({ ...data, loading: false });
     });
     return () => { alive = false; };
-  }, []);
+  }, [wanted]);
 
   return (
     <PublicContentContext.Provider value={state}>
-      {children}
+      <RequestContext.Provider value={setWanted}>
+        {children}
+      </RequestContext.Provider>
     </PublicContentContext.Provider>
   );
 }
 
+const RequestContext = createContext<(v: boolean) => void>(() => {});
+
 export function usePublicContent(): PublicContent {
+  const request = useContext(RequestContext);
+  useEffect(() => { request(true); }, [request]);
   return useContext(PublicContentContext);
 }

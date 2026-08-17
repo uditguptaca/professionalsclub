@@ -66,6 +66,8 @@ export default function EventsPage() {
     <>
       <Navbar />
 
+      <main id="main">
+
       {/* Hero */}
       <section className="events-hero-section">
         <MeetupEventVideo />
@@ -319,6 +321,8 @@ export default function EventsPage() {
           </div>
         </section>
       )}
+
+      </main>
 
       <Footer />
     </>

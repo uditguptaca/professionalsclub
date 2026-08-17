@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useApp } from '@/context/app-context';
 import {
   getProfileDetail, getMyMatrimony, addToShortlist, removeFromShortlist,
-  sendInterest, respondToInterest, reportProfile, blockProfile,
+  sendInterest, respondToInterest, reportProfile, blockProfile, requestPhotoAccess,
 } from '@/app/actions/matrimony';
 import type { MatrimonyProfile, MatrimonyPreferences, MatrimonyContact, MatrimonyMedia } from '@/types/matrimony';
 import { computeMatchScore } from '@/lib/matrimony/matching';
@@ -13,7 +13,7 @@ import {
   User, Heart, MapPin, Briefcase, GraduationCap, Users, Calendar,
   Shield, ArrowLeft, CheckCircle2, AlertCircle, Clock, XCircle,
   Phone, Mail, HeartHandshake, Smile, Coffee, BookOpen, Star, Sparkles,
-  Bookmark, Send, MessageCircle, AlertTriangle, ShieldAlert
+  Bookmark, Send, MessageCircle, AlertTriangle, ShieldAlert, Image as ImageIcon
 } from 'lucide-react';
 
 const statusConfig: Record<string, { color: string; bg: string; label: string; icon: React.ElementType }> = {
@@ -44,6 +44,11 @@ export default function CandidateProfilePage() {
   const [candidateContact, setCandidateContact] = useState<MatrimonyContact | null>(null);
   const [contactLoading, setContactLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Photo access request
+  const [photoRequesting, setPhotoRequesting] = useState(false);
+  const [photoRequestSent, setPhotoRequestSent] = useState(false);
+  const [photoRequestError, setPhotoRequestError] = useState<string | null>(null);
 
   // Modal / overlay states
   const [reportOpen, setReportOpen] = useState(false);
@@ -158,6 +163,25 @@ export default function CandidateProfilePage() {
     else console.error('Error declining interest:', result.error);
 
     setActionLoading(false);
+  };
+
+  /**
+   * Only reachable when the candidate set photo_visibility to 'on_request'.
+   * The insert is unique on (requester, target) and ignores conflicts, so the
+   * request cannot pile up server-side; the button also disables once sent.
+   * A request already sent in an earlier session is not reflected, because no
+   * action reads matrimony_photo_requests back.
+   */
+  const handleRequestPhotoAccess = async () => {
+    if (!profile || photoRequesting || photoRequestSent) return;
+    setPhotoRequesting(true);
+    setPhotoRequestError(null);
+
+    const result = await requestPhotoAccess(profile.id);
+    if (result.ok) setPhotoRequestSent(true);
+    else setPhotoRequestError(result.error);
+
+    setPhotoRequesting(false);
   };
 
   const handleReport = async (e: React.FormEvent) => {
@@ -333,10 +357,30 @@ export default function CandidateProfilePage() {
                 Interest Declined
               </span>
             )}
+            {profile.photo_visibility === 'on_request' && interestStatus !== 'accepted' && (
+              <button
+                className="btn btn-outline"
+                onClick={handleRequestPhotoAccess}
+                disabled={photoRequesting || photoRequestSent}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+              >
+                <ImageIcon size={16} />
+                {photoRequestSent ? 'Photo access requested' : photoRequesting ? 'Sending request...' : 'Request photo access'}
+              </button>
+            )}
             <button className="btn btn-outline" onClick={handleToggleShortlist} disabled={actionLoading} style={{ minWidth: 44, padding: 10 }}>
               <Bookmark size={18} fill={isShortlisted ? 'currentColor' : 'none'} />
             </button>
           </div>
+
+          {photoRequestError && (
+            <p role="alert" className="community-error" style={{ marginTop: 12 }}>{photoRequestError}</p>
+          )}
+          {photoRequestSent && !photoRequestError && (
+            <p className="community-notice">
+              <CheckCircle2 size={14} /> Request sent. This member decides whether to share their photos.
+            </p>
+          )}
         </div>
 
         {/* Match Score Indicator */}

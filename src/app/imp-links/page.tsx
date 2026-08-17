@@ -69,7 +69,7 @@ export default function ImpLinksPage() {
     <>
       <Navbar />
 
-      <main style={{ paddingTop: 120, paddingBottom: 80, minHeight: '100vh', background: 'var(--bg-secondary)' }}>
+      <main id="main" style={{ paddingTop: 120, paddingBottom: 80, minHeight: '100vh', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ maxWidth: 1000 }}>
           
           <div style={{ textAlign: 'center', marginBottom: 60 }}>

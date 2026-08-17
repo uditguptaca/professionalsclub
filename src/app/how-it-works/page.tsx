@@ -10,6 +10,8 @@ export default function HowItWorksPage() {
     <>
       <Navbar />
 
+      <main id="main">
+
       {/* Hero */}
       <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: 'var(--text-primary)', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
@@ -100,6 +102,8 @@ export default function HowItWorksPage() {
           </div>
         </div>
       </section>
+
+      </main>
 
       <Footer />
     </>

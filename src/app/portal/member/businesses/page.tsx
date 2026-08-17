@@ -1,9 +1,11 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
-import { submitBusinessContactRequest } from '@/app/actions/portal';
+import {
+  submitBusinessContactRequest, fetchSavedBusinessIds, toggleSaveBusiness,
+} from '@/app/actions/portal';
 import {
   Search, ShieldCheck, Star, Tag, MapPin, Phone, Mail, Globe,
   ArrowRight, CheckCircle, X, ChevronDown, Building2, Bookmark,
@@ -16,8 +18,44 @@ export default function MemberBusinessDirectory() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [dealsOnly, setDealsOnly] = useState(false);
+  const [savedOnly, setSavedOnly] = useState(false);
   const [sort, setSort] = useState('featured');
+
+  // Saved businesses live in member_saved_businesses. This used to be local
+  // state only, so a bookmark vanished on the next navigation.
   const [savedBiz, setSavedBiz] = useState<string[]>([]);
+  const [savingIds, setSavingIds] = useState<string[]>([]);
+  const [saveError, setSaveError] = useState('');
+  const touchedSaves = useRef(false);
+
+  useEffect(() => {
+    fetchSavedBusinessIds().then(result => {
+      // Ignore the initial read if the member has already toggled something:
+      // it would clobber a bookmark that is already written.
+      if (result.ok && !touchedSaves.current) setSavedBiz(result.data);
+    });
+  }, []);
+
+  const setSavedFlag = (id: string, on: boolean) =>
+    setSavedBiz(ids => (on ? (ids.includes(id) ? ids : [...ids, id]) : ids.filter(x => x !== id)));
+
+  const handleToggleSave = async (id: string) => {
+    if (savingIds.includes(id)) return;
+    touchedSaves.current = true;
+    setSavingIds(ids => [...ids, id]);
+    setSaveError('');
+
+    const wasSaved = savedBiz.includes(id);
+    setSavedFlag(id, !wasSaved);
+
+    // The server's answer wins: it is the row that actually exists, and a
+    // failed write has to put the bookmark back where it was.
+    const result = await toggleSaveBusiness(id);
+    setSavedFlag(id, result.ok ? result.data.saved : wasSaved);
+    if (!result.ok) setSaveError(result.error);
+
+    setSavingIds(ids => ids.filter(x => x !== id));
+  };
 
   // Contact modal state
   const [contactModal, setContactModal] = useState<string | null>(null);
@@ -38,10 +76,13 @@ export default function MemberBusinessDirectory() {
     }
     if (category) result = result.filter(b => b.category === category);
     if (dealsOnly) result = result.filter(b => b.hasMemberRate);
+    if (savedOnly) result = result.filter(b => savedBiz.includes(b.id));
     if (sort === 'featured') result.sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0));
     else if (sort === 'alpha') result.sort((a, b) => a.name.localeCompare(b.name));
     return result;
-  }, [publicBiz, search, category, dealsOnly, sort]);
+  }, [publicBiz, search, category, dealsOnly, savedOnly, savedBiz, sort]);
+
+  const savedVisible = publicBiz.filter(b => savedBiz.includes(b.id)).length;
 
   const modalBiz = contactModal ? businesses.find(b => b.id === contactModal) : null;
 
@@ -109,6 +150,12 @@ export default function MemberBusinessDirectory() {
         <button type="button" className={`biz-filter-toggle ${dealsOnly ? 'active' : ''}`} onClick={() => setDealsOnly(!dealsOnly)}>
           <Tag size={13} /> Member Deals
         </button>
+        <button type="button" className={`biz-filter-toggle ${savedOnly ? 'active' : ''}`} onClick={() => setSavedOnly(!savedOnly)} aria-pressed={savedOnly}>
+          {/* Counts only listings still in the directory: a saved business that
+              lost its verification is not one the member can open. */}
+          <Bookmark size={13} fill={savedOnly ? 'currentColor' : 'none'} /> Saved
+          {savedVisible > 0 && ` (${savedVisible})`}
+        </button>
         <select value={sort} onChange={e => setSort(e.target.value)}>
           <option value="featured">Featured First</option>
           <option value="alpha">A – Z</option>
@@ -116,9 +163,15 @@ export default function MemberBusinessDirectory() {
         <div className="biz-results-count">{filtered.length} business{filtered.length !== 1 ? 'es' : ''}</div>
       </div>
 
+      {saveError && <p role="alert" className="community-error">{saveError}</p>}
+
       {/* Grid */}
       {filtered.length === 0 ? (
-        <div className="biz-empty"><h3>No businesses match your filters</h3><p>Try adjusting your search.</p></div>
+        savedOnly && savedBiz.length === 0 ? (
+          <div className="biz-empty"><h3>No saved businesses yet</h3><p>Use the bookmark on a listing to save it here.</p></div>
+        ) : (
+          <div className="biz-empty"><h3>No businesses match your filters</h3><p>Try adjusting your search.</p></div>
+        )
       ) : (
         <div className="biz-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
           {filtered.map(biz => (
@@ -132,8 +185,11 @@ export default function MemberBusinessDirectory() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setSavedBiz(prev => prev.includes(biz.id) ? prev.filter(x => x !== biz.id) : [...prev, biz.id])}
-                  style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: savedBiz.includes(biz.id) ? 'var(--primary-600)' : 'var(--gray-400)' }}
+                  onClick={() => handleToggleSave(biz.id)}
+                  disabled={savingIds.includes(biz.id)}
+                  aria-pressed={savedBiz.includes(biz.id)}
+                  aria-label={savedBiz.includes(biz.id) ? `Remove ${biz.name} from saved` : `Save ${biz.name}`}
+                  style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: savingIds.includes(biz.id) ? 'default' : 'pointer', opacity: savingIds.includes(biz.id) ? 0.6 : 1, color: savedBiz.includes(biz.id) ? 'var(--primary-600)' : 'var(--gray-400)' }}
                 >
                   <Bookmark size={16} fill={savedBiz.includes(biz.id) ? 'currentColor' : 'none'} />
                 </button>

@@ -177,7 +177,7 @@ export default function PortalShell({
         </div>
       </aside>
 
-      <main className="portal-main">
+      <main id="main" className="portal-main">
         <header className="portal-topbar">
           <div className="portal-topbar-brand">{brand}</div>
 

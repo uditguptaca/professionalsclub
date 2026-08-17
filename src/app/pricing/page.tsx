@@ -9,6 +9,8 @@ export default function PricingPage() {
     <>
       <Navbar />
 
+      <main id="main">
+
       {/* Hero */}
       <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 80, background: 'var(--text-primary)', overflow: 'hidden' }}>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
@@ -126,6 +128,8 @@ export default function PricingPage() {
           ))}
         </div>
       </section>
+
+      </main>
 
       <Footer />
     </>

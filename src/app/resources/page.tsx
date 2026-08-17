@@ -24,6 +24,8 @@ export default function ResourcesPage() {
     <div style={{ background: 'var(--bg-secondary)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
 
+      <main id="main">
+
       {/* Hero */}
       <section className="resources-hero-section" style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: 'var(--text-primary)' }}>
         {/* Background Animation (Resources) */}
@@ -191,6 +193,8 @@ export default function ResourcesPage() {
           </div>
         </div>
       </section>
+
+      </main>
 
       <Footer />
     </div>

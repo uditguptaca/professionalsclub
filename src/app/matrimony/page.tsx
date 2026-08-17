@@ -127,6 +127,8 @@ export default function MatrimonyLandingPage() {
     <div style={{ background: 'var(--bg-secondary)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
 
+      <main id="main">
+
       {/* ═══════ HERO ═══════ */}
       <section style={{
         position: 'relative',
@@ -683,6 +685,8 @@ export default function MatrimonyLandingPage() {
           </div>
         </div>
       </section>
+
+      </main>
 
       <Footer />
     </div>

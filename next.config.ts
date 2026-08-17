@@ -24,6 +24,11 @@ const securityHeaders = [
       "font-src 'self' data:",
       "connect-src 'self' https:",
       "media-src 'self'",
+      // What WE may embed. Without this clause default-src 'self' applied, and
+      // it silently blanked both embeds we actually ship: the resume builder on
+      // /build-resume and every video on /youtube. This is the whole list —
+      // frame-ancestors below still stops anyone embedding us.
+      "frame-src 'self' https://writecv.io https://www.youtube.com https://www.youtube-nocookie.com",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",

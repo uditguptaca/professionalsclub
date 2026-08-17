@@ -1,5 +1,5 @@
 import 'server-only';
-import { withUser, one, type Db } from '@/server/db';
+import { withUser, withUserRead, one, type Db } from '@/server/db';
 import { insertRow, updateRow, type ColumnMap } from '@/server/query';
 import type {
   MatrimonyProfile, MatrimonyPreferences, MatrimonyContact, MatrimonyMedia,
@@ -58,25 +58,44 @@ export interface MyMatrimonyData {
   media: MatrimonyMedia[];
 }
 
+/**
+ * The member's own listing and its three satellites.
+ *
+ * One statement, not four. The profile row and its preferences, contact and
+ * media all keyed off the same user id, so the satellites do not have to wait
+ * for the profile's id to come back over the wire first. RLS still restricts
+ * every table to the caller's own row.
+ */
 export async function getMine(userId: string): Promise<MyMatrimonyData> {
-  return withUser(userId, async (db) => {
-    const profile = await one<MatrimonyProfile>(
-      await db`select * from public.matrimony_profiles where user_id = ${userId}::uuid`
+  return withUserRead(userId, async (db) => {
+    const row = await one<{
+      profile: MatrimonyProfile | null;
+      preferences: MatrimonyPreferences | null;
+      contact: MatrimonyContact | null;
+      media: MatrimonyMedia[] | null;
+    }>(
+      await db`
+        with mine as (
+          select * from public.matrimony_profiles where user_id = ${userId}::uuid
+        )
+        select
+          (select to_json(m) from mine m) as profile,
+          (select to_json(p) from public.matrimony_preferences p
+            where p.profile_id = (select id from mine)) as preferences,
+          (select to_json(c) from public.matrimony_contacts c
+            where c.profile_id = (select id from mine)) as contact,
+          (select json_agg(md) from public.matrimony_media md
+            where md.profile_id = (select id from mine)) as media
+      `
     );
 
-    if (!profile) return { profile: null, preferences: null, contact: null, media: [] };
-
-    const [prefs, contact, media] = await Promise.all([
-      db`select * from public.matrimony_preferences where profile_id = ${profile.id}::uuid`,
-      db`select * from public.matrimony_contacts where profile_id = ${profile.id}::uuid`,
-      db`select * from public.matrimony_media where profile_id = ${profile.id}::uuid`,
-    ]);
+    if (!row?.profile) return { profile: null, preferences: null, contact: null, media: [] };
 
     return {
-      profile: norm<MatrimonyProfile>(profile),
-      preferences: prefs[0] ? norm<MatrimonyPreferences>(prefs[0]) : null,
-      contact: contact[0] ? norm<MatrimonyContact>(contact[0]) : null,
-      media: normAll<MatrimonyMedia>(media),
+      profile: norm<MatrimonyProfile>(row.profile),
+      preferences: row.preferences ? norm<MatrimonyPreferences>(row.preferences) : null,
+      contact: row.contact ? norm<MatrimonyContact>(row.contact) : null,
+      media: normAll<MatrimonyMedia>(row.media ?? []),
     };
   });
 }
@@ -237,7 +256,7 @@ export async function browsePaged(
   userId: string,
   filters: BrowseFilters = {}
 ): Promise<BrowsePage> {
-  return withUser(userId, async (db) => {
+  return withUserRead(userId, async (db) => {
     const where: string[] = ["v.status = 'approved'", 'v.is_hidden = false'];
     const values: unknown[] = [];
     const add = (clause: string, value: unknown) => {
@@ -366,7 +385,7 @@ export interface PopulatedInterest {
 }
 
 export async function listInterests(userId: string) {
-  return withUser(userId, async (db) => {
+  return withUserRead(userId, async (db) => {
     const mine = await myProfileId(db);
     if (!mine) return { received: [], sent: [] };
 
@@ -457,7 +476,7 @@ export async function respondToInterest(
 // ========== SHORTLIST / BLOCK / REPORT ==========
 
 export async function listShortlist(userId: string): Promise<MatrimonyProfileCard[]> {
-  return withUser(userId, async (db) => {
+  return withUserRead(userId, async (db) => {
     const mine = await myProfileId(db);
     if (!mine) return [];
 
@@ -552,7 +571,7 @@ export async function saveSearch(
 }
 
 export async function listBlockedIds(userId: string): Promise<string[]> {
-  return withUser(userId, async (db) => {
+  return withUserRead(userId, async (db) => {
     const mine = await myProfileId(db);
     if (!mine) return [];
     const rows = await db<{ blocked_profile_id: string }>`
@@ -570,7 +589,7 @@ export interface PopulatedConversation extends MatrimonyConversation {
 }
 
 export async function listConversations(userId: string) {
-  return withUser(userId, async (db) => {
+  return withUserRead(userId, async (db) => {
     const mine = await myProfileId(db);
     if (!mine) return { conversations: [] as PopulatedConversation[], myProfileId: null };
 
@@ -606,7 +625,7 @@ export async function listConversations(userId: string) {
 }
 
 export async function listMessages(userId: string, conversationId: string): Promise<MatrimonyMessage[]> {
-  return withUser(userId, async (db) => {
+  return withUserRead(userId, async (db) => {
     const rows = await db`
       select * from public.matrimony_messages
        where conversation_id = ${conversationId}::uuid
@@ -636,47 +655,81 @@ export async function sendMatrimonyMessage(
 
 // ========== DASHBOARD ==========
 
+/**
+ * The matrimony landing page: own listing, four counts, two recent lists and
+ * four recommendations.
+ *
+ * One statement. The old version needed the profile row back before it could
+ * even start the rest, then paid a further two round trips - and the whole page
+ * waits on it, so it read as three seconds of spinner.
+ */
 export async function dashboard(userId: string) {
-  return withUser(userId, async (db) => {
-    const profile = await one<MatrimonyProfile>(
-      await db`select * from public.matrimony_profiles where user_id = ${userId}::uuid`
-    );
-    if (!profile) return null;
-
-    const [counts, recentInterests, recentViews] = await Promise.all([
-      db`
+  return withUserRead(userId, async (db) => {
+    const row = await one<{
+      profile: MatrimonyProfile | null;
+      counts: Record<string, number> | null;
+      recent_interests: Record<string, unknown>[] | null;
+      recent_views: Record<string, unknown>[] | null;
+      recommendations: MatrimonyProfileCard[] | null;
+      notifications: InAppNotification[] | null;
+    }>(
+      await db`
+        with mine as (
+          select * from public.matrimony_profiles where user_id = ${userId}::uuid
+        )
         select
-          (select count(*) from public.matrimony_interests where receiver_profile_id = ${profile.id}::uuid) as received,
-          (select count(*) from public.matrimony_interests where sender_profile_id   = ${profile.id}::uuid) as sent,
-          (select count(*) from public.matrimony_profile_views where viewed_profile_id = ${profile.id}::uuid) as views,
-          (select count(*) from public.matrimony_shortlists where target_profile_id  = ${profile.id}::uuid) as shortlisted
-      `,
-      db`select id, status, created_at, sender_profile_id, receiver_profile_id
-           from public.matrimony_interests
-          where sender_profile_id = ${profile.id}::uuid or receiver_profile_id = ${profile.id}::uuid
-          order by created_at desc limit 5`,
-      db`select id, created_at from public.matrimony_profile_views
-          where viewed_profile_id = ${profile.id}::uuid order by created_at desc limit 3`,
-    ]);
+          (select to_json(m) from mine m) as profile,
+          json_build_object(
+            'received',    (select count(*) from public.matrimony_interests where receiver_profile_id = (select id from mine)),
+            'sent',        (select count(*) from public.matrimony_interests where sender_profile_id   = (select id from mine)),
+            'views',       (select count(*) from public.matrimony_profile_views where viewed_profile_id = (select id from mine)),
+            'shortlisted', (select count(*) from public.matrimony_shortlists where target_profile_id  = (select id from mine))
+          ) as counts,
+          (select json_agg(t) from (
+            select id, status, created_at, sender_profile_id, receiver_profile_id
+              from public.matrimony_interests
+             where sender_profile_id = (select id from mine)
+                or receiver_profile_id = (select id from mine)
+             order by created_at desc limit 5
+          ) t) as recent_interests,
+          (select json_agg(t) from (
+            select id, created_at from public.matrimony_profile_views
+             where viewed_profile_id = (select id from mine)
+             order by created_at desc limit 3
+          ) t) as recent_views,
+          -- Other members' listings, only ever from the view.
+          (select json_agg(t) from (
+            select * from public.matrimony_visible_profiles
+             where status = 'approved'
+               and gender <> (select gender from mine)
+               and user_id <> ${userId}::uuid
+             limit 4
+          ) t) as recommendations,
+          -- Notifications live in their own table (written by triggers). They
+          -- ride along because Next serialises Server Action calls, so a second
+          -- action would cost the page another full round trip.
+          (select json_agg(t) from (
+            select * from public.in_app_notifications
+             where user_id = ${userId}::uuid order by created_at desc limit 50
+          ) t) as notifications
+      `
+    );
 
-    const recommendations = await db`
-      select * from public.matrimony_visible_profiles
-       where status = 'approved' and gender <> ${profile.gender} and user_id <> ${userId}::uuid
-       limit 4
-    `;
+    if (!row?.profile) return null;
 
-    const c = counts[0] as Record<string, string>;
+    const c = row.counts ?? {};
     return {
-      profile: norm<MatrimonyProfile>(profile),
+      profile: norm<MatrimonyProfile>(row.profile),
       counts: {
-        interestsReceived: Number(c.received),
-        interestsSent: Number(c.sent),
-        profileViews: Number(c.views),
-        shortlistedBy: Number(c.shortlisted),
+        interestsReceived: Number(c.received ?? 0),
+        interestsSent: Number(c.sent ?? 0),
+        profileViews: Number(c.views ?? 0),
+        shortlistedBy: Number(c.shortlisted ?? 0),
       },
-      recentInterests: normAll<Record<string, unknown>>(recentInterests),
-      recentViews: normAll<Record<string, unknown>>(recentViews),
-      recommendations: normAll<MatrimonyProfileCard>(recommendations),
+      recentInterests: normAll<Record<string, unknown>>(row.recent_interests ?? []),
+      recentViews: normAll<Record<string, unknown>>(row.recent_views ?? []),
+      recommendations: normAll<MatrimonyProfileCard>(row.recommendations ?? []),
+      notifications: normAll<InAppNotification>(row.notifications ?? []),
     };
   });
 }
@@ -684,7 +737,7 @@ export async function dashboard(userId: string) {
 // ========== NOTIFICATIONS ==========
 
 export async function listNotifications(userId: string): Promise<InAppNotification[]> {
-  return withUser(userId, async (db) => {
+  return withUserRead(userId, async (db) => {
     const rows = await db`
       select * from public.in_app_notifications
        where user_id = ${userId}::uuid order by created_at desc limit 50
@@ -702,7 +755,7 @@ export async function markNotificationRead(userId: string, id: string): Promise<
 // ========== ADMIN ==========
 
 export async function adminOverview(adminId: string) {
-  return withUser(adminId, async (db) => {
+  return withUserRead(adminId, async (db) => {
     const [profiles, reports, verifications, audit] = await Promise.all([
       db`select * from public.matrimony_profiles order by created_at desc`,
       db`select * from public.matrimony_reports order by created_at desc`,
@@ -743,7 +796,7 @@ export async function adminOverview(adminId: string) {
 }
 
 export async function adminGetProfile(adminId: string, profileId: string) {
-  return withUser(adminId, async (db) => {
+  return withUserRead(adminId, async (db) => {
     const profile = await one<MatrimonyProfile>(
       await db`select * from public.matrimony_profiles where id = ${profileId}::uuid`
     );

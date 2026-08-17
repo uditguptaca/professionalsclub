@@ -204,14 +204,6 @@ export async function updateOwnProfile(
   });
 }
 
-export async function archiveOwnAccount(): Promise<ActionResult<null>> {
-  return run('Closing account', async () => {
-    const uid = await requireUserId();
-    await repo.archiveOwnAccount(uid);
-    invalidateProfileCache(uid);
-    return null;
-  });
-}
 
 // ========== PUBLIC INQUIRIES ==========
 
@@ -234,4 +226,89 @@ export async function updateInquiryStatus(input: {
     await repo.setInquiryStatus(await requireAdminId(), input);
     return null;
   });
+}
+
+// ========== ADMIN CONTROLS ==========
+
+export async function updateMemberVerification(input: {
+  memberId: string;
+  // profiles.verification_status accepts exactly these three (0001). Offering
+  // a fourth would have shipped a control that always fails the constraint.
+  status: 'unverified' | 'pending' | 'verified';
+}): Promise<ActionResult<Member>> {
+  return run('Updating verification', async () =>
+    repo.setMemberVerification(await requireAdminId(), input));
+}
+
+export async function updateMemberAccountStatus(input: {
+  memberId: string;
+  status: 'active' | 'suspended' | 'archived';
+}): Promise<ActionResult<Member>> {
+  return run('Updating account status', async () => {
+    const adminId = await requireAdminId();
+    const member = await repo.setMemberAccountStatus(adminId, input);
+    // A suspended member must lose access on their next action, not in five
+    // minutes when the cached profile expires.
+    invalidateProfileCache(input.memberId);
+    return member;
+  });
+}
+
+export async function updateBusinessRequestStatus(input: {
+  requestId: string;
+  status: string;
+  adminNotes?: string;
+}): Promise<ActionResult<BusinessContactRequest>> {
+  return run('Updating the request', async () =>
+    repo.setBusinessRequestStatus(await requireAdminId(), input));
+}
+
+export async function fetchPendingMatrimonyPhotos(): Promise<ActionResult<repo.PendingPhoto[]>> {
+  return run('Loading photos', async () =>
+    repo.listPendingMatrimonyPhotos(await requireAdminId()));
+}
+
+export async function updateMatrimonyPhotoApproval(input: {
+  mediaId: string;
+  decision: 'approved' | 'rejected' | 'pending';
+}): Promise<ActionResult<null>> {
+  return run('Updating the photo', async () => {
+    await repo.setMatrimonyPhotoApproval(await requireAdminId(), input);
+    return null;
+  });
+}
+
+export async function resolveMatrimonyReport(input: {
+  reportId: string;
+  status: 'reviewed' | 'actioned' | 'dismissed';
+  adminNotes?: string;
+}): Promise<ActionResult<null>> {
+  return run('Resolving the report', async () => {
+    await repo.resolveMatrimonyReport(await requireAdminId(), input);
+    return null;
+  });
+}
+
+export async function resolveMatrimonyVerification(input: {
+  verificationId: string;
+  status: 'approved' | 'rejected';
+}): Promise<ActionResult<null>> {
+  return run('Resolving the verification', async () => {
+    await repo.resolveMatrimonyVerification(await requireAdminId(), input);
+    return null;
+  });
+}
+
+// ========== SAVED BUSINESSES ==========
+
+export async function fetchSavedBusinessIds(): Promise<ActionResult<string[]>> {
+  return run('Loading saved businesses', async () =>
+    repo.listSavedBusinessIds(await requireUserId()));
+}
+
+export async function toggleSaveBusiness(
+  businessId: string
+): Promise<ActionResult<{ saved: boolean }>> {
+  return run('Saving the business', async () =>
+    repo.toggleSavedBusiness(await requireUserId(), businessId));
 }

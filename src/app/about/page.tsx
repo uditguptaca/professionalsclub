@@ -15,6 +15,8 @@ export default function AboutPage() {
     <div style={{ background: 'var(--bg-secondary)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
 
+      <main id="main">
+
       {/* 1. HERO SECTION */}
       <section className="about-hero-section" style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: 'var(--text-primary)', color: 'white', textAlign: 'center' }}>
         {/* Background Animation (Toronto Skyline CN Tower) */}
@@ -364,6 +366,8 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
+
+      </main>
 
       <Footer />
     </div>

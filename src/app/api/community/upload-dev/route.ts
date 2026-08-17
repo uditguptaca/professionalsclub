@@ -18,6 +18,10 @@ const ALLOWED: Record<string, string> = {
   'video/mp4': '.mp4',
   'video/webm': '.webm',
   'video/quicktime': '.mov',
+  // Help-request and volunteer-application attachments.
+  'application/pdf': '.pdf',
+  'application/msword': '.doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
 };
 
 export async function POST(request: NextRequest): Promise<NextResponse> {

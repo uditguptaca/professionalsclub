@@ -23,6 +23,10 @@ export default function MatrimonySettingsPage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
+  // Two messages rather than one, so a failure is rendered next to the button
+  // that caused it: the save button and the delete button are far apart.
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadSettings() {
@@ -50,25 +54,23 @@ export default function MatrimonySettingsPage() {
     if (!profile || saving) return;
     setSaving(true);
     setSavedMsg(false);
+    setSaveError(null);
 
-    try {
-      // The action writes against the caller's own listing; no profile id is
-      // sent, so this cannot be pointed at someone else's settings.
-      const result = await saveMatrimonyProfile({
-        photo_visibility: photoVisibility,
-        is_hidden: isHidden,
-      });
+    // The action writes against the caller's own listing; no profile id is
+    // sent, so this cannot be pointed at someone else's settings.
+    const result = await saveMatrimonyProfile({
+      photo_visibility: photoVisibility,
+      is_hidden: isHidden,
+    });
 
-      if (!result.ok) throw new Error(result.error);
-
+    if (result.ok) {
       setSavedMsg(true);
       setTimeout(() => setSavedMsg(false), 3000);
-    } catch (err) {
-      console.error('Error saving settings:', err);
-      alert('Failed to save settings. Please try again.');
-    } finally {
-      setSaving(false);
+    } else {
+      setSaveError(result.error);
     }
+
+    setSaving(false);
   };
 
   const handleDeleteProfile = async () => {
@@ -79,20 +81,19 @@ export default function MatrimonySettingsPage() {
     if (!confirm2) return;
 
     setDeleting(true);
-    try {
-      // Foreign keys cascade, so removing the listing also removes
-      // preferences, contact, interests, shortlists and conversations.
-      const result = await deleteMyMatrimonyProfile();
-      if (!result.ok) throw new Error(result.error);
+    setDeleteError(null);
 
-      alert('Your Matrimony Profile has been successfully deleted.');
+    // Foreign keys cascade, so removing the listing also removes
+    // preferences, contact, interests, shortlists and conversations.
+    const result = await deleteMyMatrimonyProfile();
+
+    if (result.ok) {
       router.push('/portal/member/matrimony');
-    } catch (err) {
-      console.error('Error deleting profile:', err);
-      alert('Failed to delete profile. Please try again.');
-    } finally {
-      setDeleting(false);
+      return;
     }
+
+    setDeleteError(result.error);
+    setDeleting(false);
   };
 
   if (loading) {
@@ -161,7 +162,7 @@ export default function MatrimonySettingsPage() {
                       name="photo_visibility"
                       value={opt.value}
                       checked={photoVisibility === opt.value}
-                      onChange={e => setPhotoVisibility(e.target.value as any)}
+                      onChange={e => setPhotoVisibility(e.target.value as 'all' | 'on_request' | 'blurred')}
                       style={{ marginTop: 4 }}
                     />
                     <div>
@@ -203,6 +204,7 @@ export default function MatrimonySettingsPage() {
         </div>
 
         {/* Save Settings Trigger */}
+        {saveError && <p role="alert" className="community-error">{saveError}</p>}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <button type="submit" className="btn btn-primary" disabled={saving}>
             {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
@@ -210,7 +212,7 @@ export default function MatrimonySettingsPage() {
           </button>
           {savedMsg && (
             <span style={{ fontSize: '0.8rem', color: 'var(--success-500)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <CheckCircle2 size={14} /> Settings saved successfully!
+              <CheckCircle2 size={14} /> Settings saved.
             </span>
           )}
         </div>
@@ -235,6 +237,7 @@ export default function MatrimonySettingsPage() {
             {deleting ? 'Deleting...' : 'Delete Profile'}
           </button>
         </div>
+        {deleteError && <p role="alert" className="community-error">{deleteError}</p>}
       </div>
     </div>
   );

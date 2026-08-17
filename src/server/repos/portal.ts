@@ -11,6 +11,24 @@ import type {
 } from '@/types';
 
 /**
+ * Attachment arrays arrive from a client that caps them, but a hand-crafted
+ * action call is not bound by the UI. Cap and shape them here too, where every
+ * write has to pass.
+ */
+const MAX_ATTACHMENTS = 8;
+
+function safeDocuments(input: unknown): string[] {
+  if (!Array.isArray(input)) return [];
+  return input
+    .filter((u): u is string => typeof u === 'string' && u.trim().length > 0)
+    .map((u) => u.trim())
+    .filter((u) =>
+      /^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\//.test(u) ||
+      /^\/uploads\/[a-z0-9]+\.[a-z0-9]{2,5}$/i.test(u))
+    .slice(0, MAX_ATTACHMENTS);
+}
+
+/**
  * Help-desk data access.
  *
  * Every function runs inside withUser(), so RLS decides which rows come back.
@@ -69,68 +87,74 @@ const contentQuery = (entity: ContentEntity) => {
   return `select ${selectList(columns, ['id', 'created_at'])} from ${table} order by ${order}`;
 };
 
-/** Everything the portal renders, in one transaction. */
+/**
+ * Everything the portal renders, in ONE round trip.
+ *
+ * This used to be fifteen statements in a Promise.all. That reads as parallel
+ * but a single connection serialises queries, so the portal paid fifteen
+ * sequential round trips - about five seconds from a laptop, on every portal
+ * page load. Each slice is now a json_agg subquery in one statement.
+ *
+ * RLS is unaffected: a policy is evaluated per table access, nested or not, so
+ * a member still sees only their own rows here.
+ */
+const slice = (alias: string, query: string) =>
+  `(select coalesce(json_agg(t), '[]'::json) from (${query}) t) as ${alias}`;
+
 export async function loadSnapshot(userId: string, isAdmin: boolean): Promise<PortalSnapshot> {
   return withUserRead(userId, async (db) => {
-    const [
-      members, requests, volunteers, assignments, messages,
-      businesses, contactRequests,
-      ebooks, workshops, templates, events, team, news, donations, jobs,
-    ] = await Promise.all([
-      db`select * from public.profiles order by created_at desc`,
-      db.run(`select ${REQUEST_SELECT} from public.help_requests r order by r.created_at desc`),
-      db`select * from public.volunteer_applications order by created_at desc`,
-      db`select * from public.case_assignments order by created_at desc`,
-      db`select * from public.messages order by created_at desc`,
-      db`select * from public.businesses order by created_at desc`,
-      db`select * from public.business_contact_requests order by created_at desc`,
-      db.run(contentQuery('ebooks')),
-      db.run(contentQuery('workshops')),
-      db.run(contentQuery('templates')),
-      db.run(contentQuery('events')),
-      db.run(contentQuery('team')),
-      db.run(contentQuery('news')),
-      db.run(contentQuery('donations')),
-      db.run(contentQuery('jobs')),
-    ]);
+    const slices = [
+      slice('members', 'select * from public.profiles order by created_at desc'),
+      slice('requests', `select ${REQUEST_SELECT} from public.help_requests r order by r.created_at desc`),
+      slice('volunteers', 'select * from public.volunteer_applications order by created_at desc'),
+      slice('assignments', 'select * from public.case_assignments order by created_at desc'),
+      slice('messages', 'select * from public.messages order by created_at desc'),
+      slice('businesses', 'select * from public.businesses order by created_at desc'),
+      slice('contact_requests', 'select * from public.business_contact_requests order by created_at desc'),
+      slice('ebooks', contentQuery('ebooks')),
+      slice('workshops', contentQuery('workshops')),
+      slice('templates', contentQuery('templates')),
+      slice('events', contentQuery('events')),
+      slice('team', contentQuery('team')),
+      slice('news', contentQuery('news')),
+      slice('donations', contentQuery('donations')),
+      slice('jobs', contentQuery('jobs')),
+    ];
 
-    // Both are admin-only at the database level, so there is no point asking.
-    let auditLog: AuditLogEntry[] = [];
-    let stats = EMPTY_STATS;
-
+    // Both are admin-only at the database level, so there is no point asking as
+    // a member - and asking anyway would make helpdesk_stats() raise.
     if (isAdmin) {
-      const [auditRows, statsRows] = await Promise.all([
-        db`select * from public.audit_log order by created_at desc limit 200`,
-        db`select public.helpdesk_stats() as stats`,
-      ]);
-
-      auditLog = toDomainAll<AuditLogEntry & { createdAt: string }>(auditRows).map((row) => ({
-        ...row,
-        timestamp: row.createdAt,
-      }));
-
-      const raw = (statsRows[0] as { stats: HelpDeskStats } | undefined)?.stats;
-      if (raw) stats = raw;
+      slices.push(
+        slice('audit', 'select * from public.audit_log order by created_at desc limit 200'),
+        'public.helpdesk_stats() as stats'
+      );
     }
 
+    const rows = await db.run(`select ${slices.join(', ')}`);
+    const b = rows[0] as Record<string, never[]> & { stats?: HelpDeskStats };
+
+    const auditLog = toDomainAll<AuditLogEntry & { createdAt: string }>(b.audit ?? []).map(
+      (row) => ({ ...row, timestamp: row.createdAt })
+    );
+
     return {
-      members: toDomainAll<Member>(members),
-      helpRequests: toDomainAll<HelpRequest>(requests),
-      volunteerApps: toDomainAll<VolunteerApplication>(volunteers),
-      assignments: toDomainAll<CaseAssignment>(assignments),
-      messages: toDomainAll<AdminMessage>(messages),
+      members: toDomainAll<Member>(b.members),
+      helpRequests: toDomainAll<HelpRequest>(b.requests),
+      volunteerApps: toDomainAll<VolunteerApplication>(b.volunteers),
+      assignments: toDomainAll<CaseAssignment>(b.assignments),
+      messages: toDomainAll<AdminMessage>(b.messages),
       auditLog,
-      stats,
-      businesses: toDomainAll<Business>(businesses),
-      businessContactRequests: toDomainAll<BusinessContactRequest>(contactRequests),
-      ebooks: toDomainAll<EBook>(ebooks),
-      workshops: toDomainAll<VideoWorkshop>(workshops),
-      templates: toDomainAll<ContentTemplate>(templates),
-      events: toDomainAll<CommunityEvent>(events),
-      teamMembers: toDomainAll<TeamMember>(team),
-      newsArticles: toDomainAll<NewsArticle>(news),
-      donationCampaigns: toDomainAll<DonationCampaign>(donations),
-      jobPostings: toDomainAll<JobPosting>(jobs),
+      stats: b.stats ?? EMPTY_STATS,
+      businesses: toDomainAll<Business>(b.businesses),
+      businessContactRequests: toDomainAll<BusinessContactRequest>(b.contact_requests),
+      ebooks: toDomainAll<EBook>(b.ebooks),
+      workshops: toDomainAll<VideoWorkshop>(b.workshops),
+      templates: toDomainAll<ContentTemplate>(b.templates),
+      events: toDomainAll<CommunityEvent>(b.events),
+      teamMembers: toDomainAll<TeamMember>(b.team),
+      newsArticles: toDomainAll<NewsArticle>(b.news),
+      donationCampaigns: toDomainAll<DonationCampaign>(b.donations),
+      jobPostings: toDomainAll<JobPosting>(b.jobs),
     };
   });
 }
@@ -164,7 +188,7 @@ export async function createHelpRequest(
         ${input.preferredTimeline ?? null},
         ${input.previouslyRequested ?? false},
         ${input.documentsRequired ?? false},
-        ${(input.documents as string[]) ?? []},
+        ${safeDocuments(input.documents)},
         ${input.consentGiven ?? false},
         ${input.supportType ?? 'one_time'},
         ${input.openToGroupResources ?? false},
@@ -230,7 +254,7 @@ export async function createVolunteerApplication(
         ${input.referralSupportInterest ?? false}, ${input.resumeReviewInterest ?? false},
         ${input.settlementSupportInterest ?? false}, ${input.taxGuidanceInterest ?? false},
         ${input.immigrationGuidanceInterest ?? false}, ${input.motivation ?? null},
-        ${input.experienceSummary ?? null}, ${(input.documents as string[]) ?? []},
+        ${input.experienceSummary ?? null}, ${safeDocuments(input.documents)},
         ${input.agreedToRules ?? false}, ${input.agreedNoDirectContact ?? false},
         ${input.agreedAdminMediated ?? false}, ${input.consentToScreening ?? false}
       )
@@ -463,13 +487,6 @@ export async function updateOwnProfile(
   });
 }
 
-export async function archiveOwnAccount(userId: string): Promise<void> {
-  // Deliberately not a hard delete: removing the identity row is Neon Auth's to
-  // do, and case history is retained for administrative records.
-  await withUser(userId, async (db) => {
-    await db`update public.profiles set account_status = 'archived' where id = ${userId}::uuid`;
-  });
-}
 
 // ========== PUBLIC INQUIRIES (contact form + volunteer help relay) ==========
 
@@ -536,5 +553,174 @@ export async function setInquiryStatus(
              handled_at = now()
        where id = ${input.id}::uuid
     `;
+  });
+}
+
+// ========== ADMIN CONTROLS THAT HAD NO SERVER PATH ==========
+
+/**
+ * These four writes existed as read-only columns in the admin UI with no way
+ * to change them: member verification and account status, the business
+ * contact-request queue's status, and matrimony photo approval. The guard
+ * trigger on profiles (0001) already lets an admin through and pins everyone
+ * else, so the authority is unchanged — this only gives the admin a path.
+ */
+
+export async function setMemberVerification(
+  adminId: string,
+  input: { memberId: string; status: 'unverified' | 'pending' | 'verified' }
+): Promise<Member> {
+  return withUser(adminId, async (db) => {
+    const rows = await db`
+      update public.profiles set verification_status = ${input.status}
+       where id = ${input.memberId}::uuid
+      returning *
+    `;
+    const row = await one(rows);
+    if (!row) throw new Error('Member not found');
+    return toDomain<Member>(row);
+  });
+}
+
+export async function setMemberAccountStatus(
+  adminId: string,
+  input: { memberId: string; status: 'active' | 'suspended' | 'archived' }
+): Promise<Member> {
+  return withUser(adminId, async (db) => {
+    const rows = await db`
+      update public.profiles set account_status = ${input.status}
+       where id = ${input.memberId}::uuid
+      returning *
+    `;
+    const row = await one(rows);
+    if (!row) throw new Error('Member not found');
+    return toDomain<Member>(row);
+  });
+}
+
+export async function setBusinessRequestStatus(
+  adminId: string,
+  input: { requestId: string; status: string; adminNotes?: string }
+): Promise<BusinessContactRequest> {
+  return withUser(adminId, async (db) => {
+    const rows = await db`
+      update public.business_contact_requests
+         set status = ${input.status},
+             admin_notes = coalesce(${input.adminNotes ?? null}, admin_notes)
+       where id = ${input.requestId}::uuid
+      returning *
+    `;
+    const row = await one(rows);
+    if (!row) throw new Error('Request not found');
+    return toDomain<BusinessContactRequest>(row);
+  });
+}
+
+/**
+ * Approve or hide a member's matrimony photo. Nothing set is_approved before
+ * this, so uploaded photos could never reach other members.
+ */
+export async function setMatrimonyPhotoApproval(
+  adminId: string,
+  input: { mediaId: string; decision: 'approved' | 'rejected' | 'pending' }
+): Promise<void> {
+  await withUser(adminId, async (db) => {
+    // is_approved is kept in step by the trigger added in 0012, so readers do
+    // not need to know about moderation_status.
+    await db`
+      update public.matrimony_media set moderation_status = ${input.decision}
+       where id = ${input.mediaId}::uuid
+    `;
+  });
+}
+
+/**
+ * Resolve a matrimony report. The status column and its check constraint have
+ * existed since 0002; nothing ever wrote them, so reports could be filed and
+ * read but never closed.
+ */
+export async function resolveMatrimonyReport(
+  adminId: string,
+  input: { reportId: string; status: 'reviewed' | 'actioned' | 'dismissed'; adminNotes?: string }
+): Promise<void> {
+  await withUser(adminId, async (db) => {
+    await db`
+      update public.matrimony_reports
+         set status = ${input.status},
+             admin_notes = coalesce(${input.adminNotes ?? null}, admin_notes),
+             reviewed_by = ${adminId}::uuid,
+             reviewed_at = now()
+       where id = ${input.reportId}::uuid
+    `;
+  });
+}
+
+/** Approve or reject a submitted verification document. Same gap as reports. */
+export async function resolveMatrimonyVerification(
+  adminId: string,
+  input: { verificationId: string; status: 'approved' | 'rejected' }
+): Promise<void> {
+  await withUser(adminId, async (db) => {
+    await db`
+      update public.matrimony_verifications
+         set status = ${input.status},
+             reviewed_by = ${adminId}::uuid,
+             reviewed_at = now()
+       where id = ${input.verificationId}::uuid
+    `;
+  });
+}
+
+/** Photos waiting on a decision, newest first. */
+export interface PendingPhoto {
+  id: string;
+  profileId: string;
+  url: string;
+  isPrimary: boolean;
+  createdAt: string;
+}
+
+export async function listPendingMatrimonyPhotos(adminId: string): Promise<PendingPhoto[]> {
+  return withUserRead(adminId, async (db) => {
+    const rows = await db`
+      select id, profile_id, url, is_primary, created_at
+        from public.matrimony_media
+       where moderation_status = 'pending'
+       order by created_at desc
+       limit 100
+    `;
+    return toDomainAll<PendingPhoto>(rows);
+  });
+}
+
+// ========== SAVED BUSINESSES (member) ==========
+
+export async function listSavedBusinessIds(userId: string): Promise<string[]> {
+  return withUserRead(userId, async (db) => {
+    const rows = await db`
+      select business_id from public.member_saved_businesses
+       where member_id = ${userId}::uuid
+    `;
+    return rows.map((r) => (r as { business_id: string }).business_id);
+  });
+}
+
+export async function toggleSavedBusiness(
+  userId: string,
+  businessId: string
+): Promise<{ saved: boolean }> {
+  return withUser(userId, async (db) => {
+    const inserted = await db`
+      insert into public.member_saved_businesses (member_id, business_id)
+      values (${userId}::uuid, ${businessId}::uuid)
+      on conflict do nothing
+      returning business_id
+    `;
+    if (inserted.length > 0) return { saved: true };
+    await db`
+      delete from public.member_saved_businesses
+       where member_id = ${userId}::uuid and business_id = ${businessId}::uuid
+    `;
+    return { saved: false };
   });
 }

@@ -195,6 +195,18 @@ export async function deleteComment(userId: string, commentId: string): Promise<
 
 // ========== GROUPS ==========
 
+/**
+ * Groups and feed together. They are two statements but share one transaction
+ * and one connection acquisition, and - the point of it - one Server Action
+ * round trip from the browser.
+ */
+export async function listGroupsAndFeed(
+  userId: string,
+  opts: { groupId?: string | null }
+): Promise<[CommunityGroup[], CommunityPost[]]> {
+  return [await listGroups(userId), await listFeed(userId, opts)];
+}
+
 export async function listGroups(userId: string): Promise<CommunityGroup[]> {
   return withUserRead(userId, async (db) => {
     const rows = await db.run(

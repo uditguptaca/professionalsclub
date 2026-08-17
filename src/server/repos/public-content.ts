@@ -96,45 +96,69 @@ export interface PublicContentBundle {
 
 export async function loadPublicContent(): Promise<PublicContentBundle> {
   return withAnon(async (db) => {
-    // One transaction, eight statements — the marketing pages that need this
-    // are static-shaped and cheap, and a single round trip beats eight.
-    const [jobs, news, team, donations, ebooks, workshops, templates, events] = await Promise.all([
-      db`select id, title, company, company_logo, location, province,
-                salary_min, salary_max, salary_period, job_type, category,
-                description, requirements, responsibilities, contact_email,
-                apply_url, tags, is_featured, is_active, posted_at, expires_at, created_at
-           from public.jobs order by is_featured desc, posted_at desc nulls last`,
-      db`select id, title, summary, content, image, author, category,
-                published_at, is_published, created_at
-           from public.news_articles order by published_at desc nulls last`,
-      db`select id, name, role, bio, image, linkedin_url,
-                display_order as "order", is_published, created_at
-           from public.team_members order by display_order asc`,
-      db`select id, title, description, goal_amount, raised_amount, is_active, created_at
-           from public.donation_campaigns order by created_at desc`,
-      db`select id, title, author, type, size, color, image,
-                download_url, is_published, created_at
-           from public.ebooks order by created_at desc`,
-      db`select id, title, duration, recorded_date, platform,
-                thumbnail_image, video_url, is_published, created_at
-           from public.workshops order by created_at desc`,
-      db`select id, title, file_type, category, image, access_url, is_published, created_at
-           from public.content_templates order by created_at desc`,
-      db`select id, title, description, event_date as date, event_time as time,
-                location, event_type, capacity, attendees, image, is_featured,
-                platform, rsvp_url, status, is_published, created_at
-           from public.events order by event_date asc nulls last`,
-    ]);
+    // ONE statement, not eight. Promise.all over a tagged template looks
+    // concurrent but a single connection serialises queries, so the old version
+    // paid eight round trips (~2.7s from a dev machine) on every visit. Each
+    // slice is a json_agg subquery, so this is one round trip and the shapes are
+    // identical.
+    const rows = await db`
+      select
+        (select coalesce(json_agg(t), '[]'::json) from (
+          select id, title, company, company_logo, location, province,
+                 salary_min, salary_max, salary_period, job_type, category,
+                 description, requirements, responsibilities, contact_email,
+                 apply_url, tags, is_featured, is_active, posted_at, expires_at, created_at
+            from public.jobs order by is_featured desc, posted_at desc nulls last
+        ) t) as jobs,
+        (select coalesce(json_agg(t), '[]'::json) from (
+          select id, title, summary, content, image, author, category,
+                 published_at, is_published, created_at
+            from public.news_articles order by published_at desc nulls last
+        ) t) as news,
+        (select coalesce(json_agg(t), '[]'::json) from (
+          select id, name, role, bio, image, linkedin_url,
+                 display_order as "order", is_published, created_at
+            from public.team_members order by display_order asc
+        ) t) as team,
+        (select coalesce(json_agg(t), '[]'::json) from (
+          select id, title, description, goal_amount, raised_amount, is_active, created_at
+            from public.donation_campaigns order by created_at desc
+        ) t) as donations,
+        (select coalesce(json_agg(t), '[]'::json) from (
+          select id, title, author, type, size, color, image,
+                 download_url, is_published, created_at
+            from public.ebooks order by created_at desc
+        ) t) as ebooks,
+        (select coalesce(json_agg(t), '[]'::json) from (
+          select id, title, duration, recorded_date, platform,
+                 thumbnail_image, video_url, is_published, created_at
+            from public.workshops order by created_at desc
+        ) t) as workshops,
+        (select coalesce(json_agg(t), '[]'::json) from (
+          select id, title, file_type, category, image, access_url, is_published, created_at
+            from public.content_templates order by created_at desc
+        ) t) as templates,
+        (select coalesce(json_agg(t), '[]'::json) from (
+          select id, title, description, event_date as date, event_time as time,
+                 location, event_type, capacity, attendees, image, is_featured,
+                 platform, rsvp_url, status, is_published, created_at
+            from public.events order by event_date asc nulls last
+        ) t) as events
+    `;
+
+    // RLS still decides what each subquery may see: app_anonymous only matches
+    // the *_select_published policies, so nothing unpublished is in here.
+    const b = rows[0] as Record<string, unknown[]>;
 
     return {
-      jobPostings: toDomainAll<JobPosting>(jobs),
-      newsArticles: toDomainAll<NewsArticle>(news),
-      teamMembers: toDomainAll<TeamMember>(team),
-      donationCampaigns: toDomainAll<DonationCampaign>(donations),
-      ebooks: toDomainAll<EBook>(ebooks),
-      workshops: toDomainAll<VideoWorkshop>(workshops),
-      templates: toDomainAll<ContentTemplate>(templates),
-      events: toDomainAll<CommunityEvent>(events),
+      jobPostings: toDomainAll<JobPosting>(b.jobs),
+      newsArticles: toDomainAll<NewsArticle>(b.news),
+      teamMembers: toDomainAll<TeamMember>(b.team),
+      donationCampaigns: toDomainAll<DonationCampaign>(b.donations),
+      ebooks: toDomainAll<EBook>(b.ebooks),
+      workshops: toDomainAll<VideoWorkshop>(b.workshops),
+      templates: toDomainAll<ContentTemplate>(b.templates),
+      events: toDomainAll<CommunityEvent>(b.events),
     };
   });
 }
@@ -191,6 +215,17 @@ export interface BusinessApplicationInput {
   services?: string[];
   memberBenefits?: string[];
   memberRateText?: string;
+  // Added with 0011 so the wizard stops discarding these.
+  subcategory?: string;
+  serviceArea?: string;
+  businessHours?: string;
+  pricingSummary?: string;
+  offerBadge?: string;
+  logo?: string;
+  /** Social and review links, keyed by platform. */
+  socialLinks?: Record<string, string>;
+  /** Applicant detail with no dedicated column; review context for admins. */
+  submissionDetails?: Record<string, unknown>;
 }
 
 export async function submitBusinessApplication(input: BusinessApplicationInput): Promise<void> {
@@ -203,7 +238,12 @@ export async function submitBusinessApplication(input: BusinessApplicationInput)
         ${input.address ?? null}, ${input.city ?? null}, ${input.province ?? null},
         ${input.postalCode ?? null}, ${input.yearsInBusiness ?? null},
         ${input.services ?? []}, ${input.memberBenefits ?? []},
-        ${input.memberRateText ?? null}
+        ${input.memberRateText ?? null},
+        ${input.subcategory ?? null}, ${input.serviceArea ?? null},
+        ${input.businessHours ?? null}, ${input.pricingSummary ?? null},
+        ${input.offerBadge ?? null}, ${input.logo ?? null},
+        ${JSON.stringify(input.socialLinks ?? {})}::jsonb,
+        ${JSON.stringify(input.submissionDetails ?? {})}::jsonb
       )
     `;
   });

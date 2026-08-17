@@ -265,9 +265,13 @@ export default function AskHelpPage() {
   return (
     <>
       <Navbar />
+
+      <main id="main">
       <Suspense fallback={<div style={{ padding: '120px 0', textAlign: 'center', background: 'var(--bg-primary)', minHeight: '80vh', color: 'var(--text-secondary)' }}>Loading request form...</div>}>
         <AskHelpForm />
       </Suspense>
+      </main>
+
       <Footer />
     </>
   );

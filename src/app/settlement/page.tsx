@@ -122,6 +122,8 @@ export default function SettlementPage() {
     <>
       <Navbar />
 
+      <main id="main">
+
       {/* Hero */}
       <section className="settlement-hero-section" style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: 'var(--text-primary)' }}>
         {/* Background Animation (Toronto Skyline CN Tower) */}
@@ -236,6 +238,8 @@ export default function SettlementPage() {
           </Link>
         </div>
       </section>
+
+      </main>
 
       <Footer />
     </>

@@ -22,10 +22,14 @@ export default function AdminRequestDetailPage() {
   const [msgToMember, setMsgToMember] = useState('');
   const [msgToVol, setMsgToVol] = useState('');
   const [newStatus, setNewStatus] = useState('');
+  const [volFilter, setVolFilter] = useState('');
 
   const request = helpRequests.find(r => r.id === requestId);
   const caseMessages = messages.filter(m => m.caseId === requestId);
   const approvedVolunteers = volunteerApps.filter(a => a.status === 'approved');
+  const shownVolunteers = volFilter.trim()
+    ? approvedVolunteers.filter(v => v.memberName.toLowerCase().includes(volFilter.trim().toLowerCase()))
+    : approvedVolunteers;
 
   if (!request) {
     return <div style={{ textAlign: 'center', padding: 80 }}><h2>Request not found</h2><Link href="/portal/admin/requests" className="btn btn-outline">Back</Link></div>;
@@ -47,7 +51,8 @@ export default function AdminRequestDetailPage() {
   const handleAssign = async (volunteerMemberId: string, volunteerName: string) => {
     if (assigning) return;
     setAssigning(volunteerMemberId);
-    await createAssignment({
+    setActionError('');
+    const result = await createAssignment({
       requestId,
       requestTitle: request.title,
       volunteerMemberId,
@@ -57,6 +62,7 @@ export default function AdminRequestDetailPage() {
       instructions: `Please assist with: ${request.title}`,
       dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
     });
+    if (!result.ok) setActionError(result.error);
     setAssigning(null);
   };
 
@@ -74,28 +80,39 @@ export default function AdminRequestDetailPage() {
   // recipientUserId is what the RLS select policy matches on
   // (`sender_user_id = me or recipient_user_id = me`). Sending without it meant
   // admin messages were addressed to nobody and the member never saw them.
-  const handleSendToMember = () => {
-    if (!msgToMember.trim()) return;
-    sendMessage({
+  // Both sends await the write and keep the draft on failure. Clearing the
+  // textarea first made a rejected send look delivered and threw away the text
+  // the admin had just typed, with nothing on screen to explain it.
+  const handleSendToMember = async () => {
+    if (!msgToMember.trim() || busy) return;
+    setBusy('member');
+    setActionError('');
+    const result = await sendMessage({
       caseId: requestId, caseTitle: request.title,
       senderRole: 'admin', senderUserId: '', senderName: adminName,
       recipientUserId: request.memberId, recipientRole: 'member',
       moderatedFlag: false, visibilityScope: 'member_only',
       body: msgToMember, attachments: [],
     });
-    setMsgToMember('');
+    if (result.ok) setMsgToMember('');
+    else setActionError(result.error);
+    setBusy(null);
   };
 
-  const handleSendToVolunteer = () => {
-    if (!msgToVol.trim() || !request.assignedVolunteerId) return;
-    sendMessage({
+  const handleSendToVolunteer = async () => {
+    if (!msgToVol.trim() || !request.assignedVolunteerId || busy) return;
+    setBusy('volunteer');
+    setActionError('');
+    const result = await sendMessage({
       caseId: requestId, caseTitle: request.title,
       senderRole: 'admin', senderUserId: '', senderName: adminName,
       recipientUserId: request.assignedVolunteerId, recipientRole: 'volunteer',
       moderatedFlag: false, visibilityScope: 'volunteer_only',
       body: msgToVol, attachments: [],
     });
-    setMsgToVol('');
+    if (result.ok) setMsgToVol('');
+    else setActionError(result.error);
+    setBusy(null);
   };
 
   return (
@@ -107,6 +124,10 @@ export default function AdminRequestDetailPage() {
       <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 24 }}>
         {/* Main Column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Shared failure surface. Every action on this page sets actionError;
+              until this rendered, a rejected write left no trace on screen. */}
+          {actionError && <p role="alert" className="community-error">{actionError}</p>}
+
           {/* Header */}
           <div className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
@@ -144,7 +165,9 @@ export default function AdminRequestDetailPage() {
             <h3 className="font-bold mb-3" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><MessageSquare size={16} /> Message to Member</h3>
             <div style={{ display: 'flex', gap: 8 }}>
               <textarea className="input" style={{ flex: 1 }} rows={2} placeholder="Type a message to send to the requester..." value={msgToMember} onChange={e => setMsgToMember(e.target.value)} />
-              <button className="btn btn-primary" onClick={handleSendToMember} disabled={!msgToMember.trim()} style={{ alignSelf: 'flex-end' }}><Send size={16} /></button>
+              <button className="btn btn-primary" onClick={handleSendToMember} disabled={!msgToMember.trim() || busy === 'member'} style={{ alignSelf: 'flex-end' }}>
+                {busy === 'member' ? 'Sending…' : <Send size={16} />}
+              </button>
             </div>
           </div>
 
@@ -161,9 +184,9 @@ export default function AdminRequestDetailPage() {
                 />
                 <button
                   className="btn btn-primary" onClick={handleSendToVolunteer}
-                  disabled={!msgToVol.trim() || !request.assignedVolunteerId}
+                  disabled={!msgToVol.trim() || !request.assignedVolunteerId || busy === 'volunteer'}
                   style={{ alignSelf: 'flex-end' }}
-                ><Send size={16} /></button>
+                >{busy === 'volunteer' ? 'Sending…' : <Send size={16} />}</button>
               </div>
             </div>
           )}
@@ -234,22 +257,42 @@ export default function AdminRequestDetailPage() {
               </div>
             ) : (
               <div>
-                <p className="text-secondary text-sm mb-3">No volunteer assigned yet. Approved volunteers:</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {approvedVolunteers.slice(0, 3).map(v => (
-                    <div key={v.id} style={{ padding: '8px 12px', borderRadius: 6, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', fontSize: '0.82rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div><strong>{v.memberName}</strong><div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{v.currentProfession}</div></div>
-                      <button
-                        className="btn btn-outline btn-sm"
-                        style={{ fontSize: '0.68rem' }}
-                        onClick={() => handleAssign(v.memberId, v.memberName)}
-                        disabled={assigning !== null}
-                      >
-                        {assigning === v.memberId ? 'Assigning…' : 'Assign'}
-                      </button>
+                <p className="text-secondary text-sm mb-3">No volunteer assigned yet.</p>
+                {/* This is the only assign control in the admin portal, so the
+                    list has to hold every approved volunteer: capping it at
+                    three made the rest impossible to assign anywhere. */}
+                {approvedVolunteers.length === 0 ? (
+                  <p className="text-secondary text-sm">No approved volunteers to assign yet.</p>
+                ) : (
+                  <>
+                    {approvedVolunteers.length > 5 && (
+                      <input
+                        className="input"
+                        style={{ fontSize: '0.82rem', marginBottom: 8 }}
+                        placeholder={`Filter ${approvedVolunteers.length} volunteers by name...`}
+                        value={volFilter}
+                        onChange={e => setVolFilter(e.target.value)}
+                      />
+                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 280, overflowY: 'auto' }}>
+                      {shownVolunteers.length === 0 ? (
+                        <p className="text-secondary text-sm">No approved volunteer matches that name.</p>
+                      ) : shownVolunteers.map(v => (
+                        <div key={v.id} style={{ padding: '8px 12px', borderRadius: 6, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', fontSize: '0.82rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                          <div><strong>{v.memberName}</strong><div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{v.currentProfession}</div></div>
+                          <button
+                            className="btn btn-outline btn-sm"
+                            style={{ fontSize: '0.68rem', flexShrink: 0 }}
+                            onClick={() => handleAssign(v.memberId, v.memberName)}
+                            disabled={assigning !== null}
+                          >
+                            {assigning === v.memberId ? 'Assigning…' : 'Assign'}
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </>
+                )}
               </div>
             )}
           </div>

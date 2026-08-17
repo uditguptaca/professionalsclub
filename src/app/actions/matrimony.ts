@@ -182,10 +182,3 @@ export async function adminModerateProfile(profileId: string, moderation: Modera
   return runAdmin('Saving moderation', (aid) => repo.adminModerate(aid, profileId, moderation));
 }
 
-export async function adminSetMatrimonyStatus(
-  profileId: string,
-  status: MatrimonyProfileStatus,
-  reason?: string
-) {
-  return runAdmin('Updating profile status', (aid) => repo.adminSetStatus(aid, profileId, status, reason));
-}

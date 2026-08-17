@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
+import Footer from '@/components/shared/Footer';
 import {
   ShieldCheck, Star, Tag, MapPin, Phone, Mail, Globe, Clock, Briefcase,
   ArrowLeft, CheckCircle, ExternalLink, User, Calendar, Target,
@@ -57,6 +58,7 @@ export default function BusinessProfilePage() {
     <>
       <Navbar />
 
+      <main id="main">
       {/* Cover */}
       <div className="biz-profile-hero">
         {biz.coverImage && <img src={biz.coverImage} alt={biz.name} />}
@@ -169,6 +171,9 @@ export default function BusinessProfilePage() {
           <ArrowLeft size={16} /> Back to Business Directory
         </Link>
       </div>
+      </main>
+
+      <Footer />
     </>
   );
 }

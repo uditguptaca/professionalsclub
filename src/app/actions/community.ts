@@ -159,6 +159,24 @@ export async function removeOwnComment(commentId: string): Promise<ActionResult<
 
 // ========== GROUPS ==========
 
+/**
+ * The groups rail and the first page of the feed, in one call.
+ *
+ * Next runs a client's Server Action calls one at a time, so the rail's group
+ * fetch and the feed's post fetch never overlapped - they cost the community
+ * page two full round trips on every view. Both mount in the same tick, so
+ * they share this one.
+ */
+export async function fetchCommunityHome(opts: {
+  groupId?: string | null;
+}): Promise<ActionResult<{ groups: CommunityGroup[]; posts: CommunityPost[] }>> {
+  return run('Loading the community', async () => {
+    const uid = await requireUserId();
+    const [groups, posts] = await repo.listGroupsAndFeed(uid, opts);
+    return { groups, posts };
+  });
+}
+
 export async function fetchGroups(): Promise<ActionResult<CommunityGroup[]>> {
   return run('Loading groups', async () => {
     const uid = await requireUserId();

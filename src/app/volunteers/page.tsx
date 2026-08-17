@@ -253,6 +253,8 @@ export default function VolunteerDirectoryPage() {
     <>
       <Navbar />
 
+      <main id="main">
+
       {/* Hero Section */}
       <section className="volunteers-hero-section" style={{ position: 'relative', paddingTop: 160, paddingBottom: 80, background: 'var(--text-primary)', overflow: 'hidden' }}>
         <div className="cinematic-bg-container">
@@ -386,6 +388,8 @@ export default function VolunteerDirectoryPage() {
 
         </div>
       </section>
+
+      </main>
 
       <Footer />
     </>

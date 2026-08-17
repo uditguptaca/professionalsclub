@@ -3,11 +3,11 @@ import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import ContentImage from '@/components/shared/ContentImage';
 import Link from 'next/link';
-import { Search, MapPin, Briefcase, ChevronRight, Code2, Calculator, Cpu, Stethoscope, Landmark, Tv2, UtensilsCrossed, GraduationCap, Heart, DollarSign, ArrowRight, Filter, Building2, Clock, ExternalLink, ChevronDown, Tag } from 'lucide-react';
+import { Search, MapPin, Briefcase, ChevronRight, Code2, Calculator, Cpu, Stethoscope, Landmark, Tv2, UtensilsCrossed, GraduationCap, Heart, DollarSign, ArrowRight, Filter, Building2, Clock, ExternalLink, ChevronDown, Tag, Mail } from 'lucide-react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { usePublicContent } from '@/context/public-content';
-import type { JobType } from '@/types';
+import type { JobPosting, JobType } from '@/types';
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   'Developer': <Code2 size={28} />,
@@ -35,6 +35,35 @@ const JOB_TYPE_COLORS: Record<JobType, { bg: string; color: string }> = {
   freelance: { bg: 'rgba(12, 12, 14, 0.05)', color: 'var(--text-primary)' },
   internship: { bg: 'rgba(232, 93, 4, 0.08)', color: 'var(--primary-600)' },
 };
+
+// We only have skyline art for these four, so the set is fixed, but the count on
+// each card is derived from the jobs table. `city` is also the term fed to the
+// location filter when the card is clicked.
+const CITY_CARDS = [
+  { city: 'Toronto', region: 'ON', img: '/toronto-skyline.png' },
+  { city: 'Vancouver', region: 'BC', img: '/vancouver-skyline.png' },
+  { city: 'Calgary', region: 'AB', img: '/calgary-skyline.png' },
+  { city: 'Montreal', region: 'QC', img: '/montreal-skyline.png' },
+];
+
+// Shared by the search box and the city cards so a card can never advertise a
+// count the filtered list won't produce.
+function matchesLocation(job: JobPosting, term: string) {
+  const q = term.trim().toLowerCase();
+  return job.location.toLowerCase().includes(q) || job.province.toLowerCase().includes(q);
+}
+
+// Both applyUrl and contactEmail are optional for the admin entering a job, so
+// there is a third state. href="#" looked live and jumped to the top of the page.
+// Requiring an absolute http(s) URL also rejects the literal '#' one row stores
+// and any scheme-less value, which would otherwise resolve against /jobs.
+function applyTarget(job: JobPosting) {
+  const url = job.applyUrl.trim();
+  if (/^https?:\/\//i.test(url)) return { href: url, label: 'APPLY', external: true, icon: <ExternalLink size={12} /> };
+  const email = job.contactEmail.trim();
+  if (email) return { href: `mailto:${email}`, label: 'EMAIL TO APPLY', external: false, icon: <Mail size={12} /> };
+  return { href: '/portal/auth', label: 'APPLY VIA CLUB', external: false, icon: <ArrowRight size={12} /> };
+}
 
 function formatSalary(min: number, max: number, period: string) {
   const fmt = (n: number) => {
@@ -68,6 +97,12 @@ export default function JobsPage() {
     return counts;
   }, [activeJobs]);
 
+  // City counts, from the same rows the listing below renders.
+  const cityCards = useMemo(
+    () => CITY_CARDS.map(c => ({ ...c, count: activeJobs.filter(j => matchesLocation(j, c.city)).length })),
+    [activeJobs]
+  );
+
   // Filtered jobs for main listing
   const filteredJobs = useMemo(() => {
     let jobs = [...activeJobs];
@@ -79,8 +114,7 @@ export default function JobsPage() {
         jobs = jobs.filter(j => j.title.toLowerCase().includes(kw) || j.company.toLowerCase().includes(kw) || j.tags.some(t => t.toLowerCase().includes(kw)));
       }
       if (location) {
-        const loc = location.toLowerCase();
-        jobs = jobs.filter(j => j.location.toLowerCase().includes(loc) || j.province.toLowerCase().includes(loc));
+        jobs = jobs.filter(j => matchesLocation(j, location));
       }
       if (typeFilter) {
         jobs = jobs.filter(j => j.jobType === typeFilter);
@@ -134,6 +168,8 @@ export default function JobsPage() {
   return (
     <>
       <Navbar />
+
+      <main id="main">
 
       {/* ─── HERO ─── */}
       <section style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: 'var(--text-primary)' }}>
@@ -311,26 +347,28 @@ export default function JobsPage() {
           </div>
 
           <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
-            {[
-              { name: 'Toronto, ON', jobs: 120, img: '/toronto-skyline.png' },
-              { name: 'Vancouver, BC', jobs: 85, img: '/vancouver-skyline.png' },
-              { name: 'Calgary, AB', jobs: 45, img: '/calgary-skyline.png' },
-              { name: 'Montreal, QC', jobs: 60, img: '/montreal-skyline.png' }
-            ].map((city, i) => (
-              <div key={i} style={{ cursor: 'pointer', transition: 'transform 0.2s' }} onMouseOver={e=>e.currentTarget.style.transform='translateY(-4px)'} onMouseOut={e=>e.currentTarget.style.transform='none'}>
-                <div style={{ borderRadius: 20, overflow: 'hidden', position: 'relative', height: 260, marginBottom: 16 }}>
-                  <Image src={city.img} alt={city.name} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} unoptimized={city.img.startsWith('http')} />
-                </div>
-                <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: 4 }}>{city.name}</div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{city.jobs} Jobs Available</div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ textAlign: 'center', marginTop: 40 }}>
-             <button style={{ background: 'none', border: 'none', color: 'var(--primary-600)', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'opacity 0.2s' }} onMouseOver={e=>e.currentTarget.style.opacity='0.8'} onMouseOut={e=>e.currentTarget.style.opacity='1'}>
-               Explore More <ChevronRight size={16} />
-             </button>
+            {cityCards.map(city => {
+              const hasJobs = city.count > 0;
+              return (
+                <button
+                  key={city.city}
+                  type="button"
+                  disabled={!hasJobs}
+                  onClick={() => { setLocation(city.city); setSearchApplied(true); setActiveTab('recent'); }}
+                  style={{ background: 'none', border: 'none', padding: 0, display: 'block', width: '100%', textAlign: 'left', cursor: hasJobs ? 'pointer' : 'default', transition: 'transform 0.2s' }}
+                  onMouseOver={e => { if (hasJobs) e.currentTarget.style.transform = 'translateY(-4px)'; }}
+                  onMouseOut={e => { e.currentTarget.style.transform = 'none'; }}
+                >
+                  <div style={{ borderRadius: 20, overflow: 'hidden', position: 'relative', height: 260, marginBottom: 16 }}>
+                    <Image src={city.img} alt={`${city.city}, ${city.region}`} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover', opacity: hasJobs ? 1 : 0.5 }} />
+                  </div>
+                  <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: 4 }}>{city.city}, {city.region}</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    {hasJobs ? `${city.count} job${city.count === 1 ? '' : 's'} listed` : 'No jobs listed yet'}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -386,6 +424,7 @@ export default function JobsPage() {
             <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
               {filteredJobs.map(job => {
                 const typeStyle = JOB_TYPE_COLORS[job.jobType];
+                const apply = applyTarget(job);
                 return (
                   <div key={job.id} style={{
                     background: 'var(--bg-primary)',
@@ -442,21 +481,27 @@ export default function JobsPage() {
                               <Clock size={11} /> {Math.ceil((Date.now() - new Date(job.postedAt).getTime()) / (1000 * 60 * 60 * 24))}d ago
                             </span>
                           </div>
-                          <Link href={job.applyUrl || '#'} style={{
-                            padding: '6px 18px',
-                            background: 'var(--primary-600)',
-                            color: 'white',
-                            borderRadius: 6,
-                            fontSize: '0.78rem',
-                            fontWeight: 700,
-                            textDecoration: 'none',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 4,
-                            transition: 'all 0.2s',
-                          }}>
-                            APPLY <ExternalLink size={12} />
-                          </Link>
+                          <a
+                            href={apply.href}
+                            target={apply.external ? '_blank' : undefined}
+                            rel={apply.external ? 'noopener noreferrer' : undefined}
+                            style={{
+                              padding: '6px 18px',
+                              background: 'var(--primary-600)',
+                              color: 'white',
+                              borderRadius: 6,
+                              fontSize: '0.78rem',
+                              fontWeight: 700,
+                              textDecoration: 'none',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              whiteSpace: 'nowrap',
+                              transition: 'all 0.2s',
+                            }}
+                          >
+                            {apply.label} {apply.icon}
+                          </a>
                         </div>
                       </div>
                     </div>
@@ -591,6 +636,8 @@ export default function JobsPage() {
           </div>
         </div>
       </section>
+
+      </main>
 
       <Footer />
     </>

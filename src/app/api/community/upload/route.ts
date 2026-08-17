@@ -9,8 +9,8 @@ import { requireUserId } from '@/server/auth';
  * squeezed through a serverless function's body limit); this route only
  * decides WHO may upload WHAT:
  *   - a signed-in, active member (requireUserId throws otherwise),
- *   - images or mp4/webm video only,
- *   - capped at 8 MB per image and 120 MB per video.
+ *   - images, mp4/webm video, or a PDF/Word document,
+ *   - capped at 8 MB per image or document and 120 MB per video.
  *
  * Requires BLOB_READ_WRITE_TOKEN (Vercel dashboard -> Storage -> Blob).
  * Without it this route 503s and the client falls back to the dev-only
@@ -19,6 +19,17 @@ import { requireUserId } from '@/server/auth';
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
+
+// Attachments on a help request or volunteer application: a scan or a photo of
+// the same paperwork is just as common as the PDF, so images are allowed too.
+const DOCUMENT_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+];
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
@@ -40,8 +51,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       request,
       onBeforeGenerateToken: async (pathname, clientPayload) => {
         const isVideo = clientPayload === 'video';
+        const isDocument = clientPayload === 'document';
         return {
-          allowedContentTypes: isVideo ? VIDEO_TYPES : IMAGE_TYPES,
+          allowedContentTypes: isVideo
+            ? VIDEO_TYPES
+            : isDocument
+              ? DOCUMENT_TYPES
+              : IMAGE_TYPES,
           maximumSizeInBytes: isVideo ? 120 * 1024 * 1024 : 8 * 1024 * 1024,
           addRandomSuffix: true,
           tokenPayload: userId,

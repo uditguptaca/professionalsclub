@@ -310,6 +310,8 @@ export default function EBooksPage() {
     <div style={{ background: 'var(--bg-secondary)', minHeight: '100vh' }}>
       <Navbar />
 
+      <main id="main">
+
       {/* Hero Section - Clean & High Impact */}
       <section style={{ 
         paddingTop: '160px', 
@@ -495,6 +497,8 @@ export default function EBooksPage() {
           </div>
         </div>
       </section>
+
+      </main>
 
       <Footer />
     </div>
