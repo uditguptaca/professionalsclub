@@ -97,8 +97,9 @@ export default function ContactPage() {
               ) : (
                 <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>Your Name *</label>
+                    <label htmlFor="contact-name" style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>Your Name *</label>
                     <input
+                      id="contact-name"
                       type="text"
                       required
                       value={name}
@@ -111,8 +112,9 @@ export default function ContactPage() {
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>Email Address *</label>
+                    <label htmlFor="contact-email" style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>Email Address *</label>
                     <input
+                      id="contact-email"
                       type="email"
                       required
                       value={email}
@@ -125,8 +127,8 @@ export default function ContactPage() {
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>Subject</label>
-                    <select 
+                    <label htmlFor="contact-subject" style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>Subject</label>
+                    <select id="contact-subject" 
                       value={subject}
                       onChange={e => setSubject(e.target.value)}
                       style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border-color)', outline: 'none', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
@@ -140,8 +142,9 @@ export default function ContactPage() {
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>Message *</label>
+                    <label htmlFor="contact-message" style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>Message *</label>
                     <textarea
+                      id="contact-message"
                       required
                       rows={5}
                       value={message}
@@ -174,17 +177,17 @@ export default function ContactPage() {
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                   <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                    <Mail size={18} style={{ color: 'var(--primary-600)', marginTop: 2, flexShrink: 0 }} />
+                    <Mail size={18} style={{ color: 'var(--text-accent)', marginTop: 2, flexShrink: 0 }} />
                     <div>
                       <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>Email Support</div>
-                      <a href="mailto:support@professionalsclub.ca" style={{ fontSize: '0.88rem', color: 'var(--primary-600)', textDecoration: 'none' }}>
+                      <a href="mailto:support@professionalsclub.ca" style={{ fontSize: '0.88rem', color: 'var(--text-accent)', textDecoration: 'none' }}>
                         support@professionalsclub.ca
                       </a>
                     </div>
                   </div>
 
                   <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                    <MapPin size={18} style={{ color: 'var(--primary-600)', marginTop: 2, flexShrink: 0 }} />
+                    <MapPin size={18} style={{ color: 'var(--text-accent)', marginTop: 2, flexShrink: 0 }} />
                     <div>
                       <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>Headquarters</div>
                       <div style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
@@ -197,7 +200,7 @@ export default function ContactPage() {
 
               <div style={{ background: 'linear-gradient(135deg, rgba(232,93,4,0.08), rgba(232,93,4,0.02))', padding: 28, borderRadius: 24, border: '1px solid rgba(232,93,4,0.15)' }}>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Shield size={18} style={{ color: 'var(--primary-600)' }} /> Privacy First
+                  <Shield size={18} style={{ color: 'var(--text-accent)' }} /> Privacy First
                 </h3>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
                   Your data is protected. All messages sent to our help desk are encrypted and only accessible by authorized community support administrators.

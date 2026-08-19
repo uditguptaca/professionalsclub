@@ -2,10 +2,12 @@
 import React, { useState } from 'react';
 import { usePortal } from '@/context/portal-context';
 import { Calendar, Plus, Pencil, Trash2, X, MapPin, Users, Star } from 'lucide-react';
+import { useConfirm } from '@/components/portal/confirm';
 import type { CommunityEvent, EventType, EventStatus } from '@/types';
 
 export default function EventsManagementPage() {
   const { events, addEvent, updateEvent, deleteEvent } = usePortal();
+  const confirmAction = useConfirm();
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string | number | boolean>>({});
@@ -54,7 +56,7 @@ export default function EventsManagementPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this event?')) return;
+    if (!(await confirmAction({ title: 'Delete this event?', message: 'It disappears from the public events page immediately.', confirmLabel: 'Delete event' }))) return;
     setListError(null);
     setDeletingId(id);
     const result = await deleteEvent(id);
@@ -62,7 +64,7 @@ export default function EventsManagementPage() {
     if (!result.ok) setListError(result.error);
   };
 
-  const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-primary)' };
+  const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem',  background: 'var(--bg-primary)' };
   const labelStyle: React.CSSProperties = { fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4, display: 'block' };
   const tableHeaderStyle: React.CSSProperties = { padding: '12px 16px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', borderBottom: '2px solid var(--border-color)' };
   const tableCellStyle: React.CSSProperties = { padding: '14px 16px', borderBottom: '1px solid var(--border-color)', fontSize: '0.88rem' };

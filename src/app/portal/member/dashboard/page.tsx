@@ -62,7 +62,7 @@ export default function MemberDashboard() {
               </div>
             </div>
             {openRequests.length > 0 && (
-              <div style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--primary-600)', fontWeight: 600 }}>
+              <div style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--text-accent)', fontWeight: 600 }}>
                 {openRequests.length} active
               </div>
             )}
@@ -81,8 +81,8 @@ export default function MemberDashboard() {
                     <span style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 4 }}>
                       {myVolunteerApp.status === 'approved' && <><CheckCircle size={16} style={{ color: 'var(--success-600)' }} /> Approved</>}
                       {myVolunteerApp.status === 'pending_verification' && '⏳ Pending'}
-                      {myVolunteerApp.status === 'new_application' && <><FileEdit size={16} style={{ color: 'var(--accent-600)' }} /> Submitted</>}
-                      {myVolunteerApp.status === 'rejected' && <><XCircle size={16} style={{ color: 'var(--error-500)' }} /> Rejected</>}
+                      {myVolunteerApp.status === 'new_application' && <><FileEdit size={16} style={{ color: 'var(--accent-700)' }} /> Submitted</>}
+                      {myVolunteerApp.status === 'rejected' && <><XCircle size={16} style={{ color: 'var(--error-600)' }} /> Rejected</>}
                       {!['approved', 'pending_verification', 'new_application', 'rejected'].includes(myVolunteerApp.status) && myVolunteerApp.status}
                     </span>
                   ) : '—'}
@@ -97,7 +97,7 @@ export default function MemberDashboard() {
           <div className="card-stat" style={{ cursor: 'pointer', position: 'relative' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ padding: 10, background: 'rgba(245,158,11,0.1)', borderRadius: 10, position: 'relative' }}>
-                <MessageSquare size={22} style={{ color: 'var(--accent-600)' }} />
+                <MessageSquare size={22} style={{ color: 'var(--accent-700)' }} />
                 {unreadMessages > 0 && (
                   <div style={{ position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: '50%', background: 'var(--error-500)', color: 'white', fontSize: '0.65rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unreadMessages}</div>
                 )}
@@ -108,7 +108,7 @@ export default function MemberDashboard() {
               </div>
             </div>
             {unreadMessages > 0 && (
-              <div style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--error-500)', fontWeight: 600 }}>
+              <div style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--error-600)', fontWeight: 600 }}>
                 {unreadMessages} unread
               </div>
             )}
@@ -121,7 +121,7 @@ export default function MemberDashboard() {
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h2 className="text-xl font-bold font-display">Recent Requests</h2>
-            <Link href="/portal/member/my-requests" style={{ fontSize: '0.85rem', color: 'var(--primary-600)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Link href="/portal/member/my-requests" style={{ fontSize: '0.85rem', color: 'var(--text-accent)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
               View All <ArrowRight size={14} />
             </Link>
           </div>

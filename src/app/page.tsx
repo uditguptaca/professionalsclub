@@ -5,6 +5,7 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import HeroStopMotion from '@/components/home/HeroStopMotion';
 import { Reveal, WordReveal, Stagger, StaggerItem, CountUp, Marquee, Parallax } from '@/components/motion/primitives';
+import { getVerifiedBusinesses } from '@/app/actions/public';
 
 /**
  * Homepage.
@@ -15,7 +16,10 @@ import { Reveal, WordReveal, Stagger, StaggerItem, CountUp, Marquee, Parallax } 
  * the four moves in components/motion/primitives; nothing fades in generically.
  */
 
-export default function Home() {
+export default async function Home() {
+  // Featured directory listings; RLS already limits this to verified rows.
+  const businesses = (await getVerifiedBusinesses().catch(() => [])).slice(0, 3);
+
   return (
     <>
       <Navbar />
@@ -278,19 +282,18 @@ export default function Home() {
                 </Reveal>
                 <Stagger className="chip-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(15rem, 1fr))' }}>
                   {[
-                    { cat: 'Technology', icon: <Briefcase size={17} />, jobs: 142 },
-                    { cat: 'Accounting & Finance', icon: <Wallet size={17} />, jobs: 89 },
-                    { cat: 'Healthcare', icon: <Hospital size={17} />, jobs: 64 },
-                    { cat: 'Government', icon: <Shield size={17} />, jobs: 30 },
-                    { cat: 'Marketing', icon: <Star size={17} />, jobs: 45 },
-                    { cat: 'Education', icon: <GraduationCap size={17} />, jobs: 52 },
-                    { cat: 'Retail & Food', icon: <Tag size={17} />, jobs: 110 },
-                    { cat: 'Engineering', icon: <Search size={17} />, jobs: 75 },
+                    { cat: 'Technology', icon: <Briefcase size={17} /> },
+                    { cat: 'Accounting & Finance', icon: <Wallet size={17} /> },
+                    { cat: 'Healthcare', icon: <Hospital size={17} /> },
+                    { cat: 'Government', icon: <Shield size={17} /> },
+                    { cat: 'Marketing', icon: <Star size={17} /> },
+                    { cat: 'Education', icon: <GraduationCap size={17} /> },
+                    { cat: 'Retail & Food', icon: <Tag size={17} /> },
+                    { cat: 'Engineering', icon: <Search size={17} /> },
                   ].map((item) => (
                     <StaggerItem key={item.cat} style={{ display: 'contents' }}>
                       <Link href="/jobs">
-                        {item.icon}
-                        <span>{item.cat}<span style={{ display: 'block', fontSize: '0.74rem', fontWeight: 500, color: 'var(--text-secondary)' }}>{item.jobs} jobs available</span></span>
+                        {item.icon} {item.cat}
                       </Link>
                     </StaggerItem>
                   ))}
@@ -364,7 +367,6 @@ export default function Home() {
 
                   <Stagger className="event-rows" style={{ marginBottom: '2rem' }}>
                     {[
-                      { d: '25', m: 'Apr', title: 'Toronto Monthly Community Meetup', loc: 'Downtown Toronto', type: 'In-person' },
                       { d: 'Tue', m: 'Every', title: 'Taxes for Newcomers Livestream', loc: 'YouTube Live', type: 'Online' },
                       { d: 'Thu', m: 'Every', title: 'Resume Polish Workshop', loc: 'Zoom', type: 'Online' },
                     ].map((evt) => (
@@ -510,6 +512,7 @@ export default function Home() {
           </section>
 
           {/* ─── FEATURED BUSINESSES ─── */}
+          {businesses.length > 0 && (
           <section className="flow">
             <div className="container">
               <div className="section-head-editorial">
@@ -521,26 +524,22 @@ export default function Home() {
               </div>
 
               <Stagger style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(20rem, 1fr))', gap: 'clamp(0.75rem, 1.5vw, 1.25rem)' }}>
-                {[
-                  { name: 'Sharma & Associates CPA', cat: 'Tax & Accounting', desc: 'Personal and small-business returns, newcomer first filings.', badge: '15% off', city: 'Toronto', years: 15, slug: 'sharma-associates-cpa', img: '/finance_bg.png' },
-                  { name: 'HomeTrust Realty', cat: 'Real Estate', desc: 'First-time buyers and new-arrival rentals.', badge: 'Cashback', city: 'Toronto', years: 12, slug: 'hometrust-realty', img: '/housing_bg.png' },
-                  { name: 'Maple Ridge Wealth', cat: 'Financial Planning', desc: 'RRSP, TFSA and first-year tax planning.', badge: 'Free consult', city: 'Mississauga', years: 9, slug: 'elevate-financial-planning', img: '/img/resume-review.jpg' },
-                ].map((biz) => (
+                {businesses.map((biz) => (
                   <StaggerItem key={biz.slug} style={{ display: 'contents' }}>
                     <Link href={`/businesses/${biz.slug}`} className="bento-tile" style={{ padding: 0, minHeight: 0 }}>
-                      <span style={{ position: 'relative', display: 'block', height: '10rem', overflow: 'hidden' }}>
-                        <Image src={biz.img} alt={biz.name} fill sizes="(max-width: 768px) 100vw, 33vw" style={{ objectFit: 'cover' }} />
+                      <span style={{ position: 'relative', display: 'block', height: '10rem', overflow: 'hidden', background: 'var(--bg-secondary)' }}>
+                        {biz.coverImage && <img src={biz.coverImage} alt={biz.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
                         <span style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 6 }}>
-                          <span className="biz-badge biz-badge-verified"><ShieldCheck size={10} /> Verified</span>
-                          <span className="biz-badge biz-badge-deal"><Tag size={10} /> {biz.badge}</span>
+                          {biz.verificationStatus === 'verified' && <span className="biz-badge biz-badge-verified"><ShieldCheck size={10} /> Verified</span>}
+                          {biz.offerBadge && <span className="biz-badge biz-badge-deal"><Tag size={10} /> {biz.offerBadge}</span>}
                         </span>
                       </span>
                       <span style={{ display: 'block', padding: '1.15rem 1.35rem 1.35rem' }}>
-                        <span className="bento-kicker">{biz.cat}</span>
+                        <span className="bento-kicker">{biz.category}</span>
                         <h3 style={{ margin: '0.3rem 0 0.4rem' }}>{biz.name}</h3>
-                        <p>{biz.desc}</p>
+                        <p>{biz.descriptionShort}</p>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '0.9rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)' }}>
-                          <MapPin size={12} /> {biz.city} &middot; {biz.years} yrs
+                          <MapPin size={12} /> {biz.city} &middot; {biz.yearsInBusiness} yrs
                         </span>
                       </span>
                     </Link>
@@ -557,6 +556,7 @@ export default function Home() {
               </Reveal>
             </div>
           </section>
+          )}
         </div>
       </main>
 

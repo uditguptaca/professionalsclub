@@ -10,7 +10,7 @@ import type { PublicVideo } from '@/server/repos/public-content';
 const CATEGORY_CONFIG: Record<string, { icon: React.ReactNode; color: string; bgColor: string; borderColor: string; description: string }> = {
   'Career & Job Search': {
     icon: <Briefcase size={22} />,
-    color: 'var(--primary-600)',
+    color: 'var(--text-accent)',
     bgColor: 'var(--bg-secondary)',
     borderColor: 'rgba(232, 93, 4, 0.2)',
     description: 'Explore resources to help you navigate the Canadian job market - from building a standout resume and cover letter, to finding freelance or full-time opportunities.',
@@ -24,7 +24,7 @@ const CATEGORY_CONFIG: Record<string, { icon: React.ReactNode; color: string; bg
   },
   'Certifications & Licensing': {
     icon: <ShieldCheck size={22} />,
-    color: 'var(--primary-600)',
+    color: 'var(--text-accent)',
     bgColor: 'var(--bg-secondary)',
     borderColor: 'rgba(232, 93, 4, 0.2)',
     description: 'Expert strategy sessions and step-by-step guides on obtaining professional designations like CPA, CFA, or a Real Estate license in Canada.',
@@ -141,11 +141,11 @@ export default function YouTubePage() {
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(232,93,4,0.08)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(232,93,4,0.2)' }}>
-            <PlayCircle size={14} style={{ color: 'var(--primary-600)' }} />
-            <span style={{ color: 'var(--primary-600)', fontWeight: 700, fontSize: '0.82rem' }}>YouTube Archive</span>
+            <PlayCircle size={14} style={{ color: 'var(--text-accent)' }} />
+            <span style={{ color: 'var(--text-accent)', fontWeight: 700, fontSize: '0.82rem' }}>YouTube Archive</span>
           </div>
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
-            Learn, Watch & <span style={{ color: 'var(--primary-600)' }}>Grow</span>
+            Learn, Watch & <span style={{ color: 'var(--text-accent)' }}>Grow</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
             Browse our curated video library organized by topic. Find expert sessions, tutorials, and community recordings.
@@ -183,7 +183,7 @@ export default function YouTubePage() {
                     fontSize: '0.75rem',
                     fontWeight: 800,
                     textTransform: 'uppercase',
-                    color: 'var(--primary-600)',
+                    color: 'var(--text-accent)',
                     letterSpacing: '0.05em',
                     display: 'block',
                     marginBottom: 4
@@ -208,7 +208,7 @@ export default function YouTubePage() {
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 8,
-                    background: 'var(--primary-600)',
+                    background: 'var(--primary-700)',
                     color: 'white',
                     padding: '10px 20px',
                     borderRadius: 10,
@@ -288,14 +288,20 @@ export default function YouTubePage() {
                     boxShadow: isExpanded ? '0 4px 20px rgba(0,0,0,0.06)' : 'none',
                   }}
                 >
-                  <div
+                  <button
+                    type="button"
                     onClick={() => toggleSection(category)}
+                    aria-expanded={isExpanded}
                     style={{
+                      width: '100%',
                       padding: '24px 28px',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       cursor: 'pointer',
+                      border: 'none',
+                      font: 'inherit',
+                      textAlign: 'left',
                       background: isExpanded ? config.bgColor : 'white',
                       transition: 'background 0.2s ease',
                     }}
@@ -327,7 +333,7 @@ export default function YouTubePage() {
                     <div style={{ color: config.color, transition: 'transform 0.2s' }}>
                       {isExpanded ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
                     </div>
-                  </div>
+                  </button>
 
                   {isExpanded && (
                     <div style={{ padding: '0 28px 28px', borderTop: '1px solid ' + (config.borderColor) }}>
@@ -453,7 +459,7 @@ export default function YouTubePage() {
 
           {!loading && orderedCategories.length > 0 && (
             <div style={{ marginTop: 48, textAlign: 'center', padding: '40px 32px', borderRadius: 16, background: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
-              <PlayCircle size={36} style={{ color: 'var(--primary-600)', margin: '0 auto 16px' }} />
+              <PlayCircle size={36} style={{ color: 'var(--text-accent)', margin: '0 auto 16px' }} />
               <h3 style={{ fontWeight: 800, fontSize: '1.3rem', color: 'var(--text-primary)', marginBottom: 8, fontFamily: 'var(--font-display)' }}>
                 Want more content?
               </h3>
@@ -465,7 +471,7 @@ export default function YouTubePage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-primary"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 32px', background: 'var(--primary-600)', color: 'white', borderRadius: 12, fontWeight: 700, textDecoration: 'none', border: 'none' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 32px', background: 'var(--primary-700)', color: 'white', borderRadius: 12, fontWeight: 700, textDecoration: 'none', border: 'none' }}
               >
                 <PlayCircle size={18} /> Subscribe on YouTube
               </a>

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { usePortal } from '@/context/portal-context';
 import { Briefcase, Plus, Pencil, Trash2, X, MapPin, DollarSign, Star, Eye, EyeOff } from 'lucide-react';
+import { useConfirm } from '@/components/portal/confirm';
 import type { JobPosting, JobType, JobCategory } from '@/types';
 import { JOB_CATEGORIES } from '@/types';
 
@@ -23,6 +24,7 @@ const JOB_TYPE_COLORS: Record<JobType, { bg: string; color: string }> = {
 
 export default function JobsManagementPage() {
   const { jobPostings, addJobPosting, updateJobPosting, deleteJobPosting } = usePortal();
+  const confirmAction = useConfirm();
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string | number | boolean>>({});
@@ -93,7 +95,7 @@ export default function JobsManagementPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this job posting?')) return;
+    if (!(await confirmAction({ title: 'Delete this job posting?', message: 'It disappears from the public jobs board immediately.', confirmLabel: 'Delete posting' }))) return;
     setListError(null);
     setBusyId(id);
     const result = await deleteJobPosting(id);
@@ -109,7 +111,7 @@ export default function JobsManagementPage() {
     if (!result.ok) setListError(result.error);
   };
 
-  const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-primary)' };
+  const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem',  background: 'var(--bg-primary)' };
   const labelStyle: React.CSSProperties = { fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4, display: 'block' };
   const tableHeaderStyle: React.CSSProperties = { padding: '12px 16px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', borderBottom: '2px solid var(--border-color)' };
   const tableCellStyle: React.CSSProperties = { padding: '14px 16px', borderBottom: '1px solid var(--border-color)', fontSize: '0.88rem' };
@@ -201,9 +203,9 @@ export default function JobsManagementPage() {
       <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
         {[
           { label: 'Active Jobs', value: activeJobs.length, color: 'var(--success-600)', bg: 'var(--success-50)' },
-          { label: 'Featured', value: jobPostings.filter(j => j.isFeatured).length, color: 'var(--accent-600)', bg: 'var(--accent-100)' },
+          { label: 'Featured', value: jobPostings.filter(j => j.isFeatured).length, color: 'var(--accent-700)', bg: 'var(--accent-100)' },
           { label: 'Inactive', value: inactiveJobs.length, color: 'var(--text-muted)', bg: 'var(--bg-secondary)' },
-          { label: 'Total', value: jobPostings.length, color: '#0891b2', bg: '#ecfeff' },
+          { label: 'Total', value: jobPostings.length, color: '#0e7490', bg: '#ecfeff' },
         ].map((stat, i) => (
           <div key={i} style={{ padding: '20px 24px', borderRadius: 12, background: stat.bg, border: `1px solid ${stat.color}20` }}>
             <div style={{ fontSize: '1.6rem', fontWeight: 800, color: stat.color }}>{stat.value}</div>

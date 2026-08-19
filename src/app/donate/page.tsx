@@ -99,7 +99,7 @@ export default function DonatePage() {
                     )}
                   </div>
                   <div style={{ width: '100%', height: 10, background: 'var(--border-color)', borderRadius: 5, overflow: 'hidden' }}>
-                    <div style={{ width: `${goalProgress}%`, height: '100%', background: 'var(--primary-600)', borderRadius: 5, transition: 'width 0.5s ease' }} />
+                    <div style={{ width: `${goalProgress}%`, height: '100%', background: 'var(--primary-700)', borderRadius: 5, transition: 'width 0.5s ease' }} />
                   </div>
                 </div>
               )}
@@ -141,7 +141,7 @@ export default function DonatePage() {
                           padding: '12px',
                           border: selected ? 'none' : '1px solid var(--border-color)',
                           borderRadius: 8,
-                          background: selected ? 'var(--primary-600)' : 'var(--bg-primary)',
+                          background: selected ? 'var(--primary-700)' : 'var(--bg-primary)',
                           color: selected ? 'white' : 'var(--text-secondary)',
                           fontWeight: 600,
                           cursor: 'pointer',
@@ -179,7 +179,7 @@ export default function DonatePage() {
                   <a
                     href={mailtoHref}
                     className="btn btn-primary"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '16px 32px', background: 'var(--primary-600)', color: 'white', fontWeight: 700, borderRadius: 8, border: 'none', fontSize: '0.95rem', textDecoration: 'none' }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '16px 32px', background: 'var(--primary-700)', color: 'white', fontWeight: 700, borderRadius: 8, border: 'none', fontSize: '0.95rem', textDecoration: 'none' }}
                   >
                     <Send size={16} /> Email us about my ${amountValue} donation
                   </a>
@@ -189,7 +189,7 @@ export default function DonatePage() {
 
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 16, lineHeight: 1.7 }}>
                   <Mail size={13} style={{ verticalAlign: '-2px', marginRight: 6 }} />
-                  Prefer a form? Use the <Link href="/contact" style={{ color: 'var(--primary-600)' }}>contact page</Link> and
+                  Prefer a form? Use the <Link href="/contact" style={{ color: 'var(--text-accent)' }}>contact page</Link> and
                   mention the amount. Either way a person reads it - nothing is charged automatically.
                 </p>
               </div>

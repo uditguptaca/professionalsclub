@@ -13,6 +13,7 @@ import {
   Inbox, Send, Building2, Users, Check, X, Loader2, ShieldCheck, Mail,
   Phone, Link2, FileText, ExternalLink, Trash2, Plus, HelpCircle, EyeOff,
 } from 'lucide-react';
+import { useConfirm } from '@/components/portal/confirm';
 
 /**
  * Both sides of a referral, plus the opt-in that makes someone an insider.
@@ -41,6 +42,7 @@ const when = (iso: string | null): string => {
 
 export default function ReferralsPage() {
   const { currentUserId } = useApp();
+  const confirm = useConfirm();
 
   const [tab, setTab] = useState<Tab>('inbox');
   const [loading, setLoading] = useState(true);
@@ -96,7 +98,12 @@ export default function ReferralsPage() {
 
   const withdraw = async (requestId: string) => {
     if (busy) return;
-    if (!window.confirm('Withdraw this request? Anyone who has not answered yet will stop seeing it.')) return;
+    const ok = await confirm({
+      title: 'Withdraw this request?',
+      message: 'Anyone who has not answered yet stops seeing it. People who already offered to help keep your details.',
+      confirmLabel: 'Withdraw',
+    });
+    if (!ok) return;
     setBusy(requestId);
     setError('');
     const r = await withdrawReferral(requestId);

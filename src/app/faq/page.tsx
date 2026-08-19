@@ -76,7 +76,7 @@ export default function FAQPage() {
                   padding: '12px 20px',
                   borderRadius: 12,
                   border: 'none',
-                  background: activeTab === tab.id ? 'var(--primary-600)' : 'var(--bg-primary)',
+                  background: activeTab === tab.id ? 'var(--primary-700)' : 'var(--bg-primary)',
                   color: activeTab === tab.id ? 'white' : 'var(--text-primary)',
                   fontWeight: 700,
                   fontSize: '0.9rem',
@@ -107,7 +107,7 @@ export default function FAQPage() {
             {activeTab === 'general' && (
               <div>
                 <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 28, display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <HelpCircle size={24} style={{ color: 'var(--primary-600)' }} /> General FAQ & Help Center
+                  <HelpCircle size={24} style={{ color: 'var(--text-accent)' }} /> General FAQ & Help Center
                 </h2>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -146,7 +146,7 @@ export default function FAQPage() {
             {activeTab === 'terms' && (
               <div>
                 <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 28, display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <Scale size={24} style={{ color: 'var(--primary-600)' }} /> Terms of Service
+                  <Scale size={24} style={{ color: 'var(--text-accent)' }} /> Terms of Service
                 </h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20, fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                   <p>Welcome to Professionals Club. By accessing our website, creating an account, or using our services, you agree to comply with and be bound by the following terms and conditions.</p>
@@ -167,7 +167,7 @@ export default function FAQPage() {
             {activeTab === 'privacy' && (
               <div>
                 <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 28, display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <Shield size={24} style={{ color: 'var(--primary-600)' }} /> Privacy Policy
+                  <Shield size={24} style={{ color: 'var(--text-accent)' }} /> Privacy Policy
                 </h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20, fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                   <p>Professionals Club is committed to protecting your privacy. This policy explains how we collect, protect, and use your personal information.</p>
@@ -188,7 +188,7 @@ export default function FAQPage() {
             {activeTab === 'cookie' && (
               <div>
                 <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 28, display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <BadgeInfo size={24} style={{ color: 'var(--primary-600)' }} /> Cookie Policy
+                  <BadgeInfo size={24} style={{ color: 'var(--text-accent)' }} /> Cookie Policy
                 </h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20, fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                   <p>This policy details how Professionals Club uses cookies and similar tracking technologies on our portal.</p>
@@ -206,7 +206,7 @@ export default function FAQPage() {
             {activeTab === 'refund' && (
               <div>
                 <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 28, display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <DollarSign size={24} style={{ color: 'var(--primary-600)' }} /> Refund Policy
+                  <DollarSign size={24} style={{ color: 'var(--text-accent)' }} /> Refund Policy
                 </h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20, fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                   <p>Because Professionals Club is a completely free platform run by volunteers, there are no charges, membership fees, or subscription payments. As such, refund terms are governed as follows:</p>
@@ -215,7 +215,7 @@ export default function FAQPage() {
                   <p>Since we do not charge for any of our referral, settlement, or mentorship services, refund policies are not applicable to platform usage.</p>
 
                   <h4 style={{ color: 'var(--text-primary)', fontWeight: 800, margin: '12px 0 6px 0' }}>2. Voluntary Donations</h4>
-                  <p>If you made a voluntary financial donation to support our initiative and need assistance or a correction regarding your contribution, please contact our support desk at <a href="mailto:support@professionalsclub.ca" style={{ color: 'var(--primary-600)', textDecoration: 'none' }}>support@professionalsclub.ca</a>.</p>
+                  <p>If you made a voluntary financial donation to support our initiative and need assistance or a correction regarding your contribution, please contact our support desk at <a href="mailto:support@professionalsclub.ca" style={{ color: 'var(--text-accent)', textDecoration: 'none' }}>support@professionalsclub.ca</a>.</p>
                 </div>
               </div>
             )}

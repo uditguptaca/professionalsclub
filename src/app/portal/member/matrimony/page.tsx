@@ -12,33 +12,33 @@ import {
   CircleDot, HeartHandshake, UserPlus
 } from 'lucide-react';
 
-type DashboardTab = 'overview' | 'browse' | 'matches' | 'interests' | 'shortlist' | 'messages' | 'settings';
-
-const navTabs: { key: DashboardTab; label: string; icon: React.ElementType }[] = [
-  { key: 'overview', label: 'My Profile', icon: User },
-  { key: 'browse', label: 'Browse', icon: Search },
-  { key: 'matches', label: 'Matches', icon: HeartHandshake },
-  { key: 'interests', label: 'Interests', icon: Heart },
-  { key: 'shortlist', label: 'Shortlist', icon: Bookmark },
-  { key: 'messages', label: 'Messages', icon: MessageCircle },
-  { key: 'settings', label: 'Settings', icon: Settings },
+// The dashboard is the "My Profile" stop on this nav; every other entry is a
+// real route of its own.
+const navTabs: { href: string; label: string; icon: React.ElementType }[] = [
+  { href: '/portal/member/matrimony', label: 'My Profile', icon: User },
+  { href: '/portal/member/matrimony/browse', label: 'Browse', icon: Search },
+  { href: '/portal/member/matrimony/matches', label: 'Matches', icon: HeartHandshake },
+  { href: '/portal/member/matrimony/interests', label: 'Interests', icon: Heart },
+  { href: '/portal/member/matrimony/shortlist', label: 'Shortlist', icon: Bookmark },
+  { href: '/portal/member/matrimony/messages', label: 'Messages', icon: MessageCircle },
+  { href: '/portal/member/matrimony/settings', label: 'Settings', icon: Settings },
 ];
 
 const statusConfig: Record<string, { color: string; bg: string; icon: React.ElementType; label: string }> = {
   draft: { color: 'var(--text-secondary)', bg: 'rgba(100,116,139,0.1)', icon: FileEdit, label: 'Draft' },
-  pending: { color: 'var(--warning-500)', bg: 'rgba(245,158,11,0.1)', icon: Clock, label: 'Pending Review' },
-  approved: { color: 'var(--success-500)', bg: 'rgba(0,168,107,0.1)', icon: CheckCircle2, label: 'Approved & Live' },
-  rejected: { color: 'var(--error-500)', bg: 'rgba(240,73,35,0.1)', icon: XCircle, label: 'Rejected' },
-  changes_requested: { color: 'var(--accent-600)', bg: 'rgba(217,119,6,0.1)', icon: AlertCircle, label: 'Changes Requested' },
+  pending: { color: '#92400e', bg: 'rgba(245,158,11,0.1)', icon: Clock, label: 'Pending Review' },
+  approved: { color: '#04724d', bg: 'rgba(0,168,107,0.1)', icon: CheckCircle2, label: 'Approved & Live' },
+  rejected: { color: 'var(--error-600)', bg: 'rgba(240,73,35,0.1)', icon: XCircle, label: 'Rejected' },
+  changes_requested: { color: 'var(--accent-700)', bg: 'rgba(217,119,6,0.1)', icon: AlertCircle, label: 'Changes Requested' },
   suspended: { color: 'var(--error-600)', bg: 'rgba(220,38,38,0.1)', icon: PauseCircle, label: 'Suspended' },
 };
 
 export default function MemberMatrimonyDashboard() {
   const { currentUserId, isAuthenticated } = useApp();
 
-  const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
   const [profile, setProfile] = useState<MatrimonyProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [interestsReceived, setInterestsReceived] = useState(0);
   const [interestsSent, setInterestsSent] = useState(0);
   const [profileViews, setProfileViews] = useState(0);
@@ -60,7 +60,10 @@ export default function MemberMatrimonyDashboard() {
       const result = await getMatrimonyDashboard();
 
       if (!result.ok) {
-        setNotifError(result.error);
+        // A failed load must NOT fall through to the "create your profile"
+        // onboarding: a member who already has a listing would read that as
+        // their profile having been deleted.
+        setLoadError(result.error);
         console.error('Error fetching matrimony data:', result.error);
         setLoading(false);
         return;
@@ -162,6 +165,22 @@ export default function MemberMatrimonyDashboard() {
     );
   }
 
+  // Failed load: say so and offer a retry. Distinct from "no profile yet".
+  if (loadError && !profile) {
+    return (
+      <div className="flex flex-col gap-8 animate-fade-in">
+        <div className="card" style={{ padding: 40, textAlign: 'center' }}>
+          <AlertCircle size={40} style={{ color: 'var(--error-600)', margin: '0 auto 12px' }} />
+          <h2 style={{ fontSize: '1.15rem', fontWeight: 800, marginBottom: 8 }}>Could not load your matrimony dashboard</h2>
+          <p role="alert" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 20 }}>{loadError}</p>
+          <button type="button" className="btn btn-primary" onClick={() => window.location.reload()}>
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // No profile state
   if (!profile) {
     return (
@@ -227,8 +246,8 @@ export default function MemberMatrimonyDashboard() {
         {/* Info cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
           {[
-            { icon: ShieldCheck, title: 'Admin Verified', desc: 'Every profile is manually reviewed for authenticity.', color: 'var(--primary-600)' },
-            { icon: Eye, title: 'Privacy First', desc: 'Your contact info is never shared without your consent.', color: 'var(--success-500)' },
+            { icon: ShieldCheck, title: 'Admin Verified', desc: 'Every profile is manually reviewed for authenticity.', color: 'var(--text-accent)' },
+            { icon: Eye, title: 'Privacy First', desc: 'Your contact info is never shared without your consent.', color: '#04724d' },
             { icon: HeartHandshake, title: 'Meaningful Matches', desc: 'Smart matching based on preferences, values, and lifestyle.', color: 'var(--accent-400)' },
           ].map((item) => {
             const Icon = item.icon;
@@ -262,9 +281,9 @@ export default function MemberMatrimonyDashboard() {
   // you, so those two are counters rather than links to a route that does not
   // exist.
   const statCards: { label: string; value: number; icon: React.ElementType; color: string; link?: string }[] = [
-    { label: 'Interests Received', value: interestsReceived, icon: Inbox, color: 'var(--error-500)', link: '/portal/member/matrimony/interests' },
-    { label: 'Interests Sent', value: interestsSent, icon: Send, color: 'var(--primary-600)', link: '/portal/member/matrimony/interests' },
-    { label: 'Profile Views', value: profileViews, icon: Eye, color: 'var(--success-500)' },
+    { label: 'Interests Received', value: interestsReceived, icon: Inbox, color: 'var(--error-600)', link: '/portal/member/matrimony/interests' },
+    { label: 'Interests Sent', value: interestsSent, icon: Send, color: 'var(--text-accent)', link: '/portal/member/matrimony/interests' },
+    { label: 'Profile Views', value: profileViews, icon: Eye, color: '#04724d' },
     { label: 'Shortlisted By', value: shortlistedBy, icon: Bookmark, color: 'var(--accent-400)' },
   ];
 
@@ -299,7 +318,7 @@ export default function MemberMatrimonyDashboard() {
           </div>
         </div>
         {profile.status === 'rejected' && profile.rejection_reason && (
-          <div style={{ fontSize: '0.8rem', color: 'var(--error-500)' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--error-600)' }}>
             Reason: {profile.rejection_reason}
           </div>
         )}
@@ -314,7 +333,7 @@ export default function MemberMatrimonyDashboard() {
       <div className="card" style={{ padding: '20px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <BarChart3 size={18} style={{ color: 'var(--primary-600)' }} />
+            <BarChart3 size={18} style={{ color: 'var(--text-accent)' }} />
             <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Profile Completeness</span>
           </div>
           <span style={{
@@ -342,7 +361,7 @@ export default function MemberMatrimonyDashboard() {
         {profile.completeness_pct < 100 && (
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 8 }}>
             Complete your profile to improve your visibility and match quality.{' '}
-            <Link href="/portal/member/matrimony/edit" style={{ color: 'var(--primary-600)', fontWeight: 600 }}>
+            <Link href="/portal/member/matrimony/edit" style={{ color: 'var(--text-accent)', fontWeight: 600 }}>
               Complete Now →
             </Link>
           </p>
@@ -357,27 +376,28 @@ export default function MemberMatrimonyDashboard() {
       }}>
         {navTabs.map((tab) => {
           const Icon = tab.icon;
-          const isActive = activeTab === tab.key;
+          // This page is the "My Profile" stop; every other entry navigates to
+          // its real route instead of driving a local tab state that only ever
+          // rendered "go to the real page" placeholder cards.
+          const isActive = tab.href === '/portal/member/matrimony';
           return (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+            <Link key={tab.href} href={tab.href} aria-current={isActive ? 'page' : undefined} style={{
               display: 'flex', alignItems: 'center', gap: 6,
-              padding: '10px 16px', borderRadius: 10, border: 'none',
+              padding: '10px 16px', borderRadius: 10,
               background: isActive ? 'white' : 'transparent',
               boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-              color: isActive ? 'var(--primary-600)' : 'var(--text-muted)',
+              color: isActive ? 'var(--text-accent)' : 'var(--text-muted)',
               fontWeight: isActive ? 700 : 500, fontSize: '0.8rem',
-              cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s',
+              textDecoration: 'none', whiteSpace: 'nowrap', transition: 'all 0.15s',
             }}>
               <Icon size={16} />
               {tab.label}
-            </button>
+            </Link>
           );
         })}
       </div>
 
-      {/* ═══════ TAB: Overview ═══════ */}
-      {activeTab === 'overview' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           {/* Quick Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
             {statCards.map((stat) => {
@@ -426,7 +446,7 @@ export default function MemberMatrimonyDashboard() {
                   <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>Recommended for You</span>
                 </div>
                 <Link href="/portal/member/matrimony/browse" style={{
-                  fontSize: '0.8rem', color: 'var(--primary-600)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4,
+                  fontSize: '0.8rem', color: 'var(--text-accent)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4,
                 }}>
                   Browse All <ChevronRight size={14} />
                 </Link>
@@ -457,17 +477,17 @@ export default function MemberMatrimonyDashboard() {
                         {/* Avatar placeholder */}
                         <div style={{
                           width: 48, height: 48, borderRadius: 14, flexShrink: 0,
-                          background: `linear-gradient(135deg, ${rec.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)'}20, ${rec.gender === 'female' ? 'var(--accent-400)' : 'var(--primary-500)'}10)`,
+                          background: rec.gender?.toLowerCase() === 'female' ? 'linear-gradient(135deg, rgba(217,119,6,0.13), rgba(251,191,36,0.06))' : 'linear-gradient(135deg, rgba(232,93,4,0.13), rgba(249,115,22,0.06))',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
-                          <User size={22} style={{ color: rec.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
+                          <User size={22} style={{ color: rec.gender?.toLowerCase() === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>
                               {getDisplayName(rec.full_name, rec.display_pref)}
                             </span>
-                            {rec.is_verified_id && <UserCheck size={14} style={{ color: 'var(--primary-600)' }} />}
+                            {rec.is_verified_id && <UserCheck size={14} style={{ color: 'var(--text-accent)' }} />}
                           </div>
                           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>
                             {calculateAge(rec.dob)} yrs • {rec.city}, {rec.province} • {rec.occupation}
@@ -487,7 +507,7 @@ export default function MemberMatrimonyDashboard() {
                 padding: '20px 24px', borderBottom: '1px solid var(--border-color)',
                 display: 'flex', alignItems: 'center', gap: 8,
               }}>
-                <Activity size={18} style={{ color: 'var(--success-500)' }} />
+                <Activity size={18} style={{ color: '#04724d' }} />
                 <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>Recent Activity</span>
               </div>
 
@@ -540,7 +560,7 @@ export default function MemberMatrimonyDashboard() {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Bell size={18} style={{ color: 'var(--primary-600)' }} />
+                <Bell size={18} style={{ color: 'var(--text-accent)' }} />
                 <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>Notifications</span>
               </div>
               {unreadCount > 0 && (
@@ -610,10 +630,10 @@ export default function MemberMatrimonyDashboard() {
           {/* Quick Actions */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
             {[
-              { href: '/portal/member/matrimony/browse', icon: Search, label: 'Browse Profiles', desc: 'Find compatible matches', color: 'var(--primary-600)' },
+              { href: '/portal/member/matrimony/browse', icon: Search, label: 'Browse Profiles', desc: 'Find compatible matches', color: 'var(--text-accent)' },
               // Partner preferences are the last step of the profile wizard, which
               // /edit reuses. There is no separate preferences route.
-              { href: '/portal/member/matrimony/edit', icon: FileEdit, label: 'Edit Profile', desc: 'Update your details and partner preferences', color: 'var(--success-500)' },
+              { href: '/portal/member/matrimony/edit', icon: FileEdit, label: 'Edit Profile', desc: 'Update your details and partner preferences', color: '#04724d' },
               { href: '/portal/member/matrimony/matches', icon: HeartHandshake, label: 'My Matches', desc: 'Profiles scored against your preferences', color: 'var(--accent-400)' },
               { href: '/portal/member/matrimony/shortlist', icon: Bookmark, label: 'My Shortlist', desc: 'View saved profiles', color: 'var(--primary-700)' },
             ].map((action) => {
@@ -640,91 +660,7 @@ export default function MemberMatrimonyDashboard() {
             })}
           </div>
         </div>
-      )}
-
-      {/* ═══════ TAB: Browse ═══════ */}
-      {activeTab === 'browse' && (
-        <div className="card" style={{ padding: 40, textAlign: 'center' }}>
-          <Search size={48} style={{ color: 'var(--text-muted)', marginBottom: 16, opacity: 0.4 }} />
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 8 }}>Browse Profiles</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 24 }}>
-            Search and filter through verified profiles to find your ideal match.
-          </p>
-          <Link href="/portal/member/matrimony/browse" className="btn btn-primary" style={{ textDecoration: 'none' }}>
-            <Search size={16} /> Start Browsing
-          </Link>
-        </div>
-      )}
-
-      {/* ═══════ TAB: Matches ═══════ */}
-      {activeTab === 'matches' && (
-        <div className="card" style={{ padding: 40, textAlign: 'center' }}>
-          <HeartHandshake size={48} style={{ color: 'var(--text-muted)', marginBottom: 16, opacity: 0.4 }} />
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 8 }}>Your Matches</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 24 }}>
-            Profiles that match your preferences will appear here.
-          </p>
-          <Link href="/portal/member/matrimony/matches" className="btn btn-primary" style={{ textDecoration: 'none' }}>
-            <HeartHandshake size={16} /> View Matches
-          </Link>
-        </div>
-      )}
-
-      {/* ═══════ TAB: Interests ═══════ */}
-      {activeTab === 'interests' && (
-        <div className="card" style={{ padding: 40, textAlign: 'center' }}>
-          <Heart size={48} style={{ color: 'var(--text-muted)', marginBottom: 16, opacity: 0.4 }} />
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 8 }}>Interests</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 24 }}>
-            View interests you&apos;ve sent and received.
-          </p>
-          <Link href="/portal/member/matrimony/interests" className="btn btn-primary" style={{ textDecoration: 'none' }}>
-            <Heart size={16} /> Manage Interests
-          </Link>
-        </div>
-      )}
-
-      {/* ═══════ TAB: Shortlist ═══════ */}
-      {activeTab === 'shortlist' && (
-        <div className="card" style={{ padding: 40, textAlign: 'center' }}>
-          <Bookmark size={48} style={{ color: 'var(--text-muted)', marginBottom: 16, opacity: 0.4 }} />
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 8 }}>Your Shortlist</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 24 }}>
-            Profiles you&apos;ve saved for later.
-          </p>
-          <Link href="/portal/member/matrimony/shortlist" className="btn btn-primary" style={{ textDecoration: 'none' }}>
-            <Bookmark size={16} /> View Shortlist
-          </Link>
-        </div>
-      )}
-
-      {/* ═══════ TAB: Messages ═══════ */}
-      {activeTab === 'messages' && (
-        <div className="card" style={{ padding: 40, textAlign: 'center' }}>
-          <MessageCircle size={48} style={{ color: 'var(--text-muted)', marginBottom: 16, opacity: 0.4 }} />
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 8 }}>Messages</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 24 }}>
-            Your conversations with other members.
-          </p>
-          <Link href="/portal/member/matrimony/messages" className="btn btn-primary" style={{ textDecoration: 'none' }}>
-            <MessageCircle size={16} /> Open Messages
-          </Link>
-        </div>
-      )}
-
-      {/* ═══════ TAB: Settings ═══════ */}
-      {activeTab === 'settings' && (
-        <div className="card" style={{ padding: 40, textAlign: 'center' }}>
-          <Settings size={48} style={{ color: 'var(--text-muted)', marginBottom: 16, opacity: 0.4 }} />
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 8 }}>Matrimony Settings</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 24 }}>
-            Manage privacy, notifications, and profile visibility.
-          </p>
-          <Link href="/portal/member/matrimony/settings" className="btn btn-primary" style={{ textDecoration: 'none' }}>
-            <Settings size={16} /> Open Settings
-          </Link>
-        </div>
-      )}
+      
     </div>
   );
 }

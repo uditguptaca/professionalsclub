@@ -108,7 +108,7 @@ function AuthForm() {
             <div className="input-group">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <label htmlFor="password" style={{ marginBottom: 0 }}>Password</label>
-                <Link href="/portal/forgot-password" style={{ fontSize: '0.8rem', color: 'var(--primary-600)', fontWeight: 600 }}>Forgot password?</Link>
+                <Link href="/portal/forgot-password" style={{ fontSize: '0.8rem', color: 'var(--text-accent)', fontWeight: 600 }}>Forgot password?</Link>
               </div>
               <input
                 id="password"
@@ -123,7 +123,7 @@ function AuthForm() {
             </div>
 
             {error && (
-              <div role="alert" style={{ color: 'var(--error-500)', fontSize: '0.85rem', fontWeight: 500, padding: '10px 12px', background: 'rgba(240, 73, 35, 0.1)', borderRadius: 8, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+              <div role="alert" style={{ color: 'var(--error-600)', fontSize: '0.85rem', fontWeight: 500, padding: '10px 12px', background: 'rgba(240, 73, 35, 0.1)', borderRadius: 8, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                 <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
                 <span>{error}</span>
               </div>
@@ -148,7 +148,7 @@ function AuthForm() {
 
             <div style={{ marginTop: 12, textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
               Don&apos;t have an account?{' '}
-              <Link href="/portal/signup" style={{ color: 'var(--primary-600)', fontWeight: 600 }}>Sign up as Member</Link>
+              <Link href="/portal/signup" style={{ color: 'var(--text-accent)', fontWeight: 600 }}>Sign up as Member</Link>
             </div>
           </form>
         </div>

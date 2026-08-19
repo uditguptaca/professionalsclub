@@ -120,19 +120,19 @@ function VolunteerCard({ vol }: { vol: Volunteer }) {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>
         {(vol.city || vol.province) && (
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <MapPin size={12} style={{ color: 'var(--primary-600)' }} />
+            <MapPin size={12} style={{ color: 'var(--text-accent)' }} />
             {[vol.city, vol.province].filter(Boolean).join(', ')}
           </span>
         )}
         {vol.yearsExperience !== null && (
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Clock size={12} style={{ color: 'var(--primary-600)' }} />
+            <Clock size={12} style={{ color: 'var(--text-accent)' }} />
             {vol.yearsExperience} {vol.yearsExperience === 1 ? 'year' : 'years'} experience
           </span>
         )}
         {languages.length > 0 && (
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Languages size={12} style={{ color: 'var(--primary-600)' }} />
+            <Languages size={12} style={{ color: 'var(--text-accent)' }} />
             {languages.join(', ')}
           </span>
         )}
@@ -268,11 +268,11 @@ export default function VolunteerDirectoryPage() {
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(232,93,4,0.12)', padding: '6px 16px', borderRadius: 99, marginBottom: 20, border: '1px solid rgba(232,93,4,0.2)' }}>
-            <UserCheck size={14} style={{ color: 'var(--primary-600)' }} />
+            <UserCheck size={14} style={{ color: 'var(--text-accent)' }} />
             <span style={{ color: 'var(--primary-400)', fontWeight: 700, fontSize: '0.82rem' }}>Community Mentors</span>
           </div>
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16, lineHeight: 1.15 }}>
-            Volunteer &amp; Mentor <span style={{ color: 'var(--primary-600)' }}>Directory</span>
+            Volunteer &amp; Mentor <span style={{ color: 'var(--text-accent)' }}>Directory</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
             Members whose volunteer applications have been approved. Requests are relayed by our
@@ -323,7 +323,7 @@ export default function VolunteerDirectoryPage() {
               {hasFilters && (
                 <button
                   onClick={resetFilters}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 20px', borderRadius: 99, border: '1.5px solid var(--primary-600)', background: 'rgba(232, 93, 4, 0.05)', color: 'var(--primary-600)', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', outline: 'none' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 20px', borderRadius: 99, border: '1.5px solid var(--primary-600)', background: 'rgba(232, 93, 4, 0.05)', color: 'var(--text-accent)', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', outline: 'none' }}
                 >
                   Reset
                 </button>

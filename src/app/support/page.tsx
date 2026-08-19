@@ -57,7 +57,7 @@ export default function SupportPage() {
                         </div>
                         {/* Progress Bar Container */}
                         <div style={{ width: '100%', height: 8, background: 'var(--border-color)', borderRadius: 4, overflow: 'hidden' }}>
-                          <div style={{ width: `${progress}%`, height: '100%', background: 'var(--primary-600)', borderRadius: 4 }} />
+                          <div style={{ width: `${progress}%`, height: '100%', background: 'var(--primary-700)', borderRadius: 4 }} />
                         </div>
                       </div>
 
@@ -71,7 +71,7 @@ export default function SupportPage() {
                       <Link
                         href="/donate"
                         className="btn"
-                        style={{ width: 'fit-content', background: 'var(--primary-600)', color: 'white', padding: '12px 24px', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, border: 'none', borderRadius: 6, textDecoration: 'none' }}
+                        style={{ width: 'fit-content', background: 'var(--primary-700)', color: 'white', padding: '12px 24px', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, border: 'none', borderRadius: 6, textDecoration: 'none' }}
                       >
                         Donate
                       </Link>

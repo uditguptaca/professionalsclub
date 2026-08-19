@@ -18,7 +18,7 @@ const howItWorks = [
     icon: FileCheck,
     title: 'Create Your Profile',
     desc: 'Fill out a detailed profile with your personal details, preferences, family background, and what you\'re looking for in a life partner. Upload photos with privacy controls.',
-    color: 'var(--primary-600)',
+    color: 'var(--text-accent)',
     bg: 'var(--primary-50)',
   },
   {
@@ -26,7 +26,7 @@ const howItWorks = [
     icon: ShieldCheck,
     title: 'Admin Reviews & Verifies',
     desc: 'Our team manually reviews every profile before it goes live. We verify authenticity, check for completeness, and ensure a safe, genuine community.',
-    color: 'var(--primary-600)',
+    color: 'var(--text-accent)',
     bg: 'var(--primary-50)',
   },
   {
@@ -34,15 +34,15 @@ const howItWorks = [
     icon: HeartHandshake,
     title: 'Connect Privately',
     desc: 'Browse verified profiles, express interest, and connect privately through our admin-mediated process. Your contact details stay hidden until mutual consent.',
-    color: 'var(--primary-600)',
+    color: 'var(--text-accent)',
     bg: 'var(--primary-50)',
   },
 ];
 
 const trustBadges = [
-  { icon: UserCheck, title: 'Admin-Verified Profiles', desc: 'Every profile is manually reviewed', color: 'var(--primary-600)' },
-  { icon: Lock, title: 'Private & Secure', desc: 'Your data is never shared publicly', color: 'var(--primary-600)' },
-  { icon: Eye, title: '100% Confidential', desc: 'Contact info visible only on consent', color: 'var(--primary-600)' },
+  { icon: UserCheck, title: 'Admin-Verified Profiles', desc: 'Every profile is manually reviewed', color: 'var(--text-accent)' },
+  { icon: Lock, title: 'Private & Secure', desc: 'Your data is never shared publicly', color: 'var(--text-accent)' },
+  { icon: Eye, title: '100% Confidential', desc: 'Contact info visible only on consent', color: 'var(--text-accent)' },
 ];
 
 // Claims about how the service is built, not counts. We do not publish member
@@ -154,7 +154,7 @@ export default function MatrimonyLandingPage() {
               background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
               marginBottom: 32, backdropFilter: 'blur(12px)',
             }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary-600)', animation: 'pulse 2s infinite' }} />
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary-700)', animation: 'pulse 2s infinite' }} />
               <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
                 Trusted by professionals across Canada
               </span>
@@ -245,7 +245,7 @@ export default function MatrimonyLandingPage() {
               background: 'var(--primary-50)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <Lock size={26} style={{ color: 'var(--primary-600)' }} />
+              <Lock size={26} style={{ color: 'var(--text-accent)' }} />
             </div>
             <div style={{ flex: 1, minWidth: 280 }}>
               <h2 style={{
@@ -277,7 +277,7 @@ export default function MatrimonyLandingPage() {
       <section style={{ padding: '60px 0 80px', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ maxWidth: 1280 }}>
           <div className="section-header">
-            <div className="overline" style={{ color: 'var(--primary-600)' }}>Privacy Model</div>
+            <div className="overline" style={{ color: 'var(--text-accent)' }}>Privacy Model</div>
             <h2>Who Can See What</h2>
             <p>Four rules decide who ever sees your listing. Each one is enforced by the database, so it holds even if something in the interface goes wrong.</p>
           </div>
@@ -301,7 +301,7 @@ export default function MatrimonyLandingPage() {
                   <div style={{
                     position: 'absolute', top: 20, right: 24,
                     fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)',
-                    color: 'var(--primary-600)', opacity: 0.1, lineHeight: 1,
+                    color: 'var(--text-accent)', opacity: 0.1, lineHeight: 1,
                   }}>
                     {i + 1}
                   </div>
@@ -310,7 +310,7 @@ export default function MatrimonyLandingPage() {
                     background: 'var(--primary-50)', display: 'flex',
                     alignItems: 'center', justifyContent: 'center', marginBottom: 18,
                   }}>
-                    <Icon size={24} style={{ color: 'var(--primary-600)' }} />
+                    <Icon size={24} style={{ color: 'var(--text-accent)' }} />
                   </div>
                   <h3 style={{
                     fontSize: '1.05rem', fontWeight: 700, fontFamily: 'var(--font-display)',
@@ -336,7 +336,7 @@ export default function MatrimonyLandingPage() {
               borderRadius: 20, padding: 28,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                <FileCheck size={22} style={{ color: 'var(--primary-600)' }} />
+                <FileCheck size={22} style={{ color: 'var(--text-accent)' }} />
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 800, fontFamily: 'var(--font-display)', margin: 0 }}>
                   What a listing contains
                 </h3>
@@ -355,7 +355,7 @@ export default function MatrimonyLandingPage() {
                     border: '1px solid var(--border-color)',
                     fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)',
                   }}>
-                    <span style={{ color: 'var(--primary-600)', fontWeight: 800 }}>{i + 1}</span>
+                    <span style={{ color: 'var(--text-accent)', fontWeight: 800 }}>{i + 1}</span>
                     {s.label}
                   </span>
                 ))}
@@ -368,7 +368,7 @@ export default function MatrimonyLandingPage() {
               borderRadius: 20, padding: 28,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                <ShieldCheck size={22} style={{ color: 'var(--primary-600)' }} />
+                <ShieldCheck size={22} style={{ color: 'var(--text-accent)' }} />
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 800, fontFamily: 'var(--font-display)', margin: 0 }}>
                   Moderation guarantees
                 </h3>
@@ -382,7 +382,7 @@ export default function MatrimonyLandingPage() {
                     display: 'flex', gap: 10, alignItems: 'flex-start',
                     fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.7,
                   }}>
-                    <ShieldCheck size={16} style={{ color: 'var(--primary-600)', flexShrink: 0, marginTop: 4 }} />
+                    <ShieldCheck size={16} style={{ color: 'var(--text-accent)', flexShrink: 0, marginTop: 4 }} />
                     <span>{promise}</span>
                   </li>
                 ))}
@@ -427,7 +427,7 @@ export default function MatrimonyLandingPage() {
       <section id="how-it-works" style={{ padding: '80px 0', background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 1280 }}>
           <div className="section-header">
-            <div className="overline" style={{ color: 'var(--primary-600)' }}>Simple & Secure Process</div>
+            <div className="overline" style={{ color: 'var(--text-accent)' }}>Simple & Secure Process</div>
             <h2>How It Works</h2>
             <p>Three simple steps to find your perfect match — with privacy and safety at every stage.</p>
           </div>
@@ -449,7 +449,7 @@ export default function MatrimonyLandingPage() {
                   <div style={{
                     position: 'absolute', top: 20, right: 20,
                     fontSize: '4rem', fontWeight: 900, fontFamily: 'var(--font-display)',
-                    color: 'var(--primary-600)', opacity: 0.08, lineHeight: 1,
+                    color: 'var(--text-accent)', opacity: 0.08, lineHeight: 1,
                   }}>
                     {item.step}
                   </div>
@@ -458,7 +458,7 @@ export default function MatrimonyLandingPage() {
                     background: 'rgba(232, 93, 4, 0.1)', display: 'flex',
                     alignItems: 'center', justifyContent: 'center', marginBottom: 20,
                   }}>
-                    <Icon size={28} style={{ color: 'var(--primary-600)' }} />
+                    <Icon size={28} style={{ color: 'var(--text-accent)' }} />
                   </div>
                   <h3 style={{
                     fontSize: '1.25rem', fontWeight: 700,
@@ -480,7 +480,7 @@ export default function MatrimonyLandingPage() {
       <section style={{ padding: '80px 0', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ maxWidth: 1280 }}>
           <div className="section-header">
-            <div className="overline" style={{ color: 'var(--primary-600)' }}>Your Safety Matters</div>
+            <div className="overline" style={{ color: 'var(--text-accent)' }}>Your Safety Matters</div>
             <h2>Trust & Safety</h2>
             <p>We take your privacy and security seriously. Every layer of our platform is designed to keep you safe.</p>
           </div>
@@ -521,7 +521,7 @@ export default function MatrimonyLandingPage() {
       <section style={{ padding: '80px 0', background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 1280 }}>
           <div className="section-header">
-            <div className="overline" style={{ color: 'var(--primary-600)' }}>Why Choose Us</div>
+            <div className="overline" style={{ color: 'var(--text-accent)' }}>Why Choose Us</div>
             <h2>Built for Meaningful Connections</h2>
             <p>Everything you need to find a compatible life partner, with the trust and privacy you deserve.</p>
           </div>
@@ -551,7 +551,7 @@ export default function MatrimonyLandingPage() {
                     background: 'var(--primary-50)', display: 'flex',
                     alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <Icon size={22} style={{ color: 'var(--primary-600)' }} />
+                    <Icon size={22} style={{ color: 'var(--text-accent)' }} />
                   </div>
                   <div>
                     <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 6 }}>{feature.title}</h4>
@@ -595,7 +595,7 @@ export default function MatrimonyLandingPage() {
       <section style={{ padding: '80px 0', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ maxWidth: 800 }}>
           <div className="section-header">
-            <div className="overline" style={{ color: 'var(--primary-600)' }}>Common Questions</div>
+            <div className="overline" style={{ color: 'var(--text-accent)' }}>Common Questions</div>
             <h2>Frequently Asked Questions</h2>
           </div>
 
@@ -614,7 +614,7 @@ export default function MatrimonyLandingPage() {
                   textAlign: 'left', gap: 16,
                 }}>
                   <span>{faq.q}</span>
-                  {openFaq === i ? <ChevronUp size={20} style={{ flexShrink: 0, color: 'var(--primary-600)' }} /> : <ChevronDown size={20} style={{ flexShrink: 0, color: 'var(--text-muted)' }} />}
+                  {openFaq === i ? <ChevronUp size={20} style={{ flexShrink: 0, color: 'var(--text-accent)' }} /> : <ChevronDown size={20} style={{ flexShrink: 0, color: 'var(--text-muted)' }} />}
                 </button>
                 {openFaq === i && (
                   <div style={{
@@ -632,7 +632,7 @@ export default function MatrimonyLandingPage() {
           <div style={{ textAlign: 'center', marginTop: 32 }}>
             <Link href="/faq" style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
-              color: 'var(--primary-600)', fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none',
+              color: 'var(--text-accent)', fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none',
             }}>
               View All FAQs <ArrowRight size={16} />
             </Link>
@@ -652,7 +652,7 @@ export default function MatrimonyLandingPage() {
           borderRadius: '50%', background: 'radial-gradient(circle, rgba(232,93,4,0.08), transparent 70%)',
         }} />
         <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 1280 }}>
-          <Sparkles size={40} style={{ color: 'var(--primary-600)', marginBottom: 20 }} />
+          <Sparkles size={40} style={{ color: 'var(--text-accent)', marginBottom: 20 }} />
           <h2 style={{
             fontFamily: 'var(--font-display)', fontSize: 'clamp(1.8rem, 4vw, 2.5rem)',
             fontWeight: 900, color: 'white', marginBottom: 16,
@@ -668,7 +668,7 @@ export default function MatrimonyLandingPage() {
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/portal/member/matrimony/create" className="btn btn-lg" style={{
-              background: 'linear-gradient(135deg, var(--primary-600), var(--primary-50))', color: 'white',
+              background: 'var(--primary-700)', color: 'white',
               fontWeight: 700, padding: '16px 36px', fontSize: '1rem', borderRadius: 14,
               boxShadow: '0 8px 30px rgba(232,93,4,0.3)', border: 'none', textDecoration: 'none',
             }}>

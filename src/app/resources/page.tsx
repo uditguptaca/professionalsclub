@@ -56,7 +56,7 @@ export default function ResourcesPage() {
       <section style={{ padding: '80px 0', background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 1280 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32, paddingBottom: 16, borderBottom: '1px solid var(--border-color)' }}>
-            <BookOpen size={24} style={{ color: 'var(--primary-600)' }} />
+            <BookOpen size={24} style={{ color: 'var(--text-accent)' }} />
             <h2 style={{ fontSize: '1.8rem', fontWeight: 900, fontFamily: 'var(--font-display)' }}>E-Books & Detailed Guides</h2>
           </div>
           <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
@@ -71,7 +71,7 @@ export default function ResourcesPage() {
 
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24 }}>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-                    <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'white', padding: '4px 10px', background: 'var(--primary-600)', borderRadius: 6, letterSpacing: '0.05em' }}>{book.type}</span>
+                    <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'white', padding: '4px 10px', background: 'var(--primary-700)', borderRadius: 6, letterSpacing: '0.05em' }}>{book.type}</span>
                     <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'white', padding: '4px 10px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)', borderRadius: 6 }}>{book.size}</span>
                   </div>
                   <h3 style={{ fontWeight: 800, fontSize: '1.2rem', marginBottom: 8, color: 'white', lineHeight: 1.3, fontFamily: 'var(--font-display)' }}>{book.title}</h3>
@@ -106,7 +106,7 @@ export default function ResourcesPage() {
       <section style={{ padding: '80px 0', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)' }}>
         <div className="container" style={{ maxWidth: 1280 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32, paddingBottom: 16, borderBottom: '1px solid var(--border-color)' }}>
-            <Video size={24} style={{ color: 'var(--primary-600)' }} />
+            <Video size={24} style={{ color: 'var(--text-accent)' }} />
             <h2 style={{ fontSize: '1.8rem', fontWeight: 900, fontFamily: 'var(--font-display)' }}>Video Workshop Archive</h2>
           </div>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 24 }}>
@@ -117,7 +117,7 @@ export default function ResourcesPage() {
                 
                 <div style={{ position: 'absolute', inset: 0, padding: 32, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--primary-600)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', boxShadow: '0 4px 12px rgba(232,93,4,0.4)', cursor: 'pointer' }} className="hover:scale-110 transition-transform">
+                    <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--primary-700)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', boxShadow: '0 4px 12px rgba(232,93,4,0.4)', cursor: 'pointer' }} className="hover:scale-110 transition-transform">
                       <PlayCircle size={28} />
                     </div>
                     <span style={{ fontSize: '0.7rem', fontWeight: 800, padding: '4px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: 'white', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)' }}>{video.platform}</span>
@@ -149,7 +149,7 @@ export default function ResourcesPage() {
       <section style={{ padding: '80px 0', background: 'var(--bg-primary)', borderTop: '1px solid var(--border-color)' }}>
         <div className="container" style={{ maxWidth: 1280 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32, paddingBottom: 16, borderBottom: '1px solid var(--border-color)' }}>
-            <FileCheck size={24} style={{ color: 'var(--primary-600)' }} />
+            <FileCheck size={24} style={{ color: 'var(--text-accent)' }} />
             <h2 style={{ fontSize: '1.8rem', fontWeight: 900, fontFamily: 'var(--font-display)' }}>Templates & Worksheets</h2>
           </div>
           <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
@@ -159,7 +159,7 @@ export default function ResourcesPage() {
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(12,12,14,0.95) 0%, rgba(12,12,14,0.7) 40%, rgba(12,12,14,0.4) 100%)' }} />
                 
                 <div style={{ position: 'absolute', inset: 0, padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 800, padding: '4px 10px', borderRadius: 6, background: 'var(--primary-600)', color: 'white', marginBottom: 16, alignSelf: 'flex-start', backdropFilter: 'blur(4px)' }}>{temp.category}</span>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 800, padding: '4px 10px', borderRadius: 6, background: 'var(--primary-700)', color: 'white', marginBottom: 16, alignSelf: 'flex-start', backdropFilter: 'blur(4px)' }}>{temp.category}</span>
                   <h3 style={{ fontWeight: 800, fontSize: '1.15rem', marginBottom: 12, color: 'white', lineHeight: 1.3, fontFamily: 'var(--font-display)' }}>{temp.title}</h3>
                   <div style={{ fontSize: '0.8rem', color: 'var(--gray-400)', marginBottom: 20 }}>{temp.fileType} &#8226; Free Access</div>
                   {hasUrl(temp.accessUrl) ? (
@@ -182,7 +182,7 @@ export default function ResourcesPage() {
           <Image src="/toronto-skyline.png" alt="Toronto" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.1 }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 700 }}>
-          <GraduationCap size={48} style={{ color: 'var(--primary-600)', margin: '0 auto 24px' }} />
+          <GraduationCap size={48} style={{ color: 'var(--text-accent)', margin: '0 auto 24px' }} />
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Want to Contribute?</h2>
           <p style={{ fontSize: '1.1rem', color: 'var(--gray-400)', marginBottom: 28, lineHeight: 1.7 }}>
             Are you an expert? Share a guide or workshop and help someone just starting out.

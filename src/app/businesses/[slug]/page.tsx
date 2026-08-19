@@ -167,7 +167,7 @@ export default function BusinessProfilePage() {
 
       {/* Back Link */}
       <div style={{ maxWidth: 1000, margin: '0 auto 60px', padding: '0 24px' }}>
-        <Link href="/businesses" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--primary-600)', fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none' }}>
+        <Link href="/businesses" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--text-accent)', fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none' }}>
           <ArrowLeft size={16} /> Back to Business Directory
         </Link>
       </div>

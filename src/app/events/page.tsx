@@ -77,7 +77,7 @@ export default function EventsPage() {
             <span style={{ color: 'var(--primary-200)', fontWeight: 700, fontSize: '0.82rem' }}>Events & Meetups</span>
           </div>
           <h1>
-            Connect, Learn & <span style={{ color: 'var(--primary-600)' }}>Grow Together</span>
+            Connect, Learn & <span style={{ color: 'var(--text-accent)' }}>Grow Together</span>
           </h1>
           <p style={{ fontSize: '1.25rem', color: 'rgba(255, 255, 255, 0.95)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto', textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)' }}>
             Meetups, workshops, and livestreams to help you build your future in Canada.
@@ -90,7 +90,7 @@ export default function EventsPage() {
         <div className="container" style={{ maxWidth: 1200 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 40 }}>
             <div>
-              <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--primary-600)', marginBottom: 8 }}>Schedule</div>
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-accent)', marginBottom: 8 }}>Schedule</div>
               <h2 style={{ fontSize: '2.2rem', fontWeight: 900, fontFamily: 'var(--font-display)', margin: 0 }}>Upcoming Community Events</h2>
             </div>
             {upcomingEvents.length > 0 && (
@@ -107,7 +107,7 @@ export default function EventsPage() {
                 <h3>No events on the calendar yet</h3>
                 <p>
                   Nothing is scheduled right now. Email us at{' '}
-                  <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: 'var(--primary-600)' }}>{CONTACT_EMAIL}</a>{' '}
+                  <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: 'var(--text-accent)' }}>{CONTACT_EMAIL}</a>{' '}
                   and we will tell you when the next meetup is set.
                 </p>
               </div>
@@ -130,18 +130,18 @@ export default function EventsPage() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Calendar size={14} style={{ color: 'var(--primary-600)' }} />
+                        <Calendar size={14} style={{ color: 'var(--text-accent)' }} />
                         <span>{evt.date ? formatEventDate(evt.date) : 'Date to be announced'}</span>
                       </div>
                       {evt.time && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <Clock size={14} style={{ color: 'var(--primary-600)' }} />
+                          <Clock size={14} style={{ color: 'var(--text-accent)' }} />
                           <span>{evt.time}</span>
                         </div>
                       )}
                       {evt.location && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <MapPin size={14} style={{ color: 'var(--primary-600)' }} />
+                          <MapPin size={14} style={{ color: 'var(--text-accent)' }} />
                           <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{evt.location}</span>
                         </div>
                       )}
@@ -155,7 +155,7 @@ export default function EventsPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="btn btn-primary"
-                        style={{ marginTop: 'auto', width: '100%', background: 'var(--primary-600)', border: 'none', padding: '12px 0', borderRadius: 10, fontWeight: 700, fontSize: '0.88rem', color: 'white', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none' }}
+                        style={{ marginTop: 'auto', width: '100%', background: 'var(--primary-700)', border: 'none', padding: '12px 0', borderRadius: 10, fontWeight: 700, fontSize: '0.88rem', color: 'white', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none' }}
                       >
                         Register <ArrowRight size={14} />
                       </a>
@@ -192,7 +192,7 @@ export default function EventsPage() {
               </p>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.7, margin: 0 }}>
                 Requests go to the same help desk as{' '}
-                <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: 'var(--primary-600)' }}>{CONTACT_EMAIL}</a>, so nothing is booked until someone confirms it with you.
+                <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: 'var(--text-accent)' }}>{CONTACT_EMAIL}</a>, so nothing is booked until someone confirms it with you.
               </p>
             </div>
 
@@ -258,7 +258,7 @@ export default function EventsPage() {
                     type="submit"
                     disabled={bookSubmitting}
                     className="btn btn-primary"
-                    style={{ padding: '14px 0', fontSize: '0.9rem', fontWeight: 800, background: 'var(--primary-600)', border: 'none', borderRadius: 10, cursor: bookSubmitting ? 'not-allowed' : 'pointer', color: 'white', opacity: bookSubmitting ? 0.6 : 1 }}
+                    style={{ padding: '14px 0', fontSize: '0.9rem', fontWeight: 800, background: 'var(--primary-700)', border: 'none', borderRadius: 10, cursor: bookSubmitting ? 'not-allowed' : 'pointer', color: 'white', opacity: bookSubmitting ? 0.6 : 1 }}
                   >
                     {bookSubmitting ? 'Sending...' : 'Send Request'}
                   </button>
@@ -312,7 +312,7 @@ export default function EventsPage() {
                     <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 8, color: 'var(--text-primary)' }}>{evt.title}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{evt.attendees} attendees</span>
-                      <span style={{ fontSize: '0.74rem', fontWeight: 700, padding: '3px 12px', borderRadius: 6, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--primary-600)' }}>{eventTypeLabel(evt)}</span>
+                      <span style={{ fontSize: '0.74rem', fontWeight: 700, padding: '3px 12px', borderRadius: 6, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-accent)' }}>{eventTypeLabel(evt)}</span>
                     </div>
                   </div>
                 </div>

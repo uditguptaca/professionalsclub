@@ -117,7 +117,7 @@ export default function AdminRequestDetailPage() {
 
   return (
     <div className="animate-fade-in">
-      <Link href="/portal/admin/requests" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', color: 'var(--primary-600)', textDecoration: 'none', marginBottom: 24, fontWeight: 600 }}>
+      <Link href="/portal/admin/requests" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', color: 'var(--text-accent)', textDecoration: 'none', marginBottom: 24, fontWeight: 600 }}>
         <ArrowLeft size={16} /> Back to Requests
       </Link>
 
@@ -233,7 +233,7 @@ export default function AdminRequestDetailPage() {
 
           {/* Internal Notes */}
           <div className="card" style={{ borderColor: 'rgba(245,158,11,0.3)' }}>
-            <h3 className="font-bold mb-3" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><StickyNote size={16} style={{ color: 'var(--accent-600)' }} /> Internal Notes</h3>
+            <h3 className="font-bold mb-3" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><StickyNote size={16} style={{ color: 'var(--accent-700)' }} /> Internal Notes</h3>
             <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: 12 }}>Private to admin. Not visible to members.</p>
             {request.internalNotes.map(note => (
               <div key={note.id} style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--warning-50)', border: '1px solid var(--accent-200)', marginBottom: 8, fontSize: '0.82rem' }}>

@@ -54,7 +54,7 @@ export default function AdminBusinesses() {
         <h1 className="text-3xl font-display font-bold mb-2">Business Directory Management</h1>
         <p className="text-secondary">
           Verify, feature, and deactivate listings. Businesses submit their own details through the{' '}
-          <Link href="/businesses/register" style={{ color: 'var(--primary-600)', fontWeight: 600 }}>listing form</Link>,
+          <Link href="/businesses/register" style={{ color: 'var(--text-accent)', fontWeight: 600 }}>listing form</Link>,
           so admins review submissions here rather than write them.
         </p>
       </div>
@@ -64,8 +64,8 @@ export default function AdminBusinesses() {
         {[
           { label: 'Total Businesses', value: businesses.length, icon: <Building2 size={22} />, color: 'var(--text-primary)', bg: 'var(--bg-secondary)' },
           { label: 'Verified', value: verified, icon: <ShieldCheck size={22} />, color: 'var(--success-600)', bg: 'rgba(5,150,105,0.1)' },
-          { label: 'Featured', value: featured, icon: <Star size={22} />, color: 'var(--accent-600)', bg: 'rgba(245,158,11,0.1)' },
-          { label: 'Pending Review', value: pending, icon: <Clock size={22} />, color: 'var(--primary-600)', bg: 'rgba(232, 93, 4, 0.1)' },
+          { label: 'Featured', value: featured, icon: <Star size={22} />, color: 'var(--accent-700)', bg: 'rgba(245,158,11,0.1)' },
+          { label: 'Pending Review', value: pending, icon: <Clock size={22} />, color: 'var(--text-accent)', bg: 'rgba(232, 93, 4, 0.1)' },
         ].map((s, i) => (
           <div key={i} className="card-stat">
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -139,7 +139,7 @@ export default function AdminBusinesses() {
                   </button>
                 </td>
                 <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                  {biz.hasMemberRate ? <Tag size={14} style={{ color: 'var(--primary-600)' }} /> : <span style={{ color: 'var(--gray-300)' }}>—</span>}
+                  {biz.hasMemberRate ? <Tag size={14} style={{ color: 'var(--text-accent)' }} /> : <span style={{ color: 'var(--gray-300)' }}>—</span>}
                 </td>
                 <td style={{ padding: '14px 16px', textAlign: 'right' }}>
                   <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
@@ -148,7 +148,7 @@ export default function AdminBusinesses() {
                         <button type="button" className="btn btn-primary" style={{ padding: '5px 12px', fontSize: '0.72rem' }} disabled={busyId === biz.id} onClick={() => setStatus(biz.id, 'verified')}>
                           <CheckCircle size={12} /> Verify
                         </button>
-                        <button type="button" className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: '0.72rem', color: 'var(--error-500)' }} disabled={busyId === biz.id} onClick={() => setStatus(biz.id, 'rejected')}>
+                        <button type="button" className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: '0.72rem', color: 'var(--error-600)' }} disabled={busyId === biz.id} onClick={() => setStatus(biz.id, 'rejected')}>
                           <XCircle size={12} /> Reject
                         </button>
                       </>

@@ -264,8 +264,11 @@ export async function browsePaged(
       where.push(clause.replace('?', `$${values.length}`));
     };
 
-    if (filters.gender) add('v.gender = ?', filters.gender);
-    if (filters.exclude_gender) add('v.gender <> ?', filters.exclude_gender);
+    // Compared case-insensitively on purpose: the column holds 'Male'/'Female'
+    // as the create form writes them, while the browse UI sends 'male'/'female'.
+    // Every gender filter silently returned zero rows before this.
+    if (filters.gender) add('lower(v.gender) = lower(?)', filters.gender);
+    if (filters.exclude_gender) add('lower(v.gender) <> lower(?)', filters.exclude_gender);
     if (filters.city) add('v.city ilike ?', `%${filters.city}%`);
     if (filters.province) add('v.province = ?', filters.province);
     if (filters.country) add('v.country = ?', filters.country);

@@ -12,15 +12,17 @@ export default function BusinessDirectoryPage() {
   const [category, setCategory] = useState('');
   const [city, setCity] = useState('');
   const [sort, setSort] = useState('featured');
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [dealsOnly, setDealsOnly] = useState(false);
 
   // Unverified listings are filtered out by RLS, not here: the policy on
   // `businesses` only exposes verification_status = 'verified' to app_anonymous.
   const [publicBusinesses, setPublicBusinesses] = useState<Business[]>([]);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
 
   useEffect(() => {
-    void getVerifiedBusinesses().then(setPublicBusinesses);
+    getVerifiedBusinesses()
+      .then(data => { setPublicBusinesses(data); setStatus('ready'); })
+      .catch(() => setStatus('error'));
   }, []);
 
   const cities = useMemo(() => [...new Set(publicBusinesses.map(b => b.city))].sort(), [publicBusinesses]);
@@ -33,17 +35,15 @@ export default function BusinessDirectoryPage() {
     }
     if (category) result = result.filter(b => b.category === category);
     if (city) result = result.filter(b => b.city === city);
-    if (verifiedOnly) result = result.filter(b => b.verificationStatus === 'verified');
     if (dealsOnly) result = result.filter(b => b.hasMemberRate);
 
     // Sort
     if (sort === 'featured') result.sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0));
-    else if (sort === 'verified') result.sort((a, b) => (b.verificationStatus === 'verified' ? 1 : 0) - (a.verificationStatus === 'verified' ? 1 : 0));
     else if (sort === 'newest') result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     else if (sort === 'alpha') result.sort((a, b) => a.name.localeCompare(b.name));
 
     return result;
-  }, [publicBusinesses, search, category, city, sort, verifiedOnly, dealsOnly]);
+  }, [publicBusinesses, search, category, city, sort, dealsOnly]);
 
   return (
     <>
@@ -78,18 +78,17 @@ export default function BusinessDirectoryPage() {
             <div className="biz-hero-search" style={{ maxWidth: 480, margin: 0 }}>
               <input
                 type="text"
-                placeholder="Search businesses by name, category, or keyword..."
+                placeholder="Search businesses by name, category, or keyword..." aria-label="Search businesses"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
-              <button type="button"><Search size={18} /> Search</button>
             </div>
           </div>
 
           {/* Right Side — Register CTA */}
           <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
             <Link href="/businesses/register" style={{ textDecoration: 'none' }}>
-              <div style={{ background: 'var(--primary-600)', padding: '18px 36px', borderRadius: 14, color: 'white', fontWeight: 800, fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 32px rgba(232,93,4,0.3)', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', whiteSpace: 'nowrap' }}>
+              <div style={{ background: 'var(--primary-700)', padding: '18px 36px', borderRadius: 14, color: 'white', fontWeight: 800, fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 32px rgba(232,93,4,0.3)', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', whiteSpace: 'nowrap' }}>
                 List Your Business <ArrowRight size={18} />
               </div>
             </Link>
@@ -113,27 +112,19 @@ export default function BusinessDirectoryPage() {
       <div className="container" style={{ paddingBottom: 80 }}>
         {/* Filters */}
         <div className="biz-filter-bar">
-          <select value={category} onChange={e => setCategory(e.target.value)}>
+          <select value={category} onChange={e => setCategory(e.target.value)} aria-label="Filter by category">
             <option value="">All Categories</option>
             {BUSINESS_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <select value={city} onChange={e => setCity(e.target.value)}>
+          <select value={city} onChange={e => setCity(e.target.value)} aria-label="Filter by city">
             <option value="">All Cities</option>
             {cities.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <select value={sort} onChange={e => setSort(e.target.value)}>
+          <select value={sort} onChange={e => setSort(e.target.value)} aria-label="Sort order">
             <option value="featured">Featured First</option>
-            <option value="verified">Verified First</option>
             <option value="newest">Newest</option>
             <option value="alpha">A – Z</option>
           </select>
-          <button
-            type="button"
-            className={`biz-filter-toggle ${verifiedOnly ? 'active' : ''}`}
-            onClick={() => setVerifiedOnly(!verifiedOnly)}
-          >
-            <ShieldCheck size={13} /> Verified Only
-          </button>
           <button
             type="button"
             className={`biz-filter-toggle ${dealsOnly ? 'active' : ''}`}
@@ -141,11 +132,22 @@ export default function BusinessDirectoryPage() {
           >
             <Tag size={13} /> Member Deals
           </button>
-          <div className="biz-results-count">{filtered.length} business{filtered.length !== 1 ? 'es' : ''} found</div>
+          <div className="biz-results-count">
+            {status === 'ready' ? `${filtered.length} business${filtered.length !== 1 ? 'es' : ''} found` : ''}
+          </div>
         </div>
 
         {/* Listing Grid */}
-        {filtered.length === 0 ? (
+        {status === 'loading' ? (
+          <div className="biz-empty">
+            <h3>Loading businesses...</h3>
+          </div>
+        ) : status === 'error' ? (
+          <div className="biz-empty" role="alert">
+            <h3>Could not load the directory</h3>
+            <p>Something went wrong on our end. Please refresh the page to try again.</p>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="biz-empty">
             <h3>No businesses match your filters</h3>
             <p>Try adjusting your search or filters.</p>

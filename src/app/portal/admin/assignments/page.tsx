@@ -22,11 +22,11 @@ export default function AdminAssignmentsPage() {
       <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
         <div className="card-stat" style={{ borderLeft: '3px solid var(--warning-500)' }}>
           <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Awaiting Assignment</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-600)' }}>{pendingAssignment.length}</div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-700)' }}>{pendingAssignment.length}</div>
         </div>
         <div className="card-stat" style={{ borderLeft: '3px solid var(--primary-500)' }}>
           <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Active Assignments</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--primary-600)' }}>{active.length}</div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-accent)' }}>{active.length}</div>
         </div>
         <div className="card-stat" style={{ borderLeft: '3px solid var(--success-600)' }}>
           <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Completed</div>
@@ -38,7 +38,7 @@ export default function AdminAssignmentsPage() {
       {pendingAssignment.length > 0 && (
         <div style={{ marginBottom: 32 }}>
           <h2 className="text-xl font-bold font-display mb-3" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Clock size={18} style={{ color: 'var(--accent-600)' }} /> Awaiting Volunteer Assignment
+            <Clock size={18} style={{ color: 'var(--accent-700)' }} /> Awaiting Volunteer Assignment
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {pendingAssignment.map(req => (

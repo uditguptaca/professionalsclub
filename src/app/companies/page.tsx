@@ -57,13 +57,13 @@ export default function CompaniesPage() {
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(232,93,4,0.08)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(232,93,4,0.2)' }}>
-            <Building2 size={14} style={{ color: 'var(--primary-600)' }} />
-            <span style={{ color: 'var(--primary-600)', fontWeight: 700, fontSize: '0.82rem' }}>Employer Directory</span>
+            <Building2 size={14} style={{ color: 'var(--text-accent)' }} />
+            <span style={{ color: 'var(--text-accent)', fontWeight: 700, fontSize: '0.82rem' }}>Employer Directory</span>
           </div>
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
-            Major Canadian <span style={{ color: 'var(--primary-600)' }}>Employers</span>
+            Major Canadian <span style={{ color: 'var(--text-accent)' }}>Employers</span>
           </h1>
-          <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
+          <p style={{ fontSize: '1.15rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
             {withHelpers > 0
               ? `Members of the club work at ${withHelpers} of these employers and have offered to help with applications. We never say who — only that someone is there.`
               : 'Employers newcomers apply to. Members tell us where they work, and we pass referral requests along without sharing anyone\u2019s details.'}
@@ -80,6 +80,7 @@ export default function CompaniesPage() {
               <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input
                 placeholder="Search companies..."
+                aria-label="Search employers"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 style={{ width: '100%', padding: '14px 16px 14px 44px', borderRadius: 12, border: '1px solid var(--border-color)', fontSize: '0.92rem', outline: 'none', background: 'var(--bg-secondary)' }}
@@ -87,6 +88,7 @@ export default function CompaniesPage() {
             </div>
             <select
               value={industry}
+              aria-label="Filter by industry"
               onChange={e => setIndustry(e.target.value)}
               style={{ padding: '14px 20px', borderRadius: 12, border: '1px solid var(--border-color)', fontSize: '0.92rem', background: 'var(--bg-secondary)', minWidth: 200 }}
             >
@@ -185,7 +187,7 @@ export default function CompaniesPage() {
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 600 }}>
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Want a Referral?</h2>
           <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: 32 }}>Sign in, pick the employer and the roles you are going for, and every member there who has offered to help is asked. They see the role, not your name &mdash; and you see theirs only if they say yes.</p>
-          <Link href="/portal/auth" className="btn btn-primary btn-lg" style={{ padding: '16px 36px', boxShadow: '0 8px 24px rgba(232,93,4,0.3)', background: 'var(--primary-600)', color: 'white', border: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <Link href="/portal/auth" className="btn btn-primary btn-lg" style={{ padding: '16px 36px', boxShadow: '0 8px 24px rgba(232,93,4,0.3)', background: 'var(--primary-700)', color: 'white', border: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             Request a Referral <ArrowRight size={18} />
           </Link>
         </div>

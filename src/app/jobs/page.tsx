@@ -29,11 +29,11 @@ const JOB_TYPE_LABELS: Record<JobType, string> = {
 };
 
 const JOB_TYPE_COLORS: Record<JobType, { bg: string; color: string }> = {
-  full_time: { bg: 'var(--bg-secondary)', color: 'var(--primary-600)' },
-  part_time: { bg: 'var(--bg-secondary)', color: 'var(--primary-600)' },
+  full_time: { bg: 'var(--bg-secondary)', color: 'var(--text-accent)' },
+  part_time: { bg: 'var(--bg-secondary)', color: 'var(--text-accent)' },
   contract: { bg: 'rgba(12, 12, 14, 0.05)', color: 'var(--text-primary)' },
   freelance: { bg: 'rgba(12, 12, 14, 0.05)', color: 'var(--text-primary)' },
-  internship: { bg: 'rgba(232, 93, 4, 0.08)', color: 'var(--primary-600)' },
+  internship: { bg: 'rgba(232, 93, 4, 0.08)', color: 'var(--text-accent)' },
 };
 
 // We only have skyline art for these four, so the set is fixed, but the count on
@@ -185,15 +185,15 @@ export default function JobsPage() {
           {/* Left */}
           <div>
             <h1 style={{ fontSize: '3.2rem', fontWeight: 900, color: 'white', lineHeight: 1.1, marginBottom: 20, fontFamily: 'var(--font-display)' }}>
-              Find Your Next <span style={{ color: 'var(--primary-600)' }}>Role</span><br />in Canada
+              Find Your Next <span style={{ color: 'var(--text-accent)' }}>Role</span><br />in Canada
             </h1>
-            <p style={{ fontSize: '1.1rem', color: 'var(--primary-600)', fontWeight: 600, marginBottom: 16 }}>
+            <p style={{ fontSize: '1.1rem', color: 'var(--text-accent)', fontWeight: 600, marginBottom: 16 }}>
               Jobs, referrals, and real help building your career here.
             </p>
-            <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 32, maxWidth: 480 }}>
+            <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.7, marginBottom: 32, maxWidth: 480 }}>
               Browse open roles and get referred.
             </p>
-            <Link href="/portal/auth" className="btn btn-lg" style={{ background: 'var(--primary-600)', color: 'white', border: 'none', padding: '14px 28px', fontSize: '0.95rem', boxShadow: '0 8px 24px rgba(232,93,4,0.3)' }}>
+            <Link href="/portal/auth" className="btn btn-lg" style={{ background: 'var(--primary-700)', color: 'white', border: 'none', padding: '14px 28px', fontSize: '0.95rem', boxShadow: '0 8px 24px rgba(232,93,4,0.3)' }}>
               Get Started <ArrowRight size={18} />
             </Link>
           </div>
@@ -201,14 +201,14 @@ export default function JobsPage() {
           {/* Right — Search Panel */}
           <div style={{ background: 'var(--bg-primary)', borderRadius: 16, padding: '32px 28px', boxShadow: '0 25px 50px rgba(0,0,0,0.25)' }}>
             <h2 style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'var(--font-display)' }}>FIND YOUR JOB!</h2>
-            <div style={{ width: 40, height: 3, background: 'var(--primary-600)', borderRadius: 2, marginBottom: 24 }} />
+            <div style={{ width: 40, height: 3, background: 'var(--primary-700)', borderRadius: 2, marginBottom: 24 }} />
 
             <form onSubmit={handleSearch} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ position: 'relative' }}>
                 <Search size={16} style={{ position: 'absolute', left: 14, top: 14, color: 'var(--text-muted)' }} />
                 <input
                   type="text"
-                  placeholder="What are you looking for?"
+                  placeholder="What are you looking for?" aria-label="Search jobs by title or keyword"
                   value={keyword}
                   onChange={e => setKeyword(e.target.value)}
                   style={{ width: '100%', padding: '12px 14px 12px 40px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-secondary)' }}
@@ -219,7 +219,7 @@ export default function JobsPage() {
                 <MapPin size={16} style={{ position: 'absolute', left: 14, top: 14, color: 'var(--text-muted)' }} />
                 <input
                   type="text"
-                  placeholder="Location"
+                  placeholder="Location" aria-label="Filter by location"
                   value={location}
                   onChange={e => setLocation(e.target.value)}
                   style={{ width: '100%', padding: '12px 14px 12px 40px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-secondary)' }}
@@ -264,7 +264,7 @@ export default function JobsPage() {
                 <ChevronDown size={16} style={{ position: 'absolute', right: 14, top: 14, color: 'var(--text-muted)', pointerEvents: 'none' }} />
               </div>
 
-              <button type="submit" style={{ width: '100%', padding: '14px', background: 'var(--primary-600)', color: 'white', border: 'none', borderRadius: 8, fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s' }}>
+              <button type="submit" style={{ width: '100%', padding: '14px', background: 'var(--primary-700)', color: 'white', border: 'none', borderRadius: 8, fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s' }}>
                 <Search size={16} /> SEARCH
               </button>
 
@@ -316,7 +316,7 @@ export default function JobsPage() {
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'center', 
-                  color: 'var(--primary-600)',
+                  color: 'var(--text-accent)',
                   flexShrink: 0,
                   boxShadow: '0 4px 10px rgba(232,93,4,0.1)'
                 }}>
@@ -331,7 +331,7 @@ export default function JobsPage() {
           </div>
 
           <div style={{ textAlign: 'center', marginTop: 40 }}>
-             <button onClick={() => { setCategoryFilter(''); setSearchApplied(true); setActiveTab('recent'); }} style={{ background: 'none', border: 'none', color: 'var(--primary-600)', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'opacity 0.2s' }} onMouseOver={e=>e.currentTarget.style.opacity='0.8'} onMouseOut={e=>e.currentTarget.style.opacity='1'}>
+             <button onClick={() => { setCategoryFilter(''); setSearchApplied(true); setActiveTab('recent'); }} style={{ background: 'none', border: 'none', color: 'var(--text-accent)', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'opacity 0.2s' }} onMouseOver={e=>e.currentTarget.style.opacity='0.8'} onMouseOut={e=>e.currentTarget.style.opacity='1'}>
                View All Categories <ChevronRight size={16} />
              </button>
           </div>
@@ -379,7 +379,7 @@ export default function JobsPage() {
           <div className="mobile-flex-col mobile-gap-reduce" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
             <div>
               <h2 style={{ fontSize: '1.8rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 4 }}>RECENT JOBS</h2>
-              <div style={{ width: 40, height: 3, background: 'var(--primary-600)', borderRadius: 2 }} />
+              <div style={{ width: 40, height: 3, background: 'var(--primary-700)', borderRadius: 2 }} />
             </div>
 
             {/* Tab Filters */}
@@ -396,7 +396,7 @@ export default function JobsPage() {
                     letterSpacing: '0.03em',
                     border: 'none',
                     cursor: 'pointer',
-                    background: activeTab === tab.key ? 'var(--primary-600)' : 'white',
+                    background: activeTab === tab.key ? 'var(--primary-700)' : 'white',
                     color: activeTab === tab.key ? 'white' : 'var(--gray-600)',
                     transition: 'all 0.2s',
                     borderRight: '1px solid var(--border-color)',
@@ -464,7 +464,7 @@ export default function JobsPage() {
                             {JOB_TYPE_LABELS[job.jobType]}
                           </span>
                         </div>
-                        <div style={{ fontSize: '0.82rem', color: 'var(--primary-600)', fontWeight: 600, marginBottom: 10 }}>{job.company}</div>
+                        <div style={{ fontSize: '0.82rem', color: 'var(--text-accent)', fontWeight: 600, marginBottom: 10 }}>{job.company}</div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 10 }}>
                           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -487,7 +487,7 @@ export default function JobsPage() {
                             rel={apply.external ? 'noopener noreferrer' : undefined}
                             style={{
                               padding: '6px 18px',
-                              background: 'var(--primary-600)',
+                              background: 'var(--primary-700)',
                               color: 'white',
                               borderRadius: 6,
                               fontSize: '0.78rem',
@@ -509,7 +509,7 @@ export default function JobsPage() {
                     {/* Tags */}
                     {job.tags.length > 0 && (
                       <div style={{ marginTop: 14, padding: '10px 14px', background: 'linear-gradient(90deg, rgba(232, 93, 4, 0.08), rgba(232, 93, 4, 0.08))', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--primary-600)' }}>Tagged as:</span>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-accent)' }}>Tagged as:</span>
                         {job.tags.map((tag, i) => (
                           <span key={i} style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
                             {tag}{i < job.tags.length - 1 ? ',' : ''}
@@ -534,7 +534,7 @@ export default function JobsPage() {
               <Image src="/volunteer-help.png" alt="Referral" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
               {/* Floating Badge */}
               <div style={{ position: 'absolute', bottom: 24, left: 24, background: 'var(--bg-primary)', padding: '12px 24px', borderRadius: 99, display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 8px 30px rgba(0,0,0,0.1)' }}>
-                <div style={{ background: 'var(--text-primary)', width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-600)' }}>
+                <div style={{ background: 'var(--text-primary)', width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-accent)' }}>
                   <Briefcase size={20} />
                 </div>
                 <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>Get Referred Now!</span>
@@ -544,7 +544,7 @@ export default function JobsPage() {
             {/* Right Box (Text Content) */}
             <div>
               <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 20, lineHeight: 1.15 }}>
-                Want a <span style={{ color: 'var(--primary-600)' }}>Referral?</span> 
+                Want a <span style={{ color: 'var(--text-accent)' }}>Referral?</span> 
               </h2>
               <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 32 }}>
                 We match you with a professional who can refer you directly.
@@ -555,7 +555,7 @@ export default function JobsPage() {
                   'Connect with professionals', 'Get direct referrals', 'Expand network', 'Speed up job search'
                 ].map((text, idx) => (
                   <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(232, 93, 4, 0.08)', color: 'var(--primary-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(232, 93, 4, 0.08)', color: 'var(--text-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <ArrowRight size={16} />
                     </div>
                     <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{text}</span>
@@ -564,7 +564,7 @@ export default function JobsPage() {
               </div>
 
               <Link href="/portal/auth" className="btn btn-lg" style={{
-                background: 'var(--primary-600)',
+                background: 'var(--primary-700)',
                 color: 'white',
                 border: 'none',
                 padding: '16px 36px',
@@ -587,16 +587,16 @@ export default function JobsPage() {
         <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
           {/* Employer */}
           <div style={{ background: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 20px', textAlign: 'center' }}>
-            <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(232, 93, 4, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-600)', marginBottom: 12 }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(232, 93, 4, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-accent)', marginBottom: 12 }}>
               <Building2 size={24} />
             </div>
             <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--text-primary)', marginBottom: 6, fontFamily: 'var(--font-display)' }}>I&apos;M AN EMPLOYER</h3>
-            <div style={{ width: 30, height: 2, background: 'var(--primary-600)', margin: '0 auto 12px' }} />
+            <div style={{ width: 30, height: 2, background: 'var(--primary-700)', margin: '0 auto 12px' }} />
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: 320, marginBottom: 16 }}>
               Post a role and reach our community.
             </p>
             <Link href="/portal/auth" className="btn" style={{
-              background: 'var(--primary-600)',
+              background: 'var(--primary-700)',
               color: 'white',
               border: 'none',
               padding: '12px 28px',
@@ -614,16 +614,16 @@ export default function JobsPage() {
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.92), rgba(12,12,14,0.85))' }} />
             </div>
             <div style={{ position: 'relative', zIndex: 10 }}>
-              <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(232, 93, 4, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-600)', margin: '0 auto 12px' }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(232, 93, 4, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-accent)', margin: '0 auto 12px' }}>
                 <Briefcase size={24} />
               </div>
               <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: 'white', marginBottom: 6, fontFamily: 'var(--font-display)' }}>I&apos;M A CANDIDATE</h3>
-              <div style={{ width: 30, height: 2, background: 'var(--primary-600)', margin: '0 auto 12px' }} />
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.6, maxWidth: 320, marginBottom: 16 }}>
+              <div style={{ width: 30, height: 2, background: 'var(--primary-700)', margin: '0 auto 12px' }} />
+              <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.6, maxWidth: 320, marginBottom: 16 }}>
                 Create a profile and start applying.
               </p>
               <Link href="/portal/auth" className="btn" style={{
-                background: 'var(--primary-600)',
+                background: 'var(--primary-700)',
                 color: 'white',
                 border: 'none',
                 padding: '12px 28px',

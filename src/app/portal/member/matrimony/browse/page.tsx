@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useApp } from '@/context/app-context';
 import { getMyMatrimony, browseProfilesPaged, saveSearch } from '@/app/actions/matrimony';
 import type { MatrimonyProfileCard, MatrimonySearchFilters } from '@/types/matrimony';
@@ -112,7 +112,6 @@ const emptyFilters: MatrimonySearchFilters = {
 };
 
 export default function MatrimonyBrowsePage() {
-  const router = useRouter();
   const { currentUserId } = useApp();
 
   const [profiles, setProfiles] = useState<MatrimonyProfileCard[]>([]);
@@ -191,8 +190,11 @@ export default function MatrimonyBrowsePage() {
     setLoading(false);
   }, [filters, page]);
 
+  // Debounced so typing in the city or age inputs fires one query, not one
+  // per keystroke.
   useEffect(() => {
-    fetchProfiles();
+    const timer = setTimeout(() => { void fetchProfiles(); }, 300);
+    return () => clearTimeout(timer);
   }, [fetchProfiles]);
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
@@ -254,14 +256,18 @@ export default function MatrimonyBrowsePage() {
     }
   };
 
-  // ========== FILTER SIDEBAR COMPONENT ==========
-  const FilterContent = () => (
+  // ========== FILTER SIDEBAR CONTENT ==========
+  // Plain JSX, not a component: an inline component type changes every render,
+  // so React would remount the whole filter tree (and drop input focus) on
+  // every keystroke.
+  const filterContent = (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Gender */}
       <div className="input-group">
         <label>Looking for</label>
         <select
           className="input"
+          aria-label="Looking for"
           value={filters.gender || ''}
           onChange={e => handleFilterChange('gender', e.target.value || undefined)}
         >
@@ -278,7 +284,7 @@ export default function MatrimonyBrowsePage() {
           <input
             className="input"
             type="number"
-            placeholder="Min"
+            placeholder="Min" aria-label="Minimum age"
             min={18}
             max={70}
             value={filters.age_min || ''}
@@ -288,7 +294,7 @@ export default function MatrimonyBrowsePage() {
           <input
             className="input"
             type="number"
-            placeholder="Max"
+            placeholder="Max" aria-label="Maximum age"
             min={18}
             max={70}
             value={filters.age_max || ''}
@@ -303,6 +309,7 @@ export default function MatrimonyBrowsePage() {
         <div style={{ display: 'flex', gap: 8 }}>
           <select
             className="input"
+            aria-label="Minimum height"
             value={filters.height_min_cm || ''}
             onChange={e => handleFilterChange('height_min_cm', e.target.value ? parseInt(e.target.value) : undefined)}
           >
@@ -313,6 +320,7 @@ export default function MatrimonyBrowsePage() {
           </select>
           <select
             className="input"
+            aria-label="Maximum height"
             value={filters.height_max_cm || ''}
             onChange={e => handleFilterChange('height_max_cm', e.target.value ? parseInt(e.target.value) : undefined)}
           >
@@ -361,6 +369,7 @@ export default function MatrimonyBrowsePage() {
         <label>Country</label>
         <select
           className="input"
+          aria-label="Country"
           value={filters.country || ''}
           onChange={e => handleFilterChange('country', e.target.value || undefined)}
         >
@@ -374,6 +383,7 @@ export default function MatrimonyBrowsePage() {
           <label>Province</label>
           <select
             className="input"
+            aria-label="Province"
             value={filters.province || ''}
             onChange={e => handleFilterChange('province', e.target.value || undefined)}
           >
@@ -387,7 +397,7 @@ export default function MatrimonyBrowsePage() {
         <label>City</label>
         <input
           className="input"
-          placeholder="Type a city..."
+          placeholder="Type a city..." aria-label="City"
           value={filters.city || ''}
           onChange={e => handleFilterChange('city', e.target.value || undefined)}
         />
@@ -457,7 +467,7 @@ export default function MatrimonyBrowsePage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-display)', marginBottom: 4 }}>
-            <Heart size={28} style={{ display: 'inline', marginRight: 8, color: 'var(--error-500)' }} />
+            <Heart size={28} style={{ display: 'inline', marginRight: 8, color: 'var(--error-600)' }} />
             Browse Profiles
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
@@ -470,6 +480,7 @@ export default function MatrimonyBrowsePage() {
           <div style={{ position: 'relative' }}>
             <select
               className="input"
+              aria-label="Sort profiles"
               style={{ paddingRight: 32, minWidth: 160 }}
               value={filters.sort_by || 'newest'}
               onChange={e => handleFilterChange('sort_by', e.target.value as 'newest' | 'recently_active')}
@@ -521,7 +532,7 @@ export default function MatrimonyBrowsePage() {
               )}
             </h3>
           </div>
-          <FilterContent />
+          {filterContent}
         </aside>
 
         {/* Mobile Drawer */}
@@ -544,11 +555,11 @@ export default function MatrimonyBrowsePage() {
                   <Filter size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />
                   Search Filters
                 </h3>
-                <button className="btn btn-ghost btn-icon" onClick={() => setDrawerOpen(false)}>
+                <button className="btn btn-ghost btn-icon" aria-label="Close filters" onClick={() => setDrawerOpen(false)}>
                   <X size={20} />
                 </button>
               </div>
-              <FilterContent />
+              {filterContent}
             </div>
           </>
         )}
@@ -564,7 +575,7 @@ export default function MatrimonyBrowsePage() {
             </div>
           ) : loading ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: 80, flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-              <Loader2 size={36} style={{ color: 'var(--primary-600)', animation: 'spin 1s linear infinite' }} />
+              <Loader2 size={36} style={{ color: 'var(--text-accent)', animation: 'spin 1s linear infinite' }} />
               <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading profiles...</span>
             </div>
           ) : profiles.length === 0 ? (
@@ -588,7 +599,6 @@ export default function MatrimonyBrowsePage() {
                   <ProfileCard
                     key={profile.id}
                     profile={profile}
-                    onClick={() => router.push(`/portal/member/matrimony/profile/${profile.id}`)}
                     delay={idx * 50}
                   />
                 ))}
@@ -706,7 +716,7 @@ export default function MatrimonyBrowsePage() {
 }
 
 // ========== PROFILE CARD ==========
-function ProfileCard({ profile, onClick, delay }: { profile: MatrimonyProfileCard; onClick: () => void; delay: number }) {
+function ProfileCard({ profile, delay }: { profile: MatrimonyProfileCard; delay: number }) {
   const displayName = getDisplayName(profile.full_name, profile.display_pref);
   const age = getAge(profile.dob);
   const height = cmToFtIn(profile.height_cm);
@@ -714,10 +724,11 @@ function ProfileCard({ profile, onClick, delay }: { profile: MatrimonyProfileCar
   const hasVerification = profile.is_verified_id || profile.is_verified_photo || profile.is_verified_profession;
 
   return (
-    <div
+    <Link
+      href={`/portal/member/matrimony/profile/${profile.id}`}
       className="card card-clickable"
-      onClick={onClick}
       style={{
+        display: 'block', textDecoration: 'none', color: 'inherit',
         padding: 0, overflow: 'hidden', cursor: 'pointer', position: 'relative',
         animation: `fadeInUp 0.5s ease-out ${delay}ms both`,
         background: 'var(--bg-card)',
@@ -816,15 +827,15 @@ function ProfileCard({ profile, onClick, delay }: { profile: MatrimonyProfileCar
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <MapPin size={12} style={{ color: 'var(--primary-500)', flexShrink: 0 }} />
+            <MapPin size={12} style={{ color: 'var(--text-accent)', flexShrink: 0 }} />
             <span>{profile.city}, {profile.province}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Briefcase size={12} style={{ color: 'var(--primary-500)', flexShrink: 0 }} />
+            <Briefcase size={12} style={{ color: 'var(--text-accent)', flexShrink: 0 }} />
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.occupation}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <GraduationCap size={12} style={{ color: 'var(--primary-500)', flexShrink: 0 }} />
+            <GraduationCap size={12} style={{ color: 'var(--text-accent)', flexShrink: 0 }} />
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.qualification}</span>
           </div>
         </div>
@@ -853,7 +864,7 @@ function ProfileCard({ profile, onClick, delay }: { profile: MatrimonyProfileCar
         background: 'linear-gradient(90deg, var(--primary-500), var(--accent-400))',
         opacity: 0, transition: 'opacity 0.3s',
       }} className="card-bottom-accent" />
-    </div>
+    </Link>
   );
 }
 

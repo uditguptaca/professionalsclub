@@ -31,7 +31,7 @@ export default function BlogsPage() {
               <div key={article.id} className="card card-clickable hover:-translate-y-1" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ position: 'relative', height: 200 }}>
                   <ContentImage src={article.image} alt={article.title} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
-                  <div style={{ position: 'absolute', top: 16, left: 16, background: 'var(--primary-600)', color: 'white', padding: '4px 12px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 700 }}>
+                  <div style={{ position: 'absolute', top: 16, left: 16, background: 'var(--primary-700)', color: 'white', padding: '4px 12px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 700 }}>
                     {article.category}
                   </div>
                 </div>

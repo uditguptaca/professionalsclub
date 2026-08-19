@@ -18,9 +18,9 @@ import {
 
 const statusConfig: Record<string, { color: string; bg: string; label: string; icon: React.ElementType }> = {
   draft: { color: 'var(--text-secondary)', bg: 'rgba(100,116,139,0.1)', label: 'Draft', icon: Clock },
-  pending: { color: 'var(--warning-500)', bg: 'rgba(245,158,11,0.1)', label: 'Pending Review', icon: Clock },
-  approved: { color: 'var(--success-500)', bg: 'rgba(0,168,107,0.1)', label: 'Approved', icon: CheckCircle2 },
-  rejected: { color: 'var(--error-500)', bg: 'rgba(240,73,35,0.1)', label: 'Rejected', icon: XCircle },
+  pending: { color: '#92400e', bg: 'rgba(245,158,11,0.1)', label: 'Pending Review', icon: Clock },
+  approved: { color: '#04724d', bg: 'rgba(0,168,107,0.1)', label: 'Approved', icon: CheckCircle2 },
+  rejected: { color: 'var(--error-600)', bg: 'rgba(240,73,35,0.1)', label: 'Rejected', icon: XCircle },
   suspended: { color: 'var(--error-600)', bg: 'rgba(220,38,38,0.1)', label: 'Suspended', icon: XCircle },
 };
 
@@ -270,7 +270,7 @@ export default function CandidateProfilePage() {
         
         {/* Flag/Block actions */}
         <div style={{ display: 'flex', gap: 12 }}>
-          <button className="btn btn-ghost" onClick={() => setReportOpen(true)} style={{ color: 'var(--error-500)', fontSize: '0.8rem', padding: '6px 12px' }}>
+          <button className="btn btn-ghost" onClick={() => setReportOpen(true)} style={{ color: 'var(--error-600)', fontSize: '0.8rem', padding: '6px 12px' }}>
             <ShieldAlert size={14} /> Report
           </button>
           <button className="btn btn-ghost" onClick={handleBlock} style={{ color: 'var(--error-600)', fontSize: '0.8rem', padding: '6px 12px' }}>
@@ -288,7 +288,7 @@ export default function CandidateProfilePage() {
         {/* Avatar/Photo */}
         <div style={{
           width: 140, height: 140, borderRadius: 24, flexShrink: 0,
-          background: `linear-gradient(135deg, ${profile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)'}20, ${profile.gender === 'female' ? 'var(--accent-400)' : 'var(--primary-500)'}10)`,
+          background: profile.gender?.toLowerCase() === 'female' ? 'linear-gradient(135deg, rgba(217,119,6,0.13), rgba(251,191,36,0.06))' : 'linear-gradient(135deg, rgba(232,93,4,0.13), rgba(249,115,22,0.06))',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 8px 30px rgba(0,0,0,0.04)', border: '1px solid var(--border-color)',
           position: 'relative', overflow: 'hidden'
@@ -296,13 +296,21 @@ export default function CandidateProfilePage() {
           {profile.photo_visibility === 'blurred' && interestStatus !== 'accepted' ? (
             <div style={{
               width: '100%', height: '100%', filter: 'blur(8px)',
-              background: `linear-gradient(135deg, ${profile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)'}40, ${profile.gender === 'female' ? 'var(--accent-400)' : 'var(--primary-500)'}20)`,
+              background: profile.gender?.toLowerCase() === 'female' ? 'linear-gradient(135deg, rgba(217,119,6,0.25), rgba(251,191,36,0.13))' : 'linear-gradient(135deg, rgba(232,93,4,0.25), rgba(249,115,22,0.13))',
               display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
               <User size={64} style={{ opacity: 0.3 }} />
             </div>
+          ) : media.length > 0 ? (
+            /* The server already applied the visibility and approval rules to
+               this list, so whatever arrived is safe to show. */
+            <img
+              src={(media.find(m => m.is_primary) ?? media[0]).url}
+              alt={`Photo of ${profile.display_pref === 'full_name' ? profile.full_name : profile.full_name.split(' ')[0]}`}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
           ) : (
-            <User size={64} style={{ color: profile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
+            <User size={64} style={{ color: profile.gender?.toLowerCase() === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
           )}
         </div>
 
@@ -310,10 +318,13 @@ export default function CandidateProfilePage() {
         <div style={{ flex: 1, minWidth: 260 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
             <h1 style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-display)', margin: 0 }}>
-              {profile.display_pref === 'full_name' ? profile.full_name : profile.full_name.split(' ')[0]}
+              {profile.display_pref === 'full_name' ? profile.full_name
+                : profile.display_pref === 'initials'
+                  ? profile.full_name.split(' ').map(n => n[0]).join('.').toUpperCase()
+                  : profile.full_name.split(' ')[0]}
             </h1>
             {profile.is_verified_id && (
-              <span className="badge" style={{ background: 'rgba(232, 93, 4, 0.1)', color: 'var(--primary-600)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <span className="badge" style={{ background: 'rgba(232, 93, 4, 0.1)', color: 'var(--text-accent)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 <CheckCircle2 size={12} /> ID Verified
               </span>
             )}
@@ -342,7 +353,7 @@ export default function CandidateProfilePage() {
                 <button className="btn" onClick={handleAcceptInterest} disabled={actionLoading} style={{ background: 'var(--success-500)', color: 'white', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   Accept
                 </button>
-                <button className="btn btn-outline" onClick={handleDeclineInterest} disabled={actionLoading} style={{ borderColor: 'var(--error-500)', color: 'var(--error-500)' }}>
+                <button className="btn btn-outline" onClick={handleDeclineInterest} disabled={actionLoading} style={{ borderColor: 'var(--error-500)', color: 'var(--error-600)' }}>
                   Decline
                 </button>
               </div>
@@ -408,7 +419,7 @@ export default function CandidateProfilePage() {
           {/* About Me */}
           <div className="card" style={{ padding: 24 }}>
             <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Smile size={18} style={{ color: 'var(--primary-600)' }} /> About Me
+              <Smile size={18} style={{ color: 'var(--text-accent)' }} /> About Me
             </h2>
             <p style={{ lineHeight: 1.7, color: 'var(--text-secondary)', whiteSpace: 'pre-line', margin: 0, fontSize: '0.95rem' }}>
               {profile.about_me || 'No bio written.'}
@@ -418,7 +429,7 @@ export default function CandidateProfilePage() {
           {/* Background Details */}
           <div className="card" style={{ padding: 24 }}>
             <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Users size={18} style={{ color: 'var(--success-500)' }} /> Religious & Cultural Background
+              <Users size={18} style={{ color: '#04724d' }} /> Religious & Cultural Background
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
               {[
@@ -500,7 +511,7 @@ export default function CandidateProfilePage() {
           {/* Contact details */}
           <div className="card" style={{ padding: 24, border: '1px solid rgba(232, 93, 4, 0.15)', background: 'rgba(232, 93, 4, 0.01)' }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Phone size={18} style={{ color: 'var(--primary-600)' }} /> Contact Details
+              <Phone size={18} style={{ color: 'var(--text-accent)' }} /> Contact Details
             </h2>
             {interestStatus === 'accepted' ? (
               contactLoading ? (

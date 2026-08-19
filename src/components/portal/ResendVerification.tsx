@@ -66,7 +66,7 @@ export default function ResendVerification({
       )}
 
       {error && (
-        <span role="alert" style={{ fontSize: '0.8rem', color: 'var(--error-500)' }}>{error}</span>
+        <span role="alert" style={{ fontSize: '0.8rem', color: 'var(--error-600)' }}>{error}</span>
       )}
 
       <button

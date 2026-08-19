@@ -26,8 +26,8 @@ export default function MyVolunteerPage() {
 
   const statusConfig: Record<string, { color: string; bg: string; icon: React.ReactNode; label: string }> = {
     approved: { color: 'var(--success-600)', bg: 'rgba(5,150,105,0.08)', icon: <CheckCircle size={20} />, label: 'Approved' },
-    pending_verification: { color: 'var(--accent-600)', bg: 'rgba(245,158,11,0.08)', icon: <Clock size={20} />, label: 'Pending Verification' },
-    new_application: { color: 'var(--primary-600)', bg: 'rgba(232, 93, 4, 0.08)', icon: <ClipboardList size={20} />, label: 'Application Submitted' },
+    pending_verification: { color: 'var(--accent-700)', bg: 'rgba(245,158,11,0.08)', icon: <Clock size={20} />, label: 'Pending Verification' },
+    new_application: { color: 'var(--text-accent)', bg: 'rgba(232, 93, 4, 0.08)', icon: <ClipboardList size={20} />, label: 'Application Submitted' },
     rejected: { color: 'var(--error-600)', bg: 'rgba(220,38,38,0.08)', icon: <XCircle size={20} />, label: 'Rejected' },
     on_hold: { color: 'var(--text-muted)', bg: 'var(--bg-secondary)', icon: <Clock size={20} />, label: 'On Hold' },
   };
@@ -71,7 +71,7 @@ export default function MyVolunteerPage() {
             </div>
             <div className="card-stat">
               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Active</div>
-              <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--primary-600)' }}>{myAssignments.filter(a => a.status === 'in_progress' || a.status === 'pending').length}</div>
+              <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-accent)' }}>{myAssignments.filter(a => a.status === 'in_progress' || a.status === 'pending').length}</div>
             </div>
             <div className="card-stat">
               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Completed</div>

@@ -81,7 +81,7 @@ export default function RequestDetailPage() {
 
   return (
     <div className="animate-fade-in" style={{ maxWidth: 800, margin: '0 auto' }}>
-      <Link href="/portal/member/my-requests" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', color: 'var(--primary-600)', textDecoration: 'none', marginBottom: 24, fontWeight: 600 }}>
+      <Link href="/portal/member/my-requests" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', color: 'var(--text-accent)', textDecoration: 'none', marginBottom: 24, fontWeight: 600 }}>
         <ArrowLeft size={16} /> Back to My Requests
       </Link>
 
@@ -114,9 +114,16 @@ export default function RequestDetailPage() {
         {request.documents.length > 0 && (
           <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
             {request.documents.map((doc, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, background: 'var(--bg-secondary)', fontSize: '0.78rem', fontWeight: 500 }}>
-                <FileText size={14} /> {doc}
-              </div>
+              /* The value is a storage URL; the readable part is its filename. */
+              <a
+                key={i}
+                href={doc}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, background: 'var(--bg-secondary)', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-accent)', textDecoration: 'none' }}
+              >
+                <FileText size={14} /> Attachment {i + 1}
+              </a>
             ))}
           </div>
         )}
@@ -184,7 +191,7 @@ export default function RequestDetailPage() {
                 onKeyDown={e => { if (e.key === 'Enter') void handleReply(); }}
                 disabled={sending}
               />
-              <button className="btn btn-primary" onClick={handleReply} disabled={sending || !replyText.trim()}>
+              <button aria-label="Send reply" className="btn btn-primary" onClick={handleReply} disabled={sending || !replyText.trim()}>
                 <Send size={16} />
               </button>
             </div>

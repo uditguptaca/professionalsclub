@@ -55,7 +55,7 @@ export default function AdminRequestsPage() {
                 <tr key={req.id} style={{ borderBottom: '1px solid var(--bg-secondary)' }}>
                   <td style={{ padding: '12px 16px', fontSize: '0.78rem', fontFamily: 'monospace', color: 'var(--text-muted)' }}>{req.reference}</td>
                   <td style={{ padding: '12px 16px', fontSize: '0.85rem', fontWeight: 600 }}>{req.memberName}</td>
-                  <td style={{ padding: '12px 16px', fontSize: '0.78rem' }}>{req.category.split(' ').slice(0, 3).join(' ')}...</td>
+                  <td style={{ padding: '12px 16px', fontSize: '0.78rem' }} title={req.category}>{req.category}</td>
                   <td style={{ padding: '12px 16px', fontSize: '0.85rem', fontWeight: 500, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{req.title}</td>
                   <td style={{ padding: '12px 16px' }}>
                     <span style={{

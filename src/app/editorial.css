@@ -80,7 +80,7 @@
   font-weight: 700;
   letter-spacing: var(--track-label);
   text-transform: uppercase;
-  color: var(--primary-600);
+  color: var(--text-accent);
 }
 .eyebrow::before {
   content: "";
@@ -235,7 +235,7 @@
 .index-num {
   font-family: var(--font-mono);
   font-size: 0.8rem;
-  color: var(--primary-600);
+  color: var(--text-accent);
   font-variant-numeric: tabular-nums;
 }
 
@@ -285,13 +285,16 @@
   cursor: not-allowed;
 }
 
+/* The label is white, so the fill has to carry it: white on --primary-600 is
+   3.50:1 and fails AA at button label sizes. --primary-700 is 5.18:1. The
+   brand orange keeps every other job it had. */
 .btn-primary {
-  background: var(--primary-600);
+  background: var(--primary-700);
   color: #fff;
   box-shadow: var(--shadow-warm-md), var(--shadow-inset-hair);
 }
 .btn-primary:hover:not(:disabled) {
-  background: var(--primary-700);
+  background: var(--primary-800);
   box-shadow: var(--shadow-warm-lg);
   transform: translateY(-1px);
 }
@@ -302,7 +305,7 @@
   border-color: var(--border-color);
 }
 .btn-outline:hover:not(:disabled) {
-  border-color: var(--primary-600);
+  border-color: var(--text-accent);
   color: var(--primary-700);
   background: var(--primary-50);
   transform: translateY(-1px);
@@ -447,11 +450,20 @@ a:hover > .card {
 .form-input:hover:not(:disabled) {
   border-color: rgba(12, 12, 14, 0.16);
 }
+.input:focus-visible,
+.form-input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary-700);
+  outline-offset: 2px;
+  border-color: var(--primary-700);
+}
+/* Mouse focus keeps the quieter treatment: the border alone is enough when the
+   user just clicked the field they meant to click. */
 .input:focus,
 .form-input:focus {
   outline: none;
-  border-color: var(--primary-600);
-  box-shadow: 0 0 0 3px rgba(232, 93, 4, 0.13);
+  border-color: var(--primary-700);
 }
 .input:disabled,
 .form-input:disabled {
@@ -594,7 +606,7 @@ a:hover > .card {
   place-items: center;
   border-radius: var(--radius-lg);
   background: var(--bg-primary);
-  color: var(--primary-600);
+  color: var(--text-accent);
   box-shadow: var(--shadow-warm-sm);
 }
 .empty-state h3 {
@@ -807,7 +819,9 @@ a:hover > .card {
 
 /* Orange utility bar above the main bar: tagline left, essentials right. */
 .nav-topbar {
-  background: var(--primary-600);
+  /* 700, not 600: the bar carries 12px white text, and white on --primary-600
+     is 3.50:1 which fails AA at that size. On 700 it is 5.18:1. */
+  background: var(--primary-700);
   color: #fff;
 }
 .nav-topbar-inner {
@@ -867,7 +881,7 @@ a:hover > .card {
 .wordmark-leaf {
   width: 1.85rem;
   height: 1.75rem;
-  color: var(--primary-500);
+  color: var(--text-accent);
   flex-shrink: 0;
   transition: transform var(--dur-base) var(--ease-spring);
 }
@@ -1125,7 +1139,7 @@ a:hover > .card {
 }
 .hero-editorial-title em {
   font-style: italic;
-  color: var(--primary-600);
+  color: var(--text-accent);
   font-variation-settings: "SOFT" 100, "WONK" 1;
 }
 
@@ -1252,7 +1266,7 @@ a:hover > .card {
 
 .index-arrow {
   flex-shrink: 0;
-  color: var(--primary-600);
+  color: var(--text-accent);
   transition: transform var(--dur-base) var(--ease-spring);
 }
 .index-list > a:hover .index-arrow { transform: translateX(4px); }
@@ -1293,7 +1307,7 @@ a:hover > .card {
 
 .wordmark-inverse .wordmark-bottom { color: #fff; }
 .wordmark-inverse .wordmark-top { color: var(--primary-400); }
-.wordmark-inverse .wordmark-leaf { color: var(--primary-500); }
+.wordmark-inverse .wordmark-leaf { color: var(--text-accent); }
 
 .footer-editorial-blurb {
   margin: 1.5rem 0 0;
@@ -1583,7 +1597,7 @@ a:hover > .card {
   color: var(--green-300);
   font-variation-settings: "SOFT" 100, "WONK" 1;
 }
-.marquee-sep { color: var(--primary-500); font-size: 0.9rem; }
+.marquee-sep { color: var(--text-accent); font-size: 0.9rem; }
 @keyframes marquee-scroll {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
@@ -1937,7 +1951,7 @@ html { -webkit-text-size-adjust: 100%; }
   text-decoration: none;
   min-width: 0;
 }
-.portal-brand-leaf { width: 1.6rem; height: 1.5rem; color: var(--primary-500); flex-shrink: 0; }
+.portal-brand-leaf { width: 1.6rem; height: 1.5rem; color: var(--text-accent); flex-shrink: 0; }
 .portal-brand-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
 .portal-brand-text strong {
   font-size: 0.85rem;
@@ -3080,8 +3094,8 @@ html { -webkit-text-size-adjust: 100%; }
 
 .ref-card {
   display: flex;
-  align-items: center;
-  gap: 0.85rem;
+  flex-direction: column;
+  gap: 0.7rem;
   width: 100%;
   padding: 1rem;
   text-align: left;
@@ -3102,7 +3116,23 @@ html { -webkit-text-size-adjust: 100%; }
   outline: 2px solid var(--green-700, #1b4332);
   outline-offset: 2px;
 }
-.ref-card-skeleton { pointer-events: none; flex-direction: column; align-items: stretch; }
+.ref-card-skeleton { pointer-events: none; }
+
+/* Two rows: identity on top, status on the bottom. The helper pill used to sit
+   inside the body column, where a long label wrapped and pushed the open-count
+   out of line, so no two cards in the grid agreed on where anything was. */
+.ref-card-head { display: flex; align-items: center; gap: 0.85rem; width: 100%; }
+.ref-card-go { flex-shrink: 0; color: var(--text-muted); margin-left: auto; }
+.ref-card:hover .ref-card-go { color: var(--text-accent); }
+.ref-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  width: 100%;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(27, 67, 50, 0.07);
+}
 
 .ref-logo {
   display: inline-flex;
@@ -3138,7 +3168,7 @@ html { -webkit-text-size-adjust: 100%; }
   font-size: 0.8rem;
   color: var(--text-secondary);
 }
-.ref-card-jobs strong { font-size: 1.05rem; font-weight: 800; color: var(--primary-600); }
+.ref-card-jobs strong { font-size: 1.05rem; font-weight: 800; color: var(--text-accent); }
 
 /* The helper count is the whole point of the card, and it is a count only:
    there is never a name here because the server never sends one. */
@@ -3146,7 +3176,7 @@ html { -webkit-text-size-adjust: 100%; }
   display: inline-flex;
   align-items: center;
   gap: 0.32rem;
-  margin-top: 0.2rem;
+  white-space: nowrap;
   padding: 0.16rem 0.5rem;
   border-radius: 99px;
   background: rgba(27, 67, 50, 0.09);
@@ -3176,7 +3206,7 @@ html { -webkit-text-size-adjust: 100%; }
   cursor: pointer;
   width: fit-content;
 }
-.ref-back:hover { color: var(--primary-600); }
+.ref-back:hover { color: var(--text-accent); }
 
 .ref-company-head {
   display: flex;
@@ -3208,7 +3238,7 @@ html { -webkit-text-size-adjust: 100%; }
 }
 .ref-job:hover { border-color: rgba(27, 67, 50, 0.24); }
 .ref-job.is-picked {
-  border-color: var(--primary-600);
+  border-color: var(--text-accent);
   background: rgba(232, 93, 4, 0.045);
 }
 .ref-job > label {
@@ -3224,7 +3254,7 @@ html { -webkit-text-size-adjust: 100%; }
   width: 1.05rem;
   height: 1.05rem;
   margin-top: 0.12rem;
-  accent-color: var(--primary-600);
+  accent-color: var(--text-accent);
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -3246,7 +3276,7 @@ html { -webkit-text-size-adjust: 100%; }
   border-left: 1px solid rgba(27, 67, 50, 0.08);
   align-self: stretch;
 }
-.ref-job-link:hover { color: var(--primary-600); }
+.ref-job-link:hover { color: var(--text-accent); }
 .ref-job-skeleton { padding: 0.85rem 1rem; border-bottom: 1px solid rgba(27, 67, 50, 0.07); }
 
 /* ---- The ask (sticky) ---------------------------------------------------- */
@@ -3264,7 +3294,7 @@ html { -webkit-text-size-adjust: 100%; }
   z-index: 5;
 }
 .ref-ask-count { font-size: 0.85rem; color: var(--text-secondary); }
-.ref-ask-count strong { color: var(--primary-600); font-size: 1rem; }
+.ref-ask-count strong { color: var(--text-accent); font-size: 1rem; }
 .ref-ask textarea {
   width: 100%;
   padding: 0.7rem 0.8rem;
@@ -3349,7 +3379,7 @@ html { -webkit-text-size-adjust: 100%; }
 .ref-tabs button:hover { color: var(--text-primary); }
 .ref-tabs button.is-active {
   color: var(--green-900, #0f2318);
-  border-bottom-color: var(--primary-600);
+  border-bottom-color: var(--text-accent);
 }
 .ref-tab-count {
   display: inline-flex;
@@ -3401,7 +3431,7 @@ html { -webkit-text-size-adjust: 100%; }
   color: var(--green-800, #1b4332);
   text-decoration: none;
 }
-.ref-ask-jobs a:hover { color: var(--primary-600); text-decoration: underline; }
+.ref-ask-jobs a:hover { color: var(--text-accent); text-decoration: underline; }
 .ref-closed {
   font-size: 0.68rem;
   font-weight: 700;
@@ -3483,7 +3513,7 @@ html { -webkit-text-size-adjust: 100%; }
   color: var(--text-secondary);
   text-decoration: none;
 }
-.ref-contact a:hover { border-color: var(--primary-600); color: var(--primary-700); }
+.ref-contact a:hover { border-color: var(--text-accent); color: var(--primary-700); }
 
 /* ---- Where I work ------------------------------------------------------- */
 .ref-privacy {
@@ -3552,4 +3582,88 @@ html { -webkit-text-size-adjust: 100%; }
   .ref-head .btn { width: 100%; justify-content: center; }
   .ref-company-head { align-items: flex-start; }
   .ref-ask-actions .btn { flex: 1; justify-content: center; }
+}
+
+/* ===== CONFIRM DIALOG ====================================================== */
+/* Replaces window.confirm for destructive actions. Built on <dialog>, so the
+   focus trap, Escape handling and page inertness come from the platform. */
+
+.confirm-dialog {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  max-width: min(30rem, calc(100vw - 2rem));
+  /* A modal dialog is top-layer, so it needs no z-index at all. */
+}
+.confirm-dialog::backdrop {
+  background: rgba(15, 35, 24, 0.42);
+  backdrop-filter: blur(2px);
+}
+.confirm-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1.5rem;
+  background: var(--bg-primary);
+  border: 1px solid rgba(27, 67, 50, 0.12);
+  border-radius: 1rem;
+  box-shadow: 0 24px 60px -20px rgba(15, 35, 24, 0.4);
+}
+.confirm-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-bottom: 0.2rem;
+  border-radius: 0.7rem;
+}
+.confirm-icon-danger { background: rgba(220, 73, 58, 0.1); color: var(--error-600); }
+.confirm-icon-primary { background: rgba(232, 93, 4, 0.1); color: var(--primary-700); }
+
+.confirm-panel h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+.confirm-panel p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  max-width: 34ch;
+}
+.confirm-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 0.9rem;
+  flex-wrap: wrap;
+}
+
+/* The destructive confirm. Deliberately the only red button in the app, so red
+   always means "this removes something". */
+.btn-danger {
+  background: var(--error-600);
+  color: #fff;
+}
+.btn-danger:hover:not(:disabled) { background: #8f1616; }
+
+@media (max-width: 480px) {
+  .confirm-actions { flex-direction: column-reverse; }
+  .confirm-actions .btn { width: 100%; justify-content: center; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .confirm-dialog[open] .confirm-panel {
+    animation: confirm-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes confirm-in {
+    from { opacity: 0; transform: translateY(6px) scale(0.98); }
+    to   { opacity: 1; transform: none; }
+  }
 }

@@ -149,7 +149,7 @@ export default function MessagesPage() {
         <div style={{ borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', height: '100%' }}>
           <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-color)' }}>
             <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <MessageCircle size={18} style={{ color: 'var(--primary-600)' }} /> Messages
+              <MessageCircle size={18} style={{ color: 'var(--text-accent)' }} /> Messages
             </h2>
           </div>
 
@@ -164,10 +164,13 @@ export default function MessagesPage() {
               {conversations.map((conv) => {
                 const isSelected = selectedConv?.id === conv.id;
                 return (
-                  <div
+                  <button
                     key={conv.id}
+                    type="button"
                     onClick={() => setSelectedConv(conv)}
                     style={{
+                      width: '100%', textAlign: 'left', border: 'none', borderRadius: 0,
+                      font: 'inherit', color: 'inherit',
                       padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12,
                       background: isSelected ? 'rgba(232, 93, 4, 0.06)' : 'transparent',
                       borderBottom: '1px solid var(--border-color)', cursor: 'pointer',
@@ -176,23 +179,23 @@ export default function MessagesPage() {
                   >
                     <div style={{
                       width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                      background: `linear-gradient(135deg, ${conv.otherProfile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)'}20, ${conv.otherProfile.gender === 'female' ? 'var(--accent-400)' : 'var(--primary-500)'}10)`,
+                      background: conv.otherProfile.gender?.toLowerCase() === 'female' ? 'linear-gradient(135deg, rgba(217,119,6,0.13), rgba(251,191,36,0.06))' : 'linear-gradient(135deg, rgba(232,93,4,0.13), rgba(249,115,22,0.06))',
                       display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}>
-                      <User size={20} style={{ color: conv.otherProfile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
+                      <User size={20} style={{ color: conv.otherProfile.gender?.toLowerCase() === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                         <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                           {getDisplayName(conv.otherProfile.full_name, conv.otherProfile.display_pref)}
                         </span>
-                        {conv.otherProfile.is_verified_id && <UserCheck size={12} style={{ color: 'var(--primary-600)' }} />}
+                        {conv.otherProfile.is_verified_id && <UserCheck size={12} style={{ color: 'var(--text-accent)' }} />}
                       </div>
                       <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {conv.otherProfile.occupation}
                       </p>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -211,15 +214,15 @@ export default function MessagesPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{
                     width: 38, height: 38, borderRadius: 10,
-                    background: `linear-gradient(135deg, ${selectedConv.otherProfile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)'}20, ${selectedConv.otherProfile.gender === 'female' ? 'var(--accent-400)' : 'var(--primary-500)'}10)`,
+                    background: selectedConv.otherProfile.gender?.toLowerCase() === 'female' ? 'linear-gradient(135deg, rgba(217,119,6,0.13), rgba(251,191,36,0.06))' : 'linear-gradient(135deg, rgba(232,93,4,0.13), rgba(249,115,22,0.06))',
                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>
-                    <User size={18} style={{ color: selectedConv.otherProfile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
+                    <User size={18} style={{ color: selectedConv.otherProfile.gender?.toLowerCase() === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
                   </div>
                   <div>
                     <h3 style={{ fontSize: '0.9rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
                       {getDisplayName(selectedConv.otherProfile.full_name, selectedConv.otherProfile.display_pref)}
-                      {selectedConv.otherProfile.is_verified_id && <UserCheck size={14} style={{ color: 'var(--primary-600)' }} />}
+                      {selectedConv.otherProfile.is_verified_id && <UserCheck size={14} style={{ color: 'var(--text-accent)' }} />}
                     </h3>
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{selectedConv.otherProfile.city}, {selectedConv.otherProfile.province}</span>
                   </div>
@@ -235,9 +238,9 @@ export default function MessagesPage() {
                   <div style={{
                     display: 'inline-flex', alignItems: 'center', gap: 6,
                     padding: '6px 12px', borderRadius: 8, background: 'rgba(0,168,107,0.08)',
-                    color: 'var(--success-500)', fontSize: '0.72rem', fontWeight: 600
+                    color: '#04724d', fontSize: '0.72rem', fontWeight: 600
                   }}>
-                    <Shield size={12} /> Encrypted, secure chat unlocked via mutual interest
+                    <Shield size={12} /> Private chat, unlocked by mutual interest
                   </div>
                 </div>
 
@@ -256,7 +259,7 @@ export default function MessagesPage() {
                           maxWidth: '70%',
                           padding: '12px 16px',
                           borderRadius: isMine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                          background: isMine ? 'var(--primary-600)' : 'white',
+                          background: isMine ? 'var(--primary-700)' : 'white',
                           color: isMine ? 'white' : 'var(--text-primary)',
                           boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
                           border: isMine ? 'none' : '1px solid var(--border-color)',

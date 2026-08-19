@@ -13,10 +13,10 @@ import {
 
 const statusConfig: Record<string, { color: string; bg: string; label: string }> = {
   draft: { color: 'var(--text-secondary)', bg: 'rgba(100,116,139,0.1)', label: 'Draft' },
-  pending: { color: 'var(--warning-500)', bg: 'rgba(245,158,11,0.1)', label: 'Pending Review' },
-  approved: { color: 'var(--success-500)', bg: 'rgba(0,168,107,0.1)', label: 'Approved & Live' },
-  rejected: { color: 'var(--error-500)', bg: 'rgba(240,73,35,0.1)', label: 'Rejected' },
-  changes_requested: { color: 'var(--accent-600)', bg: 'rgba(217,119,6,0.1)', label: 'Changes Requested' },
+  pending: { color: '#92400e', bg: 'rgba(245,158,11,0.1)', label: 'Pending Review' },
+  approved: { color: '#04724d', bg: 'rgba(0,168,107,0.1)', label: 'Approved & Live' },
+  rejected: { color: 'var(--error-600)', bg: 'rgba(240,73,35,0.1)', label: 'Rejected' },
+  changes_requested: { color: 'var(--accent-700)', bg: 'rgba(217,119,6,0.1)', label: 'Changes Requested' },
   suspended: { color: 'var(--error-600)', bg: 'rgba(220,38,38,0.1)', label: 'Suspended' },
 };
 
@@ -40,6 +40,7 @@ export default function AdminReviewProfilePage() {
   const [isVerifiedPhoto, setIsVerifiedPhoto] = useState(false);
   const [isVerifiedProfession, setIsVerifiedProfession] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -88,11 +89,12 @@ export default function AdminReviewProfilePage() {
     });
 
     if (result.ok) {
-      alert('Moderation saved successfully.');
+      // Straight back to the queue; the row leaving Pending IS the
+      // confirmation, no blocking popup needed.
       router.push('/portal/admin/matrimony');
     } else {
       console.error('Error saving moderation:', result.error);
-      alert('Failed to save moderation. Please try again.');
+      setSaveError(result.error);
     }
 
     setSaving(false);
@@ -155,10 +157,10 @@ export default function AdminReviewProfilePage() {
           <div className="card" style={{ display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'center', padding: 24 }}>
             <div style={{
               width: 90, height: 90, borderRadius: 16,
-              background: `linear-gradient(135deg, ${profile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)'}20, ${profile.gender === 'female' ? 'var(--accent-400)' : 'var(--primary-500)'}10)`,
+              background: profile.gender?.toLowerCase() === 'female' ? 'linear-gradient(135deg, rgba(217,119,6,0.13), rgba(251,191,36,0.06))' : 'linear-gradient(135deg, rgba(232,93,4,0.13), rgba(249,115,22,0.06))',
               display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
-              <User size={44} style={{ color: profile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
+              <User size={44} style={{ color: profile.gender?.toLowerCase() === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
             </div>
             <div>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 6px 0' }}>{profile.full_name}</h2>
@@ -183,7 +185,7 @@ export default function AdminReviewProfilePage() {
                       <FileText size={24} style={{ color: 'var(--text-muted)' }} />
                     </div>
                     <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)' }}>{item.type}</span>
-                    <a href={item.url} target="_blank" rel="noreferrer" style={{ display: 'block', fontSize: '0.7rem', color: 'var(--primary-600)', textDecoration: 'none', marginTop: 4 }}>
+                    <a href={item.url} target="_blank" rel="noreferrer" style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-accent)', textDecoration: 'none', marginTop: 4 }}>
                       Open File
                     </a>
                   </div>
@@ -195,7 +197,7 @@ export default function AdminReviewProfilePage() {
           {/* About Me */}
           <div className="card" style={{ padding: 24 }}>
             <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Smile size={18} style={{ color: 'var(--primary-600)' }} /> About Me & Lifestyle
+              <Smile size={18} style={{ color: 'var(--text-accent)' }} /> About Me & Lifestyle
             </h3>
             <p style={{ lineHeight: 1.6, color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '0 0 16px 0' }}>
               {profile.about_me || 'No bio written.'}
@@ -217,7 +219,7 @@ export default function AdminReviewProfilePage() {
           {/* Background details */}
           <div className="card" style={{ padding: 24 }}>
             <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Users size={18} style={{ color: 'var(--success-500)' }} /> Religion, Community & Location
+              <Users size={18} style={{ color: '#04724d' }} /> Religion, Community & Location
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
               {[
@@ -266,7 +268,7 @@ export default function AdminReviewProfilePage() {
           {/* Contact Details (For verification review) */}
           <div className="card" style={{ padding: 24 }}>
             <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Phone size={18} style={{ color: 'var(--primary-600)' }} /> Contact Details
+              <Phone size={18} style={{ color: 'var(--text-accent)' }} /> Contact Details
             </h3>
             {contact ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -293,9 +295,10 @@ export default function AdminReviewProfilePage() {
           {/* Moderation Form */}
           <div className="card" style={{ padding: 24, border: '1px solid rgba(232, 93, 4, 0.2)', background: 'rgba(232, 93, 4, 0.01)' }}>
             <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Shield size={18} style={{ color: 'var(--primary-600)' }} /> Moderation Decision
+              <Shield size={18} style={{ color: 'var(--text-accent)' }} /> Moderation Decision
             </h3>
             <form onSubmit={handleSaveModeration} className="flex flex-col gap-4">
+              {saveError && <p role="alert" className="community-error">{saveError}</p>}
               
               {/* Status Select */}
               <div className="input-group">

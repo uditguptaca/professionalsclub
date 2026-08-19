@@ -53,11 +53,11 @@ export default function NewsPage() {
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(232,93,4,0.08)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(232,93,4,0.2)' }}>
-            <Newspaper size={14} style={{ color: 'var(--primary-600)' }} />
-            <span style={{ color: 'var(--primary-600)', fontWeight: 700, fontSize: '0.82rem' }}>Community News</span>
+            <Newspaper size={14} style={{ color: 'var(--text-accent)' }} />
+            <span style={{ color: 'var(--text-accent)', fontWeight: 700, fontSize: '0.82rem' }}>Community News</span>
           </div>
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
-            Stay <span style={{ color: 'var(--primary-600)' }}>Informed</span>
+            Stay <span style={{ color: 'var(--text-accent)' }}>Informed</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
             Community updates, career tips, and settlement news for building your future here.
@@ -73,7 +73,7 @@ export default function NewsPage() {
             {featured.map((article, idx) => {
               const cat = categoryColors[article.category] || { bg: 'var(--bg-secondary)', text: 'var(--text-primary)' };
               return (
-                <div key={article.id} style={{ position: 'relative', height: 380, borderRadius: 24, overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 10px 25px rgba(0,0,0,0.15)' }} className="hover:-translate-y-1 hover:shadow-xl">
+                <div key={article.id} style={{ position: 'relative', height: 380, borderRadius: 24, overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.15)' }}>
                   <ContentImage src={article.image} alt={article.title} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(12,12,14,0.95) 0%, rgba(12,12,14,0.6) 50%, rgba(12,12,14,0.2) 100%)' }} />
                   
@@ -109,7 +109,7 @@ export default function NewsPage() {
               {rest.map((article, idx) => {
                 const cat = categoryColors[article.category] || { bg: 'var(--bg-secondary)', text: 'var(--text-primary)' };
                 return (
-                  <div key={article.id} style={{ display: 'flex', alignItems: 'center', gap: 24, padding: '20px 24px', borderRadius: 20, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', cursor: 'pointer', transition: 'box-shadow 0.2s, transform 0.2s' }} className="hover:-translate-y-1 hover:shadow-lg">
+                  <div key={article.id} style={{ display: 'flex', alignItems: 'center', gap: 24, padding: '20px 24px', borderRadius: 20, background: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
                     <div style={{ width: 80, height: 80, borderRadius: 16, overflow: 'hidden', position: 'relative', flexShrink: 0, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                       <ContentImage src={article.image} alt={article.category} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
                       <div style={{ position: 'absolute', inset: 0, background: 'rgba(12,12,14,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

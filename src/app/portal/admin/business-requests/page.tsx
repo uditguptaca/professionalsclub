@@ -74,7 +74,7 @@ export default function AdminBusinessRequests() {
       {/* Stats */}
       <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
         {[
-          { label: 'Pending', value: requests.filter(r => r.status === 'pending').length, icon: <Clock size={22} />, color: 'var(--accent-600)', bg: 'rgba(245,158,11,0.1)' },
+          { label: 'Pending', value: requests.filter(r => r.status === 'pending').length, icon: <Clock size={22} />, color: 'var(--accent-700)', bg: 'rgba(245,158,11,0.1)' },
           { label: 'In Progress', value: requests.filter(r => r.status === 'in_progress').length, icon: <ArrowRight size={22} />, color: 'var(--primary-700)', bg: 'rgba(232, 93, 4, 0.1)' },
           { label: 'Completed', value: requests.filter(r => r.status === 'completed').length, icon: <CheckCircle size={22} />, color: 'var(--success-600)', bg: 'rgba(5,150,105,0.1)' },
         ].map((s, i) => (
@@ -127,7 +127,7 @@ export default function AdminBusinessRequests() {
                     </td>
                     <td style={{ padding: '14px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Building2 size={14} style={{ color: 'var(--primary-600)' }} />
+                        <Building2 size={14} style={{ color: 'var(--text-accent)' }} />
                         <span style={{ fontWeight: 600 }}>{req.businessName}</span>
                       </div>
                     </td>

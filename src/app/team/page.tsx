@@ -39,7 +39,7 @@ export default function TeamPage() {
                   <ContentImage src={member.image} alt={member.name} width={100} height={100} style={{ objectFit: 'cover' }} />
                 </div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>{member.name}</h3>
-                <div style={{ fontSize: '0.9rem', color: 'var(--primary-600)', fontWeight: 600, marginBottom: 12 }}>{member.role}</div>
+                <div style={{ fontSize: '0.9rem', color: 'var(--text-accent)', fontWeight: 600, marginBottom: 12 }}>{member.role}</div>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 20, minHeight: 40 }}>
                   {member.bio.length > 50 ? member.bio.substring(0, 47) + '...' : member.bio}
                 </p>

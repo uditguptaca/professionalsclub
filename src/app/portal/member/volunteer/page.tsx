@@ -65,7 +65,7 @@ export default function VolunteerApplicationPage() {
     return (
       <div className="animate-fade-in" style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center', padding: '80px 20px' }}>
         <div style={{ width: 64, height: 64, borderRadius: '50%', background: existingApp.status === 'approved' ? 'var(--success-600)' : 'rgba(245,158,11,0.15)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
-          {existingApp.status === 'approved' ? <CheckCircle2 size={28} style={{ color: 'white' }} /> : <HandHeart size={28} style={{ color: 'var(--accent-600)' }} />}
+          {existingApp.status === 'approved' ? <CheckCircle2 size={28} style={{ color: 'white' }} /> : <HandHeart size={28} style={{ color: 'var(--accent-700)' }} />}
         </div>
         <h1 className="text-2xl font-bold font-display mb-3">
           {existingApp.status === 'approved' ? 'You are an Approved Volunteer!' : 'Application Submitted'}
@@ -227,7 +227,7 @@ export default function VolunteerApplicationPage() {
             <h2 className="text-xl font-bold">Agreements & Submit</h2>
 
             <div style={{ padding: 16, borderRadius: 10, background: 'rgba(232, 93, 4, 0.04)', border: '1px solid rgba(232, 93, 4, 0.15)' }}>
-              <Shield size={18} style={{ display: 'inline', verticalAlign: '-3px', marginRight: 6, color: 'var(--primary-600)' }} />
+              <Shield size={18} style={{ display: 'inline', verticalAlign: '-3px', marginRight: 6, color: 'var(--text-accent)' }} />
               <span style={{ fontSize: '0.8rem', color: 'var(--primary-700)', fontWeight: 600 }}>Platform Rules for Volunteers</span>
               <ul style={{ fontSize: '0.8rem', color: 'var(--text-primary)', marginTop: 12, paddingLeft: 16, lineHeight: 1.8 }}>
                 <li>All support must go through the platform — you cannot contact members directly.</li>
@@ -253,7 +253,7 @@ export default function VolunteerApplicationPage() {
             </div>
 
             {submitError && (
-              <div role="alert" style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(240,73,35,0.1)', color: 'var(--error-500)', fontSize: '0.85rem' }}>
+              <div role="alert" style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(240,73,35,0.1)', color: 'var(--error-600)', fontSize: '0.85rem' }}>
                 {submitError}
               </div>
             )}

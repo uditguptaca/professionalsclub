@@ -15,6 +15,7 @@ import {
   MoreHorizontal, ImagePlus, Clapperboard, X, ChevronLeft, ChevronRight,
   Link2, Check, Plus, Users, ShieldCheck,
 } from 'lucide-react';
+import { useConfirm } from '@/components/portal/confirm';
 
 /**
  * Community surfaces. The grammar is the familiar social one — byline,
@@ -354,7 +355,17 @@ function PostMedia({
     <>
       <div className={`community-media community-media-${Math.min(media.length, 4)}`}>
         {media.map((m, i) => (
-          <button key={m.url} type="button" className="community-media-cell" onClick={() => tap(i)}>
+          <button
+            key={m.url}
+            type="button"
+            className="community-media-cell"
+            onClick={() => tap(i)}
+            aria-label={
+              media.length > 1
+                ? `Open ${m.type === 'video' ? 'video' : 'photo'} ${i + 1} of ${media.length}`
+                : `Open ${m.type === 'video' ? 'video' : 'photo'}`
+            }
+          >
             {m.type === 'image'
               ? <img src={m.url} alt="" loading="lazy" />
               : <video src={m.url} muted playsInline preload="metadata" />}
@@ -386,14 +397,20 @@ function CommentThread({
   const [comments, setComments] = useState<CommunityComment[] | null>(null);
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     let alive = true;
     fetchComments(post.id).then((r) => {
-      if (alive && r.ok) {
+      if (!alive) return;
+      if (r.ok) {
         setComments(r.data);
         onCount(r.data.length);
+      } else {
+        // An empty list stops the skeleton; the error line says why.
+        setComments([]);
+        setError(r.error);
       }
     });
     return () => { alive = false; };
@@ -419,6 +436,9 @@ function CommentThread({
   };
 
   const remove = async (id: string) => {
+    if (removingId) return;
+    setRemovingId(id);
+    setError('');
     const r = await removeOwnComment(id);
     if (r.ok) {
       setComments((c) => {
@@ -426,7 +446,10 @@ function CommentThread({
         onCount(next.length);
         return next;
       });
+    } else {
+      setError(r.error);
     }
+    setRemovingId(null);
   };
 
   return (
@@ -447,8 +470,13 @@ function CommentThread({
             <small>{timeAgo(c.createdAt)}</small>
           </p>
           {profile?.id === c.authorId && (
-            <button className="community-tool community-tool-icon" onClick={() => remove(c.id)} aria-label="Delete comment">
-              <Trash2 size={14} />
+            <button
+              className="community-tool community-tool-icon"
+              onClick={() => remove(c.id)}
+              disabled={removingId !== null}
+              aria-label="Delete comment"
+            >
+              {removingId === c.id ? <Loader2 size={14} className="spin" /> : <Trash2 size={14} />}
             </button>
           )}
         </div>
@@ -493,16 +521,39 @@ export function PostCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const [reporting, setReporting] = useState(false);
   const [reportReason, setReportReason] = useState('');
+  const [reportBusy, setReportBusy] = useState(false);
+  const [reportError, setReportError] = useState('');
   const [notice, setNotice] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [actionBusy, setActionBusy] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const confirm = useConfirm();
   const mine = profile?.id === post.authorId;
 
+  // The options popover dismisses on outside click and Escape.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [menuOpen]);
+
   const toggleLike = async () => {
+    const prev = likeState;
     setLikePop(true);
     setTimeout(() => setLikePop(false), 300);
     setLikeState((s) => ({ liked: !s.liked, count: s.count + (s.liked ? -1 : 1) }));
     const r = await likePost(post.id);
     if (r.ok) setLikeState({ liked: r.data.liked, count: r.data.likeCount });
+    else setLikeState(prev);
   };
 
   /** Double-tap path: like if not liked yet; never unlike. */
@@ -512,26 +563,52 @@ export function PostCard({
   };
 
   const deletePost = async () => {
-    if (!window.confirm('Delete this post permanently?')) return;
+    const ok = await confirm({
+      title: 'Delete this post?',
+      message: 'It disappears for everyone, along with its comments and likes. This cannot be undone.',
+      confirmLabel: 'Delete post',
+    });
+    if (!ok) return;
+    setActionBusy(true);
+    setActionError('');
     const r = await removeOwnPost(post.id);
     if (r.ok) onDeleted(post.id);
+    else setActionError(r.error);
+    setActionBusy(false);
   };
 
   const sendReport = async () => {
-    if (reportReason.trim().length < 3) return;
+    if (reportReason.trim().length < 3 || reportBusy) return;
+    setReportBusy(true);
+    setReportError('');
     const r = await reportCommunityContent({
       targetType: 'post', targetId: post.id, reason: reportReason,
     });
-    setNotice(r.ok ? 'Reported — our moderators will review it.' : r.error);
-    setReporting(false);
-    setReportReason('');
-    setMenuOpen(false);
+    if (r.ok) {
+      setNotice('Reported — our moderators will review it.');
+      setReporting(false);
+      setReportReason('');
+      setMenuOpen(false);
+    } else {
+      // The form stays open with the reason intact; the error sits by the field.
+      setReportError(r.error);
+    }
+    setReportBusy(false);
   };
 
   const block = async () => {
-    if (!window.confirm(`Block ${post.authorFirstName}? You will no longer see each other's posts or comments.`)) return;
+    const ok = await confirm({
+      title: `Block ${post.authorFirstName}?`,
+      message: 'Neither of you will see the other\u2019s posts or comments. You can undo this from your profile.',
+      confirmLabel: 'Block',
+    });
+    if (!ok) return;
+    setActionBusy(true);
+    setActionError('');
     const r = await blockCommunityMember(post.authorId);
     if (r.ok) onAuthorBlocked(post.authorId);
+    else setActionError(r.error);
+    setActionBusy(false);
     setMenuOpen(false);
   };
 
@@ -558,21 +635,27 @@ export function PostCard({
         </div>
 
         {mine ? (
-          <button className="community-tool community-tool-icon" onClick={deletePost} aria-label="Delete post">
-            <Trash2 size={16} />
+          <button
+            className="community-tool community-tool-icon"
+            onClick={deletePost}
+            disabled={actionBusy}
+            aria-label="Delete post"
+          >
+            {actionBusy ? <Loader2 size={16} className="spin" /> : <Trash2 size={16} />}
           </button>
         ) : (
-          <div className="community-menu-wrap">
+          <div className="community-menu-wrap" ref={menuRef}>
             <button
               className="community-tool community-tool-icon"
-              onClick={() => { setMenuOpen((v) => !v); setReporting(false); }}
+              onClick={() => { setMenuOpen((v) => !v); setReporting(false); setReportError(''); }}
               aria-expanded={menuOpen}
+              aria-haspopup="true"
               aria-label="Post options"
             >
               <MoreHorizontal size={18} />
             </button>
             {menuOpen && (
-              <div className="community-menu" role="menu">
+              <div className="community-menu">
                 {reporting ? (
                   <div className="community-report-form">
                     <label htmlFor={`report-${post.id}`}>Why are you reporting this?</label>
@@ -584,13 +667,15 @@ export function PostCard({
                       value={reportReason}
                       onChange={(e) => setReportReason(e.target.value)}
                     />
+                    {reportError && <p role="alert" className="community-error">{reportError}</p>}
                     <div>
                       <button className="community-tool" onClick={() => setReporting(false)}>Cancel</button>
                       <button
                         className="btn btn-primary btn-sm"
                         onClick={sendReport}
-                        disabled={reportReason.trim().length < 3}
+                        disabled={reportBusy || reportReason.trim().length < 3}
                       >
+                        {reportBusy ? <Loader2 size={14} className="spin" /> : null}
                         Send report
                       </button>
                     </div>
@@ -598,7 +683,7 @@ export function PostCard({
                 ) : (
                   <>
                     <button onClick={() => setReporting(true)}><Flag size={14} /> Report post</button>
-                    <button onClick={block}><UserX size={14} /> Block {post.authorFirstName}</button>
+                    <button onClick={block} disabled={actionBusy}><UserX size={14} /> Block {post.authorFirstName}</button>
                   </>
                 )}
               </div>
@@ -610,6 +695,7 @@ export function PostCard({
       {post.body.trim() && <p className="community-post-body">{post.body}</p>}
       <PostMedia media={post.media ?? []} onLikeBurst={ensureLiked} />
       {notice && <p className="community-notice"><ShieldCheck size={13} /> {notice}</p>}
+      {actionError && <p role="alert" className="community-error">{actionError}</p>}
 
       <footer className="community-post-foot">
         <div className="community-action-row">
@@ -693,6 +779,8 @@ export function GroupsRail() {
 
 export function CommunityAside() {
   const [groups, setGroups] = useState<CommunityGroup[] | null>(null);
+  const [joinBusy, setJoinBusy] = useState<string | null>(null);
+  const [joinError, setJoinError] = useState('');
 
   useEffect(() => {
     sharedGroups().then(setGroups);
@@ -702,6 +790,9 @@ export function CommunityAside() {
   const discover = (groups ?? []).filter((g) => !g.isMember).slice(0, 3);
 
   const join = async (id: string) => {
+    if (joinBusy) return;
+    setJoinBusy(id);
+    setJoinError('');
     const r = await joinCommunityGroup(id);
     invalidateHome();  // membership changed; the shared snapshot is stale
     if (r.ok) {
@@ -710,7 +801,10 @@ export function CommunityAside() {
           g.id === id ? { ...g, isMember: true, memberCount: g.memberCount + 1, myRole: 'member' as const } : g
         )
       );
+    } else {
+      setJoinError(r.error);
     }
+    setJoinBusy(null);
   };
 
   return (
@@ -757,10 +851,17 @@ export function CommunityAside() {
                     <small>{g.memberCount} member{g.memberCount === 1 ? '' : 's'}</small>
                   </span>
                 </Link>
-                <button className="community-aside-join" onClick={() => join(g.id)}>Join</button>
+                <button
+                  className="community-aside-join"
+                  onClick={() => join(g.id)}
+                  disabled={joinBusy !== null}
+                >
+                  {joinBusy === g.id ? <Loader2 size={13} className="spin" /> : 'Join'}
+                </button>
               </li>
             ))}
           </ul>
+          {joinError && <p role="alert" className="community-error">{joinError}</p>}
         </section>
       )}
 

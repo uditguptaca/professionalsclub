@@ -2,10 +2,12 @@
 import React, { useState } from 'react';
 import { usePortal } from '@/context/portal-context';
 import { UsersRound, Plus, Pencil, Trash2, X, GripVertical } from 'lucide-react';
+import { useConfirm } from '@/components/portal/confirm';
 import type { TeamMember } from '@/types';
 
 export default function TeamManagementPage() {
   const { teamMembers, addTeamMember, updateTeamMember, deleteTeamMember } = usePortal();
+  const confirmAction = useConfirm();
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string | number>>({});
@@ -46,7 +48,7 @@ export default function TeamManagementPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this team member?')) return;
+    if (!(await confirmAction({ title: 'Remove this team member?', message: 'They disappear from the public team page immediately.', confirmLabel: 'Remove' }))) return;
     setListError(null);
     setDeletingId(id);
     const result = await deleteTeamMember(id);
@@ -54,7 +56,7 @@ export default function TeamManagementPage() {
     if (!result.ok) setListError(result.error);
   };
 
-  const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-primary)' };
+  const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem',  background: 'var(--bg-primary)' };
   const labelStyle: React.CSSProperties = { fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4, display: 'block' };
 
   return (

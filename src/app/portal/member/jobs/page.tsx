@@ -169,9 +169,14 @@ export default function MemberJobsPage() {
           <div className="ref-grid">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="ref-card ref-card-skeleton" aria-hidden="true">
-                <span className="community-shimmer ref-logo" />
-                <span className="community-line-shimmer community-shimmer" style={{ width: '60%' }} />
-                <span className="community-line-shimmer community-shimmer" style={{ width: '40%' }} />
+                <span className="ref-card-head">
+                  <span className="community-shimmer ref-logo" />
+                  <span className="ref-card-body">
+                    <span className="community-line-shimmer community-shimmer" style={{ width: '70%' }} />
+                    <span className="community-line-shimmer community-shimmer" style={{ width: '45%' }} />
+                  </span>
+                </span>
+                <span className="community-line-shimmer community-shimmer" style={{ width: '55%' }} />
               </div>
             ))}
           </div>
@@ -189,19 +194,23 @@ export default function MemberJobsPage() {
           <div className="ref-grid">
             {visible.map((c) => (
               <button key={c.id} type="button" className="ref-card" onClick={() => openCompany(c)}>
-                <span className="ref-logo" aria-hidden="true">{c.logo || c.name.charAt(0)}</span>
-                <span className="ref-card-body">
-                  <strong>{c.name}</strong>
-                  <small>
-                    {[c.industry, c.city].filter(Boolean).join(' · ') || 'Employer'}
-                  </small>
-                  <HelperBadge count={c.helperCount} />
+                <span className="ref-card-head">
+                  <span className="ref-logo" aria-hidden="true">{c.logo || c.name.charAt(0)}</span>
+                  <span className="ref-card-body">
+                    <strong>{c.name}</strong>
+                    <small>
+                      {[c.industry, c.city].filter(Boolean).join(' · ') || 'Employer'}
+                    </small>
+                  </span>
+                  <ArrowRight size={15} aria-hidden="true" className="ref-card-go" />
                 </span>
-                <span className="ref-card-jobs">
-                  {c.openJobsCount > 0
-                    ? <><strong>{c.openJobsCount}</strong> open</>
-                    : <span className="ref-muted">See careers page</span>}
-                  <ArrowRight size={15} aria-hidden="true" />
+                <span className="ref-card-foot">
+                  <HelperBadge count={c.helperCount} />
+                  <span className="ref-card-jobs">
+                    {c.openJobsCount > 0
+                      ? <><strong>{c.openJobsCount}</strong> open</>
+                      : <span className="ref-muted">Careers page</span>}
+                  </span>
                 </span>
               </button>
             ))}

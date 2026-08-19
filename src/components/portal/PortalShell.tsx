@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth/client';
 import { readAuthError } from '@/lib/auth/errors';
+import { ConfirmProvider } from '@/components/portal/confirm';
 import type { UserRole } from '@/types';
 import {
   Home, HelpCircle, HandHeart, FileText, ClipboardList, MessageSquare,
@@ -155,6 +156,7 @@ export default function PortalShell({
   );
 
   return (
+    <ConfirmProvider>
     <div className="portal-layout">
       {/* Desktop sidebar */}
       <aside className="sidebar">
@@ -279,5 +281,6 @@ export default function PortalShell({
         </button>
       </div>
     </div>
+    </ConfirmProvider>
   );
 }

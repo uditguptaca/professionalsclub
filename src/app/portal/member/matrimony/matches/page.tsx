@@ -167,7 +167,7 @@ export default function MatchesPage() {
       ) : (
         /* No preferences saved: say so rather than showing an invented score */
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 20 }}>
-          <SlidersHorizontal size={20} style={{ color: 'var(--primary-600)', flexShrink: 0 }} />
+          <SlidersHorizontal size={20} style={{ color: 'var(--text-accent)', flexShrink: 0 }} />
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>No partner preferences yet</div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
@@ -218,13 +218,13 @@ export default function MatchesPage() {
               {/* Photo, or the fallback mark when there is none to show */}
               <div style={{
                 width: 60, height: 60, borderRadius: 16, overflow: 'hidden',
-                background: `linear-gradient(135deg, ${cand.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)'}20, ${cand.gender === 'female' ? 'var(--accent-400)' : 'var(--primary-500)'}10)`,
+                background: cand.gender?.toLowerCase() === 'female' ? 'linear-gradient(135deg, rgba(217,119,6,0.13), rgba(251,191,36,0.06))' : 'linear-gradient(135deg, rgba(232,93,4,0.13), rgba(249,115,22,0.06))',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16
               }}>
                 {cand.photo_visibility === 'all' && cand.primary_photo_url ? (
                   <img src={cand.primary_photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
-                  <User size={30} style={{ color: cand.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
+                  <User size={30} style={{ color: cand.gender?.toLowerCase() === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
                 )}
               </div>
 
@@ -232,7 +232,7 @@ export default function MatchesPage() {
               <div style={{ flex: 1 }}>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                   {getDisplayName(cand.full_name, cand.display_pref)}
-                  {cand.is_verified_id && <UserCheck size={14} style={{ color: 'var(--primary-600)' }} />}
+                  {cand.is_verified_id && <UserCheck size={14} style={{ color: 'var(--text-accent)' }} />}
                 </h3>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>

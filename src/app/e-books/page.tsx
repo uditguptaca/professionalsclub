@@ -23,7 +23,7 @@ const DigitalCover = ({ title, chapter, color }: { title: string; chapter: strin
     }}>
       {/* Header Mimic */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '10px' }}>
-        <span style={{ color: 'var(--primary-600)', fontWeight: 900, fontSize: '0.6rem', letterSpacing: '0.5px' }}>CANADA</span>
+        <span style={{ color: 'var(--text-accent)', fontWeight: 900, fontSize: '0.6rem', letterSpacing: '0.5px' }}>CANADA</span>
         <span style={{ color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.6rem', letterSpacing: '0.5px' }}>PROFESSIONALS</span>
       </div>
 
@@ -44,7 +44,7 @@ const DigitalCover = ({ title, chapter, color }: { title: string; chapter: strin
           borderLeft: `2px solid ${color}`,
           padding: '4px 0'
         }}>
-          NEWCOMER&apos;S GUIDE <span style={{ color: 'var(--primary-600)', marginLeft: '4px' }}>CHAPTER {chapter}</span>
+          NEWCOMER&apos;S GUIDE <span style={{ color: 'var(--text-accent)', marginLeft: '4px' }}>CHAPTER {chapter}</span>
         </div>
 
         {/* Center Image Placeholder Mimic */}
@@ -81,7 +81,7 @@ const DigitalCover = ({ title, chapter, color }: { title: string; chapter: strin
         borderRadius: '4px',
         fontSize: '0.5rem',
         fontWeight: 800,
-        color: 'var(--primary-600)',
+        color: 'var(--text-accent)',
         textAlign: 'center',
         textTransform: 'uppercase'
       }}>
@@ -113,7 +113,7 @@ const CATEGORIES: Array<{
     title: 'Before Moving To',
     highlight: 'Canada',
     icon: <Plane size={24} />,
-    color: 'var(--primary-600)',
+    color: 'var(--text-accent)',
     description: 'Essential guides to help you prepare for your move - visa checklists, document requirements, and pre-arrival planning.',
     files: [
       { name: 'Before Moving to Canada Guide', chapter: '1', url: 'Before-moving-to-Canada.pdf' },
@@ -208,7 +208,7 @@ const BookCard = ({ file, categoryColor }: { file: StaticGuide; categoryColor: s
               justifyContent: 'center',
               gap: '10px',
               padding: '12px 20px',
-              background: 'var(--primary-600)',
+              background: 'var(--primary-700)',
               color: 'white',
               borderRadius: '12px',
               fontWeight: 700,
@@ -336,7 +336,7 @@ export default function EBooksPage() {
             padding: '8px 20px', 
             background: 'rgba(232, 93, 4, 0.08)', 
             borderRadius: '99px', 
-            color: 'var(--primary-600)', 
+            color: 'var(--text-accent)', 
             fontSize: '0.9rem', 
             fontWeight: 700, 
             marginBottom: '24px',
@@ -352,7 +352,7 @@ export default function EBooksPage() {
             lineHeight: 1,
             fontFamily: 'var(--font-display)'
           }}>
-            E-Books <span style={{ color: 'var(--primary-600)' }}>Library</span>
+            E-Books <span style={{ color: 'var(--text-accent)' }}>Library</span>
           </h1>
           <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
             Step-by-step guides to make settling in Canada simpler — free to download.
@@ -421,11 +421,11 @@ export default function EBooksPage() {
           <div style={{ marginBottom: '100px' }}>
             <div style={{ marginBottom: '48px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div style={{ padding: '12px', background: 'var(--bg-primary)', borderRadius: '16px', color: 'var(--primary-600)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+                <div style={{ padding: '12px', background: 'var(--bg-primary)', borderRadius: '16px', color: 'var(--text-accent)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
                   <Library size={24} />
                 </div>
                 <h2 style={{ fontSize: '2.25rem', fontWeight: 900, color: 'var(--text-primary)', margin: 0, fontFamily: 'var(--font-display)' }}>
-                  From the <span style={{ color: 'var(--primary-600)' }}>Club Library</span>
+                  From the <span style={{ color: 'var(--text-accent)' }}>Club Library</span>
                 </h2>
               </div>
               <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '600px', margin: 0 }}>

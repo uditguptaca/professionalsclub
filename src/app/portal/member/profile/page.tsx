@@ -172,7 +172,7 @@ export default function MemberProfilePage() {
         </div>
 
         {error && (
-          <div role="alert" style={{ marginTop: 24, color: 'var(--error-500)', fontSize: '0.85rem', padding: '10px 14px', background: 'rgba(240, 73, 35, 0.1)', borderRadius: 8, display: 'flex', gap: 8 }}>
+          <div role="alert" style={{ marginTop: 24, color: 'var(--error-600)', fontSize: '0.85rem', padding: '10px 14px', background: 'rgba(240, 73, 35, 0.1)', borderRadius: 8, display: 'flex', gap: 8 }}>
             <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
             <span>{error}</span>
           </div>

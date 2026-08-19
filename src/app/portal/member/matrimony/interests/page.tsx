@@ -24,6 +24,7 @@ export default function InterestsPage() {
   const [received, setReceived] = useState<PopulatedInterest[]>([]);
   const [sent, setSent] = useState<PopulatedInterest[]>([]);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   /**
    * Interests carry only profile ids; the server joins the cards from
@@ -63,8 +64,8 @@ export default function InterestsPage() {
     // may do this — the guard_interest_response trigger enforces it, so a
     // sender cannot accept on the other party's behalf.
     const result = await respondToInterest(interestId, true);
-    if (result.ok) await loadInterests();
-    else console.error('Error accepting interest:', result.error);
+    if (result.ok) { setActionError(null); await loadInterests(); }
+    else setActionError(result.error);
 
     setActionLoading(null);
   };
@@ -75,8 +76,8 @@ export default function InterestsPage() {
     setActionLoading(interestId);
 
     const result = await respondToInterest(interestId, false);
-    if (result.ok) await loadInterests();
-    else console.error('Error declining interest:', result.error);
+    if (result.ok) { setActionError(null); await loadInterests(); }
+    else setActionError(result.error);
 
     setActionLoading(null);
   };
@@ -140,6 +141,7 @@ export default function InterestsPage() {
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
           Accept or send connection requests to start matching.
         </p>
+        {actionError && <p role="alert" className="community-error" style={{ marginTop: 12 }}>{actionError}</p>}
       </div>
 
       {/* Tabs */}
@@ -198,17 +200,17 @@ export default function InterestsPage() {
               {/* Avatar placeholder */}
               <div style={{
                 width: 56, height: 56, borderRadius: 14, flexShrink: 0,
-                background: `linear-gradient(135deg, ${item.profile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)'}20, ${item.profile.gender === 'female' ? 'var(--accent-400)' : 'var(--primary-500)'}10)`,
+                background: item.profile.gender?.toLowerCase() === 'female' ? 'linear-gradient(135deg, rgba(217,119,6,0.13), rgba(251,191,36,0.06))' : 'linear-gradient(135deg, rgba(232,93,4,0.13), rgba(249,115,22,0.06))',
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>
-                <User size={26} style={{ color: item.profile.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
+                <User size={26} style={{ color: item.profile.gender?.toLowerCase() === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
               </div>
 
               {/* Info details */}
               <div style={{ flex: 1, minWidth: 200 }}>
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, margin: '0 0 6px 0' }}>
                   {getDisplayName(item.profile.full_name, item.profile.display_pref)}
-                  {item.profile.is_verified_id && <UserCheck size={14} style={{ color: 'var(--primary-600)' }} />}
+                  {item.profile.is_verified_id && <UserCheck size={14} style={{ color: 'var(--text-accent)' }} />}
                 </h3>
                 <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', color: 'var(--text-secondary)', fontSize: '0.78rem' }}>
                   <span>{getAge(item.profile.dob)} yrs</span>
@@ -235,7 +237,7 @@ export default function InterestsPage() {
                       className="btn btn-sm btn-outline"
                       onClick={() => handleDecline(item.id)}
                       disabled={actionLoading !== null}
-                      style={{ borderColor: 'var(--error-500)', color: 'var(--error-500)' }}
+                      style={{ borderColor: 'var(--error-500)', color: 'var(--error-600)' }}
                     >
                       Decline
                     </button>
@@ -243,14 +245,14 @@ export default function InterestsPage() {
                 )}
 
                 {item.status === 'pending' && activeTab === 'sent' && (
-                  <span style={{ fontSize: '0.8rem', color: 'var(--warning-500)', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
+                  <span style={{ fontSize: '0.8rem', color: '#92400e', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
                     <Clock size={14} /> Pending Response
                   </span>
                 )}
 
                 {item.status === 'accepted' && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--success-500)', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
+                    <span style={{ fontSize: '0.8rem', color: '#04724d', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
                       <CheckCircle2 size={14} /> Mutual Match
                     </span>
                     <Link href="/portal/member/matrimony/messages" className="btn btn-sm btn-primary" style={{ background: 'var(--success-500)', borderColor: 'var(--success-500)', textDecoration: 'none' }}>
@@ -260,7 +262,7 @@ export default function InterestsPage() {
                 )}
 
                 {item.status === 'declined' && (
-                  <span style={{ fontSize: '0.8rem', color: 'var(--error-500)', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--error-600)', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
                     <XCircle size={14} /> Declined
                   </span>
                 )}

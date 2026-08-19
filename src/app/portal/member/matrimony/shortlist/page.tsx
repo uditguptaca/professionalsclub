@@ -134,7 +134,7 @@ export default function ShortlistPage() {
                 onClick={() => handleRemove(cand.id)}
                 disabled={actionLoading === cand.id}
                 style={{
-                  position: 'absolute', top: 16, right: 16, color: 'var(--error-500)',
+                  position: 'absolute', top: 16, right: 16, color: 'var(--error-600)',
                   padding: 8, borderRadius: 10, background: 'none'
                 }}
                 title="Remove from Shortlist"
@@ -145,17 +145,17 @@ export default function ShortlistPage() {
               {/* Avatar placeholder */}
               <div style={{
                 width: 60, height: 60, borderRadius: 16,
-                background: `linear-gradient(135deg, ${cand.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)'}20, ${cand.gender === 'female' ? 'var(--accent-400)' : 'var(--primary-500)'}10)`,
+                background: cand.gender?.toLowerCase() === 'female' ? 'linear-gradient(135deg, rgba(217,119,6,0.13), rgba(251,191,36,0.06))' : 'linear-gradient(135deg, rgba(232,93,4,0.13), rgba(249,115,22,0.06))',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16
               }}>
-                <User size={30} style={{ color: cand.gender === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
+                <User size={30} style={{ color: cand.gender?.toLowerCase() === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
               </div>
 
               {/* Profile Details */}
               <div style={{ flex: 1 }}>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                   {getDisplayName(cand.full_name, cand.display_pref)}
-                  {cand.is_verified_id && <UserCheck size={14} style={{ color: 'var(--primary-600)' }} />}
+                  {cand.is_verified_id && <UserCheck size={14} style={{ color: 'var(--text-accent)' }} />}
                 </h3>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>

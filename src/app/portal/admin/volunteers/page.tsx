@@ -38,9 +38,9 @@ export default function AdminVolunteersPage() {
       <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
         <div style={{ position: 'relative', flex: 1, maxWidth: 300 }}>
           <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-          <input className="input" style={{ paddingLeft: 36 }} placeholder="Search volunteers..." value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="input" style={{ paddingLeft: 36 }} placeholder="Search volunteers..." aria-label="Search volunteer applications" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select className="input" style={{ width: 200 }} value={filter} onChange={e => setFilter(e.target.value)}>
+        <select aria-label="Filter by status" className="input" style={{ width: 200 }} value={filter} onChange={e => setFilter(e.target.value)}>
           <option value="all">All ({volunteerApps.length})</option>
           <option value="new_application">New Applications</option>
           <option value="pending_verification">Pending Verification</option>

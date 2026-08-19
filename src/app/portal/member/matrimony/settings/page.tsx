@@ -9,9 +9,11 @@ import {
   Settings, ArrowLeft, Shield, Eye, PauseCircle, Trash2, CheckCircle2,
   AlertCircle, EyeOff, Save, Loader2
 } from 'lucide-react';
+import { useConfirm } from '@/components/portal/confirm';
 
 export default function MatrimonySettingsPage() {
   const router = useRouter();
+  const confirmAction = useConfirm();
   const { currentUserId } = useApp();
 
   const [loading, setLoading] = useState(true);
@@ -75,10 +77,14 @@ export default function MatrimonySettingsPage() {
 
   const handleDeleteProfile = async () => {
     if (!profile || deleting) return;
-    const confirm1 = confirm('WARNING: Are you sure you want to permanently delete your Matrimony Profile? This action cannot be undone.');
-    if (!confirm1) return;
-    const confirm2 = confirm('Are you absolutely sure? All your preferences, interest history, shortlist, chat messages, and details will be deleted permanently.');
-    if (!confirm2) return;
+    // One dialog that states the full consequence beats two stacked ones: the
+    // second "are you REALLY sure" teaches people to click through warnings.
+    const ok = await confirmAction({
+      title: 'Delete your matrimony profile?',
+      message: 'Your preferences, interests, shortlist and chat messages are deleted with it. This cannot be undone.',
+      confirmLabel: 'Delete profile',
+    });
+    if (!ok) return;
 
     setDeleting(true);
     setDeleteError(null);
@@ -143,7 +149,7 @@ export default function MatrimonySettingsPage() {
         {/* Privacy Settings Card */}
         <div className="card" style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 20 }}>
           <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Shield size={18} style={{ color: 'var(--primary-600)' }} /> Privacy Settings
+            <Shield size={18} style={{ color: 'var(--text-accent)' }} /> Privacy Settings
           </h2>
 
           <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
@@ -179,7 +185,7 @@ export default function MatrimonySettingsPage() {
         {/* Profile Visibility Card */}
         <div className="card" style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 20 }}>
           <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Eye size={18} style={{ color: 'var(--success-500)' }} /> Profile Visibility
+            <Eye size={18} style={{ color: '#04724d' }} /> Profile Visibility
           </h2>
 
           <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
@@ -192,7 +198,7 @@ export default function MatrimonySettingsPage() {
               />
               <div>
                 <div style={{ fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  Pause Profile (Hide from search) {isHidden && <EyeOff size={14} style={{ color: 'var(--error-500)' }} />}
+                  Pause Profile (Hide from search) {isHidden && <EyeOff size={14} style={{ color: 'var(--error-600)' }} />}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.5, marginTop: 2 }}>
                   When paused, your profile will be hidden from search results and browse catalogs.
@@ -211,7 +217,7 @@ export default function MatrimonySettingsPage() {
             Save Settings
           </button>
           {savedMsg && (
-            <span style={{ fontSize: '0.8rem', color: 'var(--success-500)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontSize: '0.8rem', color: '#04724d', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
               <CheckCircle2 size={14} /> Settings saved.
             </span>
           )}
@@ -223,7 +229,7 @@ export default function MatrimonySettingsPage() {
         padding: 28, border: '1px solid rgba(240,73,35,0.2)', background: 'rgba(240,73,35,0.01)',
         display: 'flex', flexDirection: 'column', gap: 16, marginTop: 24
       }}>
-        <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--error-500)' }}>
+        <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--error-600)' }}>
           <Trash2 size={18} /> Danger Zone
         </h2>
         <div style={{ borderTop: '1px solid rgba(240,73,35,0.1)', paddingTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>

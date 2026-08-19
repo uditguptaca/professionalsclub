@@ -40,7 +40,7 @@ const COMMUNITIES: CommunitySection[] = [
     participants: '1,600+',
     communityLink: 'https://chat.whatsapp.com/LZQxOHMI7tx3vrrXCGXit4',
     description: 'For finance professionals to network, share queries, and find jobs.',
-    color: 'var(--primary-600)',
+    color: 'var(--text-accent)',
     colorLight: 'var(--primary-50)',
     groups: [
       { icon: <Briefcase size={20} />, name: 'FP&A, IFRS, Accounts, Audit Professionals', link: 'https://bit.ly/ICPAccounts' },
@@ -58,7 +58,7 @@ const COMMUNITIES: CommunitySection[] = [
     participants: '1,200+',
     communityLink: 'https://chat.whatsapp.com/K9k0IBLoEOW3L16gx23b0n',
     description: 'For Chartered Accountants who are already living in Canada.',
-    color: 'var(--primary-600)',
+    color: 'var(--text-accent)',
     colorLight: 'var(--primary-50)',
     groups: [
       { icon: <Globe size={20} />, name: 'CA Community in Canada Group 1', link: 'https://bit.ly/ICP_CA' },
@@ -79,7 +79,7 @@ const COMMUNITIES: CommunitySection[] = [
     participants: '1,100+',
     communityLink: 'https://chat.whatsapp.com/KrfRAPFxuAjCLrZ97mlGBp',
     description: 'For professionals from various industries to share jobs and knowledge.',
-    color: 'var(--primary-600)',
+    color: 'var(--text-accent)',
     colorLight: 'var(--primary-50)',
     groups: [
       { icon: <ShieldCheck size={20} />, name: 'Immigration Queries and Professionals', link: 'https://bit.ly/ICPImmigration' },
@@ -107,7 +107,7 @@ const COMMUNITIES: CommunitySection[] = [
     participants: '1,000+',
     communityLink: 'https://chat.whatsapp.com/FgNygqhDLDqEWsQC1xZmHZ',
     description: 'For students preparing for professional exams.',
-    color: 'var(--primary-600)',
+    color: 'var(--text-accent)',
     colorLight: 'var(--primary-50)',
     groups: [
       { icon: <BookOpen size={20} />, name: 'CPA Canada Study Group', link: 'https://bit.ly/ICPCPACanada' },
@@ -124,7 +124,7 @@ const COMMUNITIES: CommunitySection[] = [
     participants: '900+',
     communityLink: 'https://chat.whatsapp.com/KIjJ7ybzkhtHSVF6BGlXYK',
     description: 'For regional connections and family support in Canada.',
-    color: 'var(--primary-600)',
+    color: 'var(--text-accent)',
     colorLight: 'var(--primary-50)',
     groups: [
       { icon: <Plane size={20} />, name: 'Travel, Food & Leisure', link: 'https://bit.ly/ICPTravel' },
@@ -154,7 +154,7 @@ const COMMUNITIES: CommunitySection[] = [
     participants: '600+',
     communityLink: 'https://chat.whatsapp.com/JhApEAWvGQoAimRT1nBHBl',
     description: 'For sports, fitness, yoga, and meditation enthusiasts.',
-    color: 'var(--primary-600)',
+    color: 'var(--text-accent)',
     colorLight: 'var(--primary-50)',
     groups: [
       { icon: <CircleDot size={20} />, name: 'Cricket Group', link: 'https://bit.ly/ICPCricket' },
@@ -192,7 +192,7 @@ export default function GroupsPage() {
                 <span style={{ color: 'var(--primary-200)', fontWeight: 700, fontSize: '0.82rem' }}>WhatsApp Community Groups</span>
               </div>
               <h1 style={{ fontSize: '3.6rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16, lineHeight: 1.1 }}>
-                Canada&apos;s Biggest <br /><span style={{ color: 'var(--primary-600)' }}>Professional</span> Community
+                Canada&apos;s Biggest <br /><span style={{ color: 'var(--text-accent)' }}>Professional</span> Community
               </h1>
               <p style={{ fontSize: '1.15rem', color: 'var(--gray-400)', lineHeight: 1.7, maxWidth: 680, margin: '0 0 40px 0' }}>
                 Join thousands of newcomers and professionals helping each other settle, find jobs, and grow.
@@ -215,7 +215,7 @@ export default function GroupsPage() {
             {/* Right Content - Main Community CTA */}
             <div style={{ flex: '1 1 400px', display: 'flex', justifyContent: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(232,93,4,0.05)', padding: '40px 40px', borderRadius: 24, border: '1px solid rgba(232,93,4,0.15)', width: '100%', maxWidth: '440px', backdropFilter: 'blur(10px)', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
-                <div style={{ width: 64, height: 64, borderRadius: 18, background: 'rgba(232,93,4,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-600)', marginBottom: 16 }}>
+                <div style={{ width: 64, height: 64, borderRadius: 18, background: 'rgba(232,93,4,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-accent)', marginBottom: 16 }}>
                   <MessageCircle size={32} />
                 </div>
                 <div style={{ fontWeight: 900, fontSize: '1.3rem', color: 'white', marginBottom: 8, fontFamily: 'var(--font-display)', textAlign: 'center' }}>Main Community Channel</div>
@@ -259,7 +259,7 @@ export default function GroupsPage() {
                   borderRadius: 99,
                   border: `1px solid var(--primary-600)`,
                   background: 'var(--primary-50)',
-                  color: 'var(--primary-600)',
+                  color: 'var(--text-accent)',
                   fontWeight: 700,
                   fontSize: '0.78rem',
                   textDecoration: 'none',
@@ -300,16 +300,16 @@ export default function GroupsPage() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
-                color: 'var(--primary-600)',
+                color: 'var(--text-accent)',
               }}>
                 {community.icon}
               </div>
               <div style={{ flex: '1 1 300px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '0.68rem', fontWeight: 800, padding: '3px 10px', borderRadius: 6, background: 'var(--primary-600)', color: 'white', letterSpacing: '0.05em' }}>
+                  <span style={{ fontSize: '0.68rem', fontWeight: 800, padding: '3px 10px', borderRadius: 6, background: 'var(--primary-700)', color: 'white', letterSpacing: '0.05em' }}>
                     COMMUNITY {community.number}
                   </span>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary-600)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-accent)', display: 'flex', alignItems: 'center', gap: 4 }}>
                     <Users size={13} /> {community.participants} participants
                   </span>
                 </div>
@@ -375,7 +375,7 @@ export default function GroupsPage() {
                     (e.currentTarget as HTMLElement).style.transform = 'none'; 
                   }}
                 >
-                  <span style={{ display: 'flex', alignItems: 'center', color: 'var(--primary-600)', flexShrink: 0 }}>{group.icon}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', color: 'var(--text-accent)', flexShrink: 0 }}>{group.icon}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: 1.3 }}>{group.name}</div>
                   </div>
@@ -432,7 +432,7 @@ export default function GroupsPage() {
       <section style={{ padding: '30px 0', background: 'var(--primary-50)', borderTop: '2px solid var(--primary-600)' }}>
         <div className="container" style={{ maxWidth: 800, textAlign: 'center' }}>
           <p style={{ fontSize: '0.9rem', color: 'var(--primary-700)', fontWeight: 600, lineHeight: 1.6, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <Shield size={16} style={{ color: 'var(--primary-600)' }} /> <strong>Important Note:</strong> Canada residents only (+1 numbers). Others will be removed.
+            <Shield size={16} style={{ color: 'var(--text-accent)' }} /> <strong>Important Note:</strong> Canada residents only (+1 numbers). Others will be removed.
           </p>
         </div>
       </section>

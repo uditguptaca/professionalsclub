@@ -57,11 +57,11 @@ export default function AdminDashboard() {
       {/* Summary Counters */}
       <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16 }}>
         {[
-          { label: 'Open Requests', value: stats.openRequests, icon: <FileText size={22} />, color: 'var(--primary-600)', bg: 'rgba(232, 93, 4, 0.1)', href: '/portal/admin/requests' },
+          { label: 'Open Requests', value: stats.openRequests, icon: <FileText size={22} />, color: 'var(--text-accent)', bg: 'rgba(232, 93, 4, 0.1)', href: '/portal/admin/requests' },
           { label: 'Pending Volunteers', value: pendingApps.length, icon: <HandHeart size={22} />, color: 'var(--success-600)', bg: 'rgba(5,150,105,0.1)', href: '/portal/admin/volunteers' },
-          { label: 'Active Assignments', value: activeAssignments.length, icon: <FolderKanban size={22} />, color: 'var(--accent-600)', bg: 'rgba(245,158,11,0.1)', href: '/portal/admin/assignments' },
+          { label: 'Active Assignments', value: activeAssignments.length, icon: <FolderKanban size={22} />, color: 'var(--accent-700)', bg: 'rgba(245,158,11,0.1)', href: '/portal/admin/assignments' },
           { label: 'Total Members', value: stats.totalMembers, icon: <Users size={22} />, color: 'var(--text-primary)', bg: 'var(--bg-secondary)', href: '/portal/admin/members' },
-          { label: 'Businesses', value: businesses.filter(b => b.verificationStatus === 'verified').length, icon: <Building2 size={22} />, color: 'var(--primary-600)', bg: 'rgba(232, 93, 4, 0.1)', href: '/portal/admin/businesses' },
+          { label: 'Businesses', value: businesses.filter(b => b.verificationStatus === 'verified').length, icon: <Building2 size={22} />, color: 'var(--text-accent)', bg: 'rgba(232, 93, 4, 0.1)', href: '/portal/admin/businesses' },
         ].map((item, i) => (
           <Link key={i} href={item.href} style={{ textDecoration: 'none' }}>
             <div className="card-stat" style={{ cursor: 'pointer' }}>
@@ -83,7 +83,7 @@ export default function AdminDashboard() {
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h3 className="font-bold font-display" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <AlertTriangle size={16} style={{ color: 'var(--accent-600)' }} /> New Requests
+              <AlertTriangle size={16} style={{ color: 'var(--accent-700)' }} /> New Requests
             </h3>
             {!pending && (
               <span style={{ fontSize: '0.7rem', fontWeight: 700, background: newRequests.length > 0 ? 'var(--accent-100)' : 'var(--bg-secondary)', color: newRequests.length > 0 ? 'var(--primary-800)' : 'var(--text-muted)', padding: '2px 10px', borderRadius: 99 }}>

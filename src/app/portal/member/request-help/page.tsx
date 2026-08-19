@@ -143,7 +143,7 @@ export default function RequestHelpPage() {
               </div>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 10 }}>
                 The reviewing admin reads these from your member record.{' '}
-                <Link href="/portal/member/profile" style={{ color: 'var(--primary-600)', fontWeight: 600 }}>
+                <Link href="/portal/member/profile" style={{ color: 'var(--text-accent)', fontWeight: 600 }}>
                   Update your profile
                 </Link>{' '}
                 to change them.
@@ -277,7 +277,7 @@ export default function RequestHelpPage() {
 
             {/* Disclaimers */}
             <div style={{ padding: 16, borderRadius: 10, background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', gap: 12 }}>
-              <AlertCircle size={18} style={{ color: 'var(--accent-600)', flexShrink: 0, marginTop: 2 }} />
+              <AlertCircle size={18} style={{ color: 'var(--accent-700)', flexShrink: 0, marginTop: 2 }} />
               <div style={{ fontSize: '0.8rem', color: 'var(--primary-800)', lineHeight: 1.6 }}>
                 <strong>Important:</strong> Your request will be sent for secure review. A volunteer may be assigned to assist you. All communication will be securely routed — no one will contact you directly outside the platform.
               </div>
@@ -292,7 +292,7 @@ export default function RequestHelpPage() {
             </div>
 
             {submitError && (
-              <div role="alert" style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(240,73,35,0.1)', color: 'var(--error-500)', fontSize: '0.85rem', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+              <div role="alert" style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(240,73,35,0.1)', color: 'var(--error-600)', fontSize: '0.85rem', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                 <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
                 <span>{submitError}</span>
               </div>

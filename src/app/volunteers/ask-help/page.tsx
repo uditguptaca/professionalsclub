@@ -96,7 +96,7 @@ function AskHelpForm() {
                   <>
                     <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>{selectedVolunteer.name}</h3>
                     {selectedVolunteer.role && (
-                      <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>{selectedVolunteer.role}</div>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-accent)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>{selectedVolunteer.role}</div>
                     )}
                     {selectedVolunteer.company && (
                       <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, marginBottom: 16 }}>
@@ -105,7 +105,7 @@ function AskHelpForm() {
                     )}
                     {(selectedVolunteer.city || selectedVolunteer.province) && (
                       <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                        <MapPin size={13} style={{ color: 'var(--primary-600)' }} /> {[selectedVolunteer.city, selectedVolunteer.province].filter(Boolean).join(', ')}
+                        <MapPin size={13} style={{ color: 'var(--text-accent)' }} /> {[selectedVolunteer.city, selectedVolunteer.province].filter(Boolean).join(', ')}
                       </div>
                     )}
                   </>
@@ -148,10 +148,11 @@ function AskHelpForm() {
 
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Your Full Name</label>
+                  <label htmlFor="ah-your-full-name" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Your Full Name</label>
                   <div style={{ position: 'relative' }}>
                     <User size={16} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                     <input
+                      id="ah-your-full-name"
                       type="text"
                       required
                       placeholder="Enter your name"
@@ -163,10 +164,11 @@ function AskHelpForm() {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Your Email Address</label>
+                  <label htmlFor="ah-your-email-address" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Your Email Address</label>
                   <div style={{ position: 'relative' }}>
                     <Mail size={16} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                     <input
+                      id="ah-your-email-address"
                       type="email"
                       required
                       placeholder="you@example.com"
@@ -179,8 +181,9 @@ function AskHelpForm() {
 
                 {volunteers && volunteers.length > 0 && (
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Volunteer you would like to reach</label>
+                    <label htmlFor="ah-volunteer-you-would-like-to-" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Volunteer you would like to reach</label>
                     <select
+                      id="ah-volunteer-you-would-like-to-"
                       value={selectedId}
                       onChange={e => setSelectedId(e.target.value)}
                       style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.92rem', outline: 'none', cursor: 'pointer' }}
@@ -196,8 +199,9 @@ function AskHelpForm() {
                 )}
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>What do you need help with?</label>
+                  <label htmlFor="ah-what-do-you-need-help-with" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>What do you need help with?</label>
                   <select
+                      id="ah-what-do-you-need-help-with"
                     value={category}
                     onChange={e => setCategory(e.target.value)}
                     style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.92rem', outline: 'none', cursor: 'pointer' }}
@@ -212,8 +216,9 @@ function AskHelpForm() {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Message / Details</label>
+                  <label htmlFor="ah-message-details" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Message / Details</label>
                   <textarea
+                      id="ah-message-details"
                     required
                     rows={5}
                     placeholder={selectedVolunteer
@@ -231,7 +236,7 @@ function AskHelpForm() {
                   type="submit"
                   className="btn btn-primary"
                   disabled={pending}
-                  style={{ padding: '16px 28px', fontSize: '0.95rem', fontWeight: 800, background: 'var(--primary-600)', border: 'none', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, cursor: pending ? 'not-allowed' : 'pointer', opacity: pending ? 0.6 : 1, transition: 'background 0.2s', color: 'white' }}
+                  style={{ padding: '16px 28px', fontSize: '0.95rem', fontWeight: 800, background: 'var(--primary-700)', border: 'none', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, cursor: pending ? 'not-allowed' : 'pointer', opacity: pending ? 0.6 : 1, transition: 'background 0.2s', color: 'white' }}
                 >
                   <Send size={16} /> {pending ? 'Sending...' : 'Send Request'}
                 </button>
@@ -241,7 +246,7 @@ function AskHelpForm() {
           </div>
         ) : (
           <div style={{ background: 'white', border: '1px solid var(--border-color)', borderRadius: 24, padding: '64px 40px', boxShadow: 'var(--shadow-sm)', textAlign: 'center', maxWidth: 600, margin: '0 auto' }}>
-            <div style={{ color: 'var(--success-500)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
+            <div style={{ color: '#04724d', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
               <CheckCircle2 size={64} style={{ color: 'var(--success-400)' }} />
             </div>
             <h2 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 12 }}>Request received</h2>
@@ -250,7 +255,7 @@ function AskHelpForm() {
               {selectedVolunteer ? <> We have noted that you asked for <strong>{selectedVolunteer.name}</strong>; the team may connect you with another volunteer with similar experience.</> : null}
               {' '}We reply to <strong>{email}</strong>, so watch for a message from us there.
             </p>
-            <Link href="/volunteers" className="btn btn-primary" style={{ display: 'inline-flex', padding: '14px 28px', background: 'var(--primary-600)', color: 'white', textDecoration: 'none', fontWeight: 800, borderRadius: 10 }}>
+            <Link href="/volunteers" className="btn btn-primary" style={{ display: 'inline-flex', padding: '14px 28px', background: 'var(--primary-700)', color: 'white', textDecoration: 'none', fontWeight: 800, borderRadius: 10 }}>
               Return to Directory
             </Link>
           </div>

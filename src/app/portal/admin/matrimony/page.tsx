@@ -25,10 +25,10 @@ import type {
 // ========== HELPERS ==========
 const STATUS_COLORS: Record<MatrimonyProfileStatus, { bg: string; color: string; label: string }> = {
   draft: { bg: 'rgba(71,85,105,0.12)', color: 'var(--text-secondary)', label: 'Draft' },
-  pending: { bg: 'rgba(245,158,11,0.14)', color: 'var(--accent-600)', label: 'Pending' },
-  approved: { bg: 'rgba(0,168,107,0.14)', color: 'var(--success-600)', label: 'Approved' },
+  pending: { bg: 'rgba(245,158,11,0.14)', color: 'var(--accent-700)', label: 'Pending' },
+  approved: { bg: 'rgba(0,168,107,0.14)', color: '#04724d', label: 'Approved' },
   rejected: { bg: 'rgba(240,73,35,0.14)', color: 'var(--error-600)', label: 'Rejected' },
-  changes_requested: { bg: 'rgba(249,115,22,0.14)', color: 'var(--primary-500)', label: 'Changes Req.' },
+  changes_requested: { bg: 'rgba(249,115,22,0.14)', color: 'var(--primary-700)', label: 'Changes Req.' },
   suspended: { bg: 'rgba(30,41,59,0.18)', color: 'var(--gray-600)', label: 'Suspended' },
 };
 
@@ -141,6 +141,7 @@ export default function AdminMatrimonyPage() {
   const [activeTab, setActiveTab] = useState<TabId>('pending');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Data
   const [profiles, setProfiles] = useState<MatrimonyProfile[]>([]);
@@ -163,6 +164,7 @@ export default function AdminMatrimonyPage() {
 
   // ===== FETCH DATA =====
   const fetchData = async () => {
+    setFetchError(null);
     // Admin-only at both layers: requireAdminId() in the actions, and the RLS
     // policies on these tables.
     const [result, photos] = await Promise.all([
@@ -176,6 +178,9 @@ export default function AdminMatrimonyPage() {
       setVerifications(result.data.verifications);
       setAuditLog(result.data.audit as unknown as MatrimonyAdminAudit[]);
     } else {
+      // Without this the page renders empty queues and "all caught up" copy on
+      // a FAILED load, which reads as nothing-to-do rather than try-again.
+      setFetchError(result.error);
       console.error('Error fetching matrimony admin data:', result.error);
     }
 
@@ -294,11 +299,11 @@ export default function AdminMatrimonyPage() {
   // ===== ANALYTICS DATA =====
   const pieData = useMemo(() => [
     { label: 'Approved', value: stats.approved, color: 'var(--success-600)' },
-    { label: 'Pending', value: stats.pending, color: 'var(--accent-600)' },
+    { label: 'Pending', value: stats.pending, color: 'var(--accent-700)' },
     { label: 'Rejected', value: stats.rejected, color: 'var(--error-600)' },
     { label: 'Suspended', value: stats.suspended, color: 'var(--gray-600)' },
     { label: 'Draft', value: profiles.filter(p => p.status === 'draft').length, color: 'var(--text-muted)' },
-    { label: 'Changes Req.', value: profiles.filter(p => p.status === 'changes_requested').length, color: 'var(--primary-500)' },
+    { label: 'Changes Req.', value: profiles.filter(p => p.status === 'changes_requested').length, color: 'var(--text-accent)' },
   ], [profiles, stats]);
 
   const weeklyData = useMemo(() => {
@@ -335,7 +340,7 @@ export default function AdminMatrimonyPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', fontWeight: 800, marginBottom: 4 }}>
-            <Heart size={28} style={{ display: 'inline', marginRight: 8, color: 'var(--error-500)', verticalAlign: 'middle' }} />
+            <Heart size={28} style={{ display: 'inline', marginRight: 8, color: 'var(--error-600)', verticalAlign: 'middle' }} />
             Matrimony Admin
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
@@ -348,26 +353,26 @@ export default function AdminMatrimonyPage() {
         </button>
       </div>
 
-      {/* ===== STATS ROW ===== */}
+      {fetchError && (
+        <p role="alert" className="community-error">
+          Could not load the moderation queues: {fetchError} — use Refresh to try again.
+        </p>
+      )}
+
+      {/* ===== STATS ROW =====
+          Four cards, not seven. Pending Review, Open Reports and Pending
+          Verifications used to live here too, but the tab bar immediately below
+          shows all three with their own count badges - the same numbers twice on
+          one screen, and seven cards wrapped to a second row with one card alone
+          on it. These four describe the status mix, which the tabs do not. */}
       <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
         {[
-          { label: 'Total Profiles', value: stats.total, icon: <Users size={20} />, color: 'var(--primary-600)', bg: 'rgba(232, 93, 4, 0.1)' },
-          { label: 'Pending Review', value: stats.pending, icon: <Clock size={20} />, color: 'var(--accent-600)', bg: 'rgba(245,158,11,0.1)', alert: stats.pending > 0 },
+          { label: 'Total Profiles', value: stats.total, icon: <Users size={20} />, color: 'var(--text-accent)', bg: 'rgba(232, 93, 4, 0.1)' },
           { label: 'Approved', value: stats.approved, icon: <CheckCircle size={20} />, color: 'var(--success-600)', bg: 'rgba(5,150,105,0.1)' },
           { label: 'Rejected', value: stats.rejected, icon: <XCircle size={20} />, color: 'var(--error-600)', bg: 'rgba(220,38,38,0.1)' },
           { label: 'Suspended', value: stats.suspended, icon: <Ban size={20} />, color: 'var(--gray-600)', bg: 'rgba(51,65,85,0.1)' },
-          { label: 'Open Reports', value: stats.openReports, icon: <AlertTriangle size={20} />, color: 'var(--primary-500)', bg: 'rgba(234,88,12,0.1)', alert: stats.openReports > 0 },
-          { label: 'Pending Verif.', value: stats.pendingVerifications, icon: <ShieldCheck size={20} />, color: 'var(--primary-700)', bg: 'rgba(232, 93, 4, 0.1)' },
         ].map((item, i) => (
-          <div key={i} className="card-stat" style={{ position: 'relative' }}>
-            {item.alert && (
-              <div style={{
-                position: 'absolute', top: 10, right: 10, width: 8, height: 8,
-                borderRadius: '50%', background: 'var(--error-500)',
-                animation: 'pulse 2s infinite',
-                boxShadow: '0 0 6px rgba(240,73,35,0.5)',
-              }} />
-            )}
+          <div key={i} className="card-stat">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ padding: 8, background: item.bg, borderRadius: 10, color: item.color }}>{item.icon}</div>
               <div>
@@ -395,7 +400,7 @@ export default function AdminMatrimonyPage() {
               {tab.icon}
               {tab.label}
               {tab.count !== undefined && (
-                <span className="count" style={activeTab === tab.id ? { background: 'rgba(232, 93, 4, 0.15)', color: 'var(--primary-600)' } : {}}>
+                <span className="count" style={activeTab === tab.id ? { background: 'rgba(232, 93, 4, 0.15)', color: 'var(--text-accent)' } : {}}>
                   {tab.count}
                 </span>
               )}
@@ -411,7 +416,7 @@ export default function AdminMatrimonyPage() {
         <div className="card" style={{ padding: 0 }}>
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ fontWeight: 700, fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Clock size={16} style={{ color: 'var(--accent-600)' }} /> Pending Review Queue
+              <Clock size={16} style={{ color: 'var(--accent-700)' }} /> Pending Review Queue
             </h3>
             <span className="badge badge-warning">{pendingProfiles.length} awaiting</span>
           </div>
@@ -439,9 +444,9 @@ export default function AdminMatrimonyPage() {
                     <div style={{
                       width: 44, height: 44, borderRadius: 10, background: 'linear-gradient(135deg, var(--primary-100), var(--accent-100))',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', fontWeight: 700,
-                      color: 'var(--primary-600)', flexShrink: 0,
+                      color: 'var(--text-accent)', flexShrink: 0,
                     }}>
-                      {profile.gender === 'male' ? '👨' : profile.gender === 'female' ? '👩' : '🧑'}
+                      {profile.gender?.toLowerCase() === 'male' ? '👨' : profile.gender?.toLowerCase() === 'female' ? '👩' : '🧑'}
                     </div>
 
                     {/* Info */}
@@ -451,7 +456,7 @@ export default function AdminMatrimonyPage() {
                         <StatusBadge status={profile.status} />
                       </div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                        <span>{profile.gender === 'male' ? 'M' : profile.gender === 'female' ? 'F' : 'O'} • {getAge(profile.dob)}y</span>
+                        <span>{profile.gender?.toLowerCase() === 'male' ? 'M' : profile.gender?.toLowerCase() === 'female' ? 'F' : 'O'} • {getAge(profile.dob)}y</span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><MapPin size={10} /> {profile.city}</span>
                         <span>Submitted {timeAgo(profile.created_at)}</span>
                       </div>
@@ -459,7 +464,7 @@ export default function AdminMatrimonyPage() {
 
                     {/* Completeness */}
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: profile.completeness_pct >= 80 ? 'var(--success-600)' : profile.completeness_pct >= 50 ? 'var(--accent-600)' : 'var(--error-500)' }}>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: profile.completeness_pct >= 80 ? '#04724d' : profile.completeness_pct >= 50 ? 'var(--accent-700)' : 'var(--error-600)' }}>
                         {profile.completeness_pct}%
                       </div>
                       <div style={{ width: 60, height: 4, borderRadius: 2, background: 'var(--gray-200)', marginTop: 4 }}>
@@ -541,7 +546,7 @@ export default function AdminMatrimonyPage() {
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             fontSize: '0.8rem', flexShrink: 0,
                           }}>
-                            {p.gender === 'male' ? '👨' : p.gender === 'female' ? '👩' : '🧑'}
+                            {p.gender?.toLowerCase() === 'male' ? '👨' : p.gender?.toLowerCase() === 'female' ? '👩' : '🧑'}
                           </div>
                           <div>
                             <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>{p.full_name}</div>
@@ -577,7 +582,7 @@ export default function AdminMatrimonyPage() {
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <div>
               <h3 style={{ fontWeight: 700, fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <ImageIcon size={16} style={{ color: 'var(--primary-600)' }} /> Photo Approvals
+                <ImageIcon size={16} style={{ color: 'var(--text-accent)' }} /> Photo Approvals
               </h3>
               <p className="community-muted" style={{ margin: '4px 0 0' }}>
                 A photo stays hidden from other members until it is approved here. A rejection is
@@ -619,7 +624,7 @@ export default function AdminMatrimonyPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                         <Link
                           href={`/portal/admin/matrimony/${photo.profileId}`}
-                          style={{ fontSize: '0.68rem', fontFamily: 'monospace', color: 'var(--primary-600)' }}
+                          style={{ fontSize: '0.68rem', fontFamily: 'monospace', color: 'var(--text-accent)' }}
                         >
                           {photo.profileId.slice(0, 8)}...
                         </Link>
@@ -643,7 +648,7 @@ export default function AdminMatrimonyPage() {
                           className="btn btn-sm btn-outline"
                           onClick={() => handlePhotoDecision(photo.id, false)}
                           disabled={photoBusyId !== null}
-                          style={{ borderColor: 'var(--error-500)', color: 'var(--error-500)', fontSize: '0.72rem', flex: 1 }}
+                          style={{ borderColor: 'var(--error-500)', color: 'var(--error-600)', fontSize: '0.72rem', flex: 1 }}
                         >
                           <XCircle size={13} /> Reject
                         </button>
@@ -663,7 +668,7 @@ export default function AdminMatrimonyPage() {
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <div>
               <h3 style={{ fontWeight: 700, fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <AlertTriangle size={16} style={{ color: 'var(--primary-500)' }} /> Open Reports
+                <AlertTriangle size={16} style={{ color: 'var(--text-accent)' }} /> Open Reports
               </h3>
               <p className="community-muted" style={{ margin: '4px 0 0' }}>
                 Dismiss a report you judge unfounded, or mark it actioned once you have dealt with
@@ -693,7 +698,7 @@ export default function AdminMatrimonyPage() {
                   <div style={{
                     width: 40, height: 40, borderRadius: 10,
                     background: 'rgba(240,73,35,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'var(--error-500)', flexShrink: 0,
+                    color: 'var(--error-600)', flexShrink: 0,
                   }}>
                     <AlertTriangle size={18} />
                   </div>
@@ -826,7 +831,7 @@ export default function AdminMatrimonyPage() {
         <div className="card" style={{ padding: 0 }}>
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)' }}>
             <h3 style={{ fontWeight: 700, fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <FileText size={16} style={{ color: 'var(--primary-600)' }} /> Audit Log
+              <FileText size={16} style={{ color: 'var(--text-accent)' }} /> Audit Log
             </h3>
           </div>
           {loading ? (
@@ -887,7 +892,7 @@ export default function AdminMatrimonyPage() {
           {/* Profiles by Status - Pie */}
           <div className="card">
             <h3 style={{ fontWeight: 700, fontFamily: 'var(--font-display)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <PieChart size={16} style={{ color: 'var(--primary-600)' }} /> Profiles by Status
+              <PieChart size={16} style={{ color: 'var(--text-accent)' }} /> Profiles by Status
             </h3>
             {loading ? (
               <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -901,7 +906,7 @@ export default function AdminMatrimonyPage() {
           {/* New Profiles per Week - Bar */}
           <div className="card">
             <h3 style={{ fontWeight: 700, fontFamily: 'var(--font-display)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <BarChart3 size={16} style={{ color: 'var(--primary-600)' }} /> New Profiles (Last 12 Weeks)
+              <BarChart3 size={16} style={{ color: 'var(--text-accent)' }} /> New Profiles (Last 12 Weeks)
             </h3>
             {loading ? (
               <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -915,7 +920,7 @@ export default function AdminMatrimonyPage() {
           {/* Gender Distribution */}
           <div className="card">
             <h3 style={{ fontWeight: 700, fontFamily: 'var(--font-display)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Users size={16} style={{ color: 'var(--primary-600)' }} /> Gender Distribution
+              <Users size={16} style={{ color: 'var(--text-accent)' }} /> Gender Distribution
             </h3>
             {loading ? (
               <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -923,9 +928,9 @@ export default function AdminMatrimonyPage() {
               </div>
             ) : (
               <SimplePieChart data={[
-                { label: 'Male', value: profiles.filter(p => p.gender === 'male').length, color: 'var(--primary-600)' },
-                { label: 'Female', value: profiles.filter(p => p.gender === 'female').length, color: 'var(--accent-600)' },
-                { label: 'Other', value: profiles.filter(p => p.gender === 'other').length, color: 'var(--primary-600)' },
+                { label: 'Male', value: profiles.filter(p => p.gender?.toLowerCase() === 'male').length, color: 'var(--text-accent)' },
+                { label: 'Female', value: profiles.filter(p => p.gender?.toLowerCase() === 'female').length, color: 'var(--accent-700)' },
+                { label: 'Other', value: profiles.filter(p => p.gender?.toLowerCase() === 'other').length, color: 'var(--text-accent)' },
               ].filter(d => d.value > 0)} />
             )}
           </div>
@@ -933,7 +938,7 @@ export default function AdminMatrimonyPage() {
           {/* Completeness Distribution */}
           <div className="card">
             <h3 style={{ fontWeight: 700, fontFamily: 'var(--font-display)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <TrendingUp size={16} style={{ color: 'var(--primary-600)' }} /> Completeness Overview
+              <TrendingUp size={16} style={{ color: 'var(--text-accent)' }} /> Completeness Overview
             </h3>
             {loading ? (
               <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

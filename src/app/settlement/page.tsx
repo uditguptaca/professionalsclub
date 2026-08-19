@@ -138,11 +138,11 @@ export default function SettlementPage() {
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(232,93,4,0.08)', padding: '6px 16px', borderRadius: 99, marginBottom: 24, border: '1px solid rgba(232,93,4,0.2)' }}>
-            <MapPin size={14} style={{ color: 'var(--primary-600)' }} />
-            <span style={{ color: 'var(--primary-600)', fontWeight: 700, fontSize: '0.82rem' }}>Settlement Hub</span>
+            <MapPin size={14} style={{ color: 'var(--text-accent)' }} />
+            <span style={{ color: 'var(--text-accent)', fontWeight: 700, fontSize: '0.82rem' }}>Settlement Hub</span>
           </div>
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
-            Welcome to <span style={{ color: 'var(--primary-600)' }}>Canada</span>
+            Welcome to <span style={{ color: 'var(--text-accent)' }}>Canada</span>
           </h1>
           <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
             Your step-by-step guide to settling in — and building a future here — from day one.
@@ -157,7 +157,7 @@ export default function SettlementPage() {
             <div key={idx} className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)', gap: 56, alignItems: 'center', marginBottom: idx < categories.length - 1 ? 96 : 0, direction: cat.imgSide === 'left' ? 'rtl' : 'ltr' }}>
               {/* Text Side */}
               <div style={{ direction: 'ltr' }}>
-                <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--primary-600)', marginBottom: 12 }}>{cat.badge}</div>
+                <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-accent)', marginBottom: 12 }}>{cat.badge}</div>
                 <h2 style={{ fontSize: '2.4rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15, color: 'var(--text-primary)' }}>{cat.title}</h2>
                 <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: 28 }}>{cat.desc}</p>
                 
@@ -196,7 +196,7 @@ export default function SettlementPage() {
         <div className="container" style={{ position: 'relative', zIndex: 10 }}>
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24, alignItems: 'center' }}>
             <div>
-              <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--primary-600)', marginBottom: 16 }}>Free Guides</div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-accent)', marginBottom: 16 }}>Free Guides</div>
               <h2 style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 24, lineHeight: 1.15, color: 'white' }}>Your First Weeks, Step by Step</h2>
               <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', lineHeight: 1.8, marginBottom: 40 }}>
                 Start with the checklist beside this. Our free newcomer guides cover each step in detail, from the SIN application to your first health card.
@@ -204,7 +204,7 @@ export default function SettlementPage() {
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                 {/* Links to the e-books library rather than a single PDF: the guides are
                     per-topic, and there is no combined checklist document to hand out. */}
-                <Link href="/e-books" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 32px', fontSize: '1rem', background: 'var(--primary-600)', border: 'none', boxShadow: '0 8px 24px rgba(232,93,4,0.3)' }}>
+                <Link href="/e-books" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 32px', fontSize: '1rem', background: 'var(--primary-700)', border: 'none', boxShadow: '0 8px 24px rgba(232,93,4,0.3)' }}>
                   <Download size={20} /> Browse Free Guides
                 </Link>
                 <Link href="/resources" className="btn" style={{ padding: '16px 32px', fontSize: '1rem', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}>View All Resources</Link>
@@ -212,7 +212,7 @@ export default function SettlementPage() {
             </div>
             <div style={{ background: 'var(--bg-card)', borderRadius: 8, padding: 40, border: '1px solid var(--border-color)', transform: 'rotate(2deg)', boxShadow: '0 25px 50px rgba(0,0,0,0.4), 0 0 0 12px rgba(255,255,255,0.05)' }}>
               <h4 style={{ fontWeight: 800, fontSize: '1.3rem', marginBottom: 24, paddingBottom: 16, borderBottom: '2px dashed var(--border-color)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <FileText size={24} style={{ color: 'var(--primary-600)' }} />
+                <FileText size={24} style={{ color: 'var(--text-accent)' }} />
                 First 7 Days Checklist
               </h4>
               {/* Every box starts empty. The page tracks nothing, so pre-ticked rows
@@ -229,11 +229,11 @@ export default function SettlementPage() {
       </section>
 
       {/* CTA */}
-      <section className="section-sm" style={{ background: 'var(--primary-600)', textAlign: 'center' }}>
+      <section className="section-sm" style={{ background: 'var(--primary-700)', textAlign: 'center' }}>
         <div className="container" style={{ maxWidth: 700 }}>
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Need Personalized Help?</h2>
           <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.85)', marginBottom: 32 }}>A trained volunteer will walk you through your specific settlement needs, one step at a time.</p>
-          <Link href="/portal/auth" className="btn btn-lg" style={{ background: 'var(--bg-primary)', color: 'var(--primary-600)', fontWeight: 700, padding: '16px 36px', border: 'none' }}>
+          <Link href="/portal/auth" className="btn btn-lg" style={{ background: 'var(--bg-primary)', color: 'var(--text-accent)', fontWeight: 700, padding: '16px 36px', border: 'none' }}>
             Request Settlement Help <ArrowRight size={18} />
           </Link>
         </div>

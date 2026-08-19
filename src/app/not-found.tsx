@@ -46,7 +46,7 @@ export default function NotFound() {
                 <Link key={item.href} href={item.href} style={{ textDecoration: 'none', color: 'inherit' }}>
                   <span className="index-num">{item.num}</span>
                   <span style={{ fontWeight: 600 }}>{item.label}</span>
-                  <span aria-hidden="true" style={{ color: 'var(--primary-600)' }}>&rarr;</span>
+                  <span aria-hidden="true" style={{ color: 'var(--text-accent)' }}>&rarr;</span>
                 </Link>
               ))}
             </nav>

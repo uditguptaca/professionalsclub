@@ -2,12 +2,14 @@
 import React, { useState } from 'react';
 import { usePortal } from '@/context/portal-context';
 import { BookOpen, Video, FileCheck, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { useConfirm } from '@/components/portal/confirm';
 import type { EBook, VideoWorkshop, ContentTemplate } from '@/types';
 
 type ModalType = 'ebook' | 'workshop' | 'template' | null;
 
 export default function ResourcesManagementPage() {
   const { ebooks, addEBook, updateEBook, deleteEBook, workshops, addWorkshop, updateWorkshop, deleteWorkshop, templates, addTemplate, updateTemplate, deleteTemplate } = usePortal();
+  const confirmAction = useConfirm();
   const [modalType, setModalType] = useState<ModalType>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
@@ -61,7 +63,7 @@ export default function ResourcesManagementPage() {
   };
 
   const handleDelete = async (type: Exclude<ModalType, null>, id: string) => {
-    if (!confirm('Are you sure you want to delete this item?')) return;
+    if (!(await confirmAction({ title: 'Delete this item?', message: 'It disappears from the public resources page immediately.', confirmLabel: 'Delete item' }))) return;
 
     setListError(null);
     setDeletingId(id);
@@ -74,7 +76,7 @@ export default function ResourcesManagementPage() {
     if (!result.ok) setListError(result.error);
   };
 
-  const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-primary)' };
+  const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem',  background: 'var(--bg-primary)' };
   const labelStyle: React.CSSProperties = { fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4, display: 'block' };
 
   const renderModal = () => {
@@ -151,7 +153,7 @@ export default function ResourcesManagementPage() {
       {/* E-Books Section */}
       <div className="card" style={{ marginBottom: 32, padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><BookOpen size={20} style={{ color: 'var(--primary-600)' }} /><h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>E-Books & Guides ({ebooks.length})</h2></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><BookOpen size={20} style={{ color: 'var(--text-accent)' }} /><h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>E-Books & Guides ({ebooks.length})</h2></div>
           <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '0.8rem' }} onClick={() => openAddModal('ebook')}><Plus size={14} /> Add E-Book</button>
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>

@@ -675,7 +675,7 @@ export default function MatrimonyCreatePage() {
 
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           {draftSavedMsg && (
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--success-500)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontSize: 'var(--text-xs)', color: '#04724d', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
               <CheckCircle2 size={14} /> Draft saved!
             </span>
           )}
@@ -716,12 +716,12 @@ function Field({ label, error, required, hint, children, span }: FieldProps) {
     <div className="input-group" style={{ gridColumn: span === 2 ? '1 / -1' : undefined }}>
       <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
         {label}
-        {required && <span style={{ color: 'var(--error-500)', fontWeight: 700 }}>*</span>}
+        {required && <span style={{ color: 'var(--error-600)', fontWeight: 700 }}>*</span>}
       </label>
       {children}
       {hint && !error && <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{hint}</span>}
       {error && (
-        <span style={{ fontSize: '12px', color: 'var(--error-500)', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500 }}>
+        <span style={{ fontSize: '12px', color: 'var(--error-600)', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500 }}>
           <AlertCircle size={12} /> {error}
         </span>
       )}
@@ -1068,7 +1068,7 @@ function StepFamily({ data, set, toggleMulti, errors }: StepWithMultiProps) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
       {/* Family section */}
       <div>
-        <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
+        <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-accent)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
           Family Background
         </h3>
         <FormGrid>
@@ -1116,7 +1116,7 @@ function StepFamily({ data, set, toggleMulti, errors }: StepWithMultiProps) {
 
       {/* Lifestyle section */}
       <div>
-        <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
+        <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-accent)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
           Lifestyle
         </h3>
         <FormGrid cols={3}>
@@ -1167,7 +1167,7 @@ function StepAbout({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
       {/* About Me */}
       <div>
-        <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
+        <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-accent)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
           About You
         </h3>
         <Field label="About Me" required error={errors.about_me} span={2}>
@@ -1189,7 +1189,7 @@ function StepAbout({
 
       {/* Photos */}
       <div>
-        <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+        <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-accent)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
           Photos
         </h3>
         <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1283,7 +1283,7 @@ function StepAbout({
 
       {/* Contact */}
       <div>
-        <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+        <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-accent)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
           Contact Information
         </h3>
         <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1324,10 +1324,10 @@ function StepAbout({
               style={{ marginTop: 3, width: 18, height: 18, accentColor: 'var(--primary-600)' }}
             />
             <span>
-              I accept the <a href="/terms" style={{ color: 'var(--primary-600)', textDecoration: 'underline' }}>Terms of Service</a> and <a href="/privacy" style={{ color: 'var(--primary-600)', textDecoration: 'underline' }}>Privacy Policy</a> for the Matrimony service. I understand my profile will be reviewed before being made visible.
+              I accept the <a href="/terms" style={{ color: 'var(--text-accent)', textDecoration: 'underline' }}>Terms of Service</a> and <a href="/privacy" style={{ color: 'var(--text-accent)', textDecoration: 'underline' }}>Privacy Policy</a> for the Matrimony service. I understand my profile will be reviewed before being made visible.
             </span>
           </label>
-          {errors.terms_accepted && <span style={{ fontSize: '12px', color: 'var(--error-500)', marginLeft: 28, fontWeight: 500 }}><AlertCircle size={12} style={{ display: 'inline', verticalAlign: 'middle' }} /> {errors.terms_accepted}</span>}
+          {errors.terms_accepted && <span style={{ fontSize: '12px', color: 'var(--error-600)', marginLeft: 28, fontWeight: 500 }}><AlertCircle size={12} style={{ display: 'inline', verticalAlign: 'middle' }} /> {errors.terms_accepted}</span>}
 
           <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', cursor: 'pointer', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
             <input
@@ -1338,7 +1338,7 @@ function StepAbout({
             />
             <span>I confirm that I am at least 18 years old and all information provided is accurate to the best of my knowledge.</span>
           </label>
-          {errors.age_confirmed && <span style={{ fontSize: '12px', color: 'var(--error-500)', marginLeft: 28, fontWeight: 500 }}><AlertCircle size={12} style={{ display: 'inline', verticalAlign: 'middle' }} /> {errors.age_confirmed}</span>}
+          {errors.age_confirmed && <span style={{ fontSize: '12px', color: 'var(--error-600)', marginLeft: 28, fontWeight: 500 }}><AlertCircle size={12} style={{ display: 'inline', verticalAlign: 'middle' }} /> {errors.age_confirmed}</span>}
         </div>
       </div>
     </div>
@@ -1353,7 +1353,7 @@ function StepPreferences({ data, set, toggleMulti, errors }: StepWithMultiProps)
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
       {/* Basic preferences */}
       <div>
-        <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
+        <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-accent)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
           Basic Preferences
         </h3>
         <FormGrid>

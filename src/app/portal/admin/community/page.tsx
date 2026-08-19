@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import type { CommunityReport, CommunityReportStatus } from '@/types';
 import { fetchCommunityReports, resolveCommunityReport } from '@/app/actions/community';
 import { Flag, ShieldOff, ShieldCheck, Loader2 } from 'lucide-react';
+import { useConfirm } from '@/components/portal/confirm';
 
 /**
  * Moderation queue for community content. Reports arrive from members
@@ -11,6 +12,7 @@ import { Flag, ShieldOff, ShieldCheck, Loader2 } from 'lucide-react';
  * trail but disappears from every member-facing query via RLS.
  */
 export default function CommunityModerationPage() {
+  const confirmAction = useConfirm();
   const [status, setStatus] = useState<CommunityReportStatus>('open');
   const [reports, setReports] = useState<CommunityReport[] | null>(null);
   const [error, setError] = useState('');
@@ -84,7 +86,14 @@ export default function CommunityModerationPage() {
               <button
                 className="btn btn-sm"
                 style={{ background: 'var(--error-600)', color: '#fff', border: 'none' }}
-                onClick={() => resolve(report.id, 'actioned')}
+                onClick={async () => {
+                  const ok = await confirmAction({
+                    title: 'Remove this content?',
+                    message: 'The post or comment is hidden from every member. The author is not notified.',
+                    confirmLabel: 'Remove content',
+                  });
+                  if (ok) resolve(report.id, 'actioned');
+                }}
                 disabled={busyId === report.id}
               >
                 {busyId === report.id ? <Loader2 size={14} className="spin" /> : <ShieldOff size={14} />}

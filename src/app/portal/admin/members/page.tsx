@@ -5,6 +5,7 @@ import { updateMemberVerification, updateMemberAccountStatus } from '@/app/actio
 import type { ActionResult } from '@/app/actions/portal';
 import type { Member } from '@/types';
 import { Search, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { useConfirm } from '@/components/portal/confirm';
 
 /**
  * The three values profiles.verification_status accepts (see the check
@@ -17,11 +18,16 @@ const ACCOUNT: Member['accountStatus'][] = ['active', 'suspended', 'archived'];
 /** Both consequential transitions say what the member loses, in the member's terms. */
 const confirmCopy = (name: string, status: Member['accountStatus']) =>
   status === 'suspended'
-    ? `Suspend ${name}? A suspended member cannot sign in until an admin sets the account back to active.`
-    : `Archive ${name}? An archived member cannot sign in and the account is closed. The record is kept.`;
+    ? { title: `Suspend ${name}?`,
+        message: 'They will not be able to sign in until an admin sets the account back to active.',
+        confirmLabel: 'Suspend member' }
+    : { title: `Archive ${name}?`,
+        message: 'They will not be able to sign in and the account is closed. The record is kept.',
+        confirmLabel: 'Archive member' };
 
 export default function AdminMembersPage() {
   const { members } = usePortal();
+  const confirm = useConfirm();
   const [search, setSearch] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -46,9 +52,10 @@ export default function AdminMembersPage() {
   const setVerification = (m: Member, status: Member['verificationStatus']) =>
     runRowAction(m.id, () => updateMemberVerification({ memberId: m.id, status }));
 
-  const setAccountStatus = (m: Member, status: Member['accountStatus']) => {
+  const setAccountStatus = async (m: Member, status: Member['accountStatus']) => {
     const name = `${m.firstName} ${m.lastName}`.trim() || m.email;
-    if (status !== 'active' && !window.confirm(confirmCopy(name, status))) return;
+    // Suspending and archiving both lock the member out, so both ask first.
+    if (status !== 'active' && !(await confirm(confirmCopy(name, status)))) return;
     return runRowAction(m.id, () => updateMemberAccountStatus({ memberId: m.id, status }));
   };
 
@@ -69,7 +76,7 @@ export default function AdminMembersPage() {
       <div style={{ marginBottom: 20 }}>
         <div style={{ position: 'relative', maxWidth: 400 }}>
           <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-          <input className="input" style={{ paddingLeft: 36 }} placeholder="Search by name or email..." value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="input" style={{ paddingLeft: 36 }} placeholder="Search by name or email..." aria-label="Search members" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </div>
 

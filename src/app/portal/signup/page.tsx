@@ -226,7 +226,7 @@ export default function SignupPage() {
       <div className="onboarding-page">
         <div className="onboarding-container">
           <div className="onboarding-card" style={{ textAlign: 'center', padding: 48 }}>
-            <Mail size={48} style={{ color: 'var(--primary-600)', marginBottom: 16 }} />
+            <Mail size={48} style={{ color: 'var(--text-accent)', marginBottom: 16 }} />
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: 12 }}>Confirm your email</h2>
             <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440, margin: '0 auto 20px' }}>
               We sent a confirmation link to <strong>{email}</strong>. Open it to activate your
@@ -275,16 +275,19 @@ export default function SignupPage() {
           const isActive = step === s.id;
           const isCompleted = step > s.id;
           return (
-            <div
+            <button
               key={s.id}
+              type="button"
               className={`onboarding-step-pill ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}
-              onClick={() => isCompleted && setStep(s.id)}
+              onClick={() => setStep(s.id)}
+              disabled={!isCompleted}
+              style={{ fontFamily: 'inherit' }}
             >
               <div className="step-circle">
                 {isCompleted ? <Check size={14} /> : <Icon size={14} />}
               </div>
               <span className="step-label">{s.label}</span>
-            </div>
+            </button>
           );
         })}
       </div>
@@ -303,45 +306,45 @@ export default function SignupPage() {
 
               <div className="form-grid-2">
                 <div className="form-field">
-                  <label>First Name <span className="required">*</span></label>
-                  <input type="text" className="form-input" placeholder="e.g. Rahul" value={firstName} onChange={e => setFirstName(e.target.value)} />
+                  <label htmlFor="su-firstName">First Name <span className="required">*</span></label>
+                  <input id="su-firstName" type="text" className="form-input" placeholder="e.g. Rahul" value={firstName} onChange={e => setFirstName(e.target.value)} />
                 </div>
                 <div className="form-field">
-                  <label>Middle Name</label>
-                  <input type="text" className="form-input" placeholder="Optional" value={middleName} onChange={e => setMiddleName(e.target.value)} />
+                  <label htmlFor="su-middleName">Middle Name</label>
+                  <input id="su-middleName" type="text" className="form-input" placeholder="Optional" value={middleName} onChange={e => setMiddleName(e.target.value)} />
                 </div>
               </div>
 
               <div className="form-field">
-                <label>Last Name <span className="required">*</span></label>
-                <input type="text" className="form-input" placeholder="e.g. Sharma" value={lastName} onChange={e => setLastName(e.target.value)} />
+                <label htmlFor="su-lastName">Last Name <span className="required">*</span></label>
+                <input id="su-lastName" type="text" className="form-input" placeholder="e.g. Sharma" value={lastName} onChange={e => setLastName(e.target.value)} />
               </div>
 
               <div className="form-field">
-                <label>Email Address <span className="required">*</span></label>
-                <input type="email" className="form-input" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} />
+                <label htmlFor="su-email">Email Address <span className="required">*</span></label>
+                <input id="su-email" type="email" className="form-input" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} />
               </div>
 
               <div className="form-field">
-                <label>Phone Number <span className="required">*</span></label>
-                <input type="tel" className="form-input" placeholder="+1 (416) 000-0000" value={phone} onChange={e => setPhone(e.target.value)} />
+                <label htmlFor="su-phone">Phone Number <span className="required">*</span></label>
+                <input id="su-phone" type="tel" autoComplete="tel" className="form-input" placeholder="+1 (416) 000-0000" value={phone} onChange={e => setPhone(e.target.value)} />
               </div>
 
               <div className="form-grid-2">
                 <div className="form-field">
-                  <label>Password <span className="required">*</span></label>
+                  <label htmlFor="su-password">Password <span className="required">*</span></label>
                   <div className="input-with-icon">
-                    <input type={showPassword ? 'text' : 'password'} className="form-input" placeholder="Min 8 characters" value={password} onChange={e => setPassword(e.target.value)} />
-                    <button type="button" className="input-icon-btn" onClick={() => setShowPassword(!showPassword)}>
+                    <input id="su-password" type={showPassword ? 'text' : 'password'} className="form-input" placeholder="Min 8 characters" value={password} onChange={e => setPassword(e.target.value)} />
+                    <button type="button" className="input-icon-btn" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword(!showPassword)}>
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
                 </div>
                 <div className="form-field">
-                  <label>Confirm Password <span className="required">*</span></label>
+                  <label htmlFor="su-confirmPassword">Confirm Password <span className="required">*</span></label>
                   <div className="input-with-icon">
-                    <input type={showConfirm ? 'text' : 'password'} className="form-input" placeholder="Re-type password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
-                    <button type="button" className="input-icon-btn" onClick={() => setShowConfirm(!showConfirm)}>
+                    <input id="su-confirmPassword" type={showConfirm ? 'text' : 'password'} className="form-input" placeholder="Re-type password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
+                    <button type="button" className="input-icon-btn" aria-label={showConfirm ? 'Hide password' : 'Show password'} onClick={() => setShowConfirm(!showConfirm)}>
                       {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
@@ -360,13 +363,13 @@ export default function SignupPage() {
 
               <div className="form-grid-2">
                 <div className="form-field">
-                  <label>Date of Birth <span className="required">*</span></label>
-                  <input type="date" className="form-input" value={dob} onChange={e => setDob(e.target.value)} />
+                  <label htmlFor="su-dob">Date of Birth</label>
+                  <input id="su-dob" type="date" className="form-input" value={dob} onChange={e => setDob(e.target.value)} />
                 </div>
                 <div className="form-field">
-                  <label>Gender</label>
+                  <label htmlFor="su-gender">Gender</label>
                   <div className="select-wrapper">
-                    <select className="form-input" value={gender} onChange={e => setGender(e.target.value)}>
+                    <select id="su-gender" className="form-input" value={gender} onChange={e => setGender(e.target.value)}>
                       <option value="">Select gender</option>
                       {GENDERS.map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
@@ -376,15 +379,15 @@ export default function SignupPage() {
               </div>
 
               <div className="form-field">
-                <label>Country of Residence <span className="required">*</span></label>
-                <input type="text" className="form-input" placeholder="e.g. Canada" value={country} onChange={e => setCountry(e.target.value)} />
+                <label htmlFor="su-country">Country of Residence</label>
+                <input id="su-country" type="text" className="form-input" placeholder="e.g. Canada" value={country} onChange={e => setCountry(e.target.value)} />
               </div>
 
               <div className="form-grid-2">
                 <div className="form-field">
-                  <label>Province / State <span className="required">*</span></label>
+                  <label htmlFor="su-province">Province / State</label>
                   <div className="select-wrapper">
-                    <select className="form-input" value={province} onChange={e => setProvince(e.target.value)}>
+                    <select id="su-province" className="form-input" value={province} onChange={e => setProvince(e.target.value)}>
                       <option value="">Select province</option>
                       {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
@@ -392,20 +395,20 @@ export default function SignupPage() {
                   </div>
                 </div>
                 <div className="form-field">
-                  <label>City <span className="required">*</span></label>
-                  <input type="text" className="form-input" placeholder="e.g. Toronto" value={city} onChange={e => setCity(e.target.value)} />
+                  <label htmlFor="su-city">City</label>
+                  <input id="su-city" type="text" className="form-input" placeholder="e.g. Toronto" value={city} onChange={e => setCity(e.target.value)} />
                 </div>
               </div>
 
               <div className="form-grid-2">
                 <div className="form-field">
-                  <label>Postal Code</label>
-                  <input type="text" className="form-input" placeholder="e.g. M5V 3L9" value={postalCode} onChange={e => setPostalCode(e.target.value)} />
+                  <label htmlFor="su-postalCode">Postal Code</label>
+                  <input id="su-postalCode" type="text" className="form-input" placeholder="e.g. M5V 3L9" value={postalCode} onChange={e => setPostalCode(e.target.value)} />
                 </div>
                 <div className="form-field">
-                  <label>Current Status <span className="required">*</span></label>
+                  <label htmlFor="su-currentStatus">Current Status</label>
                   <div className="select-wrapper">
-                    <select className="form-input" value={currentStatus} onChange={e => setCurrentStatus(e.target.value)}>
+                    <select id="su-currentStatus" className="form-input" value={currentStatus} onChange={e => setCurrentStatus(e.target.value)}>
                       <option value="">Select your status</option>
                       {CURRENT_STATUS.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
@@ -450,9 +453,9 @@ export default function SignupPage() {
 
               <div className="form-grid-2">
                 <div className="form-field">
-                  <label>Employment Status <span className="required">*</span></label>
+                  <label htmlFor="su-employmentStatus">Employment Status</label>
                   <div className="select-wrapper">
-                    <select className="form-input" value={employmentStatus} onChange={e => setEmploymentStatus(e.target.value)}>
+                    <select id="su-employmentStatus" className="form-input" value={employmentStatus} onChange={e => setEmploymentStatus(e.target.value)}>
                       <option value="">Select status</option>
                       {EMPLOYMENT_STATUS.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
@@ -460,20 +463,20 @@ export default function SignupPage() {
                   </div>
                 </div>
                 <div className="form-field">
-                  <label>Current Job Title / Role</label>
-                  <input type="text" className="form-input" placeholder="e.g. Software Engineer" value={jobTitle} onChange={e => setJobTitle(e.target.value)} />
+                  <label htmlFor="su-jobTitle">Current Job Title / Role</label>
+                  <input id="su-jobTitle" type="text" className="form-input" placeholder="e.g. Software Engineer" value={jobTitle} onChange={e => setJobTitle(e.target.value)} />
                 </div>
               </div>
 
               <div className="form-grid-2">
                 <div className="form-field">
-                  <label>Current Company / Organization</label>
-                  <input type="text" className="form-input" placeholder="e.g. Shopify" value={company} onChange={e => setCompany(e.target.value)} />
+                  <label htmlFor="su-company">Current Company / Organization</label>
+                  <input id="su-company" type="text" className="form-input" placeholder="e.g. Shopify" value={company} onChange={e => setCompany(e.target.value)} />
                 </div>
                 <div className="form-field">
-                  <label>Current Industry <span className="required">*</span></label>
+                  <label htmlFor="su-industry">Current Industry</label>
                   <div className="select-wrapper">
-                    <select className="form-input" value={industry} onChange={e => setIndustry(e.target.value)}>
+                    <select id="su-industry" className="form-input" value={industry} onChange={e => setIndustry(e.target.value)}>
                       <option value="">Select industry</option>
                       {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
                     </select>
@@ -484,20 +487,20 @@ export default function SignupPage() {
 
               <div className="form-grid-2">
                 <div className="form-field">
-                  <label>Previous Job Title</label>
-                  <input type="text" className="form-input" placeholder="Optional" value={prevJobTitle} onChange={e => setPrevJobTitle(e.target.value)} />
+                  <label htmlFor="su-prevJobTitle">Previous Job Title</label>
+                  <input id="su-prevJobTitle" type="text" className="form-input" placeholder="Optional" value={prevJobTitle} onChange={e => setPrevJobTitle(e.target.value)} />
                 </div>
                 <div className="form-field">
-                  <label>Previous Company</label>
-                  <input type="text" className="form-input" placeholder="Optional" value={prevCompany} onChange={e => setPrevCompany(e.target.value)} />
+                  <label htmlFor="su-prevCompany">Previous Company</label>
+                  <input id="su-prevCompany" type="text" className="form-input" placeholder="Optional" value={prevCompany} onChange={e => setPrevCompany(e.target.value)} />
                 </div>
               </div>
 
               <div className="form-grid-3">
                 <div className="form-field">
-                  <label>Total Experience <span className="required">*</span></label>
+                  <label htmlFor="su-experience">Total Experience</label>
                   <div className="select-wrapper">
-                    <select className="form-input" value={experience} onChange={e => setExperience(e.target.value)}>
+                    <select id="su-experience" className="form-input" value={experience} onChange={e => setExperience(e.target.value)}>
                       <option value="">Select</option>
                       {EXPERIENCE_RANGES.map(e => <option key={e} value={e}>{e}</option>)}
                     </select>
@@ -505,9 +508,9 @@ export default function SignupPage() {
                   </div>
                 </div>
                 <div className="form-field">
-                  <label>Highest Education <span className="required">*</span></label>
+                  <label htmlFor="su-education">Highest Education</label>
                   <div className="select-wrapper">
-                    <select className="form-input" value={education} onChange={e => setEducation(e.target.value)}>
+                    <select id="su-education" className="form-input" value={education} onChange={e => setEducation(e.target.value)}>
                       <option value="">Select</option>
                       {EDUCATION_LEVELS.map(e => <option key={e} value={e}>{e}</option>)}
                     </select>
@@ -515,9 +518,9 @@ export default function SignupPage() {
                   </div>
                 </div>
                 <div className="form-field">
-                  <label>Professional Category <span className="required">*</span></label>
+                  <label htmlFor="su-profCategory">Professional Category</label>
                   <div className="select-wrapper">
-                    <select className="form-input" value={profCategory} onChange={e => setProfCategory(e.target.value)}>
+                    <select id="su-profCategory" className="form-input" value={profCategory} onChange={e => setProfCategory(e.target.value)}>
                       <option value="">Select</option>
                       {PROFESSIONAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
@@ -527,32 +530,32 @@ export default function SignupPage() {
               </div>
 
               <div className="form-field">
-                <label>Field of Study / Major <span className="required">*</span></label>
-                <input type="text" className="form-input" placeholder="e.g. Computer Science" value={fieldOfStudy} onChange={e => setFieldOfStudy(e.target.value)} />
+                <label htmlFor="su-fieldOfStudy">Field of Study / Major</label>
+                <input id="su-fieldOfStudy" type="text" className="form-input" placeholder="e.g. Computer Science" value={fieldOfStudy} onChange={e => setFieldOfStudy(e.target.value)} />
               </div>
 
               <div className="form-grid-2">
                 <div className="form-field">
-                  <label>Certifications</label>
-                  <input type="text" className="form-input" placeholder="e.g. PMP, AWS, CPA" value={certifications} onChange={e => setCertifications(e.target.value)} />
+                  <label htmlFor="su-certifications">Certifications</label>
+                  <input id="su-certifications" type="text" className="form-input" placeholder="e.g. PMP, AWS, CPA" value={certifications} onChange={e => setCertifications(e.target.value)} />
                 </div>
                 <div className="form-field">
-                  <label>Key Skills</label>
-                  <input type="text" className="form-input" placeholder="e.g. Python, Finance, Leadership" value={skills} onChange={e => setSkills(e.target.value)} />
+                  <label htmlFor="su-skills">Key Skills</label>
+                  <input id="su-skills" type="text" className="form-input" placeholder="e.g. Python, Finance, Leadership" value={skills} onChange={e => setSkills(e.target.value)} />
                 </div>
               </div>
 
               <div className="form-field">
-                <label><Link2 size={14} style={{ display: 'inline', verticalAlign: '-2px', marginRight: 6, color: '#0077b5' }} />LinkedIn Profile URL <span className="required">*</span></label>
-                <input type="url" className="form-input" placeholder="https://linkedin.com/in/yourprofile" value={linkedinUrl} onChange={e => setLinkedinUrl(e.target.value)} />
+                <label htmlFor="su-linkedinUrl"><Link2 size={14} style={{ display: 'inline', verticalAlign: '-2px', marginRight: 6, color: '#0077b5' }} />LinkedIn Profile URL</label>
+                <input id="su-linkedinUrl" type="url" className="form-input" placeholder="https://linkedin.com/in/yourprofile" value={linkedinUrl} onChange={e => setLinkedinUrl(e.target.value)} />
                 <div className="field-hint">
                   <Shield size={12} /> We verify your profile through LinkedIn to maintain authenticity and trust within the community.
                 </div>
               </div>
 
               <div className="form-field">
-                <label>Short Professional Summary <span className="required">*</span></label>
-                <textarea className="form-input form-textarea" placeholder="Briefly describe your professional background, expertise, and what you're looking for..." value={summary} onChange={e => setSummary(e.target.value)} rows={3} />
+                <label htmlFor="su-summary">Short Professional Summary</label>
+                <textarea id="su-summary" className="form-input form-textarea" placeholder="Briefly describe your professional background, expertise, and what you're looking for..." value={summary} onChange={e => setSummary(e.target.value)} rows={3} />
               </div>
             </div>
           )}
@@ -567,9 +570,9 @@ export default function SignupPage() {
 
               <div className="form-grid-2">
                 <div className="form-field">
-                  <label>Preferred Contact Method <span className="required">*</span></label>
+                  <label htmlFor="su-contactMethod">Preferred Contact Method</label>
                   <div className="select-wrapper">
-                    <select className="form-input" value={contactMethod} onChange={e => setContactMethod(e.target.value)}>
+                    <select id="su-contactMethod" className="form-input" value={contactMethod} onChange={e => setContactMethod(e.target.value)}>
                       <option value="">Select method</option>
                       {CONTACT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
@@ -577,9 +580,9 @@ export default function SignupPage() {
                   </div>
                 </div>
                 <div className="form-field">
-                  <label>Preferred Language <span className="required">*</span></label>
+                  <label htmlFor="su-prefLanguage">Preferred Language</label>
                   <div className="select-wrapper">
-                    <select className="form-input" value={prefLanguage} onChange={e => setPrefLanguage(e.target.value)}>
+                    <select id="su-prefLanguage" className="form-input" value={prefLanguage} onChange={e => setPrefLanguage(e.target.value)}>
                       <option value="">Select language</option>
                       {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
                     </select>
@@ -616,7 +619,7 @@ export default function SignupPage() {
               </div>
 
               <div className="form-field">
-                <label>I am joining to… <span className="required">*</span></label>
+                <label>I am joining to…</label>
                 <div className="intent-cards">
                   {[
                     { key: 'help' as const, icon: <HelpCircle size={28} />, title: 'Get Help', desc: 'I need guidance or support with my career, settlement, taxes, etc.' },
@@ -643,9 +646,9 @@ export default function SignupPage() {
                 <div className="intent-section animate-fade-in">
                   <div className="intent-section-label">Need Help With</div>
                   <div className="form-field">
-                    <label>Type of Help Needed</label>
+                    <label htmlFor="su-helpType">Type of Help Needed</label>
                     <div className="select-wrapper">
-                      <select className="form-input" value={helpType} onChange={e => setHelpType(e.target.value)}>
+                      <select id="su-helpType" className="form-input" value={helpType} onChange={e => setHelpType(e.target.value)}>
                         <option value="">Select type</option>
                         {HELP_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
@@ -653,8 +656,8 @@ export default function SignupPage() {
                     </div>
                   </div>
                   <div className="form-field">
-                    <label>Short Description of Your Need</label>
-                    <textarea className="form-input form-textarea" placeholder="Briefly describe what help you are looking for..." value={helpDescription} onChange={e => setHelpDescription(e.target.value)} rows={2} />
+                    <label htmlFor="su-helpDescription">Short Description of Your Need</label>
+                    <textarea id="su-helpDescription" className="form-input form-textarea" placeholder="Briefly describe what help you are looking for..." value={helpDescription} onChange={e => setHelpDescription(e.target.value)} rows={2} />
                   </div>
                 </div>
               )}
@@ -680,9 +683,9 @@ export default function SignupPage() {
                     </div>
                   </div>
                   <div className="form-field">
-                    <label>Your Availability</label>
+                    <label htmlFor="su-availability">Your Availability</label>
                     <div className="select-wrapper">
-                      <select className="form-input" value={availability} onChange={e => setAvailability(e.target.value)}>
+                      <select id="su-availability" className="form-input" value={availability} onChange={e => setAvailability(e.target.value)}>
                         <option value="">Select availability</option>
                         {AVAILABILITY_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
                       </select>
@@ -739,7 +742,7 @@ export default function SignupPage() {
           {submitError && (
             <div
               role="alert"
-              style={{ marginTop: 20, color: 'var(--error-500)', fontSize: '0.85rem', fontWeight: 500, padding: '10px 14px', background: 'rgba(240, 73, 35, 0.1)', borderRadius: 8, display: 'flex', alignItems: 'flex-start', gap: 8 }}
+              style={{ marginTop: 20, color: 'var(--error-600)', fontSize: '0.85rem', fontWeight: 500, padding: '10px 14px', background: 'rgba(240, 73, 35, 0.1)', borderRadius: 8, display: 'flex', alignItems: 'flex-start', gap: 8 }}
             >
               <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
               <span>{submitError}</span>

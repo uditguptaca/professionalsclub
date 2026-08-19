@@ -41,7 +41,7 @@ export default function DonationsManagementPage() {
     closeModal();
   };
 
-  const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-primary)' };
+  const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem',  background: 'var(--bg-primary)' };
   const labelStyle: React.CSSProperties = { fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4, display: 'block' };
 
   return (
@@ -79,7 +79,7 @@ export default function DonationsManagementPage() {
                 </div>
                 <div style={{ padding: 20, background: 'var(--bg-secondary)', borderRadius: 12, textAlign: 'center' }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>Progress</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary-600)' }}>{pct.toFixed(0)}%</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-accent)' }}>{pct.toFixed(0)}%</div>
                 </div>
               </div>
 

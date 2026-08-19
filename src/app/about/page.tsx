@@ -32,13 +32,13 @@ export default function AboutPage() {
         <div className="container" style={{ maxWidth: 850, position: 'relative', zIndex: 10 }}>
           <h1 style={{ fontSize: '3.6rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15, color: 'var(--bg-primary)' }}>
             Build connections. <br/>
-            <span style={{ color: 'var(--primary-600)' }}>Find support. Grow together.</span>
+            <span style={{ color: 'var(--text-accent)' }}>Find support. Grow together.</span>
           </h1>
-          <p style={{ fontSize: '1.25rem', color: 'var(--gray-400)', marginBottom: 36, lineHeight: 1.6, fontWeight: 400 }}>
+          <p style={{ fontSize: '1.25rem', color: 'var(--gray-300)', marginBottom: 36, lineHeight: 1.6, fontWeight: 400 }}>
             A community helping newcomers and professionals build their future in Canada.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/portal/signup" className="btn btn-primary btn-lg" style={{ padding: '14px 28px', background: 'var(--primary-600)', boxShadow: '0 8px 24px rgba(232, 93, 4, 0.25)' }}>
+            <Link href="/portal/signup" className="btn btn-primary btn-lg" style={{ padding: '14px 28px', background: 'var(--primary-700)', boxShadow: '0 8px 24px rgba(232, 93, 4, 0.25)' }}>
               Join as a Member
             </Link>
             <Link href="/businesses" className="btn btn-lg" style={{ padding: '14px 28px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'white', backdropFilter: 'blur(8px)' }}>
@@ -53,7 +53,7 @@ export default function AboutPage() {
         <div className="container">
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)', gap: 40, alignItems: 'center' }}>
             <div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Who We Are</div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-accent)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Who We Are</div>
               <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 16, lineHeight: 1.25 }}>
                 An ecosystem built on people helping people.
               </h2>
@@ -64,21 +64,21 @@ export default function AboutPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               {/* Mission */}
               <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 16, padding: '24px', textAlign: 'center', boxShadow: 'var(--shadow-md)' }}>
-                <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Our Mission</h3>
+                <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-accent)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Our Mission</h3>
                 <p style={{ fontSize: '1.1rem', color: 'var(--text-primary)', lineHeight: 1.5, fontWeight: 700 }}>
                   "Help newcomers and professionals grow their careers and lives in Canada."
                 </p>
               </div>
               {/* Vision */}
               <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 16, padding: '24px', textAlign: 'center', boxShadow: 'var(--shadow-md)' }}>
-                <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Our Vision</h3>
+                <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-accent)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Our Vision</h3>
                 <p style={{ fontSize: '1.1rem', color: 'var(--text-primary)', lineHeight: 1.5, fontWeight: 700 }}>
                   "A Canada where no newcomer has to figure it out alone."
                 </p>
               </div>
               {/* Goals */}
               <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 16, padding: '24px', textAlign: 'center', boxShadow: 'var(--shadow-md)' }}>
-                <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Our Goals</h3>
+                <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-accent)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Our Goals</h3>
                 <p style={{ fontSize: '1.1rem', color: 'var(--text-primary)', lineHeight: 1.5, fontWeight: 700 }}>
                   "Open doors to jobs, settlement, and community for every member."
                 </p>
@@ -115,7 +115,7 @@ export default function AboutPage() {
                 display: 'block',
                 transition: 'transform 0.2s'
               }} className="hover:-translate-y-1">
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-secondary)', color: 'var(--primary-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-secondary)', color: 'var(--text-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
                   {item.icon}
                 </div>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 8 }}>{item.title}</h3>
@@ -131,21 +131,21 @@ export default function AboutPage() {
         <div className="container">
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center', marginBottom: 40 }}>
             <div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Platform Features</div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-accent)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Platform Features</div>
               <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 16, lineHeight: 1.25 }}>
                 Everything you need to thrive, in one place.
               </h2>
               <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 24 }}>
                 Hub for engagement and learning.
               </p>
-              <Link href="/portal/auth" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--primary-600)', fontWeight: 700, fontSize: '0.95rem' }}>
+              <Link href="/portal/auth" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--text-accent)', fontWeight: 700, fontSize: '0.95rem' }}>
                 Join the platform today <ChevronRight size={20} />
               </Link>
             </div>
             
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', boxShadow: 'var(--shadow-lg)', aspectRatio: '16/9' }}>
               <Image src="/meetup_bg.png" alt="Platform Features" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
-              <div style={{ position: 'absolute', top: 20, right: 20, background: 'var(--primary-600)', color: 'white', padding: '6px 14px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700 }}>
+              <div style={{ position: 'absolute', top: 20, right: 20, background: 'var(--primary-700)', color: 'white', padding: '6px 14px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700 }}>
                 Engagement Hub
               </div>
             </div>
@@ -183,10 +183,10 @@ export default function AboutPage() {
                 { num: '04', title: 'Request/Give Help', desc: 'Ask for support or mentor others.' }
               ].map((step, i) => (
                 <Link href="/portal/signup" key={i} style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '24px', background: 'rgba(255,255,255,0.03)', borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)', textDecoration: 'none', transition: 'background 0.2s' }}>
-                  <div style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--primary-600)', lineHeight: 1, fontFamily: 'var(--font-display)' }}>{step.num}</div>
+                  <div style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--text-accent)', lineHeight: 1, fontFamily: 'var(--font-display)' }}>{step.num}</div>
                   <div>
                     <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: 8, color: 'var(--bg-primary)' }}>{step.title}</h3>
-                    <p style={{ color: 'var(--gray-400)', lineHeight: 1.5, fontSize: '0.88rem' }}>{step.desc}</p>
+                    <p style={{ color: 'var(--gray-300)', lineHeight: 1.5, fontSize: '0.88rem' }}>{step.desc}</p>
                   </div>
                 </Link>
               ))}
@@ -200,12 +200,12 @@ export default function AboutPage() {
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center' }}>
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', boxShadow: 'var(--shadow-lg)', aspectRatio: '16/9' }}>
               <Image src="/volunteer-help.png" alt="Community Trust" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
-              <div style={{ position: 'absolute', top: 20, left: 20, background: 'var(--primary-600)', color: 'white', padding: '6px 14px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700 }}>
+              <div style={{ position: 'absolute', top: 20, left: 20, background: 'var(--primary-700)', color: 'white', padding: '6px 14px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700 }}>
                 Safety & Trust
               </div>
             </div>
             <div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Why People Trust Us</div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-accent)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Why People Trust Us</div>
               <h2 style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', marginBottom: 16, lineHeight: 1.25 }}>
                 A managed ecosystem.
               </h2>
@@ -219,7 +219,7 @@ export default function AboutPage() {
                   { title: 'Growing Ecosystem', icon: <Users size={20} /> }
                 ].map((trust, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px', background: 'var(--bg-primary)', borderRadius: 12, boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-color)' }}>
-                    <div style={{ color: 'var(--primary-600)', flexShrink: 0 }}>{trust.icon}</div>
+                    <div style={{ color: 'var(--text-accent)', flexShrink: 0 }}>{trust.icon}</div>
                     <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>{trust.title}</div>
                   </div>
                 ))}
@@ -234,7 +234,7 @@ export default function AboutPage() {
         <div className="container">
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center' }}>
             <div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Business Directory</div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-accent)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Business Directory</div>
               <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 16, lineHeight: 1.25 }}>
                 Trusted Businesses, <br/>Stronger Community
               </h2>
@@ -247,7 +247,7 @@ export default function AboutPage() {
                   'Register profiles', 'Featured directory', 'Exclusive benefits', 'Safe discovery'
                 ].map((item, i) => (
                   <li key={i} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary-600)', flexShrink: 0 }} />
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary-700)', flexShrink: 0 }} />
                     <span style={{ fontSize: '0.92rem', color: 'var(--text-secondary)' }}>{item}</span>
                   </li>
                 ))}
@@ -262,7 +262,7 @@ export default function AboutPage() {
 
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', aspectRatio: '16/9', boxShadow: 'var(--shadow-lg)' }}>
               <Image src="/event_bg.png" alt="Trusted local businesses" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
-              <div style={{ position: 'absolute', top: 20, left: 20, background: 'var(--primary-600)', color: 'white', padding: '6px 14px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700 }}>
+              <div style={{ position: 'absolute', top: 20, left: 20, background: 'var(--primary-700)', color: 'white', padding: '6px 14px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700 }}>
                 Verified Directory
               </div>
             </div>
@@ -276,12 +276,12 @@ export default function AboutPage() {
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center' }}>
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', aspectRatio: '16/9', boxShadow: 'var(--shadow-lg)' }}>
               <Image src="/events-meetup.png" alt="Community events and networking" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
-              <div style={{ position: 'absolute', top: 20, right: 20, background: 'var(--primary-600)', color: 'white', padding: '6px 14px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700 }}>
+              <div style={{ position: 'absolute', top: 20, right: 20, background: 'var(--primary-700)', color: 'white', padding: '6px 14px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700 }}>
                 Networking & Growth
               </div>
             </div>
             <div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Future Facing</div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-accent)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Future Facing</div>
               <h2 style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 16, lineHeight: 1.25 }}>
                 Meetups, Networking & Dynamic Growth
               </h2>
@@ -311,7 +311,7 @@ export default function AboutPage() {
         <div className="container">
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center' }}>
             <div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--primary-600)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Guiding Principles</div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-accent)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Guiding Principles</div>
               <h2 style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', marginBottom: 16, lineHeight: 1.25 }}>Our Core Values</h2>
               <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 24 }}>
                 Accelerated settlement.
@@ -352,12 +352,12 @@ export default function AboutPage() {
           <h2 style={{ fontSize: '3rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>
             Ready to build your future with us?
           </h2>
-          <p style={{ fontSize: '1.25rem', color: 'var(--gray-400)', marginBottom: 40, maxWidth: 600, margin: '0 auto 40px' }}>
+          <p style={{ fontSize: '1.25rem', color: 'var(--gray-300)', marginBottom: 40, maxWidth: 600, margin: '0 auto 40px' }}>
             Find help or list business.
           </p>
           
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/portal/signup" className="btn btn-primary btn-lg" style={{ padding: '16px 36px', fontSize: '0.95rem', borderRadius: 12, background: 'var(--primary-600)', boxShadow: '0 8px 24px rgba(232, 93, 4, 0.3)' }}>
+            <Link href="/portal/signup" className="btn btn-primary btn-lg" style={{ padding: '16px 36px', fontSize: '0.95rem', borderRadius: 12, background: 'var(--primary-700)', boxShadow: '0 8px 24px rgba(232, 93, 4, 0.3)' }}>
               Join the Community
             </Link>
             <Link href="/businesses" className="btn btn-lg" style={{ padding: '16px 36px', fontSize: '0.95rem', borderRadius: 12, background: 'rgba(255,255,255,0.06)', color: 'white', border: '1px solid rgba(255,255,255,0.12)' }}>
