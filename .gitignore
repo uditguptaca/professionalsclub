@@ -67,3 +67,6 @@ public/uploads/
 # which Google can reset), but keep it and the password in a password manager.
 android/keystore/
 android/keystore.properties
+
+# Local test builds — regenerate with gradlew assembleDebug/assembleRelease.
+mobile/test-apk/
