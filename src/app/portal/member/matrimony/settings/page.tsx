@@ -9,6 +9,7 @@ import {
   Settings, ArrowLeft, Shield, Eye, PauseCircle, Trash2, CheckCircle2,
   AlertCircle, EyeOff, Save, Loader2
 } from 'lucide-react';
+import PortalLoading from '@/components/portal/PortalLoading';
 import { useConfirm } from '@/components/portal/confirm';
 
 export default function MatrimonySettingsPage() {
@@ -104,13 +105,7 @@ export default function MatrimonySettingsPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 16 }}>
-        <div style={{
-          width: 48, height: 48, border: '3px solid var(--border-color)',
-          borderTopColor: 'var(--primary-600)', borderRadius: '50%', animation: 'spin 1s linear infinite',
-        }} />
-        <p style={{ color: 'var(--text-muted)' }}>Loading settings...</p>
-      </div>
+      <PortalLoading label="Loading settings" />
     );
   }
 

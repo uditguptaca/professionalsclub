@@ -8,6 +8,7 @@ import {
   MessageCircle, ArrowLeft, Send, User, ChevronRight, UserCheck, ShieldCheck,
   Clock, Shield, AlertCircle
 } from 'lucide-react';
+import PortalLoading from '@/components/portal/PortalLoading';
 
 interface PopulatedConversation extends MatrimonyConversation {
   otherProfile: MatrimonyProfileCard;
@@ -107,13 +108,7 @@ export default function MessagesPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 16 }}>
-        <div style={{
-          width: 48, height: 48, border: '3px solid var(--border-color)',
-          borderTopColor: 'var(--primary-600)', borderRadius: '50%', animation: 'spin 1s linear infinite',
-        }} />
-        <p style={{ color: 'var(--text-muted)' }}>Loading chat...</p>
-      </div>
+      <PortalLoading label="Loading chat" />
     );
   }
 

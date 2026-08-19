@@ -9,6 +9,7 @@ import {
   Sparkles, MapPin, Briefcase, Calendar, UserCheck, ArrowLeft,
   ChevronRight, Smile, Users, User, SlidersHorizontal,
 } from 'lucide-react';
+import PortalLoading from '@/components/portal/PortalLoading';
 
 /**
  * Matches: the visible profiles this member can see, ranked by how well they
@@ -90,13 +91,7 @@ export default function MatchesPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 16 }}>
-        <div style={{
-          width: 48, height: 48, border: '3px solid var(--border-color)',
-          borderTopColor: 'var(--primary-600)', borderRadius: '50%', animation: 'spin 1s linear infinite',
-        }} />
-        <p style={{ color: 'var(--text-muted)' }}>Finding matches...</p>
-      </div>
+      <PortalLoading label="Finding matches" />
     );
   }
 

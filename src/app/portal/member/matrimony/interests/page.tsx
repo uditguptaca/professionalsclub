@@ -8,6 +8,7 @@ import {
   Heart, ArrowLeft, Send, Inbox, CheckCircle2, XCircle, Clock, User,
   Calendar, MapPin, Briefcase, ChevronRight, UserCheck, Smile
 } from 'lucide-react';
+import PortalLoading from '@/components/portal/PortalLoading';
 
 type InterestTab = 'received' | 'sent';
 
@@ -100,13 +101,7 @@ export default function InterestsPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 16 }}>
-        <div style={{
-          width: 48, height: 48, border: '3px solid var(--border-color)',
-          borderTopColor: 'var(--primary-600)', borderRadius: '50%', animation: 'spin 1s linear infinite',
-        }} />
-        <p style={{ color: 'var(--text-muted)' }}>Loading interests...</p>
-      </div>
+      <PortalLoading label="Loading interests" />
     );
   }
 

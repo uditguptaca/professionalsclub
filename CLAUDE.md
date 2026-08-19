@@ -131,6 +131,11 @@ that file (and duplicated around lines 216 and 1834), so an unfamiliar utility
 class probably does not exist. Pages mix these with heavy inline `style={{}}`;
 match that. `page.module.css` exists but is unused.
 
+The **Design law** section in [AGENTS.md](AGENTS.md) is binding: token roles for
+text vs fills, `useConfirm()` over native dialogs, `<PortalLoading />` over
+spinners, inline `role="alert"` errors, labelled inputs, and the gender-casing
+rule. It exists because each entry was a shipped bug once.
+
 ## Other
 
 - Import alias `@/*` -> `src/*`.

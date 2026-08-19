@@ -206,6 +206,23 @@
   --texture-dark-alt: url('/img/texture-dark-2.jpg');
 }
 
+/* ===== REDUCED MOTION ====================================================== */
+/* One clamp for everything. This app runs decorative infinite loops (marquee,
+   Ken Burns pans, floating chips, pulse dots) that a vestibular-sensitive user
+   asked their OS to turn off; honouring that beats auditing every keyframe
+   separately. Skeletons degrade to static blocks, which is the right state.
+   JS-driven springs (motion/react) read the same media query themselves. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ========== RESET & BASE ========== */
 *, *::before, *::after {
   box-sizing: border-box;

@@ -17,6 +17,21 @@ import { motion, useInView, useMotionValue, useReducedMotion, useSpring, type Va
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+/**
+ * useReducedMotion, but hydration-safe. The server cannot read the media
+ * query, so branching on the real value during the first client render makes
+ * reduced-motion users hydrate against mismatched markup (WordReveal changes
+ * its element structure entirely). This returns false until after mount, so
+ * the first client render always matches the SSR output; the static variant
+ * takes over one frame later.
+ */
+function useReducedMotionSafe(): boolean {
+  const raw = useReducedMotion();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted ? Boolean(raw) : false;
+}
+
 /* ---------------------------------------------------------------- */
 
 export function WordReveal({
@@ -33,7 +48,7 @@ export function WordReveal({
   /** Substring whose words render inside <em> (the serif italic accent). */
   emphasis?: string;
 }) {
-  const reduce = useReducedMotion();
+  const reduce = useReducedMotionSafe();
   // The words are clipped by their overflow-hidden wrappers, so a clipped
   // word never intersects the viewport and per-word whileInView never fires.
   // Observe the heading itself and drive the words from that.
@@ -92,7 +107,7 @@ export function Reveal({
   className?: string;
   style?: React.CSSProperties;
 }) {
-  const reduce = useReducedMotion();
+  const reduce = useReducedMotionSafe();
   if (reduce) return <div className={className} style={style}>{children}</div>;
 
   return (
@@ -135,7 +150,7 @@ export function Stagger({
   className?: string;
   style?: React.CSSProperties;
 }) {
-  const reduce = useReducedMotion();
+  const reduce = useReducedMotionSafe();
   if (reduce) return <div className={className} style={style}>{children}</div>;
 
   return (
@@ -161,7 +176,7 @@ export function StaggerItem({
   className?: string;
   style?: React.CSSProperties;
 }) {
-  const reduce = useReducedMotion();
+  const reduce = useReducedMotionSafe();
   if (reduce) return <div className={className} style={style}>{children}</div>;
   return (
     <motion.div className={className} style={style} variants={staggerChild}>
@@ -174,7 +189,7 @@ export function StaggerItem({
 
 /** "1,200+" -> counts 0..1200 keeping the formatting and suffix. */
 export function CountUp({ value, duration = 1.6 }: { value: string; duration?: number }) {
-  const reduce = useReducedMotion();
+  const reduce = useReducedMotionSafe();
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: '0px 0px -10% 0px' });
   const [display, setDisplay] = useState(reduce ? value : '0');
@@ -220,7 +235,7 @@ export function Parallax({
   style?: React.CSSProperties;
   children: React.ReactNode;
 }) {
-  const reduce = useReducedMotion();
+  const reduce = useReducedMotionSafe();
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
   const x = useSpring(mx, { stiffness: 55, damping: 16, mass: 0.6 });

@@ -15,6 +15,7 @@ import {
   Phone, Mail, HeartHandshake, Smile, Coffee, BookOpen, Star, Sparkles,
   Bookmark, Send, MessageCircle, AlertTriangle, ShieldAlert, Image as ImageIcon
 } from 'lucide-react';
+import PortalLoading from '@/components/portal/PortalLoading';
 
 const statusConfig: Record<string, { color: string; bg: string; label: string; icon: React.ElementType }> = {
   draft: { color: 'var(--text-secondary)', bg: 'rgba(100,116,139,0.1)', label: 'Draft', icon: Clock },
@@ -223,13 +224,7 @@ export default function CandidateProfilePage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 16 }}>
-        <div style={{
-          width: 48, height: 48, border: '3px solid var(--border-color)',
-          borderTopColor: 'var(--primary-600)', borderRadius: '50%', animation: 'spin 1s linear infinite',
-        }} />
-        <p style={{ color: 'var(--text-muted)' }}>Loading profile details...</p>
-      </div>
+      <PortalLoading label="Loading profile details" />
     );
   }
 

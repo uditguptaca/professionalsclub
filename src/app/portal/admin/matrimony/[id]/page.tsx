@@ -10,6 +10,7 @@ import {
   Phone, Mail, MapPin, Briefcase, GraduationCap, Users, Calendar,
   Star, Sparkles, Smile, RefreshCw, FileText, Ban
 } from 'lucide-react';
+import PortalLoading from '@/components/portal/PortalLoading';
 
 const statusConfig: Record<string, { color: string; bg: string; label: string }> = {
   draft: { color: 'var(--text-secondary)', bg: 'rgba(100,116,139,0.1)', label: 'Draft' },
@@ -111,13 +112,7 @@ export default function AdminReviewProfilePage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 16 }}>
-        <div style={{
-          width: 48, height: 48, border: '3px solid var(--border-color)',
-          borderTopColor: 'var(--primary-600)', borderRadius: '50%', animation: 'spin 1s linear infinite',
-        }} />
-        <p style={{ color: 'var(--text-muted)' }}>Loading review queue details...</p>
-      </div>
+      <PortalLoading label="Loading review queue details" />
     );
   }
 

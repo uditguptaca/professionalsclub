@@ -8,6 +8,7 @@ import {
   Bookmark, ArrowLeft, Trash2, User, Calendar, MapPin, Briefcase,
   ChevronRight, UserCheck, Smile
 } from 'lucide-react';
+import PortalLoading from '@/components/portal/PortalLoading';
 
 export default function ShortlistPage() {
   const { currentUserId } = useApp();
@@ -66,13 +67,7 @@ export default function ShortlistPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 16 }}>
-        <div style={{
-          width: 48, height: 48, border: '3px solid var(--border-color)',
-          borderTopColor: 'var(--primary-600)', borderRadius: '50%', animation: 'spin 1s linear infinite',
-        }} />
-        <p style={{ color: 'var(--text-muted)' }}>Loading shortlist...</p>
-      </div>
+      <PortalLoading label="Loading shortlist" />
     );
   }
 

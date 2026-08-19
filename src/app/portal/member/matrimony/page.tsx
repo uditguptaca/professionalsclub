@@ -11,6 +11,7 @@ import {
   Bookmark, Users, Activity, ChevronRight, Sparkles, Bell, BarChart3,
   CircleDot, HeartHandshake, UserPlus
 } from 'lucide-react';
+import PortalLoading from '@/components/portal/PortalLoading';
 
 // The dashboard is the "My Profile" stop on this nav; every other entry is a
 // real route of its own.
@@ -154,13 +155,7 @@ export default function MemberMatrimonyDashboard() {
   if (loading) {
     return (
       <div className="flex flex-col gap-8 animate-fade-in" style={{ padding: 0 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 16 }}>
-          <div style={{
-            width: 48, height: 48, border: '3px solid var(--border-color)',
-            borderTopColor: 'var(--primary-600)', borderRadius: '50%', animation: 'spin 1s linear infinite',
-          }} />
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading your matrimony dashboard...</p>
-        </div>
+        <PortalLoading label="Loading your matrimony dashboard" />
       </div>
     );
   }
