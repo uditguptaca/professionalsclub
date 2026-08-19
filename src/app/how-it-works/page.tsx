@@ -39,12 +39,12 @@ export default function HowItWorksPage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {[
-              { step: 1, icon: <HelpCircle size={28} />, title: 'Submit a Help Request', desc: 'Describe your need across 10 support categories.', details: ['Full request form with category selection', 'Priority level (low, medium, high)', 'Consent to our secure process', 'Anonymous to volunteers until matched'], color: 'var(--text-accent)' },
-              { step: 2, icon: <Shield size={28} />, title: 'Platform Matches You', desc: 'The platform securely matches you with the right volunteer.', details: ['Request validated for completeness', 'Matched against volunteer expertise areas', 'We may ask clarifying questions', 'No direct contact — all verified through the platform'], color: 'var(--text-primary)' },
-              { step: 3, icon: <HandHeart size={28} />, title: 'Volunteer Assigned', desc: 'An assigned volunteer receives anonymized details. All communication is routed through our secure relay.', details: ['Volunteer sees only relevant case details', 'Volunteer responds securely', 'Platform relays volunteer response to you', 'Your contact info is never shared'], color: 'var(--text-accent)' },
+              { step: 1, icon: <HelpCircle size={28} />, title: 'Submit a Help Request', desc: 'Describe your need across 10 support categories.', details: ['Full request form with category selection', 'Priority level (low, medium, high)', 'Consent to our secure process', 'Anonymous to volunteers until matched'], color: 'var(--text-accent)', rgb: '194, 65, 12' },
+              { step: 2, icon: <Shield size={28} />, title: 'Platform Matches You', desc: 'The platform securely matches you with the right volunteer.', details: ['Request validated for completeness', 'Matched against volunteer expertise areas', 'We may ask clarifying questions', 'No direct contact — all verified through the platform'], color: 'var(--text-primary)', rgb: '12, 12, 14' },
+              { step: 3, icon: <HandHeart size={28} />, title: 'Volunteer Assigned', desc: 'An assigned volunteer receives anonymized details. All communication is routed through our secure relay.', details: ['Volunteer sees only relevant case details', 'Volunteer responds securely', 'Platform relays volunteer response to you', 'Your contact info is never shared'], color: 'var(--text-accent)', rgb: '194, 65, 12' },
             ].map(item => (
               <div key={item.step} className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 24, alignItems: 'start' }}>
-                <div style={{ width: 72, height: 72, borderRadius: '50%', background: `${item.color}12`, border: `2px solid ${item.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, position: 'relative' }}>
+                <div style={{ width: 72, height: 72, borderRadius: '50%', background: `rgba(${item.rgb}, 0.07)`, border: `2px solid rgba(${item.rgb}, 0.19)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, position: 'relative' }}>
                   {item.icon}
                   <span style={{ position: 'absolute', top: -6, right: -6, width: 26, height: 26, borderRadius: '50%', background: item.color, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800 }}>{item.step}</span>
                 </div>
@@ -53,7 +53,7 @@ export default function HowItWorksPage() {
                   <p style={{ color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.6 }}>{item.desc}</p>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {item.details.map(d => (
-                      <span key={d} style={{ fontSize: '0.75rem', fontWeight: 600, padding: '4px 12px', borderRadius: 8, background: `${item.color}08`, color: item.color, border: `1px solid ${item.color}20` }}>{d}</span>
+                      <span key={d} style={{ fontSize: '0.75rem', fontWeight: 600, padding: '4px 12px', borderRadius: 8, background: `rgba(${item.rgb}, 0.04)`, color: item.color, border: `1px solid rgba(${item.rgb}, 0.13)` }}>{d}</span>
                     ))}
                   </div>
                 </div>

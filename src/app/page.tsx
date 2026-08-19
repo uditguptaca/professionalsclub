@@ -6,6 +6,7 @@ import Footer from '@/components/shared/Footer';
 import HeroStopMotion from '@/components/home/HeroStopMotion';
 import { Reveal, WordReveal, Stagger, StaggerItem, CountUp, Marquee, Parallax } from '@/components/motion/primitives';
 import { getVerifiedBusinesses } from '@/app/actions/public';
+import { SITE_STATS } from '@/lib/site-stats';
 
 /**
  * Homepage.
@@ -77,7 +78,7 @@ export default async function Home() {
               <Parallax depth={-18}>
                 <span className="hero-chip glass">
                   <span className="hero-chip-icon"><MessageCircle size={16} /></span>
-                  <span>6,000+ in WhatsApp groups<small>Six communities, one club</small></span>
+                  <span>{SITE_STATS.whatsappParticipants} in WhatsApp groups<small>Six communities, one club</small></span>
                 </span>
               </Parallax>
             </Reveal>
@@ -132,8 +133,8 @@ export default async function Home() {
 
               <Stagger className="stat-cards">
                 {[
-                  { figure: '5,000+', label: 'Community members', sub: 'Across ten provinces' },
-                  { figure: '18', label: 'Active volunteers', sub: 'Background-checked' },
+                  { figure: SITE_STATS.members, label: 'Community members', sub: 'Across ten provinces' },
+                  { figure: SITE_STATS.volunteers, label: 'Active volunteers', sub: 'Background-checked' },
                   { figure: '89', label: 'Cases resolved', sub: 'Help requests closed' },
                   { figure: 'Free', label: 'Cost to join', sub: 'Forever, for everyone' },
                 ].map((s) => (
@@ -490,7 +491,7 @@ export default async function Home() {
                 <div>
                   <Reveal y={16}>
                     <span className="pill pill-lime" style={{ marginBottom: '1.25rem' }}>
-                      <Star size={13} /> 5,000+ participants
+                      <Star size={13} /> {SITE_STATS.whatsappParticipants} participants
                     </span>
                   </Reveal>
                   <WordReveal as="h2" text="Canada's largest professional community." delay={0.1} className="panel-heading" />

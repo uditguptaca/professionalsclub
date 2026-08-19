@@ -26,9 +26,9 @@ export default function AdminRequestsPage() {
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ position: 'relative', flex: 1, maxWidth: 300 }}>
           <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-          <input className="input" style={{ paddingLeft: 36 }} placeholder="Search by title or member..." value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="input" style={{ paddingLeft: 36 }} placeholder="Search by title or member..." aria-label="Search help requests by title or member" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select className="input" style={{ width: 200 }} value={filter} onChange={e => setFilter(e.target.value)}>
+        <select aria-label="Filter by request status" className="input" style={{ width: 200 }} value={filter} onChange={e => setFilter(e.target.value)}>
           <option value="all">All Statuses ({helpRequests.length})</option>
           {ALL_STATUSES.map(s => {
             const count = helpRequests.filter(r => r.status === s).length;

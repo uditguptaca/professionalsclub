@@ -27,7 +27,11 @@ export default function SupportPage() {
           </div>
 
           {projects.length === 0 ? (
-            !loading && (
+            loading ? (
+              <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
+                {[0, 1, 2].map((i) => <div key={i} className="skeleton skeleton-card" style={{ height: '16rem' }} />)}
+              </div>
+            ) : (
               <div className="empty-state">
                 <span className="empty-icon"><HeartHandshake size={22} /></span>
                 <h3>No active campaigns right now</h3>

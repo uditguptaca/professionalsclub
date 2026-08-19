@@ -1,15 +1,13 @@
 'use client';
 import React from 'react';
-import Image from 'next/image';
 import ContentImage from '@/components/shared/ContentImage';
-import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { usePublicContent } from '@/context/public-content';
-import { Globe } from 'lucide-react';
+import { Link2 } from 'lucide-react';
 
 export default function TeamPage() {
-  const { teamMembers } = usePublicContent();
+  const { teamMembers, loading } = usePublicContent();
   
   const sorted = [...teamMembers].sort((a, b) => a.order - b.order);
 
@@ -32,6 +30,11 @@ export default function TeamPage() {
           </div>
 
           {/* Dynamic Team Members Grid */}
+          {sorted.length === 0 ? (
+            <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: 40 }}>
+              {loading ? 'Loading team members…' : 'Team profiles are coming soon.'}
+            </p>
+          ) : (
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px', marginBottom: 40 }}>
             {sorted.map((member) => (
               <div key={member.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
@@ -40,17 +43,19 @@ export default function TeamPage() {
                 </div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>{member.name}</h3>
                 <div style={{ fontSize: '0.9rem', color: 'var(--text-accent)', fontWeight: 600, marginBottom: 12 }}>{member.role}</div>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 20, minHeight: 40 }}>
-                  {member.bio.length > 50 ? member.bio.substring(0, 47) + '...' : member.bio}
+                {/* Clamped visually, so the full bio stays in the DOM. */}
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 20, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {member.bio}
                 </p>
                 <div style={{ display: 'flex', gap: 16 }}>
                   {member.linkedinUrl && (
-                    <Link href={member.linkedinUrl} style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 700 }} onMouseOver={e=>e.currentTarget.style.color='var(--primary-600)'} onMouseOut={e=>e.currentTarget.style.color='var(--text-muted)'}>IN</Link>
+                    <a href={member.linkedinUrl} target="_blank" rel="noopener noreferrer" aria-label={`${member.name} on LinkedIn`} style={{ color: 'var(--text-muted)', display: 'inline-flex' }} onMouseOver={e=>e.currentTarget.style.color='var(--primary-600)'} onMouseOut={e=>e.currentTarget.style.color='var(--text-muted)'}><Link2 size={18} /></a>
                   )}
                 </div>
               </div>
             ))}
           </div>
+          )}
 
         </div>
       </main>

@@ -20,6 +20,15 @@ const statusConfig: Record<string, { color: string; bg: string; label: string }>
   suspended: { color: 'var(--error-600)', bg: 'rgba(220,38,38,0.1)', label: 'Suspended' },
 };
 
+function getAge(dob: string): number {
+  const d = new Date(dob);
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+  return age;
+}
+
 export default function AdminReviewProfilePage() {
   const params = useParams();
   const router = useRouter();
@@ -124,9 +133,7 @@ export default function AdminReviewProfilePage() {
     );
   }
 
-  const birthYear = new Date(profile.dob).getFullYear();
-  const currentYear = new Date().getFullYear();
-  const age = currentYear - birthYear;
+  const age = getAge(profile.dob);
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in" style={{ maxWidth: 1100, margin: '0 auto', paddingBottom: 60 }}>
@@ -149,7 +156,7 @@ export default function AdminReviewProfilePage() {
       </div>
 
       {/* Main Grid split: Left (Details), Right (Moderation Panel) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: 24, alignItems: 'start' }}>
+      <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: 24, alignItems: 'start' }}>
         
         {/* Left Column: Details */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>

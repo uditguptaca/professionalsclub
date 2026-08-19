@@ -240,7 +240,7 @@ export default function ReferralsPage() {
                       {j.title} {j.location ? <span className="ref-muted">· {j.location}</span> : null}
                       <ExternalLink size={11} aria-hidden="true" />
                     </a>
-                    {!j.isOpen && <span className="ref-closed">closed since</span>}
+                    {!j.isOpen && <span className="ref-closed">no longer listed</span>}
                   </li>
                 ))}
               </ul>
@@ -426,9 +426,9 @@ export default function ReferralsPage() {
             <div>
               <strong>What other people can see</strong>
               <p>
-                Only a number. The website and the app show “{myRoles.length > 0 ? '3' : 'N'} members
-                here can help” on a company — never who. Your name reaches a job seeker only when
-                you open a request and say you can help.
+                Only a count. The website and the app show something like “3 members here can
+                help” on a company — never who. Your name reaches a job seeker only when you open
+                a request and say you can help.
               </p>
             </div>
           </div>

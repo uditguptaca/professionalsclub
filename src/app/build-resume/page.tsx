@@ -2,6 +2,7 @@
 import React from 'react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
+import { ExternalLink } from 'lucide-react';
 
 export default function BuildResumePage() {
   return (
@@ -12,6 +13,9 @@ export default function BuildResumePage() {
         <div className="container" style={{ maxWidth: 1200 }}>
           
           <div style={{ marginBottom: 40 }}>
+            <h1 style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 20 }}>
+              Build your resume
+            </h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: 1.8, marginBottom: 20 }}>
               We've teamed up with WriteCV.io to make building a Canadian-style resume simple — whether you're landing your first role here or leveling up an established career.
             </p>
@@ -40,6 +44,15 @@ export default function BuildResumePage() {
               allow="clipboard-write; clipboard-read"
             />
           </div>
+
+          {/* The embed can be blocked by the browser or by WriteCV itself, so the
+              builder always has a way out of the iframe. */}
+          <p style={{ marginTop: 16, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+            Builder not loading?{' '}
+            <a href="https://writecv.io/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-accent)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              Open WriteCV.io in a new tab <ExternalLink size={14} />
+            </a>
+          </p>
 
         </div>
       </main>

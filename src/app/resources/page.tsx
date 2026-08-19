@@ -17,6 +17,13 @@ import { BookOpen, Video, FileCheck, FileText, Download, ExternalLink, PlayCircl
 const hasUrl = (url: string | null | undefined): boolean =>
   typeof url === 'string' && url.trim().length > 0 && url.trim() !== '#';
 
+/** Shared by the linked and the decorative play circle on a workshop card. */
+const PLAY_CIRCLE: React.CSSProperties = {
+  width: 56, height: 56, borderRadius: '50%', background: 'var(--primary-700)', color: 'white',
+  display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)',
+  boxShadow: '0 4px 12px rgba(232,93,4,0.4)',
+};
+
 export default function ResourcesPage() {
   const { ebooks, workshops, templates } = usePublicContent();
 
@@ -117,9 +124,15 @@ export default function ResourcesPage() {
                 
                 <div style={{ position: 'absolute', inset: 0, padding: 32, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--primary-700)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', boxShadow: '0 4px 12px rgba(232,93,4,0.4)', cursor: 'pointer' }} className="hover:scale-110 transition-transform">
-                      <PlayCircle size={28} />
-                    </div>
+                    {hasUrl(video.videoUrl) ? (
+                      <a href={video.videoUrl} target="_blank" rel="noopener noreferrer" aria-label={`Watch ${video.title}`} style={PLAY_CIRCLE}>
+                        <PlayCircle size={28} />
+                      </a>
+                    ) : (
+                      <div style={PLAY_CIRCLE} aria-hidden="true">
+                        <PlayCircle size={28} />
+                      </div>
+                    )}
                     <span style={{ fontSize: '0.7rem', fontWeight: 800, padding: '4px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: 'white', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)' }}>{video.platform}</span>
                   </div>
                   

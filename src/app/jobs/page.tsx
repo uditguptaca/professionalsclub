@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import ContentImage from '@/components/shared/ContentImage';
 import Link from 'next/link';
@@ -77,7 +77,7 @@ function formatSalary(min: number, max: number, period: string) {
 type TabFilter = 'featured' | 'recent' | 'full_time' | 'part_time';
 
 export default function JobsPage() {
-  const { jobPostings } = usePublicContent();
+  const { jobPostings, loading } = usePublicContent();
   const activeJobs = jobPostings.filter(j => j.isActive);
 
   // Search state
@@ -87,6 +87,21 @@ export default function JobsPage() {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [activeTab, setActiveTab] = useState<TabFilter>('featured');
   const [searchApplied, setSearchApplied] = useState(false);
+  const resultsRef = useRef<HTMLElement>(null);
+
+  // Featured is the default tab, so a board where no job is flagged featured
+  // would open on an empty state. Fall back to Recent when there is nothing to
+  // feature (which also covers the first render, before the jobs have loaded).
+  const hasFeatured = activeJobs.some(j => j.isFeatured);
+  const effectiveTab: TabFilter = activeTab === 'featured' && !hasFeatured ? 'recent' : activeTab;
+
+  // Every filter control lives above the listing, so applying one has to take
+  // the reader to the results as well as change them.
+  const showResults = () => {
+    setSearchApplied(true);
+    setActiveTab('recent');
+    resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   // Category counts
   const categoryCounts = useMemo(() => {
@@ -125,7 +140,7 @@ export default function JobsPage() {
     }
 
     // Tab filter
-    switch (activeTab) {
+    switch (effectiveTab) {
       case 'featured':
         jobs = jobs.filter(j => j.isFeatured);
         break;
@@ -141,12 +156,11 @@ export default function JobsPage() {
     }
 
     return jobs;
-  }, [activeJobs, keyword, location, typeFilter, categoryFilter, activeTab, searchApplied]);
+  }, [activeJobs, keyword, location, typeFilter, categoryFilter, effectiveTab, searchApplied]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setSearchApplied(true);
-    setActiveTab('recent');
+    showResults();
   };
 
   const clearSearch = () => {
@@ -229,6 +243,7 @@ export default function JobsPage() {
               <div style={{ position: 'relative' }}>
                 <Filter size={16} style={{ position: 'absolute', left: 14, top: 14, color: 'var(--text-muted)', pointerEvents: 'none' }} />
                 <select
+                  aria-label="Filter by job type"
                   value={typeFilter}
                   onChange={e => setTypeFilter(e.target.value)}
                   style={{ width: '100%', padding: '12px 36px 12px 40px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-secondary)', color: typeFilter ? 'var(--text-primary)' : 'var(--text-muted)', appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none' }}
@@ -246,6 +261,7 @@ export default function JobsPage() {
               <div style={{ position: 'relative' }}>
                 <Tag size={16} style={{ position: 'absolute', left: 14, top: 14, color: 'var(--text-muted)', pointerEvents: 'none' }} />
                 <select
+                  aria-label="Filter by category"
                   value={categoryFilter}
                   onChange={e => setCategoryFilter(e.target.value)}
                   style={{ width: '100%', padding: '12px 36px 12px 40px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-secondary)', color: categoryFilter ? 'var(--text-primary)' : 'var(--text-muted)', appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none' }}
@@ -287,16 +303,19 @@ export default function JobsPage() {
           </div>
 
           <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
-            {Object.entries(CATEGORY_ICONS).map(([cat, icon]) => (
+            {Object.entries(CATEGORY_ICONS).map(([cat, icon]) => {
+              const isActive = searchApplied && categoryFilter === cat;
+              return (
               <button
                 key={cat}
-                onClick={() => { setCategoryFilter(cat); setSearchApplied(true); setActiveTab('recent'); }}
+                aria-pressed={isActive}
+                onClick={() => { setCategoryFilter(cat); showResults(); }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: 16,
-                  background: 'rgba(232, 93, 4, 0.08)',
-                  border: 'none',
+                  background: isActive ? 'rgba(232, 93, 4, 0.16)' : 'rgba(232, 93, 4, 0.08)',
+                  border: isActive ? '2px solid var(--primary-600)' : '2px solid transparent',
                   borderRadius: 16,
                   padding: '20px 24px',
                   cursor: 'pointer',
@@ -304,9 +323,8 @@ export default function JobsPage() {
                   transition: 'all 0.25s',
                   position: 'relative',
                 }}
-                className="category-card-hover"
-                onMouseOver={e => { e.currentTarget.style.background = 'rgba(232, 93, 4, 0.08)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                onMouseOut={e => { e.currentTarget.style.background = 'rgba(232, 93, 4, 0.08)'; e.currentTarget.style.transform = 'none'; }}
+                onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                onMouseOut={e => { e.currentTarget.style.transform = 'none'; }}
               >
                 <div style={{ 
                   width: 46, 
@@ -327,11 +345,12 @@ export default function JobsPage() {
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 500 }}>{categoryCounts[cat] || 0} Jobs Available</div>
                 </div>
               </button>
-            ))}
+              );
+            })}
           </div>
 
           <div style={{ textAlign: 'center', marginTop: 40 }}>
-             <button onClick={() => { setCategoryFilter(''); setSearchApplied(true); setActiveTab('recent'); }} style={{ background: 'none', border: 'none', color: 'var(--text-accent)', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'opacity 0.2s' }} onMouseOver={e=>e.currentTarget.style.opacity='0.8'} onMouseOut={e=>e.currentTarget.style.opacity='1'}>
+             <button onClick={() => { setCategoryFilter(''); showResults(); }} style={{ background: 'none', border: 'none', color: 'var(--text-accent)', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'opacity 0.2s' }} onMouseOver={e=>e.currentTarget.style.opacity='0.8'} onMouseOut={e=>e.currentTarget.style.opacity='1'}>
                View All Categories <ChevronRight size={16} />
              </button>
           </div>
@@ -354,7 +373,7 @@ export default function JobsPage() {
                   key={city.city}
                   type="button"
                   disabled={!hasJobs}
-                  onClick={() => { setLocation(city.city); setSearchApplied(true); setActiveTab('recent'); }}
+                  onClick={() => { setLocation(city.city); showResults(); }}
                   style={{ background: 'none', border: 'none', padding: 0, display: 'block', width: '100%', textAlign: 'left', cursor: hasJobs ? 'pointer' : 'default', transition: 'transform 0.2s' }}
                   onMouseOver={e => { if (hasJobs) e.currentTarget.style.transform = 'translateY(-4px)'; }}
                   onMouseOut={e => { e.currentTarget.style.transform = 'none'; }}
@@ -374,7 +393,7 @@ export default function JobsPage() {
       </section>
 
       {/* ─── RECENT JOBS ─── */}
-      <section style={{ padding: '40px 0', background: 'var(--bg-secondary)' }}>
+      <section ref={resultsRef} style={{ padding: '40px 0', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div className="mobile-flex-col mobile-gap-reduce" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
             <div>
@@ -396,8 +415,8 @@ export default function JobsPage() {
                     letterSpacing: '0.03em',
                     border: 'none',
                     cursor: 'pointer',
-                    background: activeTab === tab.key ? 'var(--primary-700)' : 'white',
-                    color: activeTab === tab.key ? 'white' : 'var(--gray-600)',
+                    background: effectiveTab === tab.key ? 'var(--primary-700)' : 'white',
+                    color: effectiveTab === tab.key ? 'white' : 'var(--gray-600)',
                     transition: 'all 0.2s',
                     borderRight: '1px solid var(--border-color)',
                   }}
@@ -409,7 +428,12 @@ export default function JobsPage() {
           </div>
 
           {/* Job Cards Grid */}
-          {filteredJobs.length === 0 ? (
+          {loading && activeJobs.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--bg-primary)', borderRadius: 16, border: '1px solid var(--border-color)' }}>
+              <Briefcase size={48} style={{ color: 'var(--text-muted)', marginBottom: 16, opacity: 0.3 }} />
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading jobs&hellip;</p>
+            </div>
+          ) : filteredJobs.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--bg-primary)', borderRadius: 16, border: '1px solid var(--border-color)' }}>
               <Briefcase size={48} style={{ color: 'var(--text-muted)', marginBottom: 16 }} />
               <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>No jobs found</h3>

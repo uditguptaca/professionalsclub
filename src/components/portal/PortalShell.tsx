@@ -42,6 +42,9 @@ export default function PortalShell({
   const router = useRouter();
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const [signingOut, setSigningOut] = React.useState(false);
+  const sheetRef = React.useRef<HTMLDivElement>(null);
+  const sheetCloseRef = React.useRef<HTMLButtonElement>(null);
+  const moreRef = React.useRef<HTMLButtonElement>(null);
 
   const handleLogout = async () => {
     setSigningOut(true);
@@ -58,7 +61,8 @@ export default function PortalShell({
     setSigningOut(false);
   };
 
-  // The sheet closes on navigation and on Escape, and locks scroll while open.
+  // The sheet closes on navigation and on Escape, locks scroll while open, and
+  // moves focus in so a keyboard or screen-reader user lands inside the dialog.
   React.useEffect(() => setSheetOpen(false), [pathname]);
   React.useEffect(() => {
     if (!sheetOpen) return;
@@ -66,9 +70,17 @@ export default function PortalShell({
     window.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    const sheet = sheetRef.current;
+    // Captured now, not in the cleanup: the ref can point somewhere else by
+    // the time this effect tears down (the react-hooks warning is right).
+    const moreButton = moreRef.current;
+    sheetCloseRef.current?.focus();
     return () => {
       window.removeEventListener('keydown', onKey);
       document.body.style.overflow = prev;
+      // Hand focus back to the More button, but only if it is still inside the
+      // sheet we are closing — a route change must not steal it from the page.
+      if (sheet?.contains(document.activeElement)) moreButton?.focus();
     };
   }, [sheetOpen]);
 
@@ -218,6 +230,7 @@ export default function PortalShell({
         })}
         <button
           type="button"
+          ref={moreRef}
           className={`tabbar-item ${sheetOpen ? 'active' : ''}`}
           onClick={() => setSheetOpen((v) => !v)}
           aria-expanded={sheetOpen}
@@ -232,10 +245,10 @@ export default function PortalShell({
       {sheetOpen && (
         <div className="sheet-scrim" onClick={() => setSheetOpen(false)} aria-hidden="true" />
       )}
-      <div id="portal-more-sheet" className={`portal-sheet ${sheetOpen ? 'is-open' : ''}`} role="dialog" aria-label="More" hidden={!sheetOpen}>
+      <div id="portal-more-sheet" ref={sheetRef} className={`portal-sheet ${sheetOpen ? 'is-open' : ''}`} role="dialog" aria-modal="true" aria-label="More" hidden={!sheetOpen}>
         <div className="portal-sheet-head">
           <span className="portal-sheet-title">{roleName}</span>
-          <button type="button" className="portal-sheet-close" onClick={() => setSheetOpen(false)} aria-label="Close">
+          <button type="button" ref={sheetCloseRef} className="portal-sheet-close" onClick={() => setSheetOpen(false)} aria-label="Close">
             <X size={20} />
           </button>
         </div>

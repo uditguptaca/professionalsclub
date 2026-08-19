@@ -3,7 +3,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
-import { HelpCircle, HandHeart, FileText, ClipboardList, MessageSquare, ArrowRight, Bell, CheckCircle, Building2, Tag, Star, Lock, XCircle, FileEdit } from 'lucide-react';
+import { HelpCircle, HandHeart, FileText, ClipboardList, MessageSquare, ArrowRight, Bell, CheckCircle, Building2, Tag, Star, Lock, XCircle, FileEdit, Clock } from 'lucide-react';
 
 export default function MemberDashboard() {
   const { helpRequests, volunteerApps, messages } = usePortal();
@@ -80,7 +80,7 @@ export default function MemberDashboard() {
                   {myVolunteerApp ? (
                     <span style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 4 }}>
                       {myVolunteerApp.status === 'approved' && <><CheckCircle size={16} style={{ color: 'var(--success-600)' }} /> Approved</>}
-                      {myVolunteerApp.status === 'pending_verification' && '⏳ Pending'}
+                      {myVolunteerApp.status === 'pending_verification' && <><Clock size={16} style={{ color: 'var(--accent-700)' }} /> Pending</>}
                       {myVolunteerApp.status === 'new_application' && <><FileEdit size={16} style={{ color: 'var(--accent-700)' }} /> Submitted</>}
                       {myVolunteerApp.status === 'rejected' && <><XCircle size={16} style={{ color: 'var(--error-600)' }} /> Rejected</>}
                       {!['approved', 'pending_verification', 'new_application', 'rejected'].includes(myVolunteerApp.status) && myVolunteerApp.status}

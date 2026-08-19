@@ -496,11 +496,12 @@ export default function AdminMatrimonyPage() {
                 className="input"
                 style={{ paddingLeft: 34 }}
                 placeholder="Search by name, city, or ID..."
+                aria-label="Search profiles by name, city, or ID"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
               />
             </div>
-            <select className="input" style={{ width: 180 }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+            <select aria-label="Filter by profile status" className="input" style={{ width: 180 }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
               <option value="all">All Statuses</option>
               <option value="draft">Draft</option>
               <option value="pending">Pending</option>
@@ -930,7 +931,7 @@ export default function AdminMatrimonyPage() {
               <SimplePieChart data={[
                 { label: 'Male', value: profiles.filter(p => p.gender?.toLowerCase() === 'male').length, color: 'var(--text-accent)' },
                 { label: 'Female', value: profiles.filter(p => p.gender?.toLowerCase() === 'female').length, color: 'var(--accent-700)' },
-                { label: 'Other', value: profiles.filter(p => p.gender?.toLowerCase() === 'other').length, color: 'var(--text-accent)' },
+                { label: 'Other', value: profiles.filter(p => p.gender?.toLowerCase() === 'other').length, color: 'var(--gray-600)' },
               ].filter(d => d.value > 0)} />
             )}
           </div>

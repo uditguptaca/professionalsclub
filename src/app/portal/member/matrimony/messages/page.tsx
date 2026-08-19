@@ -300,6 +300,7 @@ export default function MessagesPage() {
                 <button
                   type="submit"
                   className="btn btn-primary"
+                  aria-label="Send message"
                   style={{ borderRadius: 12, width: 44, height: 44, padding: 0, justifyContent: 'center' }}
                   disabled={!newMessage.trim() || sending}
                 >

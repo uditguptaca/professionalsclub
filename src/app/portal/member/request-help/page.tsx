@@ -195,6 +195,15 @@ export default function RequestHelpPage() {
             <div className="input-group">
               <label>Detailed Description</label>
               <textarea className="input" rows={4} placeholder="Describe your situation and what kind of help you need..." value={description} onChange={e => setDescription(e.target.value)} />
+              {description.length > 0 && description.length < 20 ? (
+                <span role="alert" style={{ fontSize: '0.72rem', color: 'var(--accent-700)', marginTop: 4, display: 'block' }}>
+                  {20 - description.length} more {20 - description.length === 1 ? 'character' : 'characters'} needed before you can continue.
+                </span>
+              ) : (
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
+                  At least 20 characters.
+                </span>
+              )}
             </div>
             <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div className="input-group">

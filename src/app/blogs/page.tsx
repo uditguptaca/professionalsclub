@@ -6,9 +6,10 @@ import { usePublicContent } from '@/context/public-content';
 import Image from 'next/image';
 import ContentImage from '@/components/shared/ContentImage';
 import Link from 'next/link';
+import { Newspaper } from 'lucide-react';
 
 export default function BlogsPage() {
-  const { newsArticles } = usePublicContent();
+  const { newsArticles, loading } = usePublicContent();
 
   return (
     <>
@@ -26,30 +27,44 @@ export default function BlogsPage() {
             </p>
           </div>
 
-          <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
-            {newsArticles.map((article) => (
-              <div key={article.id} className="card card-clickable hover:-translate-y-1" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ position: 'relative', height: 200 }}>
-                  <ContentImage src={article.image} alt={article.title} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
-                  <div style={{ position: 'absolute', top: 16, left: 16, background: 'var(--primary-700)', color: 'white', padding: '4px 12px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 700 }}>
-                    {article.category}
-                  </div>
-                </div>
-                <div style={{ padding: 24, display: 'flex', flexDirection: 'column', flex: 1 }}>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: 12, fontFamily: 'var(--font-display)', lineHeight: 1.4 }}>
-                    {article.title}
-                  </h3>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 20, flex: 1 }}>
-                    {article.summary}
-                  </p>
-                  <div style={{ paddingTop: 16, borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    <span>By {article.author}</span>
-                    <span>{new Date(article.publishedAt).toLocaleDateString()}</span>
-                  </div>
-                </div>
+          {newsArticles.length === 0 ? (
+            !loading && (
+              <div className="empty-state">
+                <div className="empty-icon"><Newspaper size={24} /></div>
+                <h3>No blog posts yet</h3>
+                <p>
+                  Member and mentor stories appear here once they are published. If you would like
+                  to write one, email us at{' '}
+                  <a href="mailto:support@professionalsclub.ca" style={{ color: 'var(--text-accent)' }}>support@professionalsclub.ca</a>.
+                </p>
               </div>
-            ))}
-          </div>
+            )
+          ) : (
+            <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
+              {newsArticles.map((article) => (
+                <div key={article.id} className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ position: 'relative', height: 200 }}>
+                    <ContentImage src={article.image} alt={article.title} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
+                    <div style={{ position: 'absolute', top: 16, left: 16, background: 'var(--primary-700)', color: 'white', padding: '4px 12px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 700 }}>
+                      {article.category}
+                    </div>
+                  </div>
+                  <div style={{ padding: 24, display: 'flex', flexDirection: 'column', flex: 1 }}>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: 12, fontFamily: 'var(--font-display)', lineHeight: 1.4 }}>
+                      {article.title}
+                    </h3>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 20, flex: 1 }}>
+                      {article.summary}
+                    </p>
+                    <div style={{ paddingTop: 16, borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      <span>By {article.author}</span>
+                      <span>{new Date(article.publishedAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
         </div>
       </main>

@@ -133,6 +133,8 @@ export default function AdminBusinesses() {
                     type="button"
                     onClick={() => runRowAction(biz.id, () => toggleBusinessFeatured(biz.id))}
                     disabled={busyId === biz.id}
+                    aria-label={`${biz.isFeatured ? 'Remove' : 'Set'} ${biz.name} as featured`}
+                    aria-pressed={biz.isFeatured}
                     style={{ background: 'none', border: 'none', cursor: busyId === biz.id ? 'not-allowed' : 'pointer', color: biz.isFeatured ? 'var(--accent-600)' : 'var(--gray-300)' }}
                   >
                     {biz.isFeatured ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}

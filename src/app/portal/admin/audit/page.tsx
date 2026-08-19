@@ -24,9 +24,9 @@ export default function AdminAuditPage() {
       <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
         <div style={{ position: 'relative', flex: 1, maxWidth: 400 }}>
           <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-          <input className="input" style={{ paddingLeft: 36 }} placeholder="Search audit log..." value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="input" style={{ paddingLeft: 36 }} placeholder="Search audit log..." aria-label="Search audit log" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select className="input" style={{ width: 220 }} value={filterType} onChange={e => setFilterType(e.target.value)}>
+        <select aria-label="Filter by action type" className="input" style={{ width: 220 }} value={filterType} onChange={e => setFilterType(e.target.value)}>
           <option value="all">All Actions ({auditLog.length})</option>
           {actionTypes.map(t => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
         </select>

@@ -293,6 +293,7 @@ export default function VolunteerDirectoryPage() {
                 <input
                   type="text"
                   placeholder="Search by name, role, organization, or skill"
+                  aria-label="Search volunteers"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   style={{ width: '100%', padding: '12px 16px 12px 42px', borderRadius: 99, border: '1.5px solid var(--border-color)', background: 'white', color: 'var(--text-primary)', outline: 'none', fontSize: '0.9rem' }}

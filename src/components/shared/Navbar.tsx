@@ -16,8 +16,9 @@ import {
  * old ten-link bar pointed at still exists — reorganized, not removed.
  *
  * Interaction model: hover or focus-within opens a menu (CSS-driven, so it
- * works without JS); the mobile panel lists every group flat. Escape and
- * route changes close the mobile panel; body scroll locks while it is open.
+ * works without JS); the mobile panel lists every group flat. Escape closes
+ * whichever is open — a megamenu by dropping focus out of it — and route
+ * changes close the mobile panel; body scroll locks while it is open.
  */
 
 type MegaItem = { href: string; label: string; desc: string; icon: React.ReactNode; external?: boolean };
@@ -83,6 +84,9 @@ const GROUPS: MegaGroup[] = [
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  // Which megamenu is showing. CSS :hover/:focus-within still does the opening;
+  // this only mirrors it so the trigger can report aria-expanded truthfully.
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
   const pathname = usePathname();
 
   const isActive = useCallback(
@@ -157,11 +161,29 @@ export default function Navbar() {
         <nav className="nav-links" aria-label="Main">
           <ul>
             {groups.map((g) => (
-              <li key={g.label} className="has-mega">
+              <li
+                key={g.label}
+                className="has-mega"
+                onMouseEnter={() => setOpenGroup(g.label)}
+                onMouseLeave={() => setOpenGroup((v) => (v === g.label ? null : v))}
+                onFocus={() => setOpenGroup(g.label)}
+                onBlur={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+                    setOpenGroup((v) => (v === g.label ? null : v));
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Escape') return;
+                  setOpenGroup(null);
+                  (document.activeElement as HTMLElement | null)?.blur();
+                }}
+              >
                 <Link
                   href={g.href}
                   className={groupActive(g) ? 'active' : undefined}
                   aria-current={isActive(g.href) ? 'page' : undefined}
+                  aria-haspopup="true"
+                  aria-expanded={openGroup === g.label}
                 >
                   {g.label}
                   <ChevronDown size={13} aria-hidden="true" className="mega-caret" />

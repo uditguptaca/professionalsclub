@@ -58,7 +58,8 @@ export default function RecruitFirmsPage() {
               <Search style={{ position: 'absolute', top: 14, left: 16, color: 'var(--text-muted)' }} size={20} />
               <input 
                 type="text" 
-                placeholder="Search recruitment firms..." 
+                placeholder="Search recruitment firms..."
+                aria-label="Search recruitment firms"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 style={{
@@ -85,9 +86,8 @@ export default function RecruitFirmsPage() {
                 display: 'flex',
                 alignItems: 'center',
                 flexDirection: 'column',
-                textAlign: 'center',
-                transition: 'transform 0.15s, box-shadow 0.15s'
-              }} className="hover:-translate-y-1 hover:shadow-lg">
+                textAlign: 'center'
+              }}>
                 <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--gray-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, color: 'var(--text-muted)' }}>
                   <Briefcase size={24} />
                 </div>
@@ -111,7 +111,6 @@ export default function RecruitFirmsPage() {
                     borderRadius: 99,
                     background: 'rgba(232, 93, 4, 0.08)'
                   }}
-                  className="hover:bg-sky-100 transition-colors"
                 >
                   Find on LinkedIn <ExternalLink size={14} />
                 </a>

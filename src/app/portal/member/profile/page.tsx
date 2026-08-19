@@ -146,7 +146,7 @@ export default function MemberProfilePage() {
           </div>
           <div className="input-group">
             <label htmlFor="phone">Phone Number</label>
-            <input id="phone" className="input" value={form.phone} onChange={(e) => set('phone', e.target.value)} />
+            <input id="phone" className="input" type="tel" autoComplete="tel" value={form.phone} onChange={(e) => set('phone', e.target.value)} />
           </div>
           <div className="input-group">
             <label htmlFor="city">City</label>

@@ -8,7 +8,6 @@ const linkCategories = [
   {
     title: 'Canada Revenue Agency (CRA) & Taxes',
     icon: <Landmark size={24} style={{ color: 'var(--text-accent)' }} />,
-    color: 'var(--text-accent)',
     links: [
       { name: 'CRA Home Page', url: 'https://www.canada.ca/en/revenue-agency.html' },
       { name: 'Income Tax in Canada', url: 'https://www.canada.ca/en/services/taxes/income-tax.html' },
@@ -21,7 +20,6 @@ const linkCategories = [
   {
     title: 'Incorporation & Contracting',
     icon: <Briefcase size={24} style={{ color: 'var(--text-accent)' }} />,
-    color: 'var(--text-accent)',
     links: [
       { name: 'What is Incorporation in Canada?', url: 'https://ised-isde.canada.ca/site/corporations-canada/en/business-corporations/what-are-business-corporations' },
       { name: 'How do I incorporate in Canada?', url: 'https://ised-isde.canada.ca/site/corporations-canada/en/business-corporations/how-incorporate-business' },
@@ -33,7 +31,6 @@ const linkCategories = [
   {
     title: 'Employment Insurance (EI)',
     icon: <FileSignature size={24} style={{ color: 'var(--text-accent)' }} />,
-    color: 'var(--text-accent)',
     links: [
       { name: 'Employment Insurance benefits Overview', url: 'https://www.canada.ca/en/services/benefits/ei.html' },
       { name: 'EI benefits for self-employed persons', url: 'https://www.canada.ca/en/services/benefits/ei/ei-self-employed-workers.html' },
@@ -43,7 +40,6 @@ const linkCategories = [
   {
     title: 'Immigration & Citizenship (IRCC)',
     icon: <Users size={24} style={{ color: 'var(--text-accent)' }} />,
-    color: 'var(--text-accent)',
     links: [
       { name: 'IRCC Official Home Page', url: 'https://www.canada.ca/en/immigration-refugees-citizenship.html' },
       { name: 'Express Entry System', url: 'https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry.html' },
@@ -54,7 +50,6 @@ const linkCategories = [
   {
     title: 'Settlement & Daily Essentials',
     icon: <HeartPulse size={24} style={{ color: 'var(--text-accent)' }} />,
-    color: 'var(--text-accent)',
     links: [
       { name: 'Apply for a Social Insurance Number (SIN)', url: 'https://www.canada.ca/en/employment-social-development/services/sin.html' },
       { name: 'Service Canada Portal', url: 'https://www.canada.ca/en/employment-social-development/corporate/portfolio/service-canada.html' },
@@ -116,23 +111,7 @@ export default function ImpLinksPage() {
                             transition: 'all 0.2s',
                             border: '1px solid transparent'
                           }}
-                          className={`hover:border-${cat.color} hover:bg-white hover:shadow-md group`}
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.borderColor = cat.color;
-                            e.currentTarget.style.background = 'white';
-                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            const icon = e.currentTarget.querySelector('.link-icon') as HTMLElement;
-                            if (icon) icon.style.color = cat.color;
-                          }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.borderColor = 'transparent';
-                            e.currentTarget.style.background = 'var(--bg-secondary)';
-                            e.currentTarget.style.boxShadow = 'none';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            const icon = e.currentTarget.querySelector('.link-icon') as HTMLElement;
-                            if (icon) icon.style.color = 'var(--text-muted)';
-                          }}
+                          className="imp-link"
                         >
                           <ExternalLink className="link-icon" size={18} style={{ color: 'var(--text-muted)', marginTop: 2, transition: 'color 0.2s', flexShrink: 0 }} />
                           <span style={{ fontSize: '1rem', fontWeight: 600, lineHeight: 1.4 }}>{link.name}</span>
@@ -147,6 +126,18 @@ export default function ImpLinksPage() {
 
         </div>
       </main>
+
+      <style>{`
+        .imp-link:hover, .imp-link:focus-visible {
+          border-color: var(--primary-600) !important;
+          background: white !important;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+          transform: translateY(-2px);
+        }
+        .imp-link:hover .link-icon, .imp-link:focus-visible .link-icon {
+          color: var(--primary-600) !important;
+        }
+      `}</style>
 
       <Footer />
     </>

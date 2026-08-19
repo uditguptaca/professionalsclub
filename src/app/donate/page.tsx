@@ -6,6 +6,7 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { usePublicContent } from '@/context/public-content';
 import { Mail, Send } from 'lucide-react';
+import { SITE_STATS } from '@/lib/site-stats';
 
 const DONATION_EMAIL = 'support@professionalsclub.ca';
 const PRESET_AMOUNTS = [10, 25, 50, 100, 250];
@@ -63,16 +64,16 @@ export default function DonatePage() {
 
             <div className="mobile-wrap" style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap' }}>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 300, lineHeight: 1 }}>5,000+</div>
+                <div style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 300, lineHeight: 1 }}>{SITE_STATS.members}</div>
                 <div style={{ fontSize: '0.85rem', fontWeight: 700, marginTop: 8 }}>Members</div>
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 300, lineHeight: 1 }}>18</div>
+                <div style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 300, lineHeight: 1 }}>{SITE_STATS.volunteers}</div>
                 <div style={{ fontSize: '0.85rem', fontWeight: 700, marginTop: 8 }}>Active Volunteers</div>
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 300, lineHeight: 1 }}>50+</div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 700, marginTop: 8 }}>WhatsApp Groups</div>
+                <div style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 300, lineHeight: 1 }}>{SITE_STATS.whatsappCommunities}</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, marginTop: 8 }}>WhatsApp Communities</div>
               </div>
             </div>
           </div>
@@ -211,7 +212,6 @@ export default function DonatePage() {
                 </div>
                 <div>
                   <div style={{ fontSize: '2.2rem', fontFamily: 'Georgia, serif', fontStyle: 'italic', color: 'var(--text-primary)', lineHeight: 1, marginBottom: 8 }}>Udit Gupta</div>
-                  <div style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '0.95rem' }}>Udit Gupta</div>
                   <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>Founder, CEO & Director<br/>Professionals Club</div>
                 </div>
               </div>

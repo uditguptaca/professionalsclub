@@ -67,7 +67,7 @@ const DigitalCover = ({ title, chapter, color }: { title: string; chapter: strin
             backgroundImage: `radial-gradient(${color} 1px, transparent 1px)`,
             backgroundSize: '10px 10px'
           }} />
-          <div style={{ color: `${color}40` }}>
+          <div style={{ color, opacity: 0.25 }}>
             <BookOpen size={48} strokeWidth={1} />
           </div>
         </div>
@@ -477,7 +477,7 @@ export default function EBooksPage() {
               Tell us which topic you need covered and we will look at writing it next.
             </p>
             <a
-              href="mailto:info@professionalsclub.ca"
+              href="mailto:support@professionalsclub.ca"
               style={{ 
                 display: 'inline-flex', 
                 alignItems: 'center', 

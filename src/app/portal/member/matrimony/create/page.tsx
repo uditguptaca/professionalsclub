@@ -200,6 +200,9 @@ export default function MatrimonyCreatePage() {
   const [uploading, setUploading] = useState(0);
   const [removingPhoto, setRemovingPhoto] = useState<string | null>(null);
   const [hasProfile, setHasProfile] = useState(false);
+  // A listing that has already been through review: editing it sends it back to
+  // pending, so the copy has to say so.
+  const [editingReviewed, setEditingReviewed] = useState(false);
 
   const completeness = useMemo(() => calcCompleteness(data, photos.length > 0), [data, photos.length]);
 
@@ -215,6 +218,7 @@ export default function MatrimonyCreatePage() {
           const prefs = existing.ok ? existing.data.preferences : null;
           const contact = existing.ok ? existing.data.contact : null;
           setHasProfile(true);
+          setEditingReviewed(profile.status !== 'draft');
           setPhotos(existing.ok ? existing.data.media.filter(m => m.type === 'photo') : []);
 
           const loadedData: MatrimonyWizardData = {
@@ -494,13 +498,17 @@ export default function MatrimonyCreatePage() {
           <CheckCircle2 size={56} color="white" />
         </div>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', fontWeight: 800, marginBottom: 12 }}>
-          Profile Under Review
+          {editingReviewed ? 'Changes Under Review' : 'Profile Under Review'}
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-lg)', lineHeight: 1.7, maxWidth: 500, margin: '0 auto 8px' }}>
-          Thank you for creating your matrimony profile! Our team will review your details and approve your profile within <strong>24–48 hours</strong>.
+          {editingReviewed
+            ? <>Thank you for updating your matrimony profile. Our team will review your changes and put them live within <strong>24&ndash;48 hours</strong>.</>
+            : <>Thank you for creating your matrimony profile! Our team will review your details and approve your profile within <strong>24&ndash;48 hours</strong>.</>}
         </p>
         <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', marginBottom: 40 }}>
-          You&apos;ll receive a notification once your profile is live.
+          {editingReviewed
+            ? 'You’ll receive a notification once your updated profile is live.'
+            : 'You’ll receive a notification once your profile is live.'}
         </p>
         <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
           <button className="btn btn-primary btn-lg" onClick={() => router.push('/portal/member/dashboard')}>
@@ -542,7 +550,7 @@ export default function MatrimonyCreatePage() {
           </div>
           <div>
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 800, lineHeight: 1.2 }}>
-              Create Your Profile
+              {editingReviewed ? 'Edit Your Profile' : 'Create Your Profile'}
             </h1>
             <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
               Step {step + 1} of {WIZARD_STEPS.length} &middot; {completeness}% complete
@@ -691,11 +699,17 @@ export default function MatrimonyCreatePage() {
             <button className="btn btn-primary btn-lg" onClick={handleSubmit} disabled={submitting}
               style={{ background: 'linear-gradient(135deg, var(--success-600), var(--success-500))' }}>
               {submitting ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
-              Submit Profile
+              {editingReviewed ? 'Save & Resubmit for Review' : 'Submit Profile'}
             </button>
           )}
         </div>
       </div>
+
+      {step === 7 && editingReviewed && (
+        <p style={{ marginTop: 12, textAlign: 'right', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+          Your profile will be reviewed again before changes go live.
+        </p>
+      )}
     </div>
   );
 }
@@ -712,13 +726,21 @@ interface FieldProps {
   span?: 1 | 2;
 }
 function Field({ label, error, required, hint, children, span }: FieldProps) {
+  // Only a single native control can own the label. A Field wrapping a tag
+  // group or several inputs keeps a plain caption rather than an htmlFor
+  // pointing at nothing.
+  const generatedId = React.useId();
+  const only = React.isValidElement(children) ? (children as React.ReactElement<{ id?: string }>) : null;
+  const isNativeControl = !!only && typeof only.type === 'string'
+    && ['input', 'select', 'textarea'].includes(only.type);
+  const controlId = isNativeControl && only ? (only.props.id ?? generatedId) : undefined;
   return (
     <div className="input-group" style={{ gridColumn: span === 2 ? '1 / -1' : undefined }}>
-      <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      <label htmlFor={controlId} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
         {label}
         {required && <span style={{ color: 'var(--error-600)', fontWeight: 700 }}>*</span>}
       </label>
-      {children}
+      {controlId && only ? React.cloneElement(only, { id: controlId }) : children}
       {hint && !error && <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{hint}</span>}
       {error && (
         <span style={{ fontSize: '12px', color: 'var(--error-600)', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500 }}>

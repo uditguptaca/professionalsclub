@@ -379,7 +379,14 @@ export default function CandidateProfilePage() {
                 {photoRequestSent ? 'Photo access requested' : photoRequesting ? 'Sending request...' : 'Request photo access'}
               </button>
             )}
-            <button className="btn btn-outline" onClick={handleToggleShortlist} disabled={actionLoading} style={{ minWidth: 44, padding: 10 }}>
+            <button
+              className="btn btn-outline"
+              onClick={handleToggleShortlist}
+              disabled={actionLoading}
+              aria-label={isShortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
+              aria-pressed={isShortlisted}
+              style={{ minWidth: 44, padding: 10 }}
+            >
               <Bookmark size={18} fill={isShortlisted ? 'currentColor' : 'none'} />
             </button>
           </div>

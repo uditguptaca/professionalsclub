@@ -81,7 +81,7 @@ export default function Footer() {
               way you did.
             </p>
 
-            <Link href="/portal/auth" className="btn btn-primary footer-editorial-cta">
+            <Link href="/portal/signup" className="btn btn-primary footer-editorial-cta">
               Join the club
             </Link>
           </div>

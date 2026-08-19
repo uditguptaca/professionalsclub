@@ -112,9 +112,8 @@ export default function AboutPage() {
                 border: '1px solid var(--border-color)',
                 color: 'inherit',
                 textDecoration: 'none',
-                display: 'block',
-                transition: 'transform 0.2s'
-              }} className="hover:-translate-y-1">
+                display: 'block'
+              }} className="card-clickable">
                 <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-secondary)', color: 'var(--text-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
                   {item.icon}
                 </div>
@@ -136,7 +135,7 @@ export default function AboutPage() {
                 Everything you need to thrive, in one place.
               </h2>
               <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 24 }}>
-                Hub for engagement and learning.
+                Help requests, events, the business directory, and job referrals all live in one place.
               </p>
               <Link href="/portal/auth" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--text-accent)', fontWeight: 700, fontSize: '0.95rem' }}>
                 Join the platform today <ChevronRight size={20} />
@@ -239,7 +238,7 @@ export default function AboutPage() {
                 Trusted Businesses, <br/>Stronger Community
               </h2>
               <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 24 }}>
-                Trusted business launchpad.
+                Local businesses list what they offer, and members find someone they can trust.
               </p>
               
               <ul style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 0, margin: '0 0 32px 0', listStyle: 'none' }}>
@@ -286,7 +285,7 @@ export default function AboutPage() {
                 Meetups, Networking & Dynamic Growth
               </h2>
               <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 24 }}>
-                Growth happens via community events.
+                We run in-person meetups and online webinars where members learn from people a few steps ahead of them.
               </p>
               
               <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -314,7 +313,7 @@ export default function AboutPage() {
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-accent)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Guiding Principles</div>
               <h2 style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', marginBottom: 16, lineHeight: 1.25 }}>Our Core Values</h2>
               <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 24 }}>
-                Accelerated settlement.
+                These are the principles we run the club by.
               </p>
               <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 {[
@@ -325,7 +324,7 @@ export default function AboutPage() {
                   { title: 'Inclusion', desc: 'Diverse fields.', icon: <Globe size={20} color="var(--primary-600)" /> },
                   { title: 'Integrity', desc: 'High standards.', icon: <Sparkles size={20} color="var(--primary-600)" /> },
                 ].map((val, i) => (
-                  <Link href="/portal/signup" key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 12, textDecoration: 'none' }} className="hover:-translate-y-1 hover:shadow-md transition-all">
+                  <Link href="/portal/signup" key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 12, textDecoration: 'none' }} className="card-clickable">
                     <div style={{ flexShrink: 0 }}>{val.icon}</div>
                     <div>
                       <h3 style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 2 }}>{val.title}</h3>
@@ -353,7 +352,7 @@ export default function AboutPage() {
             Ready to build your future with us?
           </h2>
           <p style={{ fontSize: '1.25rem', color: 'var(--gray-300)', marginBottom: 40, maxWidth: 600, margin: '0 auto 40px' }}>
-            Find help or list business.
+            Ask for help, volunteer your time, or list your business.
           </p>
           
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>

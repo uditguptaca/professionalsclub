@@ -22,6 +22,14 @@ const JOB_TYPE_COLORS: Record<JobType, { bg: string; color: string }> = {
   internship: { bg: 'var(--primary-50)', color: '#5b21b6' },
 };
 
+// The starred fields in the modal: what the public jobs board actually renders.
+const REQUIRED_FIELDS: [string, string][] = [
+  ['title', 'Job title'],
+  ['company', 'Company name'],
+  ['description', 'Job description'],
+  ['location', 'Location'],
+];
+
 export default function JobsManagementPage() {
   const { jobPostings, addJobPosting, updateJobPosting, deleteJobPosting } = usePortal();
   const confirmAction = useConfirm();
@@ -60,19 +68,27 @@ export default function JobsManagementPage() {
   const handleChange = (key: string, val: string | number | boolean) => setForm(prev => ({ ...prev, [key]: val }));
 
   const handleSave = async () => {
+    // The four starred fields are the ones the public jobs board renders, so an
+    // empty one has to be refused rather than silently filled with a placeholder.
+    const missing = REQUIRED_FIELDS.filter(([key]) => !String(form[key] ?? '').trim()).map(([, label]) => label);
+    if (missing.length > 0) {
+      setFormError(`Please fill in: ${missing.join(', ')}.`);
+      return;
+    }
+
     const tagsStr = String(form.tags || '');
     const data = {
-      title: String(form.title || 'New Job'),
-      company: String(form.company || ''),
+      title: String(form.title).trim(),
+      company: String(form.company).trim(),
       companyLogo: String(form.companyLogo || '/career-mentorship.png'),
-      location: String(form.location || ''),
+      location: String(form.location).trim(),
       province: String(form.province || 'Ontario'),
       salaryMin: Number(form.salaryMin) || 0,
       salaryMax: Number(form.salaryMax) || 0,
       salaryPeriod: (form.salaryPeriod as 'yearly' | 'monthly' | 'hourly') || 'yearly',
       jobType: (form.jobType as JobType) || 'full_time',
       category: (form.category as JobCategory) || 'Developer',
-      description: String(form.description || ''),
+      description: String(form.description).trim(),
       requirements: String(form.requirements || ''),
       responsibilities: String(form.responsibilities || ''),
       contactEmail: String(form.contactEmail || ''),
