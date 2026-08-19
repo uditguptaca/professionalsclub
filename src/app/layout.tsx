@@ -125,6 +125,17 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${fraunces.variable} ${manrope.variable} ${mono.variable}`}>
       <body>
+        {/* crypto.randomUUID exists only on secure origins (https / localhost),
+            but the Neon Auth client calls it unconditionally — so on a phone
+            loading the dev server over plain http (LAN IP, emulator 10.0.2.2)
+            every page crashed into the error boundary. Inline so it runs
+            during HTML parse, before any deferred bundle. getRandomValues IS
+            available on insecure origins, so the polyfill is a real UUIDv4. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if (typeof crypto !== 'undefined' && !crypto.randomUUID) { crypto.randomUUID = function () { var b = crypto.getRandomValues(new Uint8Array(16)); b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128; var h = Array.from(b, function (x) { return x.toString(16).padStart(2, '0'); }).join(''); return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20); }; }`,
+          }}
+        />
         {/* Keyboard users need a way past the nav; visually hidden until focused. */}
         <a href="#main" className="skip-link">Skip to content</a>
 

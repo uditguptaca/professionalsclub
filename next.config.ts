@@ -49,6 +49,12 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Dev-only: lets a phone or the Android emulator load this dev server's
+  // assets. Without it, Next serves the HTML but blocks /_next/* cross-origin,
+  // so nothing hydrates and every button on the page is dead. Ignored in
+  // production builds.
+  allowedDevOrigins: ['192.168.1.3', '10.0.2.2', '192.168.1.10'],
+
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },
