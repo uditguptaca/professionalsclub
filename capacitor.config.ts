@@ -14,7 +14,10 @@ const config: CapacitorConfig = {
   appName: 'Professionals Club',
   webDir: 'mobile/www',
   server: {
-    url: 'https://professionalsclub.vercel.app',
+    // The app starts INSIDE the portal, not on the marketing homepage: the
+    // /portal/auth entry point shows sign-in to a signed-out user and bounces
+    // a signed-in one straight to their dashboard (the proxy handles that).
+    url: 'https://professionalsclub.vercel.app/portal/auth',
     errorPath: 'error.html',
     androidScheme: 'https',
     allowNavigation: [
