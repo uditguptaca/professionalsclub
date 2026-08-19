@@ -90,3 +90,46 @@ credentials in the App Review notes.
 - [ ] Privacy policy reachable at /privacy without signing in
 - [ ] Test on a real phone: sign in, request help, matrimony, delete-account
       flow with a throwaway account, offline screen (airplane mode)
+
+---
+
+## Build state — 2026-08-19 (done on this machine)
+
+**The signed release bundle exists:**
+`android/app/build/outputs/bundle/release/app-release.aab` (3.1 MB, signed,
+upload-key SHA-256 `A0:38:37:CE:...:1E:C8`). This is the file Play Console
+asks for. It currently points the WebView at `professionalsclub.vercel.app`
+(capacitor.config.ts) — redeploy production BEFORE uploading, since the app is
+that site.
+
+**Signing:** `android/keystore/upload-keystore.jks` + `android/keystore.properties`
+(both gitignored — they exist only on this machine). Back both up to a password
+manager. If lost, Play App Signing lets Google reset the upload key, so it is
+recoverable, but avoid needing that.
+
+**Toolchain used** (for rebuilds on this machine):
+- JDK 21 (portable): `%LOCALAPPDATA%\jdk-21.0.12.1+1`
+- Android SDK: `%LOCALAPPDATA%\Android\Sdk` (platform-tools, android-36,
+  build-tools 36.0.0; licenses accepted)
+- Rebuild: set `JAVA_HOME` to the JDK path, then
+  `cd android && gradlew bundleRelease`
+- Windows gotcha, learned the hard way: `android/local.properties` must use
+  FORWARD slashes (`sdk.dir=C:/Users/...`). Backslashes are escape characters
+  in .properties files, and `\Users\nitin` contains a literal `\n`.
+
+**Icons/splash:** generated for both platforms from `assets/logo*.png`
+(`npx @capacitor/assets generate`). Rerun after any logo change, then
+`npx cap sync`.
+
+**Store assets:** `mobile/store-assets/play/` (6 screenshots 1080×1920 +
+feature graphic) and `mobile/store-assets/appstore-6.7/` (6 screenshots
+1290×2796). Listing copy: `mobile/store-listing.md`.
+
+**Review account:** `appreview@professionalsclub.ca` — email pre-verified,
+member status verified, approved matrimony listing in place so reviewers can
+see that section. The password is NOT in this repo; it was handed over in the
+build session. Rotate it after each store review round.
+
+**Version bumps:** `versionCode` / `versionName` live in
+`android/app/build.gradle`. Play requires a higher `versionCode` on every
+upload, even for rejected builds.
