@@ -312,3 +312,28 @@ export async function toggleSaveBusiness(
   return run('Saving the business', async () =>
     repo.toggleSavedBusiness(await requireUserId(), businessId));
 }
+
+// ========== HOME FEED ==========
+
+export async function fetchHomeFeed(): Promise<ActionResult<import('@/server/repos/home').HomeFeed>> {
+  return run('Loading your home feed', async () => {
+    const { fetchHomeFeed: load } = await import('@/server/repos/home');
+    return load(await requireUserId());
+  });
+}
+
+/**
+ * Switch the member's community city. Reuses the existing own-profile update
+ * path (column allowlist + RLS), then invalidates the cached profile so the
+ * next feed load sees the new city.
+ */
+export async function updateMyCity(city: string): Promise<ActionResult<null>> {
+  return run('Updating your city', async () => {
+    const uid = await requireUserId();
+    const trimmed = city.trim().slice(0, 80);
+    if (trimmed.length < 2) throw new Error('Choose a city.');
+    await repo.updateOwnProfile(uid, { city: trimmed });
+    invalidateProfileCache(uid);
+    return null;
+  });
+}

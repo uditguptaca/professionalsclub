@@ -1,179 +1,354 @@
 'use client';
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
-import { HelpCircle, HandHeart, FileText, ClipboardList, MessageSquare, ArrowRight, Bell, CheckCircle, Building2, Tag, Star, Lock, XCircle, FileEdit, Clock } from 'lucide-react';
+import { fetchHomeFeed, updateMyCity } from '@/app/actions/portal';
+import type { HomeFeed } from '@/server/repos/home';
+import { COMMUNITY_CITIES, cityInfo } from '@/lib/cities';
+import {
+  MapPin, ChevronDown, Calendar, Users, ArrowRight, Briefcase, ShieldCheck,
+  FileText, Send, Bookmark, Mail, Store, Check, Loader2, UsersRound, X,
+} from 'lucide-react';
 
-export default function MemberDashboard() {
-  const { helpRequests, volunteerApps, messages } = usePortal();
-  const { currentUserId } = useApp();
+/**
+ * The member home: a city feed, not a menu.
+ *
+ * Structure follows the reference the club chose (InterNations' start screen),
+ * translated into this club's voice and rules:
+ *
+ *   city hero + switcher   →  skyline, greeting, "{City} Community" pill
+ *   profile completeness   →  ring + one CTA (hidden at 100%)
+ *   New in {city}          →  member_names view; say hello in the community,
+ *                             never DMs — the club is admin-mediated
+ *   Events for you         →  image cards, city-tagged, attendee counts
+ *   Groups for you         →  horizontal rail, live member counts
+ *   Don't forget           →  photo tiles with the member's own counters
+ *   Jobs near you          →  employers with roles in this city + helper count
+ *   Member offers          →  verified businesses, city first
+ *
+ * Everything arrives in one server round trip (fetchHomeFeed); switching city
+ * writes the profile and refetches, so the whole feed follows the pill.
+ */
 
-  const myRequests = helpRequests.filter(r => r.memberId === currentUserId);
-  const myVolunteerApp = volunteerApps.find(a => a.memberId === currentUserId);
-  const myMessages = messages.filter(m => (m.recipientRole === 'member' && m.visibilityScope === 'member_only'));
-  const unreadMessages = myMessages.filter(m => !m.read).length;
-  const openRequests = myRequests.filter(r => !['resolved', 'closed', 'rejected', 'archived'].includes(r.status));
+const monthDay = (iso: string | null): string => {
+  if (!iso) return 'Date TBA';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
+};
+
+const joinedAgo = (iso: string): string => {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (days < 1) return 'joined today';
+  if (days < 7) return `joined ${days}d ago`;
+  if (days < 60) return `joined ${Math.floor(days / 7)}w ago`;
+  return `joined ${Math.floor(days / 30)}mo ago`;
+};
+
+const initials = (first: string, last: string) =>
+  `${(first[0] ?? '').toUpperCase()}${(last[0] ?? '').toUpperCase()}` || 'M';
+
+/** Completeness ring, drawn with SVG stroke arithmetic — no chart library. */
+function Ring({ pct }: { pct: number }) {
+  const r = 26;
+  const c = 2 * Math.PI * r;
+  return (
+    <svg width="64" height="64" viewBox="0 0 64 64" role="img" aria-label={`Profile ${pct}% complete`}>
+      <circle cx="32" cy="32" r={r} fill="none" stroke="var(--primary-100)" strokeWidth="6" />
+      <circle
+        cx="32" cy="32" r={r} fill="none"
+        stroke="var(--primary-600)" strokeWidth="6" strokeLinecap="round"
+        strokeDasharray={`${(pct / 100) * c} ${c}`}
+        transform="rotate(-90 32 32)"
+      />
+      <text x="32" y="37" textAnchor="middle" fontSize="14" fontWeight="800" fill="var(--text-primary)">
+        {pct}%
+      </text>
+    </svg>
+  );
+}
+
+export default function MemberHomePage() {
+  const { profile } = useApp();
+  const [feed, setFeed] = useState<HomeFeed | null>(null);
+  const [error, setError] = useState('');
+  const [cityOpen, setCityOpen] = useState(false);
+  const [switching, setSwitching] = useState(false);
+
+  const load = async () => {
+    const r = await fetchHomeFeed();
+    if (r.ok) { setFeed(r.data); setError(''); }
+    else setError(r.error);
+  };
+  useEffect(() => { load(); }, []);
+
+  const city = useMemo(() => cityInfo(feed?.city), [feed?.city]);
+
+  const switchCity = async (name: string) => {
+    if (switching) return;
+    setSwitching(true);
+    const r = await updateMyCity(name);
+    if (r.ok) { setCityOpen(false); await load(); }
+    else setError(r.error);
+    setSwitching(false);
+  };
+
+  const firstName = profile?.firstName || 'there';
+
+  if (error && !feed) {
+    return (
+      <div className="hf-page">
+        <div className="card" style={{ padding: 32, textAlign: 'center' }}>
+          <p role="alert" className="community-error" style={{ marginBottom: 16 }}>{error}</p>
+          <button type="button" className="btn btn-primary" onClick={() => { setError(''); load(); }}>
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col gap-8 animate-fade-in">
-      {/* Welcome */}
-      <div>
-        <h1 className="text-3xl font-display font-bold mb-2">Welcome to the Help Desk</h1>
-        <p className="text-secondary">How can we help you today? Choose an action below or track your existing requests.</p>
-      </div>
+    <div className="hf-page">
+      {/* ================= City hero ================= */}
+      <header className="hf-hero">
+        <img src={city.skyline} alt="" aria-hidden="true" className="hf-hero-img" />
+        <div className="hf-hero-scrim" aria-hidden="true" />
+        <div className="hf-hero-body">
+          <span className="hf-avatar" aria-hidden="true">
+            {initials(profile?.firstName ?? '', profile?.lastName ?? '')}
+          </span>
+          <h1>Hi {firstName}!</h1>
+          <p>What would you like to do today?</p>
+          <button type="button" className="hf-city-pill" onClick={() => setCityOpen(true)}>
+            <MapPin size={14} aria-hidden="true" />
+            {city.known ? `${city.name} Community` : city.name}
+            <ChevronDown size={14} aria-hidden="true" />
+          </button>
+        </div>
+      </header>
 
-      {/* Primary Actions */}
-      <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-        <Link href="/portal/member/request-help" style={{ textDecoration: 'none' }}>
-          <div className="card card-clickable" style={{ background: 'linear-gradient(135deg, var(--primary-600), var(--primary-400))', color: 'white', border: 'none', padding: '32px 28px', boxShadow: '0 10px 30px rgba(232, 93, 4, 0.25)', transition: 'transform 0.2s', cursor: 'pointer' }}>
-            <HelpCircle size={36} style={{ marginBottom: 16, opacity: 0.9 }} />
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: 8 }}>Request Help</h2>
-            <p style={{ fontSize: '0.85rem', opacity: 0.85, lineHeight: 1.5 }}>Submit a support request for job referrals, settlement guidance, tax help, mentorship, and more.</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 16, fontSize: '0.85rem', fontWeight: 600 }}>
-              Get Started <ArrowRight size={16} />
+      {/* City switcher sheet */}
+      {cityOpen && (
+        <div className="hf-sheet-scrim" onClick={() => setCityOpen(false)}>
+          <div className="hf-sheet" role="dialog" aria-modal="true" aria-label="Choose your community"
+               onClick={(e) => e.stopPropagation()}>
+            <div className="hf-sheet-head">
+              <h2>Your community</h2>
+              <button type="button" className="ref-icon-btn" aria-label="Close" onClick={() => setCityOpen(false)}>
+                <X size={18} />
+              </button>
             </div>
-          </div>
-        </Link>
-
-        <Link href="/portal/member/volunteer" style={{ textDecoration: 'none' }}>
-          <div className="card card-clickable" style={{ background: 'linear-gradient(135deg, var(--green-800), var(--green-600))', color: 'white', border: 'none', padding: '32px 28px', boxShadow: '0 10px 30px rgba(27, 67, 50, 0.3)', transition: 'transform 0.2s', cursor: 'pointer' }}>
-            <HandHeart size={36} style={{ marginBottom: 16, opacity: 0.9 }} />
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: 8 }}>Volunteer to Help</h2>
-            <p style={{ fontSize: '0.85rem', opacity: 0.85, lineHeight: 1.5 }}>Apply to become a volunteer or mentor. Help community members with your professional expertise.</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 16, fontSize: '0.85rem', fontWeight: 600 }}>
-              Apply Now <ArrowRight size={16} />
-            </div>
-          </div>
-        </Link>
-      </div>
-
-      {/* Status Cards */}
-      <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-        <Link href="/portal/member/my-requests" style={{ textDecoration: 'none' }}>
-          <div className="card-stat" style={{ cursor: 'pointer' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ padding: 10, background: 'rgba(232, 93, 4, 0.1)', borderRadius: 10 }}>
-                <FileText size={22} className="text-primary-600" />
-              </div>
-              <div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{myRequests.length}</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>My Requests</div>
-              </div>
-            </div>
-            {openRequests.length > 0 && (
-              <div style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--text-accent)', fontWeight: 600 }}>
-                {openRequests.length} active
-              </div>
-            )}
-          </div>
-        </Link>
-
-        <Link href="/portal/member/my-volunteer" style={{ textDecoration: 'none' }}>
-          <div className="card-stat" style={{ cursor: 'pointer' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ padding: 10, background: 'rgba(16,185,129,0.1)', borderRadius: 10 }}>
-                <ClipboardList size={22} style={{ color: 'var(--success-600)' }} />
-              </div>
-              <div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>
-                  {myVolunteerApp ? (
-                    <span style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      {myVolunteerApp.status === 'approved' && <><CheckCircle size={16} style={{ color: 'var(--success-600)' }} /> Approved</>}
-                      {myVolunteerApp.status === 'pending_verification' && <><Clock size={16} style={{ color: 'var(--accent-700)' }} /> Pending</>}
-                      {myVolunteerApp.status === 'new_application' && <><FileEdit size={16} style={{ color: 'var(--accent-700)' }} /> Submitted</>}
-                      {myVolunteerApp.status === 'rejected' && <><XCircle size={16} style={{ color: 'var(--error-600)' }} /> Rejected</>}
-                      {!['approved', 'pending_verification', 'new_application', 'rejected'].includes(myVolunteerApp.status) && myVolunteerApp.status}
-                    </span>
-                  ) : '—'}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Volunteer Status</div>
-              </div>
-            </div>
-          </div>
-        </Link>
-
-        <Link href="/portal/member/messages" style={{ textDecoration: 'none' }}>
-          <div className="card-stat" style={{ cursor: 'pointer', position: 'relative' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ padding: 10, background: 'rgba(245,158,11,0.1)', borderRadius: 10, position: 'relative' }}>
-                <MessageSquare size={22} style={{ color: 'var(--accent-700)' }} />
-                {unreadMessages > 0 && (
-                  <div style={{ position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: '50%', background: 'var(--error-500)', color: 'white', fontSize: '0.65rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unreadMessages}</div>
-                )}
-              </div>
-              <div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{myMessages.length}</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Admin Messages</div>
-              </div>
-            </div>
-            {unreadMessages > 0 && (
-              <div style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--error-600)', fontWeight: 600 }}>
-                {unreadMessages} unread
-              </div>
-            )}
-          </div>
-        </Link>
-      </div>
-
-      {/* Recent Requests */}
-      {myRequests.length > 0 && (
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h2 className="text-xl font-bold font-display">Recent Requests</h2>
-            <Link href="/portal/member/my-requests" style={{ fontSize: '0.85rem', color: 'var(--text-accent)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
-              View All <ArrowRight size={14} />
-            </Link>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {myRequests.slice(0, 3).map(req => (
-              <Link key={req.id} href={`/portal/member/my-requests/${req.id}`} style={{ textDecoration: 'none' }}>
-                <div className="card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-                  <div>
-                    <div style={{ fontWeight: 700, marginBottom: 4 }}>{req.title}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', gap: 12 }}>
-                      <span>{req.category}</span>
-                      <span>•</span>
-                      <span>{new Date(req.createdAt).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                  <span className={`badge ${
-                    ['resolved', 'closed'].includes(req.status) ? 'badge-success' :
-                    ['submitted', 'under_review'].includes(req.status) ? 'badge-warning' :
-                    req.status === 'rejected' ? 'badge-error' : 'badge-primary'
-                  }`} style={{ textTransform: 'capitalize', fontSize: '0.7rem' }}>
-                    {req.status.replace(/_/g, ' ')}
-                  </span>
-                </div>
-              </Link>
-            ))}
+            <p className="hf-sheet-sub">Events, groups, jobs and offers follow your city.</p>
+            <ul className="hf-city-list">
+              {COMMUNITY_CITIES.map((c) => {
+                const active = c.name.toLowerCase() === (feed?.city ?? '').toLowerCase();
+                return (
+                  <li key={c.name}>
+                    <button type="button" disabled={switching} onClick={() => switchCity(c.name)}
+                            aria-current={active ? 'true' : undefined}>
+                      <span>{c.name}<small>{c.province}</small></span>
+                      {active ? <Check size={16} aria-hidden="true" />
+                              : switching ? null : <ArrowRight size={14} aria-hidden="true" className="hf-city-go" />}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         </div>
       )}
 
-      {/* Business Directory CTA */}
-      <Link href="/portal/member/businesses" style={{ textDecoration: 'none' }}>
-        <div className="card card-clickable" style={{ background: 'linear-gradient(135deg, var(--primary-600), var(--primary-400))', color: 'white', border: 'none', padding: '24px 28px', boxShadow: '0 8px 24px rgba(232, 93, 4, 0.25)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 20 }}>
-          <div style={{ padding: 12, background: 'rgba(255,255,255,0.15)', borderRadius: 12 }}>
-            <Building2 size={28} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: 4 }}>Discover Verified Businesses</h3>
-            <p style={{ fontSize: '0.82rem', opacity: 0.85, lineHeight: 1.5 }}>Find trusted local services with exclusive member rates — tax, legal, real estate, financial planning & more.</p>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ display: 'inline-flex', padding: '4px 10px', borderRadius: 99, background: 'rgba(255,255,255,0.2)', fontSize: '0.7rem', fontWeight: 700 }}><Tag size={11} style={{ marginRight: 4 }} /> Member Deals</span>
-            <ArrowRight size={20} />
-          </div>
-        </div>
-      </Link>
+      {error && <p role="alert" className="community-error">{error}</p>}
 
-      {/* Safety Notice */}
-      <div style={{ padding: '16px 20px', borderRadius: 12, background: 'rgba(232, 93, 4, 0.04)', border: '1px solid rgba(232, 93, 4, 0.1)' }}>
-        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.6, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-          <Lock size={14} className="text-primary-600" /> <strong>Your privacy is protected.</strong> All communications go through our admin team. No member can contact you directly.
-        </p>
-      </div>
+      {/* ================= Loading skeleton ================= */}
+      {!feed && !error && (
+        <div className="hf-body" aria-busy="true">
+          <div className="community-shimmer" style={{ height: 92, borderRadius: 14 }} />
+          <div className="community-shimmer" style={{ height: 200, borderRadius: 14 }} />
+          <div className="community-shimmer" style={{ height: 160, borderRadius: 14 }} />
+        </div>
+      )}
+
+      {feed && (
+        <div className="hf-body">
+          {/* ============ Profile completeness ============ */}
+          {feed.completenessPct < 100 && (
+            <section className="hf-complete card">
+              <Ring pct={feed.completenessPct} />
+              <div>
+                <h2>Make your profile work for you</h2>
+                <p>The more you share, the easier it is to match you with the right help.</p>
+                <Link href="/portal/member/profile" className="btn btn-outline btn-sm">
+                  Complete your profile
+                </Link>
+              </div>
+            </section>
+          )}
+
+          {/* ============ New in {city} ============ */}
+          {feed.newMembers.length > 0 && (
+            <section className="hf-section">
+              <div className="hf-section-head">
+                <h2>New in {city.known ? city.name : 'the club'}</h2>
+                <Link href="/portal/member/community">Community <ArrowRight size={14} aria-hidden="true" /></Link>
+              </div>
+              <div className="hf-members card">
+                {feed.newMembers.slice(0, 4).map((m) => (
+                  <div key={m.id} className="hf-member">
+                    <span className="hf-member-avatar" aria-hidden="true">{initials(m.firstName, m.lastName)}</span>
+                    <div>
+                      <strong>{m.firstName} {m.lastName}</strong>
+                      <small>
+                        {[m.jobTitle, m.city].filter(Boolean).join(' · ') || 'Member'} · {joinedAgo(m.createdAt)}
+                      </small>
+                    </div>
+                  </div>
+                ))}
+                <Link href="/portal/member/community" className="btn btn-primary hf-members-cta">
+                  <UsersRound size={15} aria-hidden="true" /> Say hello in the community
+                </Link>
+              </div>
+            </section>
+          )}
+
+          {/* ============ Events for you ============ */}
+          {feed.events.length > 0 && (
+            <section className="hf-section">
+              <div className="hf-section-head">
+                <h2>Events for you</h2>
+                <Link href="/events">All events <ArrowRight size={14} aria-hidden="true" /></Link>
+              </div>
+              <div className="hf-events">
+                {feed.events.map((e) => (
+                  <a key={e.id} href={e.rsvpUrl ?? '/events'} className="hf-event card"
+                     target={e.rsvpUrl ? '_blank' : undefined} rel={e.rsvpUrl ? 'noopener noreferrer' : undefined}>
+                    <span className="hf-event-media">
+                      {e.image
+                        ? <img src={e.image} alt="" aria-hidden="true" />
+                        : <span className="hf-event-fallback" aria-hidden="true"><Calendar size={28} /></span>}
+                      {e.inCity && <span className="hf-chip">{city.name}</span>}
+                    </span>
+                    <span className="hf-event-body">
+                      <strong>{e.title}</strong>
+                      <small><Calendar size={12} aria-hidden="true" /> {monthDay(e.date)}{e.time ? ` · ${e.time}` : ''}</small>
+                      <small><Users size={12} aria-hidden="true" /> {e.attendees} attending{e.location ? ` · ${e.location}` : ''}</small>
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* ============ Groups for you ============ */}
+          {feed.groups.length > 0 && (
+            <section className="hf-section">
+              <div className="hf-section-head">
+                <h2>Groups for you</h2>
+                <Link href="/portal/member/community/groups">All groups <ArrowRight size={14} aria-hidden="true" /></Link>
+              </div>
+              <div className="hf-rail">
+                {feed.groups.map((g) => (
+                  <Link key={g.id} href={`/portal/member/community/groups/${g.id}`} className="hf-group card">
+                    <span className="hf-group-badge" aria-hidden="true">{g.name.slice(0, 2).toUpperCase()}</span>
+                    <strong>{g.name}</strong>
+                    <small><Users size={12} aria-hidden="true" /> {g.memberCount} member{g.memberCount === 1 ? '' : 's'}</small>
+                    {g.isMember
+                      ? <span className="hf-joined"><Check size={12} aria-hidden="true" /> Joined</span>
+                      : <span className="hf-join">View group</span>}
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* ============ Don't forget ============ */}
+          <section className="hf-section">
+            <div className="hf-section-head"><h2>Don&rsquo;t forget</h2></div>
+            <div className="hf-tiles">
+              {[
+                { n: feed.counters.openRequests, label: 'Open requests', href: '/portal/member/my-requests', img: '/img/mentoring-1.jpg', icon: <FileText size={14} /> },
+                { n: feed.counters.pendingReferralAsks, label: 'Referral asks waiting', href: '/portal/member/referrals', img: '/img/resume-review.jpg', icon: <Send size={14} /> },
+                { n: feed.counters.myUpcomingEvents, label: 'Upcoming events', href: '/events', img: '/img/event-wide-1.jpg', icon: <Calendar size={14} /> },
+                { n: feed.counters.savedBusinesses, label: 'Saved businesses', href: '/portal/member/businesses', img: '/img/community-hall-1.jpg', icon: <Bookmark size={14} /> },
+              ].map((t) => (
+                <Link key={t.label} href={t.href} className="hf-tile">
+                  <img src={t.img} alt="" aria-hidden="true" />
+                  <span className="hf-tile-scrim" aria-hidden="true" />
+                  <span className="hf-tile-icon" aria-hidden="true">{t.icon}</span>
+                  <span className="hf-tile-body"><strong>{t.n}</strong>{t.label}</span>
+                </Link>
+              ))}
+            </div>
+            {feed.counters.unreadMessages > 0 && (
+              <Link href="/portal/member/messages" className="hf-unread card">
+                <Mail size={16} aria-hidden="true" />
+                {feed.counters.unreadMessages === 1
+                  ? '1 unread message from the admin team'
+                  : `${feed.counters.unreadMessages} unread messages from the admin team`}
+                <ArrowRight size={14} aria-hidden="true" />
+              </Link>
+            )}
+          </section>
+
+          {/* ============ Jobs near you ============ */}
+          {feed.jobs.length > 0 && (
+            <section className="hf-section">
+              <div className="hf-section-head">
+                <h2>Jobs {city.known ? `in ${city.name}` : 'for you'}</h2>
+                <Link href="/portal/member/jobs">All employers <ArrowRight size={14} aria-hidden="true" /></Link>
+              </div>
+              <div className="hf-jobs card">
+                {feed.jobs.map((c) => (
+                  <Link key={c.companyId} href="/portal/member/jobs" className="hf-job">
+                    <span className="ref-logo" aria-hidden="true">{c.companyLogo || c.companyName.charAt(0)}</span>
+                    <span className="hf-job-body">
+                      <strong>{c.companyName}</strong>
+                      <small>
+                        {c.cityJobs > 0
+                          ? `${c.cityJobs} open in ${city.name}`
+                          : c.sample ?? 'Open roles'}
+                      </small>
+                      {c.helperCount > 0 && (
+                        <span className="ref-helpers"><ShieldCheck size={12} aria-hidden="true" />
+                          {c.helperCount === 1 ? '1 member can help' : `${c.helperCount} members can help`}
+                        </span>
+                      )}
+                    </span>
+                    <Briefcase size={16} aria-hidden="true" className="hf-job-go" />
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* ============ Member offers ============ */}
+          {feed.businesses.length > 0 && (
+            <section className="hf-section">
+              <div className="hf-section-head">
+                <h2>Member offers {city.known ? `in ${city.name}` : ''}</h2>
+                <Link href="/portal/member/businesses">Directory <ArrowRight size={14} aria-hidden="true" /></Link>
+              </div>
+              <div className="hf-rail">
+                {feed.businesses.map((b) => (
+                  <Link key={b.id} href="/portal/member/businesses" className="hf-biz card">
+                    <span className="hf-group-badge hf-biz-badge" aria-hidden="true">{b.logo || b.name.charAt(0)}</span>
+                    <strong>{b.name}</strong>
+                    <small>{[b.category, b.city].filter(Boolean).join(' · ')}</small>
+                    {b.memberRateText && (
+                      <span className="hf-deal"><Store size={11} aria-hidden="true" /> {b.memberRateText}</span>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+      )}
+      {switching && (
+        <div className="hf-switching" role="status" aria-label="Switching city">
+          <Loader2 size={18} className="spin" aria-hidden="true" />
+        </div>
+      )}
     </div>
   );
 }

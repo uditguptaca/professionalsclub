@@ -1,3 +1,11 @@
+
+/* Safe-area helpers. Android WebView reports env(safe-area-inset-*) as 0;
+   the Capacitor shell writes the real insets onto <body> as inline
+   --safe-area-inset-* variables. Take whichever is larger, once. */
+body {
+  --sat: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  --sab: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+}
 /* Typefaces come from next/font in src/app/layout.tsx, which self-hosts them
    and sets --font-display / --font-sans / --font-mono. A Google Fonts @import
    here would block first paint and defeat that. */
@@ -3032,7 +3040,10 @@ tr:last-child td { border-bottom: none; }
     width: 100% !important;
   }
   .portal-topbar {
+    /* Keep the notch/status-bar inset: the shorthand alone wiped it and the
+       clock sat on top of the logo in the native shell. */
     padding: 0 16px !important;
+    padding-top: var(--sat) !important;
   }
   .portal-header-notice {
     display: none !important; /* Hide long header text on mobile */

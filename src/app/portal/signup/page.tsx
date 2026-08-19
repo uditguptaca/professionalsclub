@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signUpMember } from '@/app/actions/auth';
 import ResendVerification from '@/components/portal/ResendVerification';
+import { COMMUNITY_CITIES } from '@/lib/cities';
 import {
   ArrowRight, ArrowLeft, Check, User, MapPin, Target,
   Briefcase, Bell, Heart, Shield, Eye, EyeOff, ChevronDown,
@@ -138,6 +139,12 @@ export default function SignupPage() {
     if (step === 1) {
       const err = step1Error();
       if (err) { setSubmitError(err); return; }
+    }
+    // The home feed is city-scoped, so membership without a city is a broken
+    // experience from the first screen. Everything else on step 2 stays optional.
+    if (step === 2 && !city.trim()) {
+      setSubmitError('Choose your city — your community feed is built around it.');
+      return;
     }
     setSubmitError('');
     if (step < 7) setStep(step + 1);
@@ -395,8 +402,15 @@ export default function SignupPage() {
                   </div>
                 </div>
                 <div className="form-field">
-                  <label htmlFor="su-city">City</label>
-                  <input id="su-city" type="text" className="form-input" placeholder="e.g. Toronto" value={city} onChange={e => setCity(e.target.value)} />
+                  <label htmlFor="su-city">City <span className="required">*</span></label>
+                  {/* Structured so "toronto" and "Toronto" land in the SAME
+                      community: the whole home feed keys off this value. The
+                      datalist still accepts any city; a smaller hub simply has
+                      no curated skyline yet. */}
+                  <input id="su-city" type="text" className="form-input" placeholder="Choose your city" list="su-city-options" required value={city} onChange={e => setCity(e.target.value)} />
+                  <datalist id="su-city-options">
+                    {COMMUNITY_CITIES.map(c => <option key={c.name} value={c.name}>{c.province}</option>)}
+                  </datalist>
                 </div>
               </div>
 

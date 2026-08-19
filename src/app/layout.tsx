@@ -123,13 +123,14 @@ export default async function RootLayout({
   const profile = await getCurrentProfile();
 
   return (
-    <html lang="en" className={`${fraunces.variable} ${manrope.variable} ${mono.variable}`}>
-      {/* suppressHydrationWarning: inside the native shell, Capacitor writes
-          the device's real safe-area insets onto <body> as inline CSS variables
-          BEFORE React hydrates (--safe-area-inset-top: 52px on a notched
-          phone). The server cannot know those values, so without this React
-          reports a hydration mismatch on every native launch. Only this
-          element's attributes are exempted — children are still checked. */}
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning className={`${fraunces.variable} ${manrope.variable} ${mono.variable}`}>
+      {/* suppressHydrationWarning (html + body): inside the native shell,
+          Capacitor writes the device's real safe-area insets onto <html> as
+          inline CSS variables BEFORE React hydrates (--safe-area-inset-top:
+          52px on a notched phone). The server cannot know those values, so
+          without this React reports a hydration mismatch on every native
+          launch. Only these elements' attributes are exempted — children are
+          still checked. */}
       <body suppressHydrationWarning>
         {/* crypto.randomUUID exists only on secure origins (https / localhost),
             but the Neon Auth client calls it unconditionally — so on a phone
