@@ -71,6 +71,9 @@ export interface Member {
   isVolunteer: boolean;
   role: UserRole;
   /** Professional details collected by the signup wizard; all optional. */
+  currentStatus?: string;
+  joiningFor?: string;
+  skills?: string;
   industry?: string;
   jobTitle?: string;
   company?: string;

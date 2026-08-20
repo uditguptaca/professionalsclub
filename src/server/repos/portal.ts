@@ -465,8 +465,17 @@ const PROFILE_WRITABLE = {
   phone: 'phone',
   city: 'city',
   province: 'province',
+  currentStatus: 'current_status',
   industry: 'industry',
   jobTitle: 'job_title',
+  employmentStatus: 'employment_status',
+  experienceRange: 'experience_range',
+  educationLevel: 'education_level',
+  linkedinUrl: 'linkedin_url',
+  skills: 'skills',
+  professionalSummary: 'professional_summary',
+  preferredContactMethod: 'preferred_contact_method',
+  preferredLanguage: 'preferred_language',
 } as const;
 
 /**

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { signUpMember } from '@/app/actions/auth';
 import ResendVerification from '@/components/portal/ResendVerification';
 import { COMMUNITY_CITIES } from '@/lib/cities';
+import { PROVINCES, CURRENT_STATUS, INDUSTRIES, EXPERIENCE_RANGES, EDUCATION_LEVELS, CONTACT_METHODS, LANGUAGES } from '@/lib/profile-options';
 import {
   ArrowRight, ArrowLeft, Check, User, MapPin, Target,
   Briefcase, Bell, Heart, Shield, Eye, EyeOff, ChevronDown,
@@ -24,8 +25,6 @@ const STEPS = [
 
 /* ─── OPTION LISTS ─── */
 const GENDERS = ['Male', 'Female', 'Non-binary', 'Prefer not to say'];
-const PROVINCES = ['Ontario', 'British Columbia', 'Alberta', 'Quebec', 'Manitoba', 'Saskatchewan', 'Nova Scotia', 'New Brunswick', 'Newfoundland & Labrador', 'Prince Edward Island', 'Northwest Territories', 'Yukon', 'Nunavut'];
-const CURRENT_STATUS = ['Living in Canada', 'Planning to move to Canada', 'Outside Canada'];
 const PURPOSE_OPTIONS = [
   'I want to be part of the community',
   'I want help or guidance',
@@ -39,12 +38,7 @@ const PURPOSE_OPTIONS = [
   'Other',
 ];
 const EMPLOYMENT_STATUS = ['Employed', 'Self-employed', 'Business Owner', 'Student', 'Looking for Opportunities', 'Not Currently Working'];
-const INDUSTRIES = ['IT', 'Finance & Accounting', 'Banking', 'HR', 'Healthcare', 'Engineering', 'Marketing & Sales', 'Education', 'Legal', 'Business / Entrepreneurship', 'Other'];
-const EXPERIENCE_RANGES = ['0–1 years', '1–3 years', '3–5 years', '5–10 years', '10+ years'];
-const EDUCATION_LEVELS = ['High School', 'Diploma', 'Bachelor\'s', 'Master\'s', 'PhD', 'Other'];
 const PROFESSIONAL_CATEGORIES = ['Finance Professional', 'IT Professional', 'HR Professional', 'Engineering Professional', 'Healthcare Professional', 'Marketing Professional', 'Business Professional', 'Student', 'Other'];
-const CONTACT_METHODS = ['Email', 'WhatsApp', 'SMS'];
-const LANGUAGES = ['English', 'Hindi', 'Punjabi', 'Tamil', 'Telugu', 'Gujarati', 'Bengali', 'Malayalam', 'Marathi', 'Kannada', 'Urdu', 'French', 'Other'];
 const UPDATE_TOPICS = ['Events', 'Webinars', 'Job opportunities', 'Networking sessions', 'Volunteer opportunities', 'Community announcements', 'Study groups'];
 const HELP_TYPES = ['Job Referral', 'Resume/Cover Letter Review', 'Career Mentorship', 'Settlement Support', 'Tax Consultation', 'Immigration Guidance', 'Study/Exam Support', 'Legal Guidance', 'Other'];
 const CONTRIBUTE_OPTIONS = ['Mentoring newcomers', 'Resume reviews', 'Job referrals', 'Settlement guidance', 'Tax consultation', 'Event organization', 'Immigration guidance', 'Community support', 'Other'];

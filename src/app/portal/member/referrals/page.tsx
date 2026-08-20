@@ -69,8 +69,11 @@ export default function ReferralsPage() {
         setMyRoles(r.data.myRoles);
         setRequests(r.data.myRequests);
         setInbox(r.data.inbox);
-        // Land on whichever tab has something waiting.
-        if (r.data.inbox.some((i) => i.myStatus === 'pending')) setTab('inbox');
+        // An explicit ?tab= wins (the profile hub deep-links to Where I
+        // work); otherwise land on whichever tab has something waiting.
+        const asked = new URLSearchParams(window.location.search).get('tab');
+        if (asked === 'work' || asked === 'inbox' || asked === 'sent') setTab(asked);
+        else if (r.data.inbox.some((i) => i.myStatus === 'pending')) setTab('inbox');
         else if (r.data.myRequests.length) setTab('sent');
         else if (!r.data.myRoles.length) setTab('work');
       } else {
