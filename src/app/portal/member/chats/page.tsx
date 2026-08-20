@@ -923,6 +923,16 @@ export default function MemberChatsPage() {
     return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
   }, [lightbox, pdfView]);
 
+  // The thread OWNS the viewport on phones. Without this the page behind it
+  // still scrolls: the pinned header slides under the status bar and a blank
+  // band opens above the tab bar.
+  useEffect(() => {
+    if (isWide || !openId) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [isWide, openId]);
+
   // ---- Chat settings sheet -------------------------------------------------
   async function openSettings() {
     setSettingsOpen(true);
@@ -1091,6 +1101,11 @@ export default function MemberChatsPage() {
    * capture-phase click guard is what stops the press that JUST opened the menu
    * from also firing the bubble's own click (the lightbox, a file, a quote).
    */
+  // Swipe-right-to-reply: horizontal drag past 48px sets the reply target.
+  // Kept per-gesture in a ref; the bubble translates with the finger (capped)
+  // and springs back on release.
+  const swipeRef = useRef<{ el: HTMLElement | null; dx: number; active: boolean }>({ el: null, dx: 0, active: false });
+
   const pressProps = (m: ChatMessage) => ({
     onPointerDown: (e: React.PointerEvent) => {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -1098,6 +1113,8 @@ export default function MemberChatsPage() {
       pressRef.current.fired = false;
       pressRef.current.x = e.clientX;
       pressRef.current.y = e.clientY;
+      swipeRef.current = { el: e.currentTarget as HTMLElement, dx: 0, active: false };
+      try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* fine */ }
       pressRef.current.timer = window.setTimeout(() => {
         pressRef.current.timer = null;
         pressRef.current.fired = true;
@@ -1105,13 +1122,34 @@ export default function MemberChatsPage() {
       }, PRESS_MS);
     },
     onPointerMove: (e: React.PointerEvent) => {
-      if (pressRef.current.timer == null) return;
       const dx = e.clientX - pressRef.current.x;
       const dy = e.clientY - pressRef.current.y;
-      if (Math.hypot(dx, dy) > PRESS_SLOP) cancelPress();
+      if (pressRef.current.timer != null && Math.hypot(dx, dy) > PRESS_SLOP) cancelPress();
+      const sw = swipeRef.current;
+      if (!sw.active && dx > 12 && Math.abs(dy) < 24) { sw.active = true; cancelPress(); }
+      if (sw.active && sw.el) {
+        sw.dx = Math.max(0, Math.min(dx, 72));
+        sw.el.style.transition = 'none';
+        sw.el.style.transform = `translateX(${sw.dx}px)`;
+      }
     },
-    onPointerUp: cancelPress,
-    onPointerCancel: cancelPress,
+    onPointerUp: () => {
+      const sw = swipeRef.current;
+      if (sw.active && sw.el) {
+        const trigger = sw.dx >= 48;
+        sw.el.style.transition = reduceMotion ? '' : 'transform 0.18s ease';
+        sw.el.style.transform = '';
+        if (trigger && pollOpen !== false) setReplyTo(m);
+      }
+      swipeRef.current = { el: null, dx: 0, active: false };
+      cancelPress();
+    },
+    onPointerCancel: () => {
+      const sw = swipeRef.current;
+      if (sw.el) { sw.el.style.transform = ''; }
+      swipeRef.current = { el: null, dx: 0, active: false };
+      cancelPress();
+    },
     onPointerLeave: cancelPress,
     onContextMenu: (e: React.MouseEvent) => {
       e.preventDefault();
@@ -1392,10 +1430,18 @@ export default function MemberChatsPage() {
           ...(isWide
             ? { height: '100%', minHeight: '22rem' }
             : {
-              // Bleed past .portal-content-area's padding, the .pp-hero trick,
-              // and reserve exactly what it reserves for the tab bar.
-              margin: `calc(-1 * ${PAD_TOP}) calc(-1 * ${PAD_X}) 0`,
-              height: `calc(100dvh - ${TABBAR})`,
+              // A FIXED overlay, not a negative-margin bleed. The bleed left
+              // the document behind the thread taller than the viewport
+              // (portal-main's min-height and stray padding), so a swipe that
+              // started on the composer scrolled the WHOLE window - header
+              // under the clock, blank band over the tab bar. Fixed detaches
+              // the thread from the page: only the messages column scrolls.
+              position: 'fixed' as const,
+              top: 0, left: 0, right: 0,
+              bottom: TABBAR,
+              // Above the page, below the tab bar (--z-drawer: 200) and every
+              // sheet (--z-modal-backdrop: 390).
+              zIndex: 150,
             }),
         }}
       >
@@ -1468,7 +1514,7 @@ export default function MemberChatsPage() {
             nearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 140;
           }}
           style={{
-            flex: 1, minHeight: 0, overflowY: 'auto', background: 'var(--bg-secondary)',
+            flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', background: 'var(--bg-secondary)',
             padding: '0.9rem 0.8rem', display: 'flex', flexDirection: 'column',
           }}
         >
@@ -1845,6 +1891,7 @@ export default function MemberChatsPage() {
                     alignItems: mine ? 'flex-end' : 'flex-start',
                     marginBottom: (groupEnd ? 10 : 3) + (pills.length ? 14 : 0),
                     WebkitTouchCallout: 'none',
+                    touchAction: 'pan-y',
                     borderRadius: '1.2rem',
                     transition: reduceMotion ? undefined : 'box-shadow 0.3s ease',
                     ...(flashId === m.id ? { boxShadow: '0 0 0 3px rgba(232,93,4,0.45)' } : {}),
