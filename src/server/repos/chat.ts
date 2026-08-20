@@ -44,6 +44,7 @@ export interface ChatThread {
   unread: number;
   /** False once no unlock rule holds any more — the thread is frozen. */
   open: boolean;
+  muted: boolean;
   /** Why this chat exists; referral and matrimony outrank plain follows. */
   context: 'referral' | 'matrimony' | 'follow';
 }
@@ -52,7 +53,7 @@ export interface ChatMessage {
   id: string;
   conversationId: string;
   senderId: string;
-  kind: 'text' | 'image' | 'referral';
+  kind: 'text' | 'image' | 'video' | 'file' | 'referral';
   body: string | null;
   cipher: string | null;
   iv: string | null;
@@ -130,7 +131,7 @@ const toPerson = (r: Record<string, unknown>): ChatPerson => ({
 // same rule matrimony media applies.
 function assertOurUpload(url: string): void {
   const fromBlob = /^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/[^\s]+$/i.test(url);
-  const fromDev = /^\/uploads\/[a-z0-9]+\.(jpg|jpeg|png|webp|gif)$/.test(url);
+  const fromDev = /^\/uploads\/[a-z0-9]+\.(jpg|jpeg|png|webp|gif|mp4|webm|mov|pdf|doc|docx)$/.test(url);
   if (!fromBlob && !fromDev) throw new Error('That upload was not recognised. Please try again.');
 }
 
@@ -154,6 +155,7 @@ export async function listPeople(userId: string): Promise<{
                  where f.follower_id = n.id and f.followee_id = $1) as incoming
           from public.member_names n
          where n.id <> $1
+           and not public.is_blocked_between_members($1, n.id)
       )
       select
         (select coalesce(json_agg(t), '[]'::json) from (
@@ -237,11 +239,13 @@ export async function listChats(userId: string): Promise<ChatThread[]> {
              n.id as partner_id, n.first_name, n.last_name, n.job_title,
              c.last_message_at,
              public.is_chat_allowed(c.member_a_id, c.member_b_id) as open,
+             coalesce(pf.muted, false) as muted,
              lm.body as last_body, lm.kind as last_kind,
              (lm.cipher is not null) as last_cipher,
              (lm.sender_id = $1) as last_from_me,
              (select count(*) from public.member_messages u
-               where u.conversation_id = c.id and u.sender_id <> $1 and u.read_at is null)::int as unread,
+               where u.conversation_id = c.id and u.sender_id <> $1 and u.read_at is null
+                 and u.created_at > coalesce(pf.cleared_at, 'epoch'::timestamptz))::int as unread,
              exists (select 1 from public.referral_direct_requests r
                       where (r.seeker_id, r.insider_id) in ((c.member_a_id, c.member_b_id), (c.member_b_id, c.member_a_id))
                     ) as is_referral,
@@ -253,9 +257,12 @@ export async function listChats(userId: string): Promise<ChatThread[]> {
         from public.member_conversations c
         join public.member_names n
           on n.id = case when c.member_a_id = $1 then c.member_b_id else c.member_a_id end
+        left join public.member_chat_prefs pf
+          on pf.conversation_id = c.id and pf.member_id = $1
         left join lateral (
           select body, cipher, kind, sender_id from public.member_messages m
            where m.conversation_id = c.id
+             and m.created_at > coalesce(pf.cleared_at, 'epoch'::timestamptz)
            order by m.created_at desc limit 1
         ) lm on true
        where $1 in (c.member_a_id, c.member_b_id)
@@ -276,6 +283,7 @@ export async function listChats(userId: string): Promise<ChatThread[]> {
       lastFromMe: Boolean(r.last_from_me),
       unread: Number(r.unread ?? 0),
       open: Boolean(r.open),
+      muted: Boolean(r.muted),
       context: r.is_referral ? 'referral' : r.is_matrimony ? 'matrimony' : 'follow',
     }));
   });
@@ -310,14 +318,35 @@ export async function pollThread(userId: string, conversationId: string): Promis
     const rows = await db.run<Record<string, unknown>>(
       `
       with convo as (
-        select * from public.member_conversations where id = $1
+        select *, case when member_a_id = $2 then member_b_id else member_a_id end as peer_id
+          from public.member_conversations where id = $1
+      ),
+      prefs as (
+        select coalesce((select cleared_at from public.member_chat_prefs
+                          where conversation_id = $1 and member_id = $2), 'epoch'::timestamptz) as cleared_at
+      ),
+      -- WhatsApp symmetry: read receipts render only when BOTH sides leave
+      -- them on; typing shows only if I have not turned the indicator off
+      -- (a peer who turned theirs off never writes a heartbeat at all).
+      vis as (
+        select (public.chat_read_receipts_enabled($2)
+                and public.chat_read_receipts_enabled((select peer_id from convo))) as receipts,
+               coalesce((select typing_indicator from public.member_chat_settings
+                          where member_id = $2), true) as typing
       )
       select
         (select coalesce(json_agg(t order by t.created_at), '[]'::json) from (
-          select * from public.member_messages where conversation_id = $1
+          select m.id, m.conversation_id, m.sender_id, m.kind, m.body, m.cipher, m.iv,
+                 m.attachment_url, m.meta, m.created_at,
+                 case when m.sender_id = $2 and not (select receipts from vis)
+                      then null else m.read_at end as read_at
+            from public.member_messages m
+           where m.conversation_id = $1
+             and m.created_at > (select cleared_at from prefs)
         ) t) as messages,
         (select public.member_convo_is_open($1)) as open,
-        (select ty.typing_at from public.member_chat_typing ty
+        (select case when (select typing from vis) then ty.typing_at end
+           from public.member_chat_typing ty
           where ty.conversation_id = $1 and ty.member_id <> $2
           limit 1) as peer_typing_at,
         (select coalesce(json_agg(t), '[]'::json) from (
@@ -353,11 +382,18 @@ export async function pollThread(userId: string, conversationId: string): Promis
 export async function sendChatMessage(
   userId: string,
   conversationId: string,
-  content: { body?: string; cipher?: string; iv?: string; attachmentUrl?: string }
+  content: {
+    body?: string; cipher?: string; iv?: string;
+    attachmentUrl?: string;
+    attachmentKind?: 'image' | 'video' | 'file';
+    /** For files: what to render before anyone downloads it. */
+    fileMeta?: { name?: string; size?: number; mime?: string };
+  }
 ): Promise<ChatMessage> {
   return withUser(userId, async (db) => {
     const encrypted = Boolean(content.cipher && content.iv);
-    const kind = content.attachmentUrl ? 'image' : 'text';
+    const kind = content.attachmentUrl ? (content.attachmentKind ?? 'image') : 'text';
+    if (!['text', 'image', 'video', 'file'].includes(kind)) throw new Error('Unknown message kind.');
     if (content.attachmentUrl) assertOurUpload(content.attachmentUrl);
     if (kind === 'text' && !encrypted && !content.body?.trim()) throw new Error('Message cannot be empty.');
     if (encrypted && content.body) throw new Error('A message is plaintext or ciphertext, never both.');
@@ -365,16 +401,25 @@ export async function sendChatMessage(
       throw new Error('Message too long.');
     }
 
+    const meta = kind === 'file' && content.fileMeta
+      ? JSON.stringify({
+          name: String(content.fileMeta.name ?? 'Document').slice(0, 200),
+          size: Number(content.fileMeta.size ?? 0),
+          mime: String(content.fileMeta.mime ?? '').slice(0, 100),
+        })
+      : null;
+
     try {
       const rows = await db.run<Record<string, unknown>>(
-        `insert into public.member_messages (conversation_id, sender_id, kind, body, cipher, iv, attachment_url)
-         values ($1, $2, $3, $4, $5, $6, $7) returning *`,
+        `insert into public.member_messages (conversation_id, sender_id, kind, body, cipher, iv, attachment_url, meta)
+         values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb) returning *`,
         [
           conversationId, userId, kind,
           encrypted ? null : (content.body?.trim() || null),
           encrypted ? content.cipher! : null,
           encrypted ? content.iv! : null,
           content.attachmentUrl ?? null,
+          meta,
         ]
       );
       return toMessage(rows[0]);
@@ -400,6 +445,12 @@ export async function markChatRead(userId: string, conversationId: string): Prom
 /** Heartbeat while composing; the peer's poll turns it into "typing…". */
 export async function setTyping(userId: string, conversationId: string): Promise<void> {
   await withUser(userId, async (db) => {
+    const on = await db.run<{ on: boolean }>(
+      `select coalesce((select typing_indicator from public.member_chat_settings
+                         where member_id = $1), true) as on`,
+      [userId]
+    );
+    if (!on[0]?.on) return;
     await db.run(
       `insert into public.member_chat_typing (conversation_id, member_id)
        values ($1, $2)
@@ -545,6 +596,122 @@ export async function myDirectReferrals(userId: string): Promise<MyDirectReferra
       createdAt: iso(r.created_at) as string,
       conversationId: (r.conversation_id as string | null) ?? null,
     }));
+  });
+}
+
+// ---- Blocks, reports, mute, clear, settings --------------------------------
+
+export interface BlockedMember { id: string; firstName: string; lastName: string }
+
+export interface ChatSettings { readReceipts: boolean; typingIndicator: boolean }
+
+/** Block: freezes every chat with them, hides them from people lists, and is
+    never announced to them. */
+export async function blockMember(userId: string, targetId: string): Promise<void> {
+  await withUser(userId, async (db) => {
+    await db.run(
+      `insert into public.member_blocks (blocker_id, blocked_id)
+       values ($1, $2) on conflict do nothing`,
+      [userId, targetId]
+    );
+  });
+}
+
+export async function unblockMember(userId: string, targetId: string): Promise<void> {
+  await withUser(userId, async (db) => {
+    await db.run(
+      `delete from public.member_blocks where blocker_id = $1 and blocked_id = $2`,
+      [userId, targetId]
+    );
+  });
+}
+
+export async function listBlockedMembers(userId: string): Promise<BlockedMember[]> {
+  return withUserRead(userId, async (db) => {
+    const rows = await db.run<Record<string, unknown>>(
+      `select n.id, n.first_name, n.last_name
+         from public.member_blocks b
+         join public.member_names n on n.id = b.blocked_id
+        where b.blocker_id = $1
+        order by b.created_at desc`,
+      [userId]
+    );
+    return rows.map((r) => ({
+      id: r.id as string,
+      firstName: r.first_name as string,
+      lastName: r.last_name as string,
+    }));
+  });
+}
+
+export async function reportMember(
+  userId: string,
+  input: { reportedId: string; conversationId?: string; reason: string; details?: string }
+): Promise<void> {
+  await withUser(userId, async (db) => {
+    const reason = input.reason.trim().slice(0, 100);
+    if (!reason) throw new Error('Pick a reason.');
+    await db.run(
+      `insert into public.member_reports (reporter_id, reported_id, conversation_id, reason, details)
+       values ($1, $2, $3, $4, $5)`,
+      [userId, input.reportedId, input.conversationId ?? null, reason,
+       input.details?.trim().slice(0, 2000) || null]
+    );
+  });
+}
+
+export async function muteChat(userId: string, conversationId: string, muted: boolean): Promise<void> {
+  await withUser(userId, async (db) => {
+    await db.run(
+      `insert into public.member_chat_prefs (conversation_id, member_id, muted)
+       values ($1, $2, $3)
+       on conflict (conversation_id, member_id) do update set muted = excluded.muted`,
+      [conversationId, userId, muted]
+    );
+  });
+}
+
+/** Clear-for-me: everything up to now disappears from MY view only. */
+export async function clearChat(userId: string, conversationId: string): Promise<void> {
+  await withUser(userId, async (db) => {
+    await db.run(
+      `insert into public.member_chat_prefs (conversation_id, member_id, cleared_at)
+       values ($1, $2, now())
+       on conflict (conversation_id, member_id) do update set cleared_at = now()`,
+      [conversationId, userId]
+    );
+  });
+}
+
+export async function getChatSettings(userId: string): Promise<ChatSettings> {
+  return withUserRead(userId, async (db) => {
+    const rows = await db.run<{ read_receipts: boolean; typing_indicator: boolean }>(
+      `select read_receipts, typing_indicator from public.member_chat_settings where member_id = $1`,
+      [userId]
+    );
+    return {
+      readReceipts: rows[0]?.read_receipts ?? true,
+      typingIndicator: rows[0]?.typing_indicator ?? true,
+    };
+  });
+}
+
+export async function updateChatSettings(
+  userId: string,
+  input: { readReceipts?: boolean; typingIndicator?: boolean }
+): Promise<ChatSettings> {
+  return withUser(userId, async (db) => {
+    const rows = await db.run<{ read_receipts: boolean; typing_indicator: boolean }>(
+      `insert into public.member_chat_settings (member_id, read_receipts, typing_indicator)
+       values ($1, coalesce($2, true), coalesce($3, true))
+       on conflict (member_id) do update set
+         read_receipts    = coalesce($2, public.member_chat_settings.read_receipts),
+         typing_indicator = coalesce($3, public.member_chat_settings.typing_indicator),
+         updated_at = now()
+       returning read_receipts, typing_indicator`,
+      [userId, input.readReceipts ?? null, input.typingIndicator ?? null]
+    );
+    return { readReceipts: rows[0].read_receipts, typingIndicator: rows[0].typing_indicator };
   });
 }
 

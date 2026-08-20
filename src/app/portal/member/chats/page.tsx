@@ -5,8 +5,12 @@ import {
   listPeople, followMember, unfollowMember, acceptFollowRequest, declineFollowRequest,
   listChats, openChat, pollThread, sendChatMessage, markChatRead, setTyping,
   respondReferral, publishMemberE2EKey, getMemberE2EKey,
+  blockMember, unblockMember, listBlockedMembers, reportMember,
+  muteChat, clearChat, getChatSettings, updateChatSettings,
 } from '@/app/actions/chat';
-import type { ChatPerson, ChatThread, ChatMessage, ThreadReferral } from '@/server/repos/chat';
+import type {
+  ChatPerson, ChatThread, ChatMessage, ThreadReferral, BlockedMember, ChatSettings,
+} from '@/server/repos/chat';
 import {
   e2eeAvailable, ensureLocalKeys, deriveConversationKey, encryptText, decryptText,
 } from '@/lib/e2ee';
@@ -14,8 +18,11 @@ import { useApp } from '@/context/app-context';
 import { useConfirm } from '@/components/portal/confirm';
 import PortalLoading from '@/components/portal/PortalLoading';
 import {
-  ArrowLeft, AlertCircle, Building2, Check, CheckCheck, Heart, ImagePlus, Info,
-  Loader2, Lock, LockOpen, MessageCircle, Plus, Send, ShieldCheck, UserX, X,
+  ArrowLeft, AlertCircle, Ban, Bell, BellOff, Building2, Check, CheckCheck, Eraser,
+  FileText, Flag, Heart, ImagePlus, Info, Loader2, Lock, LockOpen, MessageCircle,
+  MoreVertical, Paperclip, Plus, Send, Settings, ShieldCheck, UserX, Video, X,
+  type LucideIcon,
+  Download,
 } from 'lucide-react';
 
 /**
@@ -34,12 +41,19 @@ import {
  * published once per mount, and a conversation key is derived from the peer's
  * published key. With a key, text goes out as { cipher, iv } and the header says
  * so; without one it goes out as plaintext and the header says that instead.
- * Images are NOT encrypted — they go to Blob storage as files — and the composer
- * says so out loud rather than letting the lock icon imply otherwise.
+ * Attachments — photos, video, documents — are NOT encrypted; they go to Blob
+ * storage as files, and the composer says so out loud rather than letting the
+ * lock icon imply otherwise.
  *
  * One poll (`pollThread`, 5s) carries messages, the open flag, the peer's typing
  * heartbeat and live referral status. Decrypted text is cached by message id so
  * a poll re-renders without re-decrypting.
+ *
+ * Safety lives in two sheets: a per-chat menu (mute, clear for me, report,
+ * block) off the thread header, and global chat settings (read receipts, typing
+ * indicator, the blocked list) off the list header. Mute and clear-for-me are
+ * one-sided prefs; a block is never announced, so a blocked thread arrives as
+ * `open === false` and gets the SAME generic frozen notice as a broken follow.
  */
 
 const HAIRLINE = '1px solid rgba(27,67,50,0.08)';
@@ -71,6 +85,61 @@ const EMPTY_LANE: Record<Lane, string> = {
   following: 'You are not following anyone yet. Start with Suggestions.',
   followers: 'Nobody follows you yet. Following people is how they find you.',
 };
+
+/**
+ * The three things you can attach. `payload` is the upload route's
+ * clientPayload, which decides the allowed MIME types and the server-side size
+ * cap; `maxMb` is the same cap checked HERE, before a 120 MB video is pushed up
+ * a phone's uplink only to be refused at the far end.
+ */
+type AttachKind = 'photo' | 'video' | 'document';
+
+const ATTACH: Record<AttachKind, {
+  label: string;
+  accept: string;
+  payload?: string;
+  kind: 'image' | 'video' | 'file';
+  maxMb: number;
+  tooBig: string;
+  failed: string;
+  Icon: LucideIcon;
+}> = {
+  photo: {
+    label: 'Photo',
+    accept: 'image/jpeg,image/png,image/webp,image/gif',
+    payload: undefined,
+    kind: 'image',
+    maxMb: 8,
+    tooBig: 'Photos can be up to 8 MB.',
+    failed: 'That photo could not be uploaded. Please try again.',
+    Icon: ImagePlus,
+  },
+  video: {
+    label: 'Video',
+    accept: 'video/mp4,video/webm,video/quicktime',
+    payload: 'video',
+    kind: 'video',
+    maxMb: 120,
+    tooBig: 'Videos can be up to 120 MB.',
+    failed: 'That video could not be uploaded. Please try again.',
+    Icon: Video,
+  },
+  document: {
+    label: 'Document',
+    accept: 'application/pdf,.doc,.docx',
+    payload: 'document',
+    kind: 'file',
+    maxMb: 8,
+    tooBig: 'Documents can be up to 8 MB.',
+    failed: 'That document could not be uploaded. Please try again.',
+    Icon: FileText,
+  },
+};
+const ATTACH_ORDER: AttachKind[] = ['photo', 'video', 'document'];
+
+const REPORT_REASONS = [
+  'Harassment', 'Spam', 'Scam or fraud', 'Inappropriate content', 'Something else',
+];
 
 const fullName = (first: string, last: string) => `${first} ${last}`.trim() || 'Member';
 
@@ -109,16 +178,25 @@ const clockTime = (iso: string) =>
   new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
 /**
- * Image upload, byte-for-byte the community composer's route: straight to Blob
- * storage, with the dev-only local-disk endpoint as the fallback when no Blob
- * store is configured. The server refuses any URL from anywhere else.
+ * Attachment upload, byte-for-byte the community composer's route: straight to
+ * Blob storage, with the dev-only local-disk endpoint as the fallback when no
+ * Blob store is configured. The server refuses any URL from anywhere else.
+ *
+ * clientPayload is what tells the route which MIME allowlist and size cap to
+ * sign the token for ('video', 'document', or images by default). Progress only
+ * exists on the Blob path; the dev fallback posts in one shot.
  */
-async function uploadImage(file: File): Promise<string> {
+async function uploadAttachment(
+  file: File,
+  clientPayload: string | undefined,
+  onPct: (pct: number) => void
+): Promise<string> {
   try {
     const blob = await upload(file.name, file, {
       access: 'public',
       handleUploadUrl: '/api/community/upload',
-      clientPayload: 'image',
+      clientPayload,
+      onUploadProgress: (e) => onPct(Math.min(99, Math.round(e.percentage))),
     });
     return blob.url;
   } catch (error) {
@@ -131,6 +209,12 @@ async function uploadImage(file: File): Promise<string> {
     return data.url;
   }
 }
+
+/** KB below a megabyte, one decimal MB above it. */
+const humanSize = (bytes: number) =>
+  bytes >= 1024 * 1024
+    ? `${(bytes / 1024 / 1024).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(bytes / 1024))} KB`;
 
 /** Initials only. No photos in chat — the member directory does not carry them. */
 function Avatar({ name, size }: { name: string; size: number }) {
@@ -152,6 +236,8 @@ export default function MemberChatsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
+  /** Full-screen image preview; null = closed. */
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   const [threads, setThreads] = useState<ChatThread[]>([]);
 
@@ -173,7 +259,30 @@ export default function MemberChatsPage() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [imageNote, setImageNote] = useState(false);
+  const [upPct, setUpPct] = useState<number | null>(null);
+  const [attachMenu, setAttachMenu] = useState(false);
+  const [attachNote, setAttachNote] = useState(false);
+
+  // Per-chat menu: mute / clear / report / block.
+  const [threadMenu, setThreadMenu] = useState(false);
+  const [menuBusy, setMenuBusy] = useState(false);
+  const [menuError, setMenuError] = useState('');
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
+
+  // Global chat settings + the blocked list.
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [settingsError, setSettingsError] = useState('');
+  const [chatSettings, setChatSettings] = useState<ChatSettings | null>(null);
+  /**
+   * Loaded with the first paint, not lazily: the settings sheet then opens with
+   * its list already there, and a frozen thread can tell "I blocked them" from
+   * "the follow broke" without offering a Follow-again button that would send a
+   * request to someone I have blocked.
+   */
+  const [blocked, setBlocked] = useState<BlockedMember[]>([]);
 
   const [people, setPeople] = useState<People>(NO_PEOPLE);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -199,6 +308,8 @@ export default function MemberChatsPage() {
   const nearBottomRef = useRef(true);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  /** Which menu entry opened the shared file input. */
+  const attachKindRef = useRef<AttachKind>('photo');
   const typingAtRef = useRef(0);
   /** The open thread's poll, so a referral answer can refresh without a reload. */
   const pollRef = useRef<(() => Promise<void>) | null>(null);
@@ -206,6 +317,9 @@ export default function MemberChatsPage() {
   const openThread = threads.find((t) => t.id === openId) ?? null;
   const peerId = openThread?.partnerId ?? null;
   const threadOpen = pollOpen ?? openThread?.open ?? false;
+  // Needed by the thread pane AND by the menu sheets, which render outside it.
+  const partnerName = openThread ? fullName(openThread.partnerFirstName, openThread.partnerLastName) : '';
+  const partnerFirst = partnerName.split(' ')[0];
 
   const refreshChats = useCallback(async () => {
     const res = await listChats();
@@ -219,19 +333,27 @@ export default function MemberChatsPage() {
     else setPeopleError(res.error);
   }, []);
 
+  const refreshBlocked = useCallback(async () => {
+    const res = await listBlockedMembers();
+    if (res.ok) setBlocked(res.data);
+  }, []);
+
   // ---- Load: chats, people, deep link ---------------------------------------
   // People come down with the first load, not lazily on sheet open: the sheet
   // then opens instantly, and a frozen thread can say WHO broke the follow.
   useEffect(() => {
     let alive = true;
     (async () => {
-      const [chats, folk] = await Promise.all([listChats(), listPeople()]);
+      const [chats, folk, blocks] = await Promise.all([
+        listChats(), listPeople(), listBlockedMembers(),
+      ]);
       if (!alive) return;
       if (!chats.ok) { setError(chats.error); setLoading(false); return; }
       if (folk.ok) {
         setPeople(folk.data);
         if (folk.data.requests.length > 0) setLane('requests');
       }
+      if (blocks.ok) setBlocked(blocks.data);
       setThreads(chats.data);
       setLoading(false);
 
@@ -326,7 +448,11 @@ export default function MemberChatsPage() {
     setPollOpen(null);
     setPeerTypingAt(null);
     setReferrals([]);
-    setImageNote(false);
+    setAttachNote(false);
+    setAttachMenu(false);
+    setThreadMenu(false);
+    setReportOpen(false);
+    setMenuError('');
     typingAtRef.current = 0;
   }, [openId]);
 
@@ -386,15 +512,32 @@ export default function MemberChatsPage() {
     el.scrollTo({ top: el.scrollHeight, behavior: reduce ? 'auto' : 'smooth' });
   }, [messages, plain, openId, peerTypingAt]);
 
-  // ---- The open sheet locks background scroll, same as every other sheet ----
+  // ---- Any open sheet locks background scroll, same as every other sheet ----
+  // Escape closes the TOP sheet only: report sits over the thread menu, so one
+  // press steps back rather than dumping you out of both.
+  const anySheet = sheetOpen || threadMenu || reportOpen || settingsOpen;
   useEffect(() => {
-    if (!sheetOpen) return;
+    if (!anySheet) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeSheet(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (reportOpen) setReportOpen(false);
+      else if (threadMenu) setThreadMenu(false);
+      else if (settingsOpen) setSettingsOpen(false);
+      else closeSheet();
+    };
     window.addEventListener('keydown', onKey);
     return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey); };
-  }, [sheetOpen]);
+  }, [anySheet, reportOpen, threadMenu, settingsOpen]);
+
+  // ---- The attach menu: Escape closes it, like any popover ------------------
+  useEffect(() => {
+    if (!attachMenu) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setAttachMenu(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [attachMenu]);
 
   function openConversation(id: string) {
     setOpenId(id);
@@ -477,10 +620,150 @@ export default function MemberChatsPage() {
     setRefBusy(null);
   }
 
+  // ---- Per-chat menu: mute, clear for me, report, block --------------------
+  async function toggleMute() {
+    if (!openThread) return;
+    const id = openThread.id;
+    const next = !openThread.muted;
+    setMenuError('');
+    // Optimistic, then the server is asked again — same contract as `mutate`.
+    setThreads((ts) => ts.map((t) => (t.id === id ? { ...t, muted: next } : t)));
+    const res = await muteChat(id, next);
+    if (!res.ok) {
+      setThreads((ts) => ts.map((t) => (t.id === id ? { ...t, muted: !next } : t)));
+      setMenuError(res.error);
+      return;
+    }
+    void refreshChats();
+    setToast(next ? 'Chat muted' : 'Chat unmuted');
+  }
+
+  async function doClearChat() {
+    if (!openThread) return;
+    const ok = await confirm({
+      title: 'Clear this chat?',
+      message: `Clears this conversation on your side only — ${partnerName} keeps their copy.`,
+      confirmLabel: 'Clear chat',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    setMenuBusy(true);
+    setMenuError('');
+    const res = await clearChat(openThread.id);
+    setMenuBusy(false);
+    if (!res.ok) { setMenuError(res.error); return; }
+    // The poll stops sending cleared messages, so the local wipe is what the
+    // next poll will agree with. The decrypt cache goes with them.
+    setMessages([]);
+    setPlain({});
+    setThreadMenu(false);
+    void refreshChats();
+    setToast('Chat cleared');
+  }
+
+  async function submitReport() {
+    if (!openThread || !reportReason || menuBusy) return;
+    setMenuBusy(true);
+    setMenuError('');
+    const res = await reportMember({
+      reportedId: openThread.partnerId,
+      conversationId: openThread.id,
+      reason: reportReason,
+      details: reportDetails.trim() || undefined,
+    });
+    setMenuBusy(false);
+    if (!res.ok) { setMenuError(res.error); return; }
+    setReportOpen(false);
+    setThreadMenu(false);
+    setReportReason('');
+    setReportDetails('');
+    setToast('Report sent to the admins');
+  }
+
+  async function doBlock() {
+    if (!openThread) return;
+    const ok = await confirm({
+      title: `Block ${partnerFirst}?`,
+      message: 'They won’t be able to message you, and this chat freezes. They are not notified.',
+      confirmLabel: 'Block',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    setMenuBusy(true);
+    setMenuError('');
+    const res = await blockMember(openThread.partnerId);
+    if (!res.ok) { setMenuError(res.error); setMenuBusy(false); return; }
+    setThreadMenu(false);
+    setOpenId(null); // back to the list; the thread is frozen from here on
+    await Promise.all([refreshChats(), refreshPeople(), refreshBlocked()]);
+    setMenuBusy(false);
+    setToast(`${partnerFirst} is blocked`);
+  }
+
+  // Documents and originals leave the WebView on purpose: the shell cannot
+  // preview a PDF, and on iOS the system browser's share sheet is where
+  // "Save to Files" lives. On the plain web this is just a new tab.
+  const openAttachment = useCallback((url: string) => {
+    const abs = new URL(url, window.location.origin).href;
+    window.open(abs, '_blank', 'noopener,noreferrer');
+  }, []);
+
+  // Lightbox: Escape closes, background scroll stays put.
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setLightbox(null); };
+    window.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
+  }, [lightbox]);
+
+  // ---- Chat settings sheet -------------------------------------------------
+  async function openSettings() {
+    setSettingsOpen(true);
+    setSettingsError('');
+    setSettingsLoading(true);
+    const [s, b] = await Promise.all([getChatSettings(), listBlockedMembers()]);
+    if (s.ok) setChatSettings(s.data); else setSettingsError(s.error);
+    if (b.ok) setBlocked(b.data);
+    setSettingsLoading(false);
+  }
+
+  async function toggleSetting(key: keyof ChatSettings) {
+    if (!chatSettings) return;
+    const before = chatSettings;
+    const next = { ...chatSettings, [key]: !chatSettings[key] };
+    setChatSettings(next);
+    setSettingsError('');
+    const res = await updateChatSettings(
+      key === 'readReceipts'
+        ? { readReceipts: next.readReceipts }
+        : { typingIndicator: next.typingIndicator }
+    );
+    if (!res.ok) { setChatSettings(before); setSettingsError(res.error); return; }
+    setChatSettings(res.data);
+  }
+
+  async function doUnblock(m: BlockedMember) {
+    setSettingsError('');
+    setBusyId(m.id);
+    const res = await unblockMember(m.id);
+    if (!res.ok) { setSettingsError(res.error); setBusyId(null); return; }
+    await Promise.all([refreshBlocked(), refreshPeople(), refreshChats()]);
+    setBusyId(null);
+    setToast(`${fullName(m.firstName, m.lastName)} is unblocked`);
+  }
+
   // ---- Composer ------------------------------------------------------------
   /** Heartbeat, never per keystroke: the peer polls every 5s anyway. */
   function pingTyping() {
     if (!openId) return;
+    // The server no-ops when the indicator is off; not calling at all is the
+    // honest version of "no one sees you typing".
+    // ponytail: settings are only loaded once the settings sheet has been
+    // opened, so before that this sends a heartbeat the server throws away.
+    // Fetch them with the first load if that round trip ever matters.
+    if (chatSettings && !chatSettings.typingIndicator) return;
     const now = Date.now();
     if (now - typingAtRef.current < TYPING_EVERY_MS) return;
     typingAtRef.current = now;
@@ -525,14 +808,41 @@ export default function MemberChatsPage() {
     setSending(false);
   }
 
-  async function pickImage(file: File | undefined) {
+  /**
+   * One hidden input serves all three kinds: `accept` is set on the node right
+   * before the click, so the OS picker only offers what the upload route would
+   * sign a token for.
+   */
+  function chooseAttachment(k: AttachKind) {
+    setAttachMenu(false);
+    const el = fileRef.current;
+    if (!el) return;
+    attachKindRef.current = k;
+    el.accept = ATTACH[k].accept;
+    el.value = '';
+    el.click();
+  }
+
+  async function pickFile(file: File | undefined, k: AttachKind) {
     if (!file || !openId || uploading) return;
-    setImageNote(true);
+    const a = ATTACH[k];
     setSendError('');
+    // Guard here, before a 120 MB video crawls up a phone's uplink only to be
+    // refused at the far end.
+    if (file.size > a.maxMb * 1024 * 1024) { setSendError(a.tooBig); return; }
+    setAttachNote(true);
     setUploading(true);
+    setUpPct(null);
     try {
-      const url = await uploadImage(file);
-      const res = await sendChatMessage(openId, { attachmentUrl: url });
+      const url = await uploadAttachment(file, a.payload, setUpPct);
+      const res = await sendChatMessage(openId, {
+        attachmentUrl: url,
+        attachmentKind: a.kind,
+        // Only a document needs a name and a size shown before it is opened.
+        ...(a.kind === 'file'
+          ? { fileMeta: { name: file.name, size: file.size, mime: file.type } }
+          : {}),
+      });
       if (res.ok) {
         nearBottomRef.current = true;
         setMessages((prev) => [...prev, res.data]);
@@ -542,9 +852,10 @@ export default function MemberChatsPage() {
         if (res.error === MUTUAL_ERROR) void refreshChats();
       }
     } catch {
-      setSendError('That photo could not be uploaded. Please try again.');
+      setSendError(a.failed);
     }
     setUploading(false);
+    setUpPct(null);
   }
 
   if (loading) return <PortalLoading label="Loading chats" />;
@@ -555,11 +866,15 @@ export default function MemberChatsPage() {
     const active = t.id === openId;
     const preview = t.lastKind === 'image'
       ? '📷 Photo'
-      : t.lastKind === 'referral'
-        ? 'Referral request'
-        : t.lastCipher
-          ? '🔒 Encrypted message'
-          : t.lastBody ?? (t.open ? 'No messages yet — say hello' : null);
+      : t.lastKind === 'video'
+        ? '🎬 Video'
+        : t.lastKind === 'file'
+          ? '📎 Document'
+          : t.lastKind === 'referral'
+            ? 'Referral request'
+            : t.lastCipher
+              ? '🔒 Encrypted message'
+              : t.lastBody ?? (t.open ? 'No messages yet — say hello' : null);
     const contextChip = t.context === 'referral' ? 'Referral' : t.context === 'matrimony' ? 'Match' : null;
 
     return (
@@ -588,6 +903,12 @@ export default function MemberChatsPage() {
               }}>
                 Follow broke
               </span>
+            )}
+            {t.muted && (
+              <>
+                <BellOff size={13} aria-hidden="true" style={{ flexShrink: 0, color: 'var(--text-muted)' }} />
+                <span className="sr-only">Muted</span>
+              </>
             )}
             <small style={{ flexShrink: 0, fontWeight: 650 }}>{timeAgo(t.lastMessageAt)}</small>
           </span>
@@ -635,15 +956,18 @@ export default function MemberChatsPage() {
   // ---- Thread --------------------------------------------------------------
   let threadPane: React.ReactNode = null;
   if (openThread) {
-    const name = fullName(openThread.partnerFirstName, openThread.partnerLastName);
+    const name = partnerName;
     const partnerId = openThread.partnerId;
-    const firstName = name.split(' ')[0];
+    const firstName = partnerFirst;
     // Frozen: if I am the one who stopped following, asking again fixes it. If
     // they dropped me, nothing I can press will reopen this, so nothing is
-    // offered — a hopeful button would be a lie.
+    // offered — a hopeful button would be a lie. A thread I froze by BLOCKING
+    // them is the same lie in the other direction: following again would send a
+    // request to someone I have blocked, so the notice stays generic and bare.
     const iBrokeIt = !threadOpen
       && openThread.context === 'follow'
-      && !people.following.some((p) => p.id === partnerId);
+      && !people.following.some((p) => p.id === partnerId)
+      && !blocked.some((b) => b.id === partnerId);
     const peerTyping = peerTypingAt != null
       && Date.now() - new Date(peerTypingAt).getTime() < TYPING_FRESH_MS;
 
@@ -712,6 +1036,25 @@ export default function MemberChatsPage() {
               {openThread.partnerJobTitle}
             </small>
           )}
+          {openThread.muted && (
+            <>
+              <BellOff size={15} aria-hidden="true" style={{ flexShrink: 0, color: 'var(--text-muted)' }} />
+              <span className="sr-only">This chat is muted</span>
+            </>
+          )}
+          {/* Mute, clear, report, block — available on a frozen thread too. */}
+          <button
+            type="button"
+            onClick={() => { setMenuError(''); setThreadMenu(true); }}
+            aria-label={`Options for this chat with ${name}`}
+            aria-haspopup="dialog"
+            style={{
+              display: 'grid', placeItems: 'center', width: 44, height: 44, flexShrink: 0,
+              border: 0, borderRadius: '50%', background: 'none', color: 'var(--text-secondary)', cursor: 'pointer',
+            }}
+          >
+            <MoreVertical size={20} aria-hidden="true" />
+          </button>
         </div>
 
         {/* Messages */}
@@ -735,7 +1078,8 @@ export default function MemberChatsPage() {
               <Info size={14} aria-hidden="true" style={{ color: 'var(--success-600)', flexShrink: 0, marginTop: 2 }} />
               <p style={{ margin: 0, flex: 1, fontSize: '0.76rem', lineHeight: 1.45, color: 'var(--text-secondary)' }}>
                 Messages you type are locked to your devices. No one else — not even
-                Professionals Club — can read them. Photos are private, but not encrypted.
+                Professionals Club — can read them. Photos, videos and files are
+                private, but not encrypted.
               </p>
               <button
                 type="button"
@@ -892,14 +1236,87 @@ export default function MemberChatsPage() {
                   background: mine ? 'var(--green-950)' : 'var(--bg-primary)',
                   border: mine ? '1px solid transparent' : HAIRLINE,
                 }}>
-                  <a href={m.attachmentUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
+                  <button
+                    type="button"
+                    onClick={() => setLightbox(m.attachmentUrl)}
+                    aria-label={mine ? 'View photo you sent' : `View photo from ${firstName}`}
+                    style={{ display: 'block', padding: 0, border: 0, background: 'none', cursor: 'zoom-in' }}
+                  >
                     <img
                       src={m.attachmentUrl}
                       alt={mine ? 'Photo you sent' : `Photo from ${firstName}`}
                       style={{ display: 'block', maxWidth: 240, width: '100%', height: 'auto', borderRadius: 14 }}
                     />
-                  </a>
+                  </button>
                   <span style={{ display: 'block', padding: '0 4px' }}>{metaLine}</span>
+                </div>
+              );
+            } else if (m.kind === 'video' && m.attachmentUrl) {
+              bubble = (
+                <div style={{
+                  padding: 4,
+                  borderRadius: mine ? '1.1rem 1.1rem 0.3rem 1.1rem' : '1.1rem 1.1rem 1.1rem 0.3rem',
+                  background: mine ? 'var(--green-950)' : 'var(--bg-primary)',
+                  border: mine ? '1px solid transparent' : HAIRLINE,
+                }}>
+                  {/* preload="metadata": a poster frame and a duration, not the
+                      whole file, on someone's mobile data. */}
+                  <video
+                    src={m.attachmentUrl}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    aria-label={mine ? 'Video you sent' : `Video from ${firstName}`}
+                    style={{ display: 'block', maxWidth: 260, width: '100%', height: 'auto', borderRadius: 14, background: '#000' }}
+                  />
+                  <span style={{ display: 'block', padding: '0 4px' }}>{metaLine}</span>
+                </div>
+              );
+            } else if (m.kind === 'file' && m.attachmentUrl) {
+              const fileMeta = (m.meta ?? {}) as { name?: string; size?: number; mime?: string };
+              const fileName = typeof fileMeta.name === 'string' && fileMeta.name ? fileMeta.name : 'Document';
+              const fileSize = typeof fileMeta.size === 'number' && fileMeta.size > 0 ? humanSize(fileMeta.size) : 'Document';
+              bubble = (
+                <div style={{
+                  padding: '0.5rem 0.6rem',
+                  borderRadius: mine ? '1.1rem 1.1rem 0.3rem 1.1rem' : '1.1rem 1.1rem 1.1rem 0.3rem',
+                  background: mine ? 'var(--green-950)' : 'var(--bg-primary)',
+                  border: mine ? '1px solid transparent' : HAIRLINE,
+                }}>
+                  <a
+                    href={m.attachmentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => { e.preventDefault(); openAttachment(m.attachmentUrl!); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10, maxWidth: 240,
+                      textDecoration: 'none', color: mine ? '#fff' : 'var(--text-primary)',
+                    }}
+                  >
+                    <span style={{
+                      display: 'grid', placeItems: 'center', width: 38, height: 38, flexShrink: 0,
+                      borderRadius: 11,
+                      background: mine ? 'rgba(255,255,255,0.14)' : 'var(--green-50)',
+                      color: mine ? '#fff' : 'var(--green-800)',
+                    }}>
+                      <FileText size={18} aria-hidden="true" />
+                    </span>
+                    <span style={{ minWidth: 0 }}>
+                      <span style={{
+                        display: 'block', fontSize: '0.86rem', fontWeight: 700,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>
+                        {fileName}
+                      </span>
+                      <span style={{
+                        display: 'block', fontSize: '0.7rem', fontWeight: 650,
+                        color: mine ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)',
+                      }}>
+                        {fileSize}
+                      </span>
+                    </span>
+                  </a>
+                  {metaLine}
                 </div>
               );
             } else {
@@ -979,30 +1396,80 @@ export default function MemberChatsPage() {
                 <input
                   ref={fileRef}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  aria-label="Choose a photo to send"
+                  accept={ATTACH.photo.accept}
+                  aria-label="Choose a file to send"
                   style={{ display: 'none' }}
                   onChange={(e) => {
-                    void pickImage(e.target.files?.[0]);
+                    void pickFile(e.target.files?.[0], attachKindRef.current);
                     e.target.value = '';
                   }}
                 />
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  aria-label="Send a photo"
-                  disabled={uploading}
-                  style={{
-                    display: 'grid', placeItems: 'center', flexShrink: 0,
-                    width: 44, height: 44, border: 0, borderRadius: '50%',
-                    background: 'var(--bg-secondary)', color: 'var(--green-800)',
-                    cursor: uploading ? 'default' : 'pointer',
-                  }}
-                >
-                  {uploading
-                    ? <Loader2 size={18} className="spin" aria-hidden="true" />
-                    : <ImagePlus size={18} aria-hidden="true" />}
-                </button>
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  {attachMenu && (
+                    <>
+                      {/* Outside tap closes it, the way a popover should. */}
+                      <div
+                        onClick={() => setAttachMenu(false)}
+                        style={{ position: 'fixed', inset: 0, zIndex: 30 }}
+                      />
+                      <div
+                        role="menu"
+                        aria-label="Attach"
+                        style={{
+                          position: 'absolute', bottom: 52, left: 0, zIndex: 31,
+                          minWidth: '11rem', padding: 4, borderRadius: '0.9rem',
+                          background: 'var(--bg-primary)', border: HAIRLINE,
+                          boxShadow: '0 14px 34px -14px rgba(15,35,24,0.45)',
+                        }}
+                      >
+                        {ATTACH_ORDER.map((k) => {
+                          const { label, Icon } = ATTACH[k];
+                          return (
+                            <button
+                              key={k}
+                              type="button"
+                              role="menuitem"
+                              onClick={() => chooseAttachment(k)}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 10,
+                                width: '100%', minHeight: 44, padding: '0 0.7rem',
+                                border: 0, borderRadius: '0.7rem', background: 'none',
+                                font: 'inherit', fontSize: '0.88rem', fontWeight: 700,
+                                color: 'var(--text-primary)', textAlign: 'left', cursor: 'pointer',
+                              }}
+                            >
+                              <Icon size={17} aria-hidden="true" style={{ color: 'var(--primary-600)', flexShrink: 0 }} />
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setAttachMenu((v) => !v)}
+                    aria-label={uploading
+                      ? `Uploading${upPct != null ? ` ${upPct} percent` : ''}`
+                      : 'Attach a photo, video or document'}
+                    aria-haspopup="menu"
+                    aria-expanded={attachMenu}
+                    disabled={uploading}
+                    style={{
+                      display: 'grid', placeItems: 'center',
+                      width: 44, height: 44, border: 0, borderRadius: '50%',
+                      background: attachMenu ? 'var(--green-50)' : 'var(--bg-secondary)',
+                      color: 'var(--green-800)',
+                      cursor: uploading ? 'default' : 'pointer',
+                    }}
+                  >
+                    {uploading
+                      ? (upPct != null
+                        ? <span style={{ fontSize: '0.66rem', fontWeight: 800 }} aria-hidden="true">{upPct}%</span>
+                        : <Loader2 size={18} className="spin" aria-hidden="true" />)
+                      : <Paperclip size={18} aria-hidden="true" />}
+                  </button>
+                </div>
                 <label htmlFor="chat-composer" className="sr-only">Message {name}</label>
                 <textarea
                   id="chat-composer"
@@ -1046,12 +1513,12 @@ export default function MemberChatsPage() {
                   <Send size={18} aria-hidden="true" />
                 </button>
               </div>
-              {imageNote && (
+              {attachNote && (
                 <p style={{
                   margin: 0, padding: '0 0.9rem 0.6rem', fontSize: '0.72rem',
                   color: 'var(--text-muted)', lineHeight: 1.4,
                 }}>
-                  Images are private but not end-to-end encrypted.
+                  Photos, videos and files are private but not end-to-end encrypted.
                 </p>
               )}
             </>
@@ -1256,6 +1723,328 @@ export default function MemberChatsPage() {
     </div>
   );
 
+  // ---- Per-chat menu sheet -------------------------------------------------
+  const menuErrorNode = menuError && (
+    <div role="alert" className="community-error" style={{ marginBottom: 10 }}>
+      <AlertCircle size={15} aria-hidden="true" /> {menuError}
+    </div>
+  );
+
+  const threadMenuSheet = threadMenu && openThread && (
+    <div
+      className="hf-sheet-scrim"
+      onClick={(e) => { if (e.target === e.currentTarget) setThreadMenu(false); }}
+    >
+      <div className="hf-sheet pp-sheet" role="dialog" aria-modal="true" aria-label={`Options for ${partnerName}`}>
+        <div className="hf-sheet-head">
+          <h2>{partnerName}</h2>
+          <button type="button" className="portal-sheet-close" onClick={() => setThreadMenu(false)} aria-label="Close">
+            <X size={18} aria-hidden="true" />
+          </button>
+        </div>
+        <p className="hf-sheet-sub">
+          These choices are yours alone. {partnerFirst} is never told about any of them.
+        </p>
+
+        {!reportOpen && menuErrorNode}
+
+        <div className="pp-group-card" style={{ marginBottom: '0.4rem' }}>
+          <button type="button" className="pp-row" onClick={() => void toggleMute()} disabled={menuBusy}>
+            <span className="pp-row-icon">
+              {openThread.muted
+                ? <Bell size={17} aria-hidden="true" />
+                : <BellOff size={17} aria-hidden="true" />}
+            </span>
+            <span className="pp-row-body">
+              <strong>{openThread.muted ? 'Unmute' : 'Mute'}</strong>
+              <small style={{ whiteSpace: 'normal', lineHeight: 1.35 }}>
+                {openThread.muted
+                  ? 'Notifications from this chat are back on'
+                  : 'Stop notifications from this chat'}
+              </small>
+            </span>
+          </button>
+
+          <button type="button" className="pp-row" onClick={() => void doClearChat()} disabled={menuBusy}>
+            <span className="pp-row-icon"><Eraser size={17} aria-hidden="true" /></span>
+            <span className="pp-row-body">
+              <strong>Clear chat</strong>
+              <small style={{ whiteSpace: 'normal', lineHeight: 1.35 }}>
+                Empties it on your side only
+              </small>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="pp-row"
+            onClick={() => { setMenuError(''); setReportOpen(true); }}
+            disabled={menuBusy}
+          >
+            <span className="pp-row-icon"><Flag size={17} aria-hidden="true" /></span>
+            <span className="pp-row-body">
+              <strong>Report {partnerFirst}</strong>
+              <small style={{ whiteSpace: 'normal', lineHeight: 1.35 }}>
+                Send the admins what happened
+              </small>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="pp-row pp-row-danger"
+            onClick={() => void doBlock()}
+            disabled={menuBusy}
+          >
+            <span className="pp-row-icon"><Ban size={17} aria-hidden="true" /></span>
+            <span className="pp-row-body">
+              <strong>Block {partnerFirst}</strong>
+              <small style={{ whiteSpace: 'normal', lineHeight: 1.35 }}>
+                They can no longer message you
+              </small>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ---- Report sheet, over the menu ----------------------------------------
+  const reportSheet = reportOpen && openThread && (
+    <div
+      className="hf-sheet-scrim"
+      onClick={(e) => { if (e.target === e.currentTarget) setReportOpen(false); }}
+    >
+      <div className="hf-sheet pp-sheet" role="dialog" aria-modal="true" aria-label={`Report ${partnerFirst}`}>
+        <div className="hf-sheet-head">
+          <h2>Report {partnerFirst}</h2>
+          <button type="button" className="portal-sheet-close" onClick={() => setReportOpen(false)} aria-label="Close">
+            <X size={18} aria-hidden="true" />
+          </button>
+        </div>
+        <p className="hf-sheet-sub">
+          Only the admins see this. {partnerFirst} is not notified.
+        </p>
+
+        <span
+          id="report-reason-label"
+          style={{ display: 'block', margin: '0 0 0.4rem 0.15rem', fontSize: '0.76rem', fontWeight: 750, color: 'var(--text-secondary)' }}
+        >
+          Reason
+        </span>
+        <div
+          role="group"
+          aria-labelledby="report-reason-label"
+          style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: '0.9rem' }}
+        >
+          {REPORT_REASONS.map((r) => {
+            const on = reportReason === r;
+            return (
+              <button
+                key={r}
+                type="button"
+                className="pp-chip"
+                aria-pressed={on}
+                onClick={() => setReportReason(r)}
+                style={{
+                  minHeight: 44, padding: '0 0.9rem',
+                  border: on ? '1px solid transparent' : HAIRLINE,
+                  background: on ? 'var(--green-950)' : 'var(--bg-secondary)',
+                  color: on ? '#fff' : 'var(--text-secondary)',
+                  font: 'inherit', fontSize: '0.78rem', fontWeight: 750, cursor: 'pointer',
+                }}
+              >
+                {r}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="pp-sheet-fields">
+          <div className="pp-field">
+            <label htmlFor="report-details">Details (optional)</label>
+            <textarea
+              id="report-details"
+              rows={3}
+              maxLength={2000}
+              value={reportDetails}
+              placeholder="What happened? Anything the admins should see."
+              onChange={(e) => setReportDetails(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {menuErrorNode}
+
+        <button
+          type="button"
+          className="pp-sheet-save"
+          onClick={() => void submitReport()}
+          disabled={!reportReason || menuBusy}
+        >
+          {menuBusy ? <Loader2 size={16} className="spin" aria-hidden="true" /> : 'Submit report'}
+        </button>
+      </div>
+    </div>
+  );
+
+  // ---- Chat settings sheet -------------------------------------------------
+  const settingsRow = (
+    key: keyof ChatSettings,
+    Icon: LucideIcon,
+    title: string,
+    sub: string
+  ) => {
+    const on = chatSettings?.[key] ?? true;
+    return (
+      <div className="pp-row pp-row-static">
+        <span className="pp-row-icon"><Icon size={17} aria-hidden="true" /></span>
+        <span className="pp-row-body">
+          <strong>{title}</strong>
+          <small style={{ whiteSpace: 'normal', lineHeight: 1.35 }}>{sub}</small>
+        </span>
+        <button
+          type="button"
+          className={`pp-toggle ${on ? 'is-on' : ''}`}
+          onClick={() => void toggleSetting(key)}
+          aria-pressed={on}
+          aria-label={`${title}: ${on ? 'on' : 'off'}`}
+          disabled={!chatSettings}
+          style={{ minHeight: 44, opacity: chatSettings ? 1 : 0.6 }}
+        >
+          <span className="pp-toggle-dot" aria-hidden="true" />
+          {on ? 'On' : 'Off'}
+        </button>
+      </div>
+    );
+  };
+
+  const settingsSheet = settingsOpen && (
+    <div
+      className="hf-sheet-scrim"
+      onClick={(e) => { if (e.target === e.currentTarget) setSettingsOpen(false); }}
+    >
+      <div className="hf-sheet pp-sheet" role="dialog" aria-modal="true" aria-label="Chat settings">
+        <div className="hf-sheet-head">
+          <h2>Chat settings</h2>
+          <button type="button" className="portal-sheet-close" onClick={() => setSettingsOpen(false)} aria-label="Close">
+            <X size={18} aria-hidden="true" />
+          </button>
+        </div>
+        <p className="hf-sheet-sub">These apply to every chat you have.</p>
+
+        {settingsError && (
+          <div role="alert" className="community-error" style={{ marginBottom: 10 }}>
+            <AlertCircle size={15} aria-hidden="true" /> {settingsError}
+          </div>
+        )}
+
+        <h3 style={{
+          fontFamily: 'var(--font-display)', fontSize: '0.98rem', fontWeight: 800,
+          margin: '0 0 0.45rem', paddingLeft: '0.15rem',
+        }}>
+          Privacy
+        </h3>
+        <div className="pp-group-card" style={{ marginBottom: '1rem' }}>
+          {settingsRow('readReceipts', CheckCheck, 'Read receipts',
+            'When off, you won’t send or see read receipts')}
+          {settingsRow('typingIndicator', MessageCircle, 'Typing indicator',
+            'When off, no one sees you typing — and you won’t see them')}
+        </div>
+
+        <h3 style={{
+          fontFamily: 'var(--font-display)', fontSize: '0.98rem', fontWeight: 800,
+          margin: '0 0 0.45rem', paddingLeft: '0.15rem',
+        }}>
+          Blocked
+        </h3>
+        {settingsLoading && blocked.length === 0 ? (
+          <p style={{ margin: '0.2rem 0.2rem 1rem', fontSize: '0.86rem', color: 'var(--text-muted)' }}>
+            Loading…
+          </p>
+        ) : blocked.length === 0 ? (
+          <p style={{ margin: '0.2rem 0.2rem 1rem', fontSize: '0.86rem', color: 'var(--text-muted)' }}>
+            You haven&apos;t blocked anyone.
+          </p>
+        ) : (
+          <div className="pp-group-card" style={{ marginBottom: '1rem' }}>
+            {blocked.map((b) => {
+              const bname = fullName(b.firstName, b.lastName);
+              return (
+                <div key={b.id} className="pp-row pp-row-static">
+                  <Avatar name={bname} size={40} />
+                  <span className="pp-row-body"><strong>{bname}</strong></span>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline"
+                    onClick={() => void doUnblock(b)}
+                    disabled={busyId === b.id}
+                    style={{ flexShrink: 0, minHeight: 44 }}
+                  >
+                    Unblock
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <p style={{
+          display: 'flex', alignItems: 'flex-start', gap: 8, margin: 0,
+          fontSize: '0.74rem', lineHeight: 1.45, color: 'var(--text-muted)',
+        }}>
+          <ShieldCheck size={15} aria-hidden="true" style={{ flexShrink: 0, marginTop: 1, color: 'var(--primary-600)' }} />
+          Messages are end-to-end encrypted. Photos, videos and files are private but not encrypted.
+        </p>
+      </div>
+    </div>
+  );
+
+  const lightboxNode = lightbox && (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Photo preview"
+      onClick={(e) => { if (e.target === e.currentTarget) setLightbox(null); }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 'var(--z-modal)' as unknown as number,
+        background: 'rgba(8, 16, 12, 0.94)',
+        display: 'grid', placeItems: 'center',
+        padding: 'calc(1rem + var(--sat)) 1rem calc(1rem + var(--sab))',
+      }}
+    >
+      <img
+        src={lightbox}
+        alt="Full-size preview"
+        style={{ maxWidth: '100%', maxHeight: '82vh', borderRadius: 12, objectFit: 'contain' }}
+      />
+      <button
+        type="button"
+        onClick={() => setLightbox(null)}
+        aria-label="Close preview"
+        style={{
+          position: 'absolute', top: 'calc(0.8rem + var(--sat))', right: '0.8rem',
+          display: 'grid', placeItems: 'center', width: 44, height: 44,
+          border: 0, borderRadius: '50%', background: 'rgba(255,255,255,0.14)', color: '#fff', cursor: 'pointer',
+        }}
+      >
+        <X size={20} aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        onClick={() => openAttachment(lightbox)}
+        style={{
+          position: 'absolute', bottom: 'calc(1.2rem + var(--sab))', left: '50%', transform: 'translateX(-50%)',
+          display: 'inline-flex', alignItems: 'center', gap: 8, minHeight: 44, padding: '0 1.2rem',
+          border: 0, borderRadius: 999, background: 'rgba(255,255,255,0.14)', color: '#fff',
+          font: 'inherit', fontSize: '0.86rem', fontWeight: 700, cursor: 'pointer',
+        }}
+      >
+        <Download size={15} aria-hidden="true" /> Open original - save from there
+      </button>
+    </div>
+  );
+
   const toastNode = toast && (
     <div className="pp-toast" role="status">
       <Check size={15} aria-hidden="true" /> {toast}
@@ -1268,7 +2057,11 @@ export default function MemberChatsPage() {
       <>
         {threadPane}
         {sheet}
-        {toastNode}
+        {threadMenuSheet}
+        {reportSheet}
+        {settingsSheet}
+        {lightboxNode}
+      {toastNode}
       </>
     );
   }
@@ -1289,27 +2082,42 @@ export default function MemberChatsPage() {
               : 'Chat with people who follow you back.'}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => { setSheetOpen(true); setPeopleError(''); if (people.requests.length > 0) setLane('requests'); }}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
-            minHeight: 44, padding: '0 1.05rem', border: 0, borderRadius: 99,
-            background: 'var(--primary-700)', color: '#fff',
-            font: 'inherit', fontSize: '0.86rem', fontWeight: 800, cursor: 'pointer',
-          }}
-        >
-          <Plus size={16} aria-hidden="true" /> People
-          {people.requests.length > 0 && (
-            <span style={{
-              minWidth: 18, padding: '0 5px', borderRadius: 99,
-              background: '#fff', color: 'var(--primary-800)',
-              fontSize: '0.7rem', fontWeight: 800,
-            }}>
-              {people.requests.length}
-            </span>
-          )}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <button
+            type="button"
+            onClick={() => { setSheetOpen(true); setPeopleError(''); if (people.requests.length > 0) setLane('requests'); }}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
+              minHeight: 44, padding: '0 1.05rem', border: 0, borderRadius: 99,
+              background: 'var(--primary-700)', color: '#fff',
+              font: 'inherit', fontSize: '0.86rem', fontWeight: 800, cursor: 'pointer',
+            }}
+          >
+            <Plus size={16} aria-hidden="true" /> People
+            {people.requests.length > 0 && (
+              <span style={{
+                minWidth: 18, padding: '0 5px', borderRadius: 99,
+                background: '#fff', color: 'var(--primary-800)',
+                fontSize: '0.7rem', fontWeight: 800,
+              }}>
+                {people.requests.length}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => void openSettings()}
+            aria-label="Chat settings"
+            aria-haspopup="dialog"
+            style={{
+              display: 'grid', placeItems: 'center', flexShrink: 0,
+              width: 44, height: 44, border: HAIRLINE, borderRadius: '50%',
+              background: 'var(--bg-primary)', color: 'var(--text-secondary)', cursor: 'pointer',
+            }}
+          >
+            <Settings size={18} aria-hidden="true" />
+          </button>
+        </div>
       </header>
 
       {error && (
@@ -1357,6 +2165,10 @@ export default function MemberChatsPage() {
       )}
 
       {sheet}
+      {threadMenuSheet}
+      {reportSheet}
+      {settingsSheet}
+      {lightboxNode}
       {toastNode}
     </div>
   );

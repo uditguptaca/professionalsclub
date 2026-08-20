@@ -25,7 +25,9 @@ function fail(context: string, error: unknown): { ok: false; error: string } {
     detail.startsWith('That upload was not recognised') ||
     detail.startsWith('You can only chat') ||
     detail.startsWith('Message cannot be empty') ||
-    detail.startsWith('Message too long');
+    detail.startsWith('Message too long') ||
+    detail.startsWith('Pick a reason') ||
+    detail.startsWith('Unknown message kind');
   return { ok: false, error: safe ? detail : `${context} failed. Please try again.` };
 }
 
@@ -75,9 +77,48 @@ export async function pollThread(conversationId: string) {
 
 export async function sendChatMessage(
   conversationId: string,
-  content: { body?: string; cipher?: string; iv?: string; attachmentUrl?: string }
+  content: {
+    body?: string; cipher?: string; iv?: string;
+    attachmentUrl?: string;
+    attachmentKind?: 'image' | 'video' | 'file';
+    fileMeta?: { name?: string; size?: number; mime?: string };
+  }
 ) {
   return run('Sending message', (uid) => repo.sendChatMessage(uid, conversationId, content));
+}
+
+// ---- Blocks, reports, mute, clear, settings ----------------------------------
+
+export async function blockMember(targetId: string) {
+  return run('Blocking', (uid) => repo.blockMember(uid, targetId));
+}
+
+export async function unblockMember(targetId: string) {
+  return run('Unblocking', (uid) => repo.unblockMember(uid, targetId));
+}
+
+export async function listBlockedMembers() {
+  return run('Loading blocked members', (uid) => repo.listBlockedMembers(uid));
+}
+
+export async function reportMember(input: { reportedId: string; conversationId?: string; reason: string; details?: string }) {
+  return run('Sending report', (uid) => repo.reportMember(uid, input));
+}
+
+export async function muteChat(conversationId: string, muted: boolean) {
+  return run('Updating mute', (uid) => repo.muteChat(uid, conversationId, muted));
+}
+
+export async function clearChat(conversationId: string) {
+  return run('Clearing chat', (uid) => repo.clearChat(uid, conversationId));
+}
+
+export async function getChatSettings() {
+  return run('Loading chat settings', (uid) => repo.getChatSettings(uid));
+}
+
+export async function updateChatSettings(input: { readReceipts?: boolean; typingIndicator?: boolean }) {
+  return run('Saving chat settings', (uid) => repo.updateChatSettings(uid, input));
 }
 
 export async function setTyping(conversationId: string) {
