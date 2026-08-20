@@ -6,6 +6,7 @@ import { fetchHomeFeed, updateMyCity } from '@/app/actions/portal';
 import { followMember, unfollowMember } from '@/app/actions/chat';
 import type { HomeFeed } from '@/server/repos/home';
 import { COMMUNITY_CITIES, cityInfo } from '@/lib/cities';
+import { readCache, writeCache } from '@/lib/swr-cache';
 import {
   MapPin, ChevronDown, Calendar, Users, ArrowRight, Briefcase, ShieldCheck,
   FileText, Send, Bookmark, Mail, Store, Check, Loader2, UsersRound, X,
@@ -81,10 +82,17 @@ export default function MemberHomePage() {
 
   const load = async () => {
     const r = await fetchHomeFeed();
-    if (r.ok) { setFeed(r.data); setError(''); }
+    if (r.ok) { setFeed(r.data); writeCache('home-feed', r.data); setError(''); }
     else setError(r.error);
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    // Render whatever the member saw last INSTANTLY, then refresh behind it -
+    // the database is remote, and nobody should stare at a skeleton twice.
+    const cached = readCache<HomeFeed>('home-feed');
+    if (cached) setFeed(cached);
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const city = useMemo(() => cityInfo(feed?.city), [feed?.city]);
 

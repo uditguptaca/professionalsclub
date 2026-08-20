@@ -6,21 +6,24 @@ import {
   listChats, openChat, pollThread, sendChatMessage, markChatRead, setTyping,
   respondReferral, publishMemberE2EKey, getMemberE2EKey,
   blockMember, unblockMember, listBlockedMembers, reportMember,
-  muteChat, clearChat, getChatSettings, updateChatSettings,
+  muteChat, clearChat, getChatSettings, updateChatSettings, reactToMessage,
 } from '@/app/actions/chat';
 import type {
   ChatPerson, ChatThread, ChatMessage, ThreadReferral, BlockedMember, ChatSettings,
+  MessageReaction,
 } from '@/server/repos/chat';
 import {
   e2eeAvailable, ensureLocalKeys, deriveConversationKey, encryptText, decryptText,
 } from '@/lib/e2ee';
+import { readCache, writeCache } from '@/lib/swr-cache';
+import type { PDFDocumentLoadingTask } from 'pdfjs-dist';
 import { useApp } from '@/context/app-context';
 import { useConfirm } from '@/components/portal/confirm';
 import PortalLoading from '@/components/portal/PortalLoading';
 import {
-  ArrowLeft, AlertCircle, Ban, Bell, BellOff, Building2, Check, CheckCheck, Eraser,
+  ArrowLeft, AlertCircle, Ban, Bell, BellOff, Building2, Check, CheckCheck, Copy, Eraser,
   FileText, Flag, Heart, ImagePlus, Info, Loader2, Lock, LockOpen, MessageCircle,
-  MoreVertical, Paperclip, Plus, Send, Settings, ShieldCheck, UserX, Video, X,
+  MoreVertical, Paperclip, Plus, Reply, Send, Settings, Share2, ShieldCheck, UserX, Video, X,
   type LucideIcon,
   Download,
 } from 'lucide-react';
@@ -54,6 +57,14 @@ import {
  * indicator, the blocked list) off the list header. Mute and clear-for-me are
  * one-sided prefs; a block is never announced, so a blocked thread arrives as
  * `open === false` and gets the SAME generic frozen notice as a broken follow.
+ *
+ * Per-message actions (react, reply, forward, copy) hang off a long-press — or a
+ * right-click — on the bubble, in one sheet. Reactions ride the same 5s poll.
+ * Replies quote by id and read the quoted text out of the SAME in-memory
+ * plaintext cache the bubbles use, so nothing decrypted is ever stored; a quote
+ * whose target was cleared degrades to "🔒 Message". Forwarding a locked message
+ * re-encrypts it under the TARGET conversation's key rather than moving
+ * ciphertext no one there can open.
  */
 
 const HAIRLINE = '1px solid rgba(27,67,50,0.08)';
@@ -140,6 +151,158 @@ const ATTACH_ORDER: AttachKind[] = ['photo', 'video', 'document'];
 const REPORT_REASONS = [
   'Harassment', 'Spam', 'Scam or fraud', 'Inappropriate content', 'Something else',
 ];
+
+/** The six taps on the reaction bar. One reaction per person per message. */
+const REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+
+/** Long-press: how long, and how far a thumb may drift before it is a scroll. */
+const PRESS_MS = 450;
+const PRESS_SLOP = 10;
+
+/** PDF preview: thumbnail width at send time, pages per batch in the viewer. */
+const PDF_THUMB_W = 360;
+const PDF_PAGE_BATCH = 10;
+
+/**
+ * pdfjs, loaded on demand — it is a large library and most chats never open a
+ * PDF. The worker is resolved through the bundler so no CDN is involved.
+ */
+async function loadPdfjs() {
+  const pdfjs = await import('pdfjs-dist');
+  pdfjs.GlobalWorkerOptions.workerSrc =
+    new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+  return pdfjs;
+}
+
+/**
+ * First page of a PDF as a small JPEG, WhatsApp-style, so the card in the thread
+ * shows the document instead of a generic icon. Returns null on ANY failure —
+ * a preview is a nicety and must never be the reason a send did not happen.
+ */
+async function pdfFirstPageJpeg(file: File): Promise<File | null> {
+  try {
+    const pdfjs = await loadPdfjs();
+    const task = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
+    const doc = await task.promise;
+    try {
+      const page = await doc.getPage(1);
+      const base = page.getViewport({ scale: 1 });
+      const viewport = page.getViewport({ scale: PDF_THUMB_W / base.width });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(viewport.width);
+      canvas.height = Math.round(viewport.height);
+      await page.render({ canvas, viewport }).promise;
+      const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', 0.8));
+      if (!blob) return null;
+      return new File([blob], 'pdf-preview.jpg', { type: 'image/jpeg' });
+    } finally {
+      // Destroying the loading task is what tears down the worker.
+      void task.destroy();
+    }
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * PDF pages rendered into canvases inside a scrolling column. Canvases are
+ * appended imperatively: React never owns them, so a re-render never repaints a
+ * page pdfjs already drew.
+ *
+ * ponytail: pages come in batches of ten behind a button rather than an
+ * IntersectionObserver. A 300-page deck would otherwise render 300 canvases into
+ * one phone's memory. Swap in an observer if anyone complains about the button.
+ */
+function PdfPages({ url, onFail }: { url: string; onFail: () => void }) {
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const taskRef = useRef<PDFDocumentLoadingTask | null>(null);
+  const doneRef = useRef(0);
+  const failRef = useRef(onFail);
+  failRef.current = onFail;
+
+  const [limit, setLimit] = useState(PDF_PAGE_BATCH);
+  const [total, setTotal] = useState(0);
+  const [busy, setBusy] = useState(true);
+
+  // The document outlives every render; only the unmount tears the worker down.
+  // The ref is cleared with it so React's development double-mount reopens the
+  // file instead of awaiting a promise that was just destroyed.
+  useEffect(() => () => {
+    void taskRef.current?.destroy();
+    taskRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    setBusy(true);
+    (async () => {
+      try {
+        if (!taskRef.current || taskRef.current.destroyed) {
+          const pdfjs = await loadPdfjs();
+          if (!alive) return;
+          taskRef.current = pdfjs.getDocument({ url: new URL(url, window.location.origin).href });
+        }
+        const doc = await taskRef.current.promise;
+        if (!alive) return;
+        setTotal(doc.numPages);
+        const upto = Math.min(limit, doc.numPages);
+        for (let n = doneRef.current + 1; n <= upto; n += 1) {
+          const page = await doc.getPage(n);
+          const host = hostRef.current;
+          if (!alive || !host) return;
+          // Device pixels, capped at 2x: crisp on a phone, not 40 MB of canvas.
+          const css = Math.min(host.clientWidth || PDF_THUMB_W, 900);
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          const base = page.getViewport({ scale: 1 });
+          const viewport = page.getViewport({ scale: (css / base.width) * dpr });
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(viewport.width);
+          canvas.height = Math.round(viewport.height);
+          canvas.setAttribute('role', 'img');
+          canvas.setAttribute('aria-label', `Page ${n}`);
+          canvas.style.cssText =
+            'display:block;width:100%;height:auto;margin:0 0 10px;border-radius:8px;background:#fff';
+          await page.render({ canvas, viewport }).promise;
+          if (!alive) return;
+          host.appendChild(canvas);
+          doneRef.current = n;
+        }
+        if (alive) setBusy(false);
+      } catch {
+        if (alive) failRef.current();
+      }
+    })();
+    return () => { alive = false; };
+  }, [url, limit]);
+
+  return (
+    <>
+      <div ref={hostRef} />
+      {busy && (
+        <p role="status" style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          margin: '0.8rem 0', fontSize: '0.82rem', color: 'rgba(255,255,255,0.8)',
+        }}>
+          <Loader2 size={16} className="spin" aria-hidden="true" /> Rendering pages…
+        </p>
+      )}
+      {!busy && total > limit && (
+        <button
+          type="button"
+          onClick={() => setLimit((n) => n + PDF_PAGE_BATCH)}
+          style={{
+            display: 'block', width: '100%', minHeight: 44, margin: '0.2rem 0 0.6rem',
+            border: '1px solid rgba(255,255,255,0.22)', borderRadius: 12,
+            background: 'rgba(255,255,255,0.10)', color: '#fff',
+            font: 'inherit', fontSize: '0.86rem', fontWeight: 700, cursor: 'pointer',
+          }}
+        >
+          Show more pages ({total - limit} left)
+        </button>
+      )}
+    </>
+  );
+}
 
 const fullName = (first: string, last: string) => `${first} ${last}`.trim() || 'Member';
 
@@ -233,13 +396,20 @@ export default function MemberChatsPage() {
   const { currentUserId } = useApp();
   const confirm = useConfirm();
 
-  const [loading, setLoading] = useState(true);
+  /**
+   * The list and the people sheet render from the last result this tab saw,
+   * instantly, and refresh behind it — the database is remote and nobody should
+   * meet a skeleton twice. The skeleton is therefore only for a first visit.
+   */
+  const [loading, setLoading] = useState(() => readCache<ChatThread[]>('chats') === undefined);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   /** Full-screen image preview; null = closed. */
   const [lightbox, setLightbox] = useState<string | null>(null);
+  /** Full-screen in-app PDF reader; null = closed. */
+  const [pdfView, setPdfView] = useState<{ url: string; name: string } | null>(null);
 
-  const [threads, setThreads] = useState<ChatThread[]>([]);
+  const [threads, setThreads] = useState<ChatThread[]>(() => readCache<ChatThread[]>('chats') ?? []);
 
   const [openId, setOpenId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -248,6 +418,17 @@ export default function MemberChatsPage() {
   const [peerTypingAt, setPeerTypingAt] = useState<string | null>(null);
   const [referrals, setReferrals] = useState<ThreadReferral[]>([]);
   const [refBusy, setRefBusy] = useState<string | null>(null);
+  /** Every reaction in the conversation, straight off the poll. */
+  const [reactions, setReactions] = useState<MessageReaction[]>([]);
+
+  // Per-message actions. The menu is opened by a long press or a right-click on
+  // a bubble; reply and forward are its two follow-on states.
+  const [msgMenu, setMsgMenu] = useState<string | null>(null);
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+  const [forwardOf, setForwardOf] = useState<ChatMessage | null>(null);
+  const [fwdBusy, setFwdBusy] = useState<string | null>(null);
+  /** The message a tapped quote just jumped to, flashed for a beat. */
+  const [flashId, setFlashId] = useState<string | null>(null);
 
   const [convKey, setConvKey] = useState<CryptoKey | null>(null);
   const convKeyRef = useRef<CryptoKey | null>(null);
@@ -284,7 +465,7 @@ export default function MemberChatsPage() {
    */
   const [blocked, setBlocked] = useState<BlockedMember[]>([]);
 
-  const [people, setPeople] = useState<People>(NO_PEOPLE);
+  const [people, setPeople] = useState<People>(() => readCache<People>('people') ?? NO_PEOPLE);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [lane, setLane] = useState<Lane>('suggestions');
   const [peopleError, setPeopleError] = useState('');
@@ -299,8 +480,9 @@ export default function MemberChatsPage() {
   const [isWide, setIsWide] = useState(false);
   // Read after mount, never during render: e2eeAvailable() is false on the
   // server (no localStorage) and true in the browser, which is a hydration
-  // mismatch if it reaches the first paint.
+  // mismatch if it reaches the first paint. Same for the motion preference.
   const [e2eeOk, setE2eeOk] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
 
   const publishedRef = useRef(false);
   const markingRef = useRef(false);
@@ -313,6 +495,10 @@ export default function MemberChatsPage() {
   const typingAtRef = useRef(0);
   /** The open thread's poll, so a referral answer can refresh without a reload. */
   const pollRef = useRef<(() => Promise<void>) | null>(null);
+  /** Long-press bookkeeping: the timer, where the finger landed, whether it fired. */
+  const pressRef = useRef<{ timer: number | null; x: number; y: number; fired: boolean }>({
+    timer: null, x: 0, y: 0, fired: false,
+  });
 
   const openThread = threads.find((t) => t.id === openId) ?? null;
   const peerId = openThread?.partnerId ?? null;
@@ -321,15 +507,17 @@ export default function MemberChatsPage() {
   const partnerName = openThread ? fullName(openThread.partnerFirstName, openThread.partnerLastName) : '';
   const partnerFirst = partnerName.split(' ')[0];
 
+  // Both write through to the session cache: whatever the member last saw is
+  // what the next visit paints before the network answers.
   const refreshChats = useCallback(async () => {
     const res = await listChats();
-    if (res.ok) setThreads(res.data);
+    if (res.ok) { setThreads(res.data); writeCache('chats', res.data); }
     return res.ok;
   }, []);
 
   const refreshPeople = useCallback(async () => {
     const res = await listPeople();
-    if (res.ok) setPeople(res.data);
+    if (res.ok) { setPeople(res.data); writeCache('people', res.data); }
     else setPeopleError(res.error);
   }, []);
 
@@ -351,10 +539,12 @@ export default function MemberChatsPage() {
       if (!chats.ok) { setError(chats.error); setLoading(false); return; }
       if (folk.ok) {
         setPeople(folk.data);
+        writeCache('people', folk.data);
         if (folk.data.requests.length > 0) setLane('requests');
       }
       if (blocks.ok) setBlocked(blocks.data);
       setThreads(chats.data);
+      writeCache('chats', chats.data);
       setLoading(false);
 
       // ?c={conversationId} deep link, honoured once the list is known.
@@ -377,6 +567,7 @@ export default function MemberChatsPage() {
   // ---- Client environment: two panes above 768px, crypto support ------------
   useEffect(() => {
     setE2eeOk(e2eeAvailable());
+    setReduceMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     const mq = window.matchMedia('(min-width: 768px)');
     const apply = () => setIsWide(mq.matches);
     apply();
@@ -426,6 +617,9 @@ export default function MemberChatsPage() {
         setPollOpen(r.data.open);
         setPeerTypingAt(r.data.peerTypingAt);
         setReferrals(r.data.referrals);
+        // Server truth replaces the optimistic reaction outright — one tap is
+        // never in flight long enough for the swap to be visible.
+        setReactions(r.data.reactions);
       } else {
         setError(r.error);
       }
@@ -448,10 +642,15 @@ export default function MemberChatsPage() {
     setPollOpen(null);
     setPeerTypingAt(null);
     setReferrals([]);
+    setReactions([]);
     setAttachNote(false);
     setAttachMenu(false);
     setThreadMenu(false);
     setReportOpen(false);
+    setMsgMenu(null);
+    setReplyTo(null);
+    setForwardOf(null);
+    setFlashId(null);
     setMenuError('');
     typingAtRef.current = 0;
   }, [openId]);
@@ -515,21 +714,23 @@ export default function MemberChatsPage() {
   // ---- Any open sheet locks background scroll, same as every other sheet ----
   // Escape closes the TOP sheet only: report sits over the thread menu, so one
   // press steps back rather than dumping you out of both.
-  const anySheet = sheetOpen || threadMenu || reportOpen || settingsOpen;
+  const anySheet = sheetOpen || threadMenu || reportOpen || settingsOpen || msgMenu != null || forwardOf != null;
   useEffect(() => {
     if (!anySheet) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      if (reportOpen) setReportOpen(false);
+      if (msgMenu) setMsgMenu(null);
+      else if (forwardOf) setForwardOf(null);
+      else if (reportOpen) setReportOpen(false);
       else if (threadMenu) setThreadMenu(false);
       else if (settingsOpen) setSettingsOpen(false);
       else closeSheet();
     };
     window.addEventListener('keydown', onKey);
     return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey); };
-  }, [anySheet, reportOpen, threadMenu, settingsOpen]);
+  }, [anySheet, reportOpen, threadMenu, settingsOpen, msgMenu, forwardOf]);
 
   // ---- The attach menu: Escape closes it, like any popover ------------------
   useEffect(() => {
@@ -708,15 +909,19 @@ export default function MemberChatsPage() {
     window.open(abs, '_blank', 'noopener,noreferrer');
   }, []);
 
-  // Lightbox: Escape closes, background scroll stays put.
+  // Full-screen overlays (photo lightbox, PDF reader): Escape closes, background
+  // scroll stays put.
   useEffect(() => {
-    if (!lightbox) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setLightbox(null); };
+    if (!lightbox && !pdfView) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (lightbox) setLightbox(null); else setPdfView(null);
+    };
     window.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
-  }, [lightbox]);
+  }, [lightbox, pdfView]);
 
   // ---- Chat settings sheet -------------------------------------------------
   async function openSettings() {
@@ -754,6 +959,173 @@ export default function MemberChatsPage() {
     setToast(`${fullName(m.firstName, m.lastName)} is unblocked`);
   }
 
+  // ---- Per-message actions: react, reply, forward, copy --------------------
+  /**
+   * One line standing in for a message, used by the reply strip, the quoted
+   * block and nothing else. Text comes from the SAME in-memory cache the bubbles
+   * read — a quote never carries stored plaintext, and a message that is gone
+   * (cleared) or unreadable on this device degrades to the lock.
+   */
+  const snippetOf = (m: ChatMessage | undefined): string => {
+    if (!m) return '🔒 Message';
+    if (m.kind === 'image') return '📷 Photo';
+    if (m.kind === 'video') return '🎬 Video';
+    if (m.kind === 'referral') return 'Referral request';
+    if (m.kind === 'file') {
+      const name = (m.meta as { name?: string } | null)?.name;
+      return typeof name === 'string' && name ? name : '📎 Document';
+    }
+    const text = m.body ?? plain[m.id];
+    return typeof text === 'string' && text.trim() ? text : '🔒 Message';
+  };
+
+  /** Plaintext of a text message, or null when this device cannot read it. */
+  const readableText = (m: ChatMessage): string | null => {
+    if (m.kind !== 'text') return null;
+    const text = m.body ?? plain[m.id];
+    return typeof text === 'string' && text.trim() ? text : null;
+  };
+
+  const myReactionTo = (messageId: string) =>
+    reactions.find((r) => r.messageId === messageId && r.memberId === currentUserId)?.emoji ?? null;
+
+  /** Tapping the reaction you already left removes it — that is the null case. */
+  async function react(messageId: string, emoji: string) {
+    if (!currentUserId) return;
+    const next = myReactionTo(messageId) === emoji ? null : emoji;
+    setReactions((rs) => {
+      const rest = rs.filter((r) => !(r.messageId === messageId && r.memberId === currentUserId));
+      return next ? [...rest, { messageId, memberId: currentUserId, emoji: next }] : rest;
+    });
+    setMsgMenu(null);
+    const res = await reactToMessage(messageId, next);
+    // The poll is the authority; on failure ask it rather than guessing back.
+    if (!res.ok) { setSendError(res.error); void pollRef.current?.(); }
+  }
+
+  async function copyMsg(m: ChatMessage) {
+    const text = readableText(m);
+    setMsgMenu(null);
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setToast('Copied');
+    } catch {
+      setSendError('This device would not let the app copy to the clipboard.');
+    }
+  }
+
+  /** Scroll a quoted original back into view and flash it, WhatsApp-style. */
+  function jumpTo(messageId: string) {
+    const el = document.getElementById(`msg-${messageId}`);
+    if (!el) return;
+    // Jumping upward is a deliberate scroll away from the bottom; do not let the
+    // stay-pinned effect yank the thread back on the next poll.
+    nearBottomRef.current = false;
+    el.scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' });
+    if (reduceMotion) return;
+    setFlashId(messageId);
+    window.setTimeout(() => setFlashId((v) => (v === messageId ? null : v)), 900);
+  }
+
+  /**
+   * Forward a copy into another chat. Ciphertext is worthless over there — the
+   * target conversation has its own key — so a locked message is re-encrypted
+   * from the plaintext this device already holds, and only falls back to
+   * plaintext when that peer has published no key at all.
+   */
+  async function doForward(target: ChatThread) {
+    const m = forwardOf;
+    if (!m || fwdBusy) return;
+    setMenuError('');
+    setFwdBusy(target.id);
+
+    let payload: Parameters<typeof sendChatMessage>[1] | null = null;
+    if (m.kind === 'text') {
+      const text = readableText(m);
+      if (!text) {
+        setMenuError('This message cannot be forwarded — this device cannot read it.');
+        setFwdBusy(null);
+        return;
+      }
+      let sealed: { cipher: string; iv: string } | null = null;
+      if (currentUserId && e2eeAvailable()) {
+        const theirs = await getMemberE2EKey(target.partnerId);
+        if (theirs.ok && theirs.data) {
+          const key = await deriveConversationKey(currentUserId, target.partnerId, theirs.data);
+          if (key) sealed = await encryptText(key, text);
+        }
+      }
+      payload = { ...(sealed ?? { body: text }), forwarded: true };
+    } else if (m.attachmentUrl && (m.kind === 'image' || m.kind === 'video' || m.kind === 'file')) {
+      const meta = (m.meta ?? {}) as { name?: string; size?: number; mime?: string; thumb?: string };
+      payload = {
+        attachmentUrl: m.attachmentUrl,
+        attachmentKind: m.kind,
+        forwarded: true,
+        ...(m.kind === 'file'
+          ? { fileMeta: { name: meta.name, size: meta.size, mime: meta.mime } }
+          : {}),
+        ...(typeof meta.thumb === 'string' ? { thumbUrl: meta.thumb } : {}),
+      };
+    }
+    if (!payload) { setFwdBusy(null); return; }
+
+    const res = await sendChatMessage(target.id, payload);
+    setFwdBusy(null);
+    if (!res.ok) { setMenuError(res.error); return; }
+    setForwardOf(null);
+    void refreshChats();
+    setToast(`Forwarded to ${fullName(target.partnerFirstName, target.partnerLastName)}`);
+  }
+
+  // ---- Long press (and right-click) on a bubble ----------------------------
+  const cancelPress = () => {
+    if (pressRef.current.timer != null) window.clearTimeout(pressRef.current.timer);
+    pressRef.current.timer = null;
+  };
+
+  /**
+   * Spread onto a bubble wrapper. A press that survives 450ms without drifting
+   * more than 10px opens the menu; anything else is a tap or a scroll. The
+   * capture-phase click guard is what stops the press that JUST opened the menu
+   * from also firing the bubble's own click (the lightbox, a file, a quote).
+   */
+  const pressProps = (m: ChatMessage) => ({
+    onPointerDown: (e: React.PointerEvent) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      cancelPress();
+      pressRef.current.fired = false;
+      pressRef.current.x = e.clientX;
+      pressRef.current.y = e.clientY;
+      pressRef.current.timer = window.setTimeout(() => {
+        pressRef.current.timer = null;
+        pressRef.current.fired = true;
+        setMsgMenu(m.id);
+      }, PRESS_MS);
+    },
+    onPointerMove: (e: React.PointerEvent) => {
+      if (pressRef.current.timer == null) return;
+      const dx = e.clientX - pressRef.current.x;
+      const dy = e.clientY - pressRef.current.y;
+      if (Math.hypot(dx, dy) > PRESS_SLOP) cancelPress();
+    },
+    onPointerUp: cancelPress,
+    onPointerCancel: cancelPress,
+    onPointerLeave: cancelPress,
+    onContextMenu: (e: React.MouseEvent) => {
+      e.preventDefault();
+      cancelPress();
+      setMsgMenu(m.id);
+    },
+    onClickCapture: (e: React.MouseEvent) => {
+      if (!pressRef.current.fired) return;
+      pressRef.current.fired = false;
+      e.preventDefault();
+      e.stopPropagation();
+    },
+  });
+
   // ---- Composer ------------------------------------------------------------
   /** Heartbeat, never per keystroke: the peer polls every 5s anyway. */
   function pingTyping() {
@@ -790,11 +1162,15 @@ export default function MemberChatsPage() {
       payload = { body: text };
     }
 
-    const res = await sendChatMessage(openId, payload);
+    const res = await sendChatMessage(openId, {
+      ...payload,
+      ...(replyTo ? { replyTo: replyTo.id } : {}),
+    });
     if (res.ok) {
       // Seed the cache with what we just typed: no decrypt round trip, no flash
       // of the placeholder on our own bubble.
       if (convKey) setPlain((p) => ({ ...p, [res.data.id]: text }));
+      setReplyTo(null);
       setDraft('');
       if (taRef.current) taRef.current.style.height = 'auto';
       nearBottomRef.current = true;
@@ -835,6 +1211,16 @@ export default function MemberChatsPage() {
     setUpPct(null);
     try {
       const url = await uploadAttachment(file, a.payload, setUpPct);
+      // A PDF gets its first page rendered and uploaded as an ordinary image, so
+      // the card in the thread shows the document. Best effort only: any failure
+      // here sends the file exactly as it would have gone without a preview.
+      let thumbUrl: string | undefined;
+      if (a.kind === 'file' && file.type === 'application/pdf') {
+        try {
+          const thumb = await pdfFirstPageJpeg(file);
+          if (thumb) thumbUrl = await uploadAttachment(thumb, undefined, () => {});
+        } catch { thumbUrl = undefined; }
+      }
       const res = await sendChatMessage(openId, {
         attachmentUrl: url,
         attachmentKind: a.kind,
@@ -842,8 +1228,11 @@ export default function MemberChatsPage() {
         ...(a.kind === 'file'
           ? { fileMeta: { name: file.name, size: file.size, mime: file.type } }
           : {}),
+        ...(thumbUrl ? { thumbUrl } : {}),
+        ...(replyTo ? { replyTo: replyTo.id } : {}),
       });
       if (res.ok) {
+        setReplyTo(null);
         nearBottomRef.current = true;
         setMessages((prev) => [...prev, res.data]);
         void refreshChats();
@@ -970,6 +1359,20 @@ export default function MemberChatsPage() {
       && !blocked.some((b) => b.id === partnerId);
     const peerTyping = peerTypingAt != null
       && Date.now() - new Date(peerTypingAt).getTime() < TYPING_FRESH_MS;
+
+    // emoji -> count per message, with "did I leave this one" folded in.
+    const reactionGroups = new Map<string, { emoji: string; count: number; mine: boolean }[]>();
+    for (const r of reactions) {
+      const list = reactionGroups.get(r.messageId) ?? [];
+      const hit = list.find((x) => x.emoji === r.emoji);
+      if (hit) {
+        hit.count += 1;
+        hit.mine = hit.mine || r.memberId === currentUserId;
+      } else {
+        list.push({ emoji: r.emoji, count: 1, mine: r.memberId === currentUserId });
+      }
+      reactionGroups.set(r.messageId, list);
+    }
 
     const contextLine = !threadOpen
       ? <><UserX size={12} aria-hidden="true" /> Frozen — this chat is no longer open</>
@@ -1119,6 +1522,56 @@ export default function MemberChatsPage() {
             const decrypted = encrypted ? plain[m.id] : m.body;
             const pending = encrypted && convKey != null && !(m.id in plain);
             const readable = typeof decrypted === 'string';
+            const pills = reactionGroups.get(m.id) ?? [];
+
+            // Forwarded label + quoted reply, both above the content and inside
+            // the bubble. The quote resolves through the thread by id, so a
+            // cleared original leaves the lock rather than stale text.
+            const quoted = m.replyTo ? messages.find((x) => x.id === m.replyTo) : undefined;
+            const forwarded = Boolean((m.meta as { forwarded?: boolean } | null)?.forwarded);
+            const quoteName = quoted
+              ? (quoted.senderId === currentUserId ? 'You' : firstName)
+              : null;
+            const head = (forwarded || m.replyTo) && m.kind !== 'referral' ? (
+              <>
+                {forwarded && (
+                  <span style={{
+                    display: 'block', marginBottom: 3,
+                    fontSize: '0.7rem', fontStyle: 'italic',
+                    color: mine ? 'rgba(255,255,255,0.72)' : 'var(--text-muted)',
+                  }}>
+                    ↪ Forwarded
+                  </span>
+                )}
+                {m.replyTo && (
+                  <button
+                    type="button"
+                    onClick={() => jumpTo(m.replyTo!)}
+                    aria-label={`Go to the message this replies to${quoteName ? `, from ${quoteName}` : ''}`}
+                    style={{
+                      display: 'block', width: '100%', marginBottom: 5, padding: '0.3rem 0.5rem',
+                      border: 0, borderLeft: '2.5px solid var(--primary-600)', borderRadius: '0.5rem',
+                      background: mine ? 'rgba(255,255,255,0.13)' : 'var(--bg-secondary)',
+                      font: 'inherit', textAlign: 'left', cursor: 'pointer',
+                      color: mine ? '#fff' : 'var(--text-primary)',
+                    }}
+                  >
+                    {quoteName && (
+                      <span style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800 }}>
+                        {quoteName}
+                      </span>
+                    )}
+                    <span style={{
+                      display: 'block', fontSize: '0.74rem', lineHeight: 1.35,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      color: mine ? 'rgba(255,255,255,0.78)' : 'var(--text-secondary)',
+                    }}>
+                      {snippetOf(quoted)}
+                    </span>
+                  </button>
+                )}
+              </>
+            ) : null;
 
             // Time + delivery state, on the bubble's own bottom-right line.
             const metaLine = (
@@ -1236,6 +1689,7 @@ export default function MemberChatsPage() {
                   background: mine ? 'var(--green-950)' : 'var(--bg-primary)',
                   border: mine ? '1px solid transparent' : HAIRLINE,
                 }}>
+                  {head && <span style={{ display: 'block', padding: '2px 4px 0' }}>{head}</span>}
                   <button
                     type="button"
                     onClick={() => setLightbox(m.attachmentUrl)}
@@ -1259,6 +1713,7 @@ export default function MemberChatsPage() {
                   background: mine ? 'var(--green-950)' : 'var(--bg-primary)',
                   border: mine ? '1px solid transparent' : HAIRLINE,
                 }}>
+                  {head && <span style={{ display: 'block', padding: '2px 4px 0' }}>{head}</span>}
                   {/* preload="metadata": a poster frame and a duration, not the
                       whole file, on someone's mobile data. */}
                   <video
@@ -1273,9 +1728,13 @@ export default function MemberChatsPage() {
                 </div>
               );
             } else if (m.kind === 'file' && m.attachmentUrl) {
-              const fileMeta = (m.meta ?? {}) as { name?: string; size?: number; mime?: string };
+              const fileMeta = (m.meta ?? {}) as { name?: string; size?: number; mime?: string; thumb?: string };
               const fileName = typeof fileMeta.name === 'string' && fileMeta.name ? fileMeta.name : 'Document';
               const fileSize = typeof fileMeta.size === 'number' && fileMeta.size > 0 ? humanSize(fileMeta.size) : 'Document';
+              const thumb = typeof fileMeta.thumb === 'string' ? fileMeta.thumb : null;
+              // A PDF opens in the app. Everything else still leaves for the
+              // system browser, which is the only thing that can render it.
+              const isPdf = fileMeta.mime === 'application/pdf' || /\.pdf$/i.test(fileName);
               bubble = (
                 <div style={{
                   padding: '0.5rem 0.6rem',
@@ -1283,36 +1742,53 @@ export default function MemberChatsPage() {
                   background: mine ? 'var(--green-950)' : 'var(--bg-primary)',
                   border: mine ? '1px solid transparent' : HAIRLINE,
                 }}>
+                  {head}
                   <a
                     href={m.attachmentUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={(e) => { e.preventDefault(); openAttachment(m.attachmentUrl!); }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (isPdf) setPdfView({ url: m.attachmentUrl!, name: fileName });
+                      else openAttachment(m.attachmentUrl!);
+                    }}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: 10, maxWidth: 240,
+                      display: 'block', maxWidth: 240,
                       textDecoration: 'none', color: mine ? '#fff' : 'var(--text-primary)',
                     }}
                   >
-                    <span style={{
-                      display: 'grid', placeItems: 'center', width: 38, height: 38, flexShrink: 0,
-                      borderRadius: 11,
-                      background: mine ? 'rgba(255,255,255,0.14)' : 'var(--green-50)',
-                      color: mine ? '#fff' : 'var(--green-800)',
-                    }}>
-                      <FileText size={18} aria-hidden="true" />
-                    </span>
-                    <span style={{ minWidth: 0 }}>
+                    {thumb && (
+                      <img
+                        src={thumb}
+                        alt={`First page of ${fileName}`}
+                        style={{
+                          display: 'block', maxWidth: 200, width: '100%', height: 'auto',
+                          borderRadius: 10, marginBottom: 7,
+                        }}
+                      />
+                    )}
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <span style={{
-                        display: 'block', fontSize: '0.86rem', fontWeight: 700,
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        display: 'grid', placeItems: 'center', width: 38, height: 38, flexShrink: 0,
+                        borderRadius: 11,
+                        background: mine ? 'rgba(255,255,255,0.14)' : 'var(--green-50)',
+                        color: mine ? '#fff' : 'var(--green-800)',
                       }}>
-                        {fileName}
+                        <FileText size={18} aria-hidden="true" />
                       </span>
-                      <span style={{
-                        display: 'block', fontSize: '0.7rem', fontWeight: 650,
-                        color: mine ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)',
-                      }}>
-                        {fileSize}
+                      <span style={{ minWidth: 0 }}>
+                        <span style={{
+                          display: 'block', fontSize: '0.86rem', fontWeight: 700,
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        }}>
+                          {fileName}
+                        </span>
+                        <span style={{
+                          display: 'block', fontSize: '0.7rem', fontWeight: 650,
+                          color: mine ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)',
+                        }}>
+                          {fileSize}
+                        </span>
                       </span>
                     </span>
                   </a>
@@ -1329,6 +1805,7 @@ export default function MemberChatsPage() {
                   border: mine ? '1px solid transparent' : HAIRLINE,
                   fontSize: '0.9rem', lineHeight: 1.45, overflowWrap: 'anywhere',
                 }}>
+                  {head}
                   {readable || !encrypted ? decrypted : (
                     <span style={{
                       display: 'inline-flex', alignItems: 'center', gap: 5, fontStyle: 'italic',
@@ -1356,14 +1833,52 @@ export default function MemberChatsPage() {
                     {day}
                   </span>
                 )}
-                <div style={{
-                  display: 'flex', flexDirection: 'column',
-                  maxWidth: m.kind === 'referral' ? '90%' : '78%',
-                  alignSelf: mine ? 'flex-end' : 'flex-start',
-                  alignItems: mine ? 'flex-end' : 'flex-start',
-                  marginBottom: groupEnd ? 10 : 3,
-                }}>
+                <div
+                  id={`msg-${m.id}`}
+                  // Referral cards are system objects: nothing to react to,
+                  // reply to, forward or copy, so they get no long press.
+                  {...(m.kind === 'referral' ? {} : pressProps(m))}
+                  style={{
+                    display: 'flex', flexDirection: 'column',
+                    maxWidth: m.kind === 'referral' ? '90%' : '78%',
+                    alignSelf: mine ? 'flex-end' : 'flex-start',
+                    alignItems: mine ? 'flex-end' : 'flex-start',
+                    marginBottom: (groupEnd ? 10 : 3) + (pills.length ? 14 : 0),
+                    WebkitTouchCallout: 'none',
+                    borderRadius: '1.2rem',
+                    transition: reduceMotion ? undefined : 'box-shadow 0.3s ease',
+                    ...(flashId === m.id ? { boxShadow: '0 0 0 3px rgba(232,93,4,0.45)' } : {}),
+                  }}
+                >
                   {bubble}
+                  {/* Reaction pills sit under the bubble and kiss its bottom
+                      edge, clear of the clock and receipt inside it. */}
+                  {pills.length > 0 && (
+                    <span style={{
+                      display: 'flex', gap: 4, position: 'relative', zIndex: 1,
+                      marginTop: -6, padding: mine ? '0 8px 0 0' : '0 0 0 8px',
+                    }}>
+                      {pills.map((p) => (
+                        <button
+                          key={p.emoji}
+                          type="button"
+                          onClick={() => setMsgMenu(m.id)}
+                          aria-label={`${p.count} reacted ${p.emoji}${p.mine ? ', including you' : ''} — change your reaction`}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 3,
+                            padding: '2px 7px', borderRadius: 999,
+                            border: p.mine ? '1px solid rgba(0,168,107,0.35)' : HAIRLINE,
+                            background: p.mine ? 'var(--green-50)' : 'var(--bg-primary)',
+                            font: 'inherit', fontSize: '0.72rem', fontWeight: 750,
+                            color: 'var(--text-secondary)', cursor: 'pointer',
+                          }}
+                        >
+                          <span aria-hidden="true">{p.emoji}</span>
+                          {p.count > 1 && p.count}
+                        </button>
+                      ))}
+                    </span>
+                  )}
                 </div>
               </React.Fragment>
             );
@@ -1392,6 +1907,40 @@ export default function MemberChatsPage() {
           )}
           {threadOpen ? (
             <>
+              {replyTo && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  margin: '0.55rem 0.7rem 0', padding: '0.35rem 0.2rem 0.35rem 0.55rem',
+                  borderLeft: '3px solid var(--primary-600)', borderRadius: '0.5rem',
+                  background: 'var(--bg-secondary)',
+                }}>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <strong style={{
+                      display: 'block', fontSize: '0.74rem', fontWeight: 800, color: 'var(--text-accent)',
+                    }}>
+                      {replyTo.senderId === currentUserId ? 'You' : firstName}
+                    </strong>
+                    <small style={{
+                      display: 'block', fontSize: '0.76rem', color: 'var(--text-secondary)',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {snippetOf(replyTo)}
+                    </small>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setReplyTo(null)}
+                    aria-label="Cancel reply"
+                    style={{
+                      display: 'grid', placeItems: 'center', width: 44, height: 44, flexShrink: 0,
+                      border: 0, borderRadius: '50%', background: 'none',
+                      color: 'var(--text-muted)', cursor: 'pointer',
+                    }}
+                  >
+                    <X size={16} aria-hidden="true" />
+                  </button>
+                </div>
+              )}
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, padding: '0.6rem' }}>
                 <input
                   ref={fileRef}
@@ -1888,6 +2437,155 @@ export default function MemberChatsPage() {
     </div>
   );
 
+  // ---- Message menu: react, reply, forward, copy ---------------------------
+  // Held open by id, not by object: a poll landing mid-decision must not swap
+  // the sheet's contents underneath the thumb.
+  const menuMsg = msgMenu ? messages.find((m) => m.id === msgMenu) ?? null : null;
+  const menuMine = menuMsg ? myReactionTo(menuMsg.id) : null;
+  const menuCopyable = menuMsg ? readableText(menuMsg) : null;
+
+  const msgMenuSheet = menuMsg && (
+    <div
+      className="hf-sheet-scrim"
+      onClick={(e) => { if (e.target === e.currentTarget) setMsgMenu(null); }}
+    >
+      <div className="hf-sheet pp-sheet" role="dialog" aria-modal="true" aria-label="Message options">
+        <div className="hf-sheet-head">
+          <h2>Message</h2>
+          <button type="button" className="portal-sheet-close" onClick={() => setMsgMenu(null)} aria-label="Close">
+            <X size={18} aria-hidden="true" />
+          </button>
+        </div>
+        {/* Which message this is about — the sheet covers the bubble itself. */}
+        <p className="hf-sheet-sub" style={{
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
+          {snippetOf(menuMsg)}
+        </p>
+
+        <div
+          role="group"
+          aria-label="React to this message"
+          style={{
+            display: 'flex', flexWrap: 'wrap', gap: 6,
+            justifyContent: 'space-between', margin: '0.5rem 0 1rem',
+          }}
+        >
+          {REACTIONS.map((emoji) => {
+            const on = menuMine === emoji;
+            return (
+              <button
+                key={emoji}
+                type="button"
+                aria-pressed={on}
+                aria-label={on ? `Remove your ${emoji} reaction` : `React ${emoji}`}
+                onClick={() => void react(menuMsg.id, emoji)}
+                style={{
+                  display: 'grid', placeItems: 'center', width: 44, height: 44,
+                  borderRadius: '50%', fontSize: '1.35rem', lineHeight: 1, cursor: 'pointer',
+                  background: on ? 'var(--green-50)' : 'var(--bg-secondary)',
+                  border: on ? '2px solid var(--primary-600)' : '1px solid transparent',
+                }}
+              >
+                <span aria-hidden="true">{emoji}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="pp-group-card" style={{ marginBottom: '0.4rem' }}>
+          {threadOpen && (
+            <button
+              type="button"
+              className="pp-row"
+              onClick={() => {
+                setReplyTo(menuMsg);
+                setMsgMenu(null);
+                window.setTimeout(() => taRef.current?.focus(), 0);
+              }}
+            >
+              <span className="pp-row-icon"><Reply size={17} aria-hidden="true" /></span>
+              <span className="pp-row-body"><strong>Reply</strong></span>
+            </button>
+          )}
+          <button
+            type="button"
+            className="pp-row"
+            onClick={() => { setMenuError(''); setForwardOf(menuMsg); setMsgMenu(null); }}
+          >
+            <span className="pp-row-icon"><Share2 size={17} aria-hidden="true" /></span>
+            <span className="pp-row-body"><strong>Forward</strong></span>
+          </button>
+          {menuCopyable && (
+            <button type="button" className="pp-row" onClick={() => void copyMsg(menuMsg)}>
+              <span className="pp-row-icon"><Copy size={17} aria-hidden="true" /></span>
+              <span className="pp-row-body"><strong>Copy text</strong></span>
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  // ---- Forward picker ------------------------------------------------------
+  // Only chats that can still take a message: not this one, and not frozen.
+  const forwardTargets = threads.filter((t) => t.id !== openId && t.open);
+
+  const forwardSheet = forwardOf && (
+    <div
+      className="hf-sheet-scrim"
+      onClick={(e) => { if (e.target === e.currentTarget) setForwardOf(null); }}
+    >
+      <div className="hf-sheet pp-sheet" role="dialog" aria-modal="true" aria-label="Forward to">
+        <div className="hf-sheet-head">
+          <h2>Forward to</h2>
+          <button type="button" className="portal-sheet-close" onClick={() => setForwardOf(null)} aria-label="Close">
+            <X size={18} aria-hidden="true" />
+          </button>
+        </div>
+        <p className="hf-sheet-sub">
+          Sends a copy, marked forwarded. This chat is left exactly as it is.
+        </p>
+
+        {menuErrorNode}
+
+        {forwardTargets.length === 0 ? (
+          <p style={{ margin: '1rem 0.2rem', fontSize: '0.86rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+            You have no other open chat to forward this to yet.
+          </p>
+        ) : (
+          <div className="pp-group-card" style={{ marginBottom: '0.4rem' }}>
+            {forwardTargets.map((t) => {
+              const tname = fullName(t.partnerFirstName, t.partnerLastName);
+              const busy = fwdBusy === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  className="pp-row"
+                  onClick={() => void doForward(t)}
+                  disabled={fwdBusy != null}
+                  style={{ opacity: fwdBusy != null && !busy ? 0.55 : 1 }}
+                >
+                  <Avatar name={tname} size={40} />
+                  <span className="pp-row-body">
+                    <strong>{tname}</strong>
+                    {t.partnerJobTitle && (
+                      <small style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {t.partnerJobTitle}
+                      </small>
+                    )}
+                  </span>
+                  {busy && <Loader2 size={16} className="spin" aria-hidden="true" style={{ flexShrink: 0 }} />}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   // ---- Chat settings sheet -------------------------------------------------
   const settingsRow = (
     key: keyof ChatSettings,
@@ -2045,6 +2743,69 @@ export default function MemberChatsPage() {
     </div>
   );
 
+  // ---- In-app PDF reader ---------------------------------------------------
+  // Same shape as the lightbox: dark backdrop, one close control, and the
+  // "open original" escape hatch at the bottom for saving or sharing.
+  const pdfNode = pdfView && (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={pdfView.name}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 'var(--z-modal)' as unknown as number,
+        background: 'rgba(8, 16, 12, 0.96)',
+        display: 'flex', flexDirection: 'column',
+      }}
+    >
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
+        padding: 'calc(0.6rem + var(--sat)) 0.6rem 0.6rem',
+      }}>
+        <button
+          type="button"
+          onClick={() => setPdfView(null)}
+          aria-label="Close document"
+          style={{
+            display: 'grid', placeItems: 'center', width: 44, height: 44, flexShrink: 0,
+            border: 0, borderRadius: '50%', background: 'rgba(255,255,255,0.14)', color: '#fff',
+            cursor: 'pointer',
+          }}
+        >
+          <X size={20} aria-hidden="true" />
+        </button>
+        <strong style={{
+          flex: 1, minWidth: 0, color: '#fff', fontSize: '0.9rem', fontWeight: 700,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
+          {pdfView.name}
+        </strong>
+      </div>
+      <div style={{
+        flex: 1, minHeight: 0, overflowY: 'auto',
+        padding: '0 0.6rem calc(4.5rem + var(--sab))',
+      }}>
+        <PdfPages
+          url={pdfView.url}
+          // pdfjs cannot open it — hand the document to the system browser
+          // rather than leaving a black screen behind.
+          onFail={() => { const url = pdfView.url; setPdfView(null); openAttachment(url); }}
+        />
+      </div>
+      <button
+        type="button"
+        onClick={() => openAttachment(pdfView.url)}
+        style={{
+          position: 'absolute', bottom: 'calc(1rem + var(--sab))', left: '50%', transform: 'translateX(-50%)',
+          display: 'inline-flex', alignItems: 'center', gap: 8, minHeight: 44, padding: '0 1.2rem',
+          border: 0, borderRadius: 999, background: 'rgba(255,255,255,0.16)', color: '#fff',
+          font: 'inherit', fontSize: '0.86rem', fontWeight: 700, cursor: 'pointer',
+        }}
+      >
+        <Download size={15} aria-hidden="true" /> Open original - save from there
+      </button>
+    </div>
+  );
+
   const toastNode = toast && (
     <div className="pp-toast" role="status">
       <Check size={15} aria-hidden="true" /> {toast}
@@ -2057,10 +2818,13 @@ export default function MemberChatsPage() {
       <>
         {threadPane}
         {sheet}
+        {msgMenuSheet}
+        {forwardSheet}
         {threadMenuSheet}
         {reportSheet}
         {settingsSheet}
         {lightboxNode}
+        {pdfNode}
       {toastNode}
       </>
     );
@@ -2165,10 +2929,13 @@ export default function MemberChatsPage() {
       )}
 
       {sheet}
+      {msgMenuSheet}
+      {forwardSheet}
       {threadMenuSheet}
       {reportSheet}
       {settingsSheet}
       {lightboxNode}
+      {pdfNode}
       {toastNode}
     </div>
   );

@@ -188,13 +188,18 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
   // and not on the community or matrimony surfaces, which have their own
   // narrower data paths.
   const pathname = usePathname();
+  // ALLOWLIST, not blocklist: the snapshot used to load on every portal route,
+  // taxing the dashboard, chats and jobs screens with a heavy query none of
+  // them read. Only the help-desk surfaces (and the whole admin portal, which
+  // renders from every slice) actually consume it.
+  const SNAPSHOT_ROUTES = [
+    '/portal/member/businesses', '/portal/member/messages',
+    '/portal/member/my-requests', '/portal/member/my-volunteer',
+    '/portal/member/request-help', '/portal/member/volunteer',
+  ];
   const needsSnapshot =
-    pathname.startsWith('/portal') &&
-    !pathname.includes('/community') &&
-    !pathname.includes('/matrimony') &&
-    !pathname.startsWith('/portal/auth') &&
-    !pathname.startsWith('/portal/signup') &&
-    !pathname.startsWith('/portal/verify');
+    pathname.startsWith('/portal/admin') ||
+    SNAPSHOT_ROUTES.some((r) => pathname.startsWith(r));
 
   useEffect(() => {
     if (needsSnapshot) void refresh();

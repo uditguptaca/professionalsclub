@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/app-context';
 import { fetchCompanies, fetchCompanyJobs } from '@/app/actions/referrals';
+import { readCache, writeCache } from '@/lib/swr-cache';
 import { listCompanyInsiders, requestReferral } from '@/app/actions/chat';
 import type { Company, CompanyJob } from '@/types';
 import type { CompanyInsiderEntry } from '@/server/repos/chat';
@@ -174,8 +175,10 @@ export default function MemberJobsPage() {
 
   useEffect(() => {
     if (!currentUserId) return;
+    const cached = readCache<Company[]>('companies');
+    if (cached) setCompanies(cached);
     fetchCompanies().then((r) => {
-      if (r.ok) setCompanies(r.data);
+      if (r.ok) { setCompanies(r.data); writeCache('companies', r.data); }
       else setError(r.error);
     });
   }, [currentUserId]);

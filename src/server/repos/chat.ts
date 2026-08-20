@@ -59,8 +59,15 @@ export interface ChatMessage {
   iv: string | null;
   attachmentUrl: string | null;
   meta: Record<string, unknown> | null;
+  replyTo: string | null;
   readAt: string | null;
   createdAt: string;
+}
+
+export interface MessageReaction {
+  messageId: string;
+  memberId: string;
+  emoji: string;
 }
 
 export interface ThreadReferral {
@@ -78,6 +85,7 @@ export interface ThreadPoll {
   open: boolean;
   peerTypingAt: string | null;
   referrals: ThreadReferral[];
+  reactions: MessageReaction[];
 }
 
 export interface CompanyInsiderEntry {
@@ -113,6 +121,7 @@ const toMessage = (r: Record<string, unknown>): ChatMessage => ({
   iv: (r.iv as string | null) ?? null,
   attachmentUrl: (r.attachment_url as string | null) ?? null,
   meta: (r.meta as Record<string, unknown> | null) ?? null,
+  replyTo: (r.reply_to as string | null) ?? null,
   readAt: iso(r.read_at),
   createdAt: iso(r.created_at) as string,
 });
@@ -337,7 +346,7 @@ export async function pollThread(userId: string, conversationId: string): Promis
       select
         (select coalesce(json_agg(t order by t.created_at), '[]'::json) from (
           select m.id, m.conversation_id, m.sender_id, m.kind, m.body, m.cipher, m.iv,
-                 m.attachment_url, m.meta, m.created_at,
+                 m.attachment_url, m.meta, m.reply_to, m.created_at,
                  case when m.sender_id = $2 and not (select receipts from vis)
                       then null else m.read_at end as read_at
             from public.member_messages m
@@ -349,6 +358,12 @@ export async function pollThread(userId: string, conversationId: string): Promis
            from public.member_chat_typing ty
           where ty.conversation_id = $1 and ty.member_id <> $2
           limit 1) as peer_typing_at,
+        (select coalesce(json_agg(t), '[]'::json) from (
+          select x.message_id, x.member_id, x.emoji
+            from public.member_message_reactions x
+            join public.member_messages mm on mm.id = x.message_id
+           where mm.conversation_id = $1
+        ) t) as reactions,
         (select coalesce(json_agg(t), '[]'::json) from (
           select r.id, r.seeker_id, r.insider_id, r.note, r.status,
                  co.name as company_name,
@@ -366,6 +381,11 @@ export async function pollThread(userId: string, conversationId: string): Promis
       messages: ((row.messages ?? []) as Record<string, unknown>[]).map(toMessage),
       open: Boolean(row.open),
       peerTypingAt: iso(row.peer_typing_at),
+      reactions: ((row.reactions ?? []) as Record<string, unknown>[]).map((r) => ({
+        messageId: r.message_id as string,
+        memberId: r.member_id as string,
+        emoji: r.emoji as string,
+      })),
       referrals: ((row.referrals ?? []) as Record<string, unknown>[]).map((r) => ({
         id: r.id as string,
         seekerId: r.seeker_id as string,
@@ -388,6 +408,12 @@ export async function sendChatMessage(
     attachmentKind?: 'image' | 'video' | 'file';
     /** For files: what to render before anyone downloads it. */
     fileMeta?: { name?: string; size?: number; mime?: string };
+    /** Quote an earlier message from the SAME conversation. */
+    replyTo?: string;
+    /** Marks a message forwarded from another chat, WhatsApp-style. */
+    forwarded?: boolean;
+    /** File-preview thumbnail (first PDF page), uploaded like any image. */
+    thumbUrl?: string;
   }
 ): Promise<ChatMessage> {
   return withUser(userId, async (db) => {
@@ -401,18 +427,32 @@ export async function sendChatMessage(
       throw new Error('Message too long.');
     }
 
-    const meta = kind === 'file' && content.fileMeta
-      ? JSON.stringify({
-          name: String(content.fileMeta.name ?? 'Document').slice(0, 200),
-          size: Number(content.fileMeta.size ?? 0),
-          mime: String(content.fileMeta.mime ?? '').slice(0, 100),
-        })
-      : null;
+    if (content.thumbUrl) assertOurUpload(content.thumbUrl);
+    const metaObj: Record<string, unknown> = {};
+    if (kind === 'file' && content.fileMeta) {
+      metaObj.name = String(content.fileMeta.name ?? 'Document').slice(0, 200);
+      metaObj.size = Number(content.fileMeta.size ?? 0);
+      metaObj.mime = String(content.fileMeta.mime ?? '').slice(0, 100);
+    }
+    if (content.forwarded) metaObj.forwarded = true;
+    if (content.thumbUrl) metaObj.thumb = content.thumbUrl;
+    const meta = Object.keys(metaObj).length ? JSON.stringify(metaObj) : null;
+
+    // A reply may only point inside this same conversation - otherwise a
+    // crafted id could quote-link across chats.
+    let replyTo: string | null = null;
+    if (content.replyTo) {
+      const found = await db.run<{ id: string }>(
+        `select id from public.member_messages where id = $1 and conversation_id = $2`,
+        [content.replyTo, conversationId]
+      );
+      replyTo = found[0]?.id ?? null;
+    }
 
     try {
       const rows = await db.run<Record<string, unknown>>(
-        `insert into public.member_messages (conversation_id, sender_id, kind, body, cipher, iv, attachment_url, meta)
-         values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb) returning *`,
+        `insert into public.member_messages (conversation_id, sender_id, kind, body, cipher, iv, attachment_url, meta, reply_to)
+         values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9) returning *`,
         [
           conversationId, userId, kind,
           encrypted ? null : (content.body?.trim() || null),
@@ -420,6 +460,7 @@ export async function sendChatMessage(
           encrypted ? content.iv! : null,
           content.attachmentUrl ?? null,
           meta,
+          replyTo,
         ]
       );
       return toMessage(rows[0]);
@@ -596,6 +637,27 @@ export async function myDirectReferrals(userId: string): Promise<MyDirectReferra
       createdAt: iso(r.created_at) as string,
       conversationId: (r.conversation_id as string | null) ?? null,
     }));
+  });
+}
+
+/** One reaction per person per message; null emoji removes it. */
+export async function reactToMessage(userId: string, messageId: string, emoji: string | null): Promise<void> {
+  await withUser(userId, async (db) => {
+    if (emoji === null) {
+      await db.run(
+        `delete from public.member_message_reactions where message_id = $1 and member_id = $2`,
+        [messageId, userId]
+      );
+      return;
+    }
+    const clean = emoji.trim().slice(0, 16);
+    if (!clean) throw new Error('Pick a reaction.');
+    await db.run(
+      `insert into public.member_message_reactions (message_id, member_id, emoji)
+       values ($1, $2, $3)
+       on conflict (message_id, member_id) do update set emoji = excluded.emoji, created_at = now()`,
+      [messageId, userId, clean]
+    );
   });
 }
 

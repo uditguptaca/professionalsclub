@@ -27,7 +27,8 @@ function fail(context: string, error: unknown): { ok: false; error: string } {
     detail.startsWith('Message cannot be empty') ||
     detail.startsWith('Message too long') ||
     detail.startsWith('Pick a reason') ||
-    detail.startsWith('Unknown message kind');
+    detail.startsWith('Unknown message kind') ||
+    detail.startsWith('Pick a reaction');
   return { ok: false, error: safe ? detail : `${context} failed. Please try again.` };
 }
 
@@ -82,6 +83,9 @@ export async function sendChatMessage(
     attachmentUrl?: string;
     attachmentKind?: 'image' | 'video' | 'file';
     fileMeta?: { name?: string; size?: number; mime?: string };
+    replyTo?: string;
+    forwarded?: boolean;
+    thumbUrl?: string;
   }
 ) {
   return run('Sending message', (uid) => repo.sendChatMessage(uid, conversationId, content));
@@ -119,6 +123,10 @@ export async function getChatSettings() {
 
 export async function updateChatSettings(input: { readReceipts?: boolean; typingIndicator?: boolean }) {
   return run('Saving chat settings', (uid) => repo.updateChatSettings(uid, input));
+}
+
+export async function reactToMessage(messageId: string, emoji: string | null) {
+  return run('Reacting', (uid) => repo.reactToMessage(uid, messageId, emoji));
 }
 
 export async function setTyping(conversationId: string) {
