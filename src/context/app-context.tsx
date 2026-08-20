@@ -69,8 +69,30 @@ export function AppProvider({
   );
 }
 
+// What the server-side pass falls back to when the context is unreachable.
+// That only happens under a Turbopack dev quirk: after enough hot updates the
+// SSR module graph can hold a DUPLICATED copy of this module, so the provider
+// writes to one instance while a page reads the other. Crashing SSR over it
+// forced a full client re-render and a scary overlay error; rendering the
+// signed-out shape server-side instead is harmless, because the client-side
+// instance (which is never duplicated) immediately hydrates the real state.
+const SSR_FALLBACK: AppContextType = {
+  profile: null,
+  currentRole: 'member',
+  isAuthenticated: false,
+  currentUserId: '',
+  sidebarOpen: true,
+  setSidebarOpen: () => {},
+  toggleSidebar: () => {},
+  refreshProfile: async () => {},
+};
+
 export function useApp() {
   const ctx = useContext(AppContext);
-  if (!ctx) throw new Error('useApp must be used within AppProvider');
+  if (!ctx) {
+    if (typeof window === 'undefined') return SSR_FALLBACK;
+    // In the browser a missing provider is a real wiring bug - keep it loud.
+    throw new Error('useApp must be used within AppProvider');
+  }
   return ctx;
 }
