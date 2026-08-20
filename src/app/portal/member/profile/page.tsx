@@ -18,15 +18,17 @@ import {
 } from '@/lib/profile-options';
 import type { CompanyInsider } from '@/types';
 import {
-  User, Briefcase, Building2, HandHeart, Heart, Bell, Shield,
-  Trash2, AlertCircle, ChevronRight, ChevronDown, Save, X, BadgeCheck, Plus,
+  User, Briefcase, Building2, HandHeart, Heart, Bell, MapPin,
+  Trash2, AlertCircle, ChevronRight, Save, X, BadgeCheck, Plus, Check,
+  GraduationCap, Link2, Mail,
 } from 'lucide-react';
 
 /**
- * The profile hub: everything a member has told the club about themselves,
- * editable on one page. Field edits accumulate into one save (the sticky bar
- * appears when something changed); the insider roles and the community
- * modules act immediately since they live in their own tables.
+ * The profile hub, second pass. The page is a glanceable summary — identity
+ * header with the completeness ring around the avatar, then grouped rows that
+ * show current values. Editing happens in focused bottom sheets (the same
+ * sheet language as the city switcher and the More menu), never in a page-long
+ * form. Each sheet saves only its own fields.
  */
 
 const FIELDS = [
@@ -39,29 +41,50 @@ type Field = (typeof FIELDS)[number];
 type Form = Record<Field, string>;
 
 /** Mirrors the home feed's completeness ring, so the two never disagree. */
-const COMPLETENESS: (keyof Form | 'joiningFor')[] = [
+const COMPLETENESS: (Field | 'joiningFor')[] = [
   'firstName', 'lastName', 'phone', 'city', 'province', 'currentStatus',
   'joiningFor', 'jobTitle', 'industry', 'experienceRange',
   'educationLevel', 'professionalSummary', 'linkedinUrl', 'skills',
 ];
 
-const selectField = (
-  id: string, label: string, value: string, options: string[],
-  onChange: (v: string) => void, allowEmpty = true,
-) => (
-  <div className="input-group">
-    <label htmlFor={id}>{label}</label>
-    <div style={{ position: 'relative' }}>
-      <select id={id} className="input" value={value} onChange={(e) => onChange(e.target.value)} style={{ appearance: 'none', width: '100%' }}>
-        {allowEmpty && <option value="">Not set</option>}
-        {options.map((o) => <option key={o} value={o}>{o}</option>)}
-        {/* A legacy value not in today's list still shows instead of blanking. */}
-        {value && !options.includes(value) && <option value={value}>{value}</option>}
-      </select>
-      <ChevronDown size={15} aria-hidden="true" style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)' }} />
-    </div>
-  </div>
-);
+type SheetId = 'identity' | 'location' | 'work' | 'background' | 'links' | 'prefs';
+
+/** What each edit sheet owns: title, blurb, and the fields inside it. */
+const SHEETS: Record<SheetId, { title: string; blurb: string; fields: Field[] }> = {
+  identity:   { title: 'Your name & phone',   blurb: 'How the club knows and reaches you.', fields: ['firstName', 'lastName', 'phone'] },
+  location:   { title: 'Where you are',       blurb: 'Your community — the whole app follows your city.', fields: ['city', 'province', 'currentStatus'] },
+  work:       { title: 'What you do',         blurb: 'Your current role.', fields: ['jobTitle', 'industry', 'experienceRange'] },
+  background: { title: 'Background',          blurb: 'Education and the skills you bring.', fields: ['educationLevel', 'skills', 'professionalSummary'] },
+  links:      { title: 'Links',               blurb: 'Where people can see your work.', fields: ['linkedinUrl'] },
+  prefs:      { title: 'How we reach you',    blurb: 'Pick what suits you — we only send what matters.', fields: ['preferredContactMethod', 'preferredLanguage'] },
+};
+
+/** The nudge rail: one chip per missing high-value field. */
+const NUDGES: { field: Field; label: string; sheet: SheetId }[] = [
+  { field: 'jobTitle',            label: 'Add your job title',  sheet: 'work' },
+  { field: 'city',                label: 'Set your city',       sheet: 'location' },
+  { field: 'skills',              label: 'Add your skills',     sheet: 'background' },
+  { field: 'linkedinUrl',         label: 'Link your LinkedIn',  sheet: 'links' },
+  { field: 'professionalSummary', label: 'Write your summary',  sheet: 'background' },
+  { field: 'industry',            label: 'Pick your industry',  sheet: 'work' },
+  { field: 'experienceRange',     label: 'Add your experience', sheet: 'work' },
+  { field: 'phone',               label: 'Add your phone',      sheet: 'identity' },
+];
+
+const OPTIONS: Partial<Record<Field, string[]>> = {
+  province: PROVINCES, currentStatus: CURRENT_STATUS, industry: INDUSTRIES,
+  experienceRange: EXPERIENCE_RANGES, educationLevel: EDUCATION_LEVELS,
+  preferredContactMethod: CONTACT_METHODS, preferredLanguage: LANGUAGES,
+};
+
+const LABELS: Record<Field, string> = {
+  firstName: 'First name', lastName: 'Last name', phone: 'Phone',
+  city: 'City', province: 'Province', currentStatus: 'Current status',
+  jobTitle: 'Job title', industry: 'Industry', experienceRange: 'Experience',
+  educationLevel: 'Education', linkedinUrl: 'LinkedIn', skills: 'Key skills',
+  professionalSummary: 'Professional summary',
+  preferredContactMethod: 'Contact method', preferredLanguage: 'Language',
+};
 
 export default function MemberProfilePage() {
   const router = useRouter();
@@ -69,8 +92,11 @@ export default function MemberProfilePage() {
   const { profile, refreshProfile } = useApp();
 
   const [form, setForm] = useState<Form | null>(null);
+  const [sheet, setSheet] = useState<SheetId | null>(null);
+  const [draft, setDraft] = useState<Form | null>(null);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [sheetError, setSheetError] = useState('');
+  const [toast, setToast] = useState('');
   const [error, setError] = useState('');
   const [deleting, setDeleting] = useState(false);
 
@@ -92,10 +118,21 @@ export default function MemberProfilePage() {
     }
   }, [matrimonyEnabled]);
 
-  const dirty = useMemo(() => {
-    if (!profile || !form) return false;
-    return FIELDS.some((f) => ((profile[f] as string | undefined) ?? '') !== form[f]);
-  }, [profile, form]);
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(''), 2600);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  // The open sheet locks background scroll, same as every other sheet here.
+  useEffect(() => {
+    if (!sheet) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSheet(null); };
+    window.addEventListener('keydown', onKey);
+    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey); };
+  }, [sheet]);
 
   const completeness = useMemo(() => {
     if (!form || !profile) return 0;
@@ -104,33 +141,30 @@ export default function MemberProfilePage() {
     return Math.round((100 * filled) / COMPLETENESS.length);
   }, [form, profile]);
 
-  if (!profile || !form) return <PortalLoading label="Loading your profile" />;
-
-  const set = (key: Field) => (value: string) => {
-    setSaved(false);
-    setForm((prev) => (prev ? { ...prev, [key]: value } : prev));
-  };
-  const input = (id: Field, label: string, extra?: React.InputHTMLAttributes<HTMLInputElement>) => (
-    <div className="input-group">
-      <label htmlFor={id}>{label}</label>
-      <input id={id} className="input" value={form[id]} onChange={(e) => set(id)(e.target.value)} {...extra} />
-    </div>
+  const nudges = useMemo(
+    () => (form ? NUDGES.filter((n) => !form[n.field].trim()).slice(0, 4) : []),
+    [form],
   );
 
-  const handleSave = async () => {
-    if (saving || !dirty) return;
+  if (!profile || !form) return <PortalLoading label="Loading your profile" />;
+
+  const openSheet = (id: SheetId) => { setDraft({ ...form }); setSheetError(''); setSheet(id); };
+
+  const saveSheet = async () => {
+    if (!sheet || !draft || saving) return;
     setSaving(true);
-    setError('');
-    // email / role / statuses are absent by design: the action's allowlist
-    // ignores anything outside the self-description fields.
-    const result = await updateOwnProfile(
-      Object.fromEntries(FIELDS.map((f) => [f, form[f].trim()])),
-    );
+    setSheetError('');
+    // Only this sheet's fields travel; the action's allowlist ignores
+    // anything outside the self-description columns regardless.
+    const payload = Object.fromEntries(SHEETS[sheet].fields.map((f) => [f, draft[f].trim()]));
+    const result = await updateOwnProfile(payload);
     if (!result.ok) {
-      setError(result.error);
+      setSheetError(result.error);
     } else {
+      setForm((prev) => (prev ? { ...prev, ...payload } as Form : prev));
       await refreshProfile();
-      setSaved(true);
+      setSheet(null);
+      setToast('Profile updated');
     }
     setSaving(false);
   };
@@ -142,7 +176,8 @@ export default function MemberProfilePage() {
       canRefer: !role.canRefer,
       notifyEmail: role.notifyEmail,
     });
-    if (r.ok) setRoles(r.data); else setRolesError(r.error);
+    if (r.ok) { setRoles(r.data); setToast(!role.canRefer ? 'Open to referrals' : 'Referrals paused'); }
+    else setRolesError(r.error);
   };
 
   const removeRole = async (role: CompanyInsider) => {
@@ -154,7 +189,7 @@ export default function MemberProfilePage() {
     });
     if (!ok) return;
     const r = await removeWhereIWork(role.companyId);
-    if (r.ok) setRoles(r.data); else setRolesError(r.error);
+    if (r.ok) { setRoles(r.data); setToast('Employer removed'); } else setRolesError(r.error);
   };
 
   const handleDelete = async () => {
@@ -186,168 +221,165 @@ export default function MemberProfilePage() {
   const initials = `${profile.firstName?.[0] ?? ''}${profile.lastName?.[0] ?? ''}`.toUpperCase() || 'PC';
   const since = new Date(profile.createdAt).toLocaleDateString('en-CA', { month: 'long', year: 'numeric' });
 
-  return (
-    <div style={{ maxWidth: 760, margin: '0 auto' }} className="animate-fade-in">
-      {/* ---- Who this is ---- */}
-      <div className="pp-head">
-        <div className="pp-avatar" aria-hidden="true">{initials}</div>
-        <div>
-          <h1>{profile.firstName} {profile.lastName}</h1>
-          <p>Member since {since}{profile.pcNumber ? ` · ${profile.pcNumber}` : ''}</p>
-          <div className="pp-chips">
-            {profile.verificationStatus === 'verified'
-              ? <span className="pp-chip"><BadgeCheck size={12} aria-hidden="true" /> Verified member</span>
-              : <span className="pp-chip is-pending">Verification {profile.verificationStatus}</span>}
-            <span className="pp-chip">{completeness}% complete</span>
-          </div>
-        </div>
-      </div>
+  // Completeness ring around the avatar: r=44 → circumference ≈ 276.5.
+  const RING_C = 2 * Math.PI * 44;
 
-      <div className="pp-sections">
-        {/* ---- Personal ---- */}
-        <section className="card pp-card">
-          <h2><User size={17} aria-hidden="true" /> Personal details</h2>
-          <p className="pp-card-sub">Who you are and where your community is.</p>
-          <div className="pp-grid">
-            {input('firstName', 'First name')}
-            {input('lastName', 'Last name')}
-            {input('phone', 'Phone number', { type: 'tel', autoComplete: 'tel' })}
-            <div className="input-group">
-              <label htmlFor="city">City</label>
-              <input id="city" className="input" list="pp-city-options" value={form.city} onChange={(e) => set('city')(e.target.value)} />
-              <datalist id="pp-city-options">
-                {COMMUNITY_CITIES.map((c) => <option key={c.name} value={c.name}>{c.province}</option>)}
-              </datalist>
-            </div>
-            {selectField('province', 'Province', form.province, PROVINCES, set('province'))}
-            {selectField('currentStatus', 'Current status', form.currentStatus, CURRENT_STATUS, set('currentStatus'))}
+  /** One glanceable row: icon, label, current value (or an "Add" hint). */
+  const row = (icon: React.ReactNode, label: string, value: string, onClick: () => void, key?: string) => (
+    <button type="button" key={key ?? label} className="pp-row" onClick={onClick}>
+      <span className="pp-row-icon">{icon}</span>
+      <span className="pp-row-body">
+        <small>{label}</small>
+        {value ? <strong>{value}</strong> : <strong className="pp-row-empty">Add</strong>}
+      </span>
+      <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
+    </button>
+  );
+
+  const sheetDef = sheet ? SHEETS[sheet] : null;
+
+  return (
+    <div className="pp2">
+      {/* ---- Identity header ---- */}
+      <header className="pp-hero">
+        <div className="pp-ring" aria-hidden="true">
+          <svg viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="44" className="pp-ring-track" />
+            <circle
+              cx="50" cy="50" r="44" className="pp-ring-fill"
+              strokeDasharray={`${(completeness / 100) * RING_C} ${RING_C}`}
+            />
+          </svg>
+          <div className="pp-avatar">{initials}</div>
+          <span className="pp-ring-pct">{completeness}%</span>
+        </div>
+        <h1>{profile.firstName} {profile.lastName}</h1>
+        <p>
+          {form.jobTitle || 'Member'}{form.city ? ` · ${form.city}` : ''}
+        </p>
+        <div className="pp-hero-chips">
+          {profile.verificationStatus === 'verified'
+            ? <span className="pp-chip pp-chip-light"><BadgeCheck size={12} aria-hidden="true" /> Verified</span>
+            : <span className="pp-chip pp-chip-light">Verification {profile.verificationStatus}</span>}
+          <span className="pp-chip pp-chip-light">Since {since}</span>
+        </div>
+      </header>
+
+      {/* ---- Finish-your-profile nudges ---- */}
+      {nudges.length > 0 && (
+        <div className="pp-nudges" role="list" aria-label="Complete your profile">
+          {nudges.map((n) => (
+            <button key={n.field} type="button" role="listitem" className="pp-nudge" onClick={() => openSheet(n.sheet)}>
+              <Plus size={13} aria-hidden="true" /> {n.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="pp-groups">
+        {/* ---- About ---- */}
+        <section className="pp-group">
+          <h2>About you</h2>
+          <div className="pp-group-card">
+            {row(<User size={17} />, 'Name & phone', [form.firstName && `${form.firstName} ${form.lastName}`, form.phone].filter(Boolean).join(' · '), () => openSheet('identity'))}
+            {row(<MapPin size={17} />, 'City & status', [form.city, form.currentStatus].filter(Boolean).join(' · '), () => openSheet('location'))}
           </div>
         </section>
 
         {/* ---- Professional ---- */}
-        <section className="card pp-card">
-          <h2><Briefcase size={17} aria-hidden="true" /> Professional</h2>
-          <p className="pp-card-sub">What you do — this is how other members and volunteers can help you, and how you can help them.</p>
-          <div className="pp-grid">
-            {input('jobTitle', 'Job title / profession')}
-            {selectField('industry', 'Industry', form.industry, INDUSTRIES, set('industry'))}
-            {selectField('experienceRange', 'Experience', form.experienceRange, EXPERIENCE_RANGES, set('experienceRange'))}
-            {selectField('educationLevel', 'Education', form.educationLevel, EDUCATION_LEVELS, set('educationLevel'))}
-            <div className="full">{input('linkedinUrl', 'LinkedIn URL', { type: 'url', placeholder: 'https://linkedin.com/in/…' })}</div>
-            <div className="full">{input('skills', 'Key skills', { placeholder: 'e.g. React, financial analysis, project management' })}</div>
-            <div className="input-group full">
-              <label htmlFor="professionalSummary">Professional summary</label>
-              <textarea
-                id="professionalSummary" className="input" rows={4}
-                value={form.professionalSummary}
-                onChange={(e) => set('professionalSummary')(e.target.value)}
-                placeholder="A few lines about your background and what you are looking for."
-              />
-            </div>
+        <section className="pp-group">
+          <h2>Professional</h2>
+          <div className="pp-group-card">
+            {row(<Briefcase size={17} />, 'Role', [form.jobTitle, form.industry].filter(Boolean).join(' · '), () => openSheet('work'))}
+            {row(<GraduationCap size={17} />, 'Background', [form.educationLevel, form.skills].filter(Boolean).join(' · '), () => openSheet('background'))}
+            {row(<Link2 size={17} />, 'LinkedIn', form.linkedinUrl.replace(/^https?:\/\/(www\.)?/, ''), () => openSheet('links'))}
           </div>
         </section>
 
         {/* ---- Where I work ---- */}
-        <section className="card pp-card">
-          <h2><Building2 size={17} aria-hidden="true" /> Where I work</h2>
-          <p className="pp-card-sub">
-            Employers you have added for the referral program. Only admins can see
-            this — job seekers see an anonymous count until you accept a request.
+        <section className="pp-group">
+          <h2>Where I work</h2>
+          <p className="pp-group-sub">
+            Employers you can refer at. Job seekers only ever see an anonymous
+            count until you accept a request.
           </p>
           {rolesError && (
             <div role="alert" className="community-error" style={{ marginBottom: 8 }}>
               <AlertCircle size={15} aria-hidden="true" /> {rolesError}
             </div>
           )}
-          {roles.length === 0
-            ? <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>No employers added yet.</p>
-            : roles.map((role) => (
-              <div key={role.id} className="pp-role">
-                <div className="pp-role-body">
+          <div className="pp-group-card">
+            {roles.map((role) => (
+              <div key={role.id} className="pp-row pp-row-static">
+                <span className="pp-row-icon"><Building2 size={17} /></span>
+                <span className="pp-row-body">
+                  <small>{role.jobTitle || 'Employer'}{role.verifiedByAdmin ? ' · verified' : ''}</small>
                   <strong>{role.companyName}</strong>
-                  <small>{role.jobTitle || 'Role not specified'}{role.verifiedByAdmin ? ' · verified' : ''}</small>
-                </div>
+                </span>
                 <button
                   type="button"
-                  className={`pp-role-toggle ${role.canRefer ? 'is-on' : ''}`}
+                  className={`pp-toggle ${role.canRefer ? 'is-on' : ''}`}
                   onClick={() => toggleCanRefer(role)}
                   aria-pressed={role.canRefer}
+                  aria-label={`${role.canRefer ? 'Stop' : 'Start'} referring at ${role.companyName}`}
                 >
-                  {role.canRefer ? <BadgeCheck size={13} aria-hidden="true" /> : null}
-                  {role.canRefer ? 'Open to referrals' : 'Not helping now'}
+                  <span className="pp-toggle-dot" aria-hidden="true" />
+                  {role.canRefer ? 'Referring' : 'Paused'}
                 </button>
-                <button type="button" className="pp-role-remove" onClick={() => removeRole(role)} aria-label={`Remove ${role.companyName}`}>
-                  <X size={16} aria-hidden="true" />
+                <button type="button" className="pp-row-x" onClick={() => removeRole(role)} aria-label={`Remove ${role.companyName}`}>
+                  <X size={15} aria-hidden="true" />
                 </button>
               </div>
             ))}
-          <Link href="/portal/member/referrals?tab=work" className="btn btn-secondary" style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <Plus size={15} aria-hidden="true" /> Add an employer
-          </Link>
+            <Link href="/portal/member/referrals?tab=work" className="pp-row pp-row-add">
+              <span className="pp-row-icon"><Plus size={17} /></span>
+              <span className="pp-row-body"><strong>{roles.length === 0 ? 'Add where you work' : 'Add another employer'}</strong></span>
+              <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
+            </Link>
+          </div>
         </section>
 
-        {/* ---- Community involvement ---- */}
-        <section className="card pp-card">
-          <h2><HandHeart size={17} aria-hidden="true" /> My community involvement</h2>
-          <div className="pp-links">
-            <Link href={profile.isVolunteer ? '/portal/member/my-volunteer' : '/portal/member/volunteer'}>
-              <HandHeart size={17} aria-hidden="true" />
-              <span>
-                Volunteering
-                <small>{profile.isVolunteer ? 'You are a volunteer — see your assignments' : 'Not a volunteer yet — apply to help other newcomers'}</small>
+        {/* ---- Community ---- */}
+        <section className="pp-group">
+          <h2>Community</h2>
+          <div className="pp-group-card">
+            <Link href={profile.isVolunteer ? '/portal/member/my-volunteer' : '/portal/member/volunteer'} className="pp-row">
+              <span className="pp-row-icon"><HandHeart size={17} /></span>
+              <span className="pp-row-body">
+                <small>Volunteering</small>
+                <strong>{profile.isVolunteer ? 'Active volunteer' : 'Apply to help newcomers'}</strong>
               </span>
-              <ChevronRight size={15} aria-hidden="true" className="pp-go" />
+              <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
             </Link>
             {matrimonyEnabled && (
-              <Link href="/portal/member/matrimony">
-                <Heart size={17} aria-hidden="true" />
-                <span>
-                  Matrimony profile
-                  <small>
-                    {hasMatrimony === null ? 'Checking…' : hasMatrimony ? 'Profile created — manage it in the matrimony section' : 'No profile yet — create one when you are ready'}
-                  </small>
+              <Link href="/portal/member/matrimony" className="pp-row">
+                <span className="pp-row-icon"><Heart size={17} /></span>
+                <span className="pp-row-body">
+                  <small>Matrimony</small>
+                  <strong>{hasMatrimony === null ? '…' : hasMatrimony ? 'Profile active' : 'Create a profile'}</strong>
                 </span>
-                <ChevronRight size={15} aria-hidden="true" className="pp-go" />
+                <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
               </Link>
             )}
           </div>
         </section>
 
-        {/* ---- Preferences ---- */}
-        <section className="card pp-card">
-          <h2><Bell size={17} aria-hidden="true" /> Preferences</h2>
-          <p className="pp-card-sub">How the club should reach you.</p>
-          <div className="pp-grid">
-            {selectField('preferredContactMethod', 'Preferred contact method', form.preferredContactMethod, CONTACT_METHODS, set('preferredContactMethod'), false)}
-            {selectField('preferredLanguage', 'Preferred language', form.preferredLanguage, LANGUAGES, set('preferredLanguage'), false)}
-          </div>
-        </section>
-
-        {/* ---- Account ---- */}
-        <section className="card pp-card">
-          <h2><Shield size={17} aria-hidden="true" /> Account</h2>
-          <div className="pp-grid">
-            <div className="input-group full">
-              <label htmlFor="pp-email">Sign-in email</label>
-              <input id="pp-email" className="input" type="email" value={profile.email} disabled readOnly />
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                Contact an administrator to change your sign-in email.
+        {/* ---- Settings ---- */}
+        <section className="pp-group">
+          <h2>Settings</h2>
+          <div className="pp-group-card">
+            {row(<Bell size={17} />, 'How we reach you', [form.preferredContactMethod, form.preferredLanguage].filter(Boolean).join(' · '), () => openSheet('prefs'))}
+            <div className="pp-row pp-row-static">
+              <span className="pp-row-icon"><Mail size={17} /></span>
+              <span className="pp-row-body">
+                <small>Sign-in email</small>
+                <strong>{profile.email}</strong>
               </span>
             </div>
-          </div>
-          <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(27,67,50,0.08)' }}>
-            <p style={{ margin: '0 0 10px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-              Deleting your account permanently erases your profile, requests,
-              volunteer history, matrimony data and messages. It cannot be undone.
-            </p>
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={deleting}
-              className="btn"
-              style={{ background: 'var(--error-50)', color: 'var(--error-600)', border: '1px solid rgba(220,73,58,0.35)', display: 'inline-flex', alignItems: 'center', gap: 8 }}
-            >
-              <Trash2 size={15} aria-hidden="true" /> {deleting ? 'Deleting…' : 'Delete my account'}
+            <button type="button" className="pp-row pp-row-danger" onClick={handleDelete} disabled={deleting}>
+              <span className="pp-row-icon"><Trash2 size={17} /></span>
+              <span className="pp-row-body"><strong>{deleting ? 'Deleting…' : 'Delete my account'}</strong></span>
+              <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
             </button>
           </div>
         </section>
@@ -359,17 +391,96 @@ export default function MemberProfilePage() {
         </div>
       )}
 
-      {/* ---- Save bar: appears only when something changed ---- */}
-      {(dirty || saved) && (
-        <div className="pp-savebar">
-          <div className="pp-savebar-inner">
-            <span>{saved && !dirty ? 'All changes saved.' : 'You have unsaved changes'}</span>
-            {(dirty || saving) && (
-              <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <Save size={16} aria-hidden="true" /> {saving ? 'Saving…' : 'Save changes'}
+      {/* ---- Focused edit sheet ---- */}
+      {sheet && sheetDef && draft && (
+        <div className="hf-sheet-scrim" onClick={(e) => { if (e.target === e.currentTarget) setSheet(null); }}>
+          <div className="hf-sheet pp-sheet" role="dialog" aria-modal="true" aria-label={sheetDef.title}>
+            <div className="hf-sheet-head">
+              <h2>{sheetDef.title}</h2>
+              <button type="button" className="portal-sheet-close" onClick={() => setSheet(null)} aria-label="Close">
+                <X size={18} />
               </button>
+            </div>
+            <p className="hf-sheet-sub">{sheetDef.blurb}</p>
+
+            <div className="pp-sheet-fields">
+              {sheetDef.fields.map((f) => {
+                const opts = OPTIONS[f];
+                if (opts) {
+                  return (
+                    <div className="pp-field" key={f}>
+                      <label htmlFor={`pp-${f}`}>{LABELS[f]}</label>
+                      <div className="pp-select">
+                        <select id={`pp-${f}`} value={draft[f]} onChange={(e) => setDraft({ ...draft, [f]: e.target.value })}>
+                          <option value="">Not set</option>
+                          {opts.map((o) => <option key={o} value={o}>{o}</option>)}
+                          {draft[f] && !opts.includes(draft[f]) && <option value={draft[f]}>{draft[f]}</option>}
+                        </select>
+                        <ChevronRight size={14} aria-hidden="true" className="pp-select-chevron" />
+                      </div>
+                    </div>
+                  );
+                }
+                if (f === 'professionalSummary') {
+                  return (
+                    <div className="pp-field" key={f}>
+                      <label htmlFor={`pp-${f}`}>{LABELS[f]}</label>
+                      <textarea
+                        id={`pp-${f}`} rows={4} value={draft[f]}
+                        onChange={(e) => setDraft({ ...draft, [f]: e.target.value })}
+                        placeholder="A few lines about your background and what you are looking for."
+                      />
+                    </div>
+                  );
+                }
+                if (f === 'city') {
+                  return (
+                    <div className="pp-field" key={f}>
+                      <label htmlFor="pp-city">City</label>
+                      <input
+                        id="pp-city" list="pp-city-options" value={draft.city}
+                        onChange={(e) => setDraft({ ...draft, city: e.target.value })}
+                        placeholder="Choose your city"
+                      />
+                      <datalist id="pp-city-options">
+                        {COMMUNITY_CITIES.map((c) => <option key={c.name} value={c.name}>{c.province}</option>)}
+                      </datalist>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="pp-field" key={f}>
+                    <label htmlFor={`pp-${f}`}>{LABELS[f]}</label>
+                    <input
+                      id={`pp-${f}`}
+                      type={f === 'phone' ? 'tel' : f === 'linkedinUrl' ? 'url' : 'text'}
+                      autoComplete={f === 'phone' ? 'tel' : undefined}
+                      placeholder={f === 'linkedinUrl' ? 'https://linkedin.com/in/…' : f === 'skills' ? 'e.g. React, financial analysis' : undefined}
+                      value={draft[f]}
+                      onChange={(e) => setDraft({ ...draft, [f]: e.target.value })}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {sheetError && (
+              <div role="alert" className="community-error" style={{ marginTop: 4 }}>
+                <AlertCircle size={15} aria-hidden="true" /> {sheetError}
+              </div>
             )}
+
+            <button type="button" className="pp-sheet-save" onClick={saveSheet} disabled={saving}>
+              {saving ? 'Saving…' : <><Save size={16} aria-hidden="true" /> Save</>}
+            </button>
           </div>
+        </div>
+      )}
+
+      {/* ---- Feedback toast ---- */}
+      {toast && (
+        <div className="pp-toast" role="status">
+          <Check size={15} aria-hidden="true" /> {toast}
         </div>
       )}
     </div>
