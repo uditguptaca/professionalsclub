@@ -5,10 +5,11 @@ import { useApp } from '@/context/app-context';
 import { getMyMatrimony, listInterests, respondToInterest } from '@/app/actions/matrimony';
 import type { MatrimonyProfile, MatrimonyInterest, MatrimonyProfileCard } from '@/types/matrimony';
 import {
-  Heart, ArrowLeft, Send, Inbox, CheckCircle2, XCircle, Clock, User,
-  Calendar, MapPin, Briefcase, ChevronRight, UserCheck, Smile
+  ArrowLeft, Send, Inbox, CheckCircle2, XCircle, Clock, User,
+  ChevronRight, UserCheck, Check, AlertCircle, Heart,
 } from 'lucide-react';
 import PortalLoading from '@/components/portal/PortalLoading';
+import { useConfirm } from '@/components/portal/confirm';
 
 type InterestTab = 'received' | 'sent';
 
@@ -16,8 +17,16 @@ interface PopulatedInterest extends Omit<MatrimonyInterest, 'sender_profile' | '
   profile: MatrimonyProfileCard;
 }
 
+/** Status chips: light fill + a text colour that passes at chip sizes. */
+const CHIPS: Record<string, { bg: string; color: string }> = {
+  pending:  { bg: 'rgba(217,119,6,0.10)', color: 'var(--accent-700)' },
+  accepted: { bg: 'rgba(0,168,107,0.10)', color: 'var(--success-600)' },
+  declined: { bg: 'var(--error-50)',      color: 'var(--error-600)' },
+};
+
 export default function InterestsPage() {
   const { currentUserId } = useApp();
+  const confirm = useConfirm();
 
   const [activeTab, setActiveTab] = useState<InterestTab>('received');
   const [loading, setLoading] = useState(true);
@@ -26,6 +35,7 @@ export default function InterestsPage() {
   const [sent, setSent] = useState<PopulatedInterest[]>([]);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [toast, setToast] = useState('');
 
   /**
    * Interests carry only profile ids; the server joins the cards from
@@ -36,7 +46,7 @@ export default function InterestsPage() {
   async function loadInterests() {
     const result = await listInterests();
     if (!result.ok) {
-      console.error('Error fetching interests:', result.error);
+      setActionError(result.error);
       return;
     }
     setReceived(result.data.received as unknown as PopulatedInterest[]);
@@ -57,6 +67,12 @@ export default function InterestsPage() {
     loadData();
   }, [currentUserId]);
 
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(''), 2600);
+    return () => clearTimeout(t);
+  }, [toast]);
+
   const handleAccept = async (interestId: string) => {
     if (!myProfile) return;
     setActionLoading(interestId);
@@ -65,7 +81,7 @@ export default function InterestsPage() {
     // may do this — the guard_interest_response trigger enforces it, so a
     // sender cannot accept on the other party's behalf.
     const result = await respondToInterest(interestId, true);
-    if (result.ok) { setActionError(null); await loadInterests(); }
+    if (result.ok) { setActionError(null); setToast('Interest accepted'); await loadInterests(); }
     else setActionError(result.error);
 
     setActionLoading(null);
@@ -73,11 +89,17 @@ export default function InterestsPage() {
 
   const handleDecline = async (interestId: string) => {
     if (!myProfile) return;
-    if (!confirm('Are you sure you want to decline this interest?')) return;
+    const ok = await confirm({
+      title: 'Decline this interest?',
+      message: 'They will not be able to message you, and this cannot be undone.',
+      confirmLabel: 'Decline',
+      tone: 'danger',
+    });
+    if (!ok) return;
     setActionLoading(interestId);
 
     const result = await respondToInterest(interestId, false);
-    if (result.ok) { setActionError(null); await loadInterests(); }
+    if (result.ok) { setActionError(null); setToast('Interest declined'); await loadInterests(); }
     else setActionError(result.error);
 
     setActionLoading(null);
@@ -107,167 +129,186 @@ export default function InterestsPage() {
 
   if (!myProfile) {
     return (
-      <div className="flex flex-col gap-6" style={{ maxWidth: 600, margin: '40px auto', textAlign: 'center' }}>
-        <h2 style={{ fontWeight: 800 }}>Profile Required</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>
-          Please create a matrimony profile first to receive and send interests.
+      <div className="pp2" style={{ textAlign: 'center', padding: '2.5rem 0' }}>
+        <Heart size={28} aria-hidden="true" style={{ opacity: 0.35, marginBottom: 12 }} />
+        <p style={{ margin: '0 0 1.1rem', fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
+          Create a matrimony profile to send and receive interests.
         </p>
-        <Link href="/portal/member/matrimony/create" className="btn btn-primary" style={{ alignSelf: 'center', textDecoration: 'none' }}>
-          Create Profile
+        <Link href="/portal/member/matrimony/create" className="btn btn-primary" style={{ textDecoration: 'none' }}>
+          Create profile
         </Link>
       </div>
     );
   }
 
   const currentList = activeTab === 'received' ? received : sent;
+  const pendingCount = received.filter(r => r.status === 'pending').length;
+
+  const tabs: { key: InterestTab; label: string }[] = [
+    { key: 'received', label: `Received${pendingCount ? ` (${pendingCount})` : ''}` },
+    { key: 'sent', label: `Sent${sent.length ? ` (${sent.length})` : ''}` },
+  ];
 
   return (
-    <div className="flex flex-col gap-6 animate-fade-in" style={{ maxWidth: 1000, margin: '0 auto', paddingBottom: 60 }}>
-      {/* Header */}
-      <div>
-        <Link href="/portal/member/matrimony" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600, fontSize: '0.85rem' }}>
-          <ArrowLeft size={16} /> Back to Dashboard
-        </Link>
-      </div>
-      <div>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-display)', marginBottom: 6 }}>
-          Manage Interests
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          Accept or send connection requests to start matching.
-        </p>
-        {actionError && <p role="alert" className="community-error" style={{ marginTop: 12 }}>{actionError}</p>}
-      </div>
+    <div className="pp2">
+      <Link
+        href="/portal/member/matrimony"
+        className="pp-chip"
+        style={{
+          background: 'var(--bg-primary)', border: '1px solid rgba(27,67,50,0.08)',
+          color: 'var(--text-secondary)', textDecoration: 'none',
+          minHeight: 40, padding: '0 0.9rem', marginBottom: '0.9rem',
+        }}
+      >
+        <ArrowLeft size={14} aria-hidden="true" /> Matrimony
+      </Link>
 
-      {/* Tabs */}
-      <div style={{
-        display: 'flex', gap: 8, borderBottom: '1px solid var(--border-color)',
-        overflowX: 'auto', paddingBottom: 1
-      }}>
-        {[
-          { key: 'received', label: `Received (${received.filter(r => r.status === 'pending').length})`, icon: Inbox },
-          { key: 'sent', label: `Sent (${sent.length})`, icon: Send },
-        ].map((tab) => {
-          const Icon = tab.icon;
+      <header style={{ marginBottom: '1.1rem' }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.01em', margin: '0 0 0.25rem' }}>
+          Interests
+        </h1>
+        <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
+          Accepting an interest opens a private chat between the two of you.
+        </p>
+      </header>
+
+      {/* Status filter */}
+      <div
+        role="tablist"
+        aria-label="Interest direction"
+        style={{
+          display: 'flex', gap: 4, padding: 4, background: 'var(--bg-primary)',
+          borderRadius: 999, border: '1px solid rgba(27,67,50,0.08)',
+          width: 'fit-content', maxWidth: '100%', overflowX: 'auto', marginBottom: '1.1rem',
+        }}
+      >
+        {tabs.map((tab) => {
           const isActive = activeTab === tab.key;
+          const Icon = tab.key === 'received' ? Inbox : Send;
           return (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key as InterestTab)}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setActiveTab(tab.key)}
               style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                padding: '12px 20px', background: 'none', border: 'none',
-                borderBottom: isActive ? '3px solid var(--primary-600)' : '3px solid transparent',
-                color: isActive ? 'var(--primary-600)' : 'var(--text-muted)',
-                fontWeight: isActive ? 700 : 500, fontSize: '0.85rem',
-                cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s'
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                minHeight: 44, padding: '0 16px', border: 0, borderRadius: 999,
+                font: 'inherit', fontSize: '0.86rem', whiteSpace: 'nowrap', cursor: 'pointer',
+                background: isActive ? 'var(--green-950)' : 'none',
+                color: isActive ? '#fff' : 'var(--text-secondary)',
+                fontWeight: isActive ? 700 : 600,
               }}
             >
-              <Icon size={16} />
-              {tab.label}
+              <Icon size={15} aria-hidden="true" /> {tab.label}
             </button>
           );
         })}
       </div>
 
-      {/* List */}
+      {actionError && (
+        <div role="alert" className="community-error" style={{ marginBottom: 12 }}>
+          <AlertCircle size={15} aria-hidden="true" /> {actionError}
+        </div>
+      )}
+
       {currentList.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
-          <Smile size={48} style={{ color: 'var(--text-muted)', marginBottom: 16, opacity: 0.4 }} />
-          <h3 style={{ fontWeight: 700, marginBottom: 8 }}>No interests found</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+        <div style={{ textAlign: 'center', padding: '2.5rem 1rem' }}>
+          {activeTab === 'received'
+            ? <Inbox size={28} aria-hidden="true" style={{ opacity: 0.35 }} />
+            : <Send size={28} aria-hidden="true" style={{ opacity: 0.35 }} />}
+          <p style={{ margin: '0.8rem 0 1.1rem', fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
             {activeTab === 'received'
-              ? "You haven't received any interests yet. Make sure your profile is complete to attract views."
-              : "You haven't sent any interests yet. Browse profiles to find someone compatible."}
+              ? 'No one has sent you an interest yet. A complete profile gets seen more often.'
+              : 'You have not sent an interest yet.'}
           </p>
-          {activeTab === 'sent' && (
-            <Link href="/portal/member/matrimony/browse" className="btn btn-primary" style={{ display: 'inline-flex', alignSelf: 'center', marginTop: 20, textDecoration: 'none' }}>
-              Browse Profiles
-            </Link>
-          )}
+          <Link
+            href={activeTab === 'received' ? '/portal/member/matrimony/edit' : '/portal/member/matrimony/browse'}
+            className="btn btn-primary"
+            style={{ textDecoration: 'none' }}
+          >
+            {activeTab === 'received' ? 'Complete your profile' : 'Browse profiles'}
+          </Link>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {currentList.map((item) => (
-            <div key={item.id} className="card animate-fade-in-up" style={{
-              display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center', padding: 20
-            }}>
-              {/* Avatar placeholder */}
-              <div style={{
-                width: 56, height: 56, borderRadius: 14, flexShrink: 0,
-                background: item.profile.gender?.toLowerCase() === 'female' ? 'linear-gradient(135deg, rgba(217,119,6,0.13), rgba(251,191,36,0.06))' : 'linear-gradient(135deg, rgba(232,93,4,0.13), rgba(249,115,22,0.06))',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
-                <User size={26} style={{ color: item.profile.gender?.toLowerCase() === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
-              </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {currentList.map((item) => {
+            const name = getDisplayName(item.profile.full_name, item.profile.display_pref);
+            const meta = [
+              `${getAge(item.profile.dob)} yrs`,
+              [item.profile.city, item.profile.province].filter(Boolean).join(', '),
+              item.profile.occupation,
+            ].filter(Boolean).join(' · ');
+            const chip = CHIPS[item.status] ?? CHIPS.pending;
+            const busy = actionLoading !== null;
 
-              {/* Info details */}
-              <div style={{ flex: 1, minWidth: 200 }}>
-                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, margin: '0 0 6px 0' }}>
-                  {getDisplayName(item.profile.full_name, item.profile.display_pref)}
-                  {item.profile.is_verified_id && <UserCheck size={14} style={{ color: 'var(--text-accent)' }} />}
-                </h3>
-                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', color: 'var(--text-secondary)', fontSize: '0.78rem' }}>
-                  <span>{getAge(item.profile.dob)} yrs</span>
-                  <span>&bull;</span>
-                  <span>{item.profile.city}, {item.profile.province}</span>
-                  <span>&bull;</span>
-                  <span>{item.profile.occupation}</span>
-                </div>
-              </div>
+            return (
+              <div key={item.id} className="pp-group-card">
+                <Link href={`/portal/member/matrimony/profile/${item.profile.id}`} className="pp-row">
+                  <span className="pp-row-icon"><User size={17} aria-hidden="true" /></span>
+                  <span className="pp-row-body">
+                    <strong style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                      {item.profile.is_verified_id && (
+                        <UserCheck size={13} aria-label="ID verified" style={{ color: 'var(--text-accent)', flexShrink: 0 }} />
+                      )}
+                    </strong>
+                    <small style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{meta}</small>
+                  </span>
+                  <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
+                </Link>
 
-              {/* Status and Action Buttons */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-                {item.status === 'pending' && activeTab === 'received' && (
-                  <div style={{ display: 'flex', gap: 8 }}>
+                {item.status === 'pending' && activeTab === 'received' ? (
+                  <div style={{ display: 'flex', gap: 8, padding: '0.75rem 0.9rem 0.9rem' }}>
                     <button
-                      className="btn btn-sm"
+                      type="button"
+                      className="btn btn-primary"
                       onClick={() => handleAccept(item.id)}
-                      disabled={actionLoading !== null}
-                      style={{ background: 'var(--success-500)', color: 'white', border: 'none' }}
+                      disabled={busy}
+                      style={{ flex: 1, minHeight: 44 }}
                     >
-                      {actionLoading === item.id ? 'Accepting...' : 'Accept'}
+                      {actionLoading === item.id
+                        ? 'Accepting…'
+                        : <><Check size={15} aria-hidden="true" /> Accept</>}
                     </button>
                     <button
-                      className="btn btn-sm btn-outline"
+                      type="button"
+                      className="btn btn-outline"
                       onClick={() => handleDecline(item.id)}
-                      disabled={actionLoading !== null}
-                      style={{ borderColor: 'var(--error-500)', color: 'var(--error-600)' }}
+                      disabled={busy}
+                      style={{ flex: 1, minHeight: 44, color: 'var(--error-600)', borderColor: 'rgba(240,73,35,0.35)' }}
                     >
                       Decline
                     </button>
                   </div>
-                )}
-
-                {item.status === 'pending' && activeTab === 'sent' && (
-                  <span style={{ fontSize: '0.8rem', color: '#92400e', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
-                    <Clock size={14} /> Pending Response
-                  </span>
-                )}
-
-                {item.status === 'accepted' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <span style={{ fontSize: '0.8rem', color: '#04724d', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
-                      <CheckCircle2 size={14} /> Mutual Match
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', padding: '0.7rem 0.9rem 0.85rem' }}>
+                    <span className="pp-chip" style={{ background: chip.bg, color: chip.color }}>
+                      {item.status === 'accepted' && <><CheckCircle2 size={12} aria-hidden="true" /> Mutual match</>}
+                      {item.status === 'declined' && <><XCircle size={12} aria-hidden="true" /> Declined</>}
+                      {item.status === 'pending' && <><Clock size={12} aria-hidden="true" /> Awaiting their reply</>}
                     </span>
-                    <Link href="/portal/member/matrimony/messages" className="btn btn-sm btn-primary" style={{ background: 'var(--success-500)', borderColor: 'var(--success-500)', textDecoration: 'none' }}>
-                      Chat
-                    </Link>
+                    {item.status === 'accepted' && (
+                      <Link
+                        href="/portal/member/matrimony/messages"
+                        className="btn btn-sm btn-outline"
+                        style={{ marginLeft: 'auto', textDecoration: 'none' }}
+                      >
+                        Message
+                      </Link>
+                    )}
                   </div>
                 )}
-
-                {item.status === 'declined' && (
-                  <span style={{ fontSize: '0.8rem', color: 'var(--error-600)', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
-                    <XCircle size={14} /> Declined
-                  </span>
-                )}
-
-                <Link href={`/portal/member/matrimony/profile/${item.profile.id}`} className="btn btn-sm btn-ghost" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  Profile <ChevronRight size={14} />
-                </Link>
               </div>
-            </div>
-          ))}
+            );
+          })}
+        </div>
+      )}
+
+      {toast && (
+        <div className="pp-toast" role="status">
+          <Check size={15} aria-hidden="true" /> {toast}
         </div>
       )}
     </div>

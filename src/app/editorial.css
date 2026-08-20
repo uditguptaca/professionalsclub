@@ -3894,9 +3894,12 @@ a.portal-sheet-user:active { background: var(--green-900, #14532d); }
   padding: calc(clamp(1.8rem, 5vw, 2.6rem) + var(--sat)) clamp(1rem, 3vw, 2.5rem) 1.6rem;
   text-align: center;
   color: #fff;
+  /* Solid band with a soft lime glow, ending in a clean rounded edge - the
+     long fade into the page background read as a rendering artifact. */
   background:
-    radial-gradient(120% 90% at 50% -10%, rgba(188, 223, 106, 0.16), transparent 60%),
-    linear-gradient(175deg, var(--green-950) 0%, #143524 70%, var(--bg-secondary) 100%);
+    radial-gradient(120% 80% at 50% -20%, rgba(188, 223, 106, 0.14), transparent 55%),
+    var(--green-950);
+  border-radius: 0 0 1.5rem 1.5rem;
 }
 @media (min-width: 1024px) {
   .pp-hero { border-radius: 1.25rem; margin: 0 0 1.2rem; padding: 2.2rem 1.5rem 1.6rem; }

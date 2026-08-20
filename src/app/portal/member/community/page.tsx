@@ -1,29 +1,34 @@
 'use client';
 import Link from 'next/link';
 import { CommunityFeed, CommunityAside } from '@/components/portal/community';
-import { UsersRound } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 
 /**
  * Community home: the feed column (club-wide posts plus the member's groups)
- * with a sticky sidebar of groups on wide screens.
+ * with a sticky sidebar of groups on wide screens. The head follows the home
+ * feed's section grammar — title on the left, one quiet link on the right.
  */
 export default function CommunityPage() {
   return (
-    <div>
-      <div className="community-page-head" style={{ maxWidth: '40rem' }}>
-        <div>
-          <h1>Community</h1>
-          <p>What members across the club are talking about.</p>
+    <div className="community-layout">
+      <div className="hf-section">
+        <div className="hf-section-head">
+          <h1 style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.01em', margin: 0 }}>
+            Community
+          </h1>
+          <Link
+            href="/portal/member/community/groups"
+            style={{ minHeight: 44, display: 'inline-flex', alignItems: 'center' }}
+          >
+            All groups <ChevronRight size={14} aria-hidden="true" />
+          </Link>
         </div>
-        <Link href="/portal/member/community/groups" className="btn btn-outline btn-sm">
-          <UsersRound size={16} /> Groups
-        </Link>
-      </div>
-
-      <div className="community-layout">
+        <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+          What members across the club are talking about.
+        </p>
         <CommunityFeed showRail composerPlaceholder="Share something with the club…" />
-        <CommunityAside />
       </div>
+      <CommunityAside />
     </div>
   );
 }

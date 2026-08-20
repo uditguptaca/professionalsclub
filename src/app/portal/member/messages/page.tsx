@@ -2,11 +2,29 @@
 import React from 'react';
 import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
-import { MessageSquare, Mail } from 'lucide-react';
+import PortalLoading from '@/components/portal/PortalLoading';
+import { MessageSquare, MailOpen, Mail, ChevronRight, Check } from 'lucide-react';
 import Link from 'next/link';
 
+/**
+ * Admin messages, one row per case thread. Unread threads sit in their own
+ * group with an orange row icon and an unread chip; everything else reads as
+ * quiet history. Tapping a row opens the case.
+ */
+
+/** Explicit locale + fields: a bare toLocaleDateString drifts between server
+ *  and client and re-triggered the hydration mismatch. */
+const shortDate = (iso: string): string =>
+  new Date(iso).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
+
+const CHIP: React.CSSProperties = {
+  background: 'var(--bg-secondary)',
+  color: 'var(--text-muted)',
+  border: '1px solid rgba(27,67,50,0.08)',
+};
+
 export default function MemberMessagesPage() {
-  const { messages, helpRequests } = usePortal();
+  const { messages, helpRequests, loading } = usePortal();
   const { currentUserId } = useApp();
 
   // Messages visible to the current member
@@ -21,56 +39,87 @@ export default function MemberMessagesPage() {
     return acc;
   }, {});
 
-  return (
-    <div className="animate-fade-in">
-      <div style={{ marginBottom: 32 }}>
-        <h1 className="text-3xl font-display font-bold mb-2">Messages from Admin</h1>
-        <p className="text-secondary">All communications from the admin team, organized by case.</p>
-      </div>
+  const threads = Object.entries(caseGroups).map(([caseId, msgs]) => ({
+    caseId,
+    msgs,
+    latest: msgs[0],
+    unread: msgs.filter(m => !m.read && m.senderRole === 'admin').length,
+    reference: helpRequests.find(r => r.id === caseId)?.reference,
+  }));
 
-      {Object.keys(caseGroups).length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '80px 20px' }}>
-          <Mail size={48} style={{ color: 'var(--gray-300)', marginBottom: 16 }} />
-          <h3 className="text-xl font-bold mb-2">No messages yet</h3>
-          <p className="text-secondary">Admin will send you updates when your requests are being processed.</p>
+  const unreadThreads = threads.filter(t => t.unread > 0);
+  const readThreads = threads.filter(t => t.unread === 0);
+
+  const row = (t: (typeof threads)[number]) => (
+    <Link key={t.caseId} href={`/portal/member/my-requests/${t.caseId}`} className="pp-row">
+      <span
+        className="pp-row-icon"
+        style={t.unread > 0 ? { background: 'rgba(232,93,4,0.09)', color: 'var(--primary-700)' } : undefined}
+      >
+        {t.unread > 0 ? <MailOpen size={17} /> : <MessageSquare size={17} />}
+      </span>
+      <span className="pp-row-body">
+        <small>{[t.reference, shortDate(t.latest.createdAt)].filter(Boolean).join(' · ')}</small>
+        <strong>{t.latest.caseTitle}</strong>
+        <span
+          style={{
+            display: 'block', marginTop: 2, fontSize: '0.82rem', color: 'var(--text-secondary)',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}
+        >
+          {t.latest.senderName}: {t.latest.body}
+        </span>
+        <span style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+          {t.unread > 0
+            ? <span className="hf-deal" style={{ marginTop: 0 }}>{t.unread} unread</span>
+            : <span className="pp-chip" style={CHIP}><Check size={11} aria-hidden="true" /> Read</span>}
+          <span className="pp-chip" style={CHIP}>
+            {t.msgs.length} message{t.msgs.length !== 1 ? 's' : ''}
+          </span>
+        </span>
+      </span>
+      <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
+    </Link>
+  );
+
+  // No hooks in this component, so the guard can sit here. Without it the first
+  // paint claims "no messages yet" before the snapshot has landed.
+  if (loading && messages.length === 0) return <PortalLoading label="Loading your messages" />;
+
+  return (
+    <div className="pp2">
+      <header style={{ marginBottom: '1.3rem' }}>
+        <h1 style={{ fontSize: '1.45rem', fontWeight: 800, margin: 0 }}>Messages</h1>
+        <p style={{ margin: '0.3rem 0 0', fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
+          Everything the admin team has sent you, grouped by case.
+        </p>
+      </header>
+
+      {threads.length === 0 ? (
+        <div className="card" style={{ padding: '2.25rem 1.25rem', textAlign: 'center' }}>
+          <Mail size={28} aria-hidden="true" style={{ opacity: 0.35 }} />
+          <p style={{ margin: '0.7rem 0 1rem', color: 'var(--text-secondary)' }}>
+            No messages yet. Admin writes here as soon as one of your requests moves.
+          </p>
+          <Link href="/portal/member/my-requests" className="btn btn-outline">
+            See your requests
+          </Link>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {Object.entries(caseGroups).map(([caseId, msgs]) => {
-            const latestMsg = msgs[0];
-            const unread = msgs.filter(m => !m.read && m.senderRole === 'admin').length;
-            return (
-              <Link key={caseId} href={`/portal/member/my-requests/${caseId}`} style={{ textDecoration: 'none' }}>
-                <div className="card" style={{ padding: '18px 22px', cursor: 'pointer', borderLeft: unread > 0 ? '3px solid var(--primary-500)' : '3px solid transparent' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <MessageSquare size={16} className="text-primary-600" />
-                        <span style={{ fontWeight: 700 }}>{latestMsg.caseTitle}</span>
-                        {unread > 0 && (
-                          <span style={{ fontSize: '0.65rem', fontWeight: 700, background: 'var(--error-500)', color: 'white', padding: '1px 8px', borderRadius: 99 }}>
-                            {unread} new
-                          </span>
-                        )}
-                      </div>
-                      <span style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: 'var(--text-muted)' }}>
-                        {helpRequests.find(r => r.id === caseId)?.reference ?? '—'}
-                      </span>
-                    </div>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                      {new Date(latestMsg.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    <strong>{latestMsg.senderName}:</strong> {latestMsg.body.substring(0, 120)}{latestMsg.body.length > 120 ? '...' : ''}
-                  </div>
-                  <div style={{ marginTop: 8, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    {msgs.length} message{msgs.length !== 1 ? 's' : ''} in this thread
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+        <div className="pp-groups">
+          {unreadThreads.length > 0 && (
+            <section className="pp-group">
+              <h2>Unread</h2>
+              <div className="pp-group-card">{unreadThreads.map(row)}</div>
+            </section>
+          )}
+
+          {readThreads.length > 0 && (
+            <section className="pp-group">
+              <h2>{unreadThreads.length > 0 ? 'Earlier' : 'All threads'}</h2>
+              <div className="pp-group-card">{readThreads.map(row)}</div>
+            </section>
+          )}
         </div>
       )}
     </div>

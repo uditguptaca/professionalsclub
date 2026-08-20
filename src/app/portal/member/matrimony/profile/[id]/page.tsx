@@ -10,24 +10,25 @@ import {
 import type { MatrimonyProfile, MatrimonyPreferences, MatrimonyContact, MatrimonyMedia } from '@/types/matrimony';
 import { computeMatchScore } from '@/lib/matrimony/matching';
 import {
-  User, Heart, MapPin, Briefcase, GraduationCap, Users, Calendar,
-  Shield, ArrowLeft, CheckCircle2, AlertCircle, Clock, XCircle,
-  Phone, Mail, HeartHandshake, Smile, Coffee, BookOpen, Star, Sparkles,
-  Bookmark, Send, MessageCircle, AlertTriangle, ShieldAlert, Image as ImageIcon
+  User, Heart, ArrowLeft, CheckCircle2, AlertCircle, XCircle,
+  Phone, Mail, Shield, ShieldAlert, Sparkles, BadgeCheck, ChevronRight,
+  Bookmark, Send, MessageCircle, Image as ImageIcon, X, Check,
 } from 'lucide-react';
 import PortalLoading from '@/components/portal/PortalLoading';
+import { useConfirm } from '@/components/portal/confirm';
 
-const statusConfig: Record<string, { color: string; bg: string; label: string; icon: React.ElementType }> = {
-  draft: { color: 'var(--text-secondary)', bg: 'rgba(100,116,139,0.1)', label: 'Draft', icon: Clock },
-  pending: { color: '#92400e', bg: 'rgba(245,158,11,0.1)', label: 'Pending Review', icon: Clock },
-  approved: { color: '#04724d', bg: 'rgba(0,168,107,0.1)', label: 'Approved', icon: CheckCircle2 },
-  rejected: { color: 'var(--error-600)', bg: 'rgba(240,73,35,0.1)', label: 'Rejected', icon: XCircle },
-  suspended: { color: 'var(--error-600)', bg: 'rgba(220,38,38,0.1)', label: 'Suspended', icon: XCircle },
-};
+const REPORT_REASONS: { value: string; label: string }[] = [
+  { value: 'fake_profile', label: 'Fake profile or stolen identity' },
+  { value: 'inappropriate_content', label: 'Inappropriate content or photos' },
+  { value: 'abusive_behavior', label: 'Abusive behaviour or harassment' },
+  { value: 'solicitation', label: 'Spam, solicitation or a scam' },
+  { value: 'other', label: 'Something else' },
+];
 
 export default function CandidateProfilePage() {
   const params = useParams();
   const router = useRouter();
+  const confirm = useConfirm();
   const id = params.id as string;
   const { currentUserId } = useApp();
 
@@ -43,15 +44,16 @@ export default function CandidateProfilePage() {
   const [interestStatus, setInterestStatus] = useState<'none' | 'sent' | 'received' | 'accepted' | 'declined'>('none');
   const [interestId, setInterestId] = useState<string | null>(null);
   const [candidateContact, setCandidateContact] = useState<MatrimonyContact | null>(null);
-  const [contactLoading, setContactLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [toast, setToast] = useState('');
 
   // Photo access request
   const [photoRequesting, setPhotoRequesting] = useState(false);
   const [photoRequestSent, setPhotoRequestSent] = useState(false);
   const [photoRequestError, setPhotoRequestError] = useState<string | null>(null);
 
-  // Modal / overlay states
+  // Report sheet
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
@@ -70,7 +72,7 @@ export default function CandidateProfilePage() {
     const [detail, mine] = await Promise.all([getProfileDetail(id as string), getMyMatrimony()]);
 
     if (!detail.ok || !detail.data) {
-      if (!detail.ok) console.error('Error loading candidate profile:', detail.error);
+      if (!detail.ok) setActionError(detail.error);
       setLoading(false);
       return;
     }
@@ -105,6 +107,22 @@ export default function CandidateProfilePage() {
     fetchProfileAndRelations();
   }, [fetchProfileAndRelations]);
 
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(''), 2600);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  // The open sheet locks background scroll, same as every other sheet here.
+  useEffect(() => {
+    if (!reportOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setReportOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey); };
+  }, [reportOpen]);
+
   // ========== ACTIONS ==========
 
   const handleToggleShortlist = async () => {
@@ -115,8 +133,13 @@ export default function CandidateProfilePage() {
       ? await removeFromShortlist(profile.id)
       : await addToShortlist(profile.id);
 
-    if (result.ok) setIsShortlisted(!isShortlisted);
-    else console.error('Error toggling shortlist:', result.error);
+    if (result.ok) {
+      setIsShortlisted(!isShortlisted);
+      setActionError(null);
+      setToast(isShortlisted ? 'Removed from shortlist' : 'Added to shortlist');
+    } else {
+      setActionError(result.error);
+    }
 
     setActionLoading(false);
   };
@@ -129,9 +152,11 @@ export default function CandidateProfilePage() {
     const result = await sendInterest(profile.id);
     if (result.ok) {
       setInterestStatus('sent');
+      setActionError(null);
+      setToast('Interest sent');
       await fetchProfileAndRelations();
     } else {
-      console.error('Error sending interest:', result.error);
+      setActionError(result.error);
     }
 
     setActionLoading(false);
@@ -147,9 +172,11 @@ export default function CandidateProfilePage() {
     const result = await respondToInterest(interestId, true);
     if (result.ok) {
       setInterestStatus('accepted');
+      setActionError(null);
+      setToast('Interest accepted');
       await fetchProfileAndRelations();
     } else {
-      console.error('Error accepting interest:', result.error);
+      setActionError(result.error);
     }
 
     setActionLoading(false);
@@ -157,11 +184,18 @@ export default function CandidateProfilePage() {
 
   const handleDeclineInterest = async () => {
     if (!interestId || actionLoading) return;
+    const ok = await confirm({
+      title: 'Decline this interest?',
+      message: 'They will not be able to message you, and this cannot be undone.',
+      confirmLabel: 'Decline',
+      tone: 'danger',
+    });
+    if (!ok) return;
     setActionLoading(true);
 
     const result = await respondToInterest(interestId, false);
-    if (result.ok) setInterestStatus('declined');
-    else console.error('Error declining interest:', result.error);
+    if (result.ok) { setInterestStatus('declined'); setActionError(null); setToast('Interest declined'); }
+    else setActionError(result.error);
 
     setActionLoading(false);
   };
@@ -200,7 +234,8 @@ export default function CandidateProfilePage() {
         setReportDetails('');
       }, 2500);
     } else {
-      console.error('Error submitting report:', result.error);
+      setActionError(result.error);
+      setReportOpen(false);
     }
 
     setActionLoading(false);
@@ -208,16 +243,21 @@ export default function CandidateProfilePage() {
 
   const handleBlock = async () => {
     if (!myProfile || !profile) return;
-    if (!confirm('Are you sure you want to block this member? You will no longer see each other in search results or browse.')) return;
+    const ok = await confirm({
+      title: 'Block this member?',
+      message: 'You will not see each other in browse or search again, and any chat between you closes.',
+      confirmLabel: 'Block member',
+      tone: 'danger',
+    });
+    if (!ok) return;
     setActionLoading(true);
 
     const result = await blockProfile(profile.id);
     if (result.ok) {
-      alert('Member blocked successfully.');
       router.push('/portal/member/matrimony/browse');
-    } else {
-      console.error('Error blocking member:', result.error);
+      return;
     }
+    setActionError(result.error);
 
     setActionLoading(false);
   };
@@ -230,404 +270,411 @@ export default function CandidateProfilePage() {
 
   if (!profile) {
     return (
-      <div className="flex flex-col gap-6" style={{ maxWidth: 600, margin: '40px auto', textAlign: 'center' }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: '50%', background: 'rgba(240,73,35,0.1)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto'
-        }}>
-          <AlertCircle size={32} color="var(--error-500)" />
-        </div>
-        <h2 style={{ fontWeight: 800 }}>Profile Not Found</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>
-          The requested profile does not exist or has been removed.
+      <div className="pp2" style={{ textAlign: 'center', padding: '2.5rem 0' }}>
+        <User size={28} aria-hidden="true" style={{ opacity: 0.35, marginBottom: 12 }} />
+        <p style={{ margin: '0 0 1.1rem', fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
+          This profile does not exist, or it is no longer listed.
         </p>
-        <Link href="/portal/member/matrimony/browse" className="btn btn-outline" style={{ alignSelf: 'center', textDecoration: 'none' }}>
-          Back to Browse
+        <Link href="/portal/member/matrimony/browse" className="btn btn-primary" style={{ textDecoration: 'none' }}>
+          Back to browse
         </Link>
+        {actionError && (
+          <div role="alert" className="community-error" style={{ marginTop: 16, textAlign: 'left' }}>
+            <AlertCircle size={15} aria-hidden="true" /> {actionError}
+          </div>
+        )}
       </div>
     );
   }
 
-  const birthYear = new Date(profile.dob).getFullYear();
-  const currentYear = new Date().getFullYear();
-  const age = currentYear - birthYear;
-
-  // Calculate Match Score
+  const age = new Date().getFullYear() - new Date(profile.dob).getFullYear();
   const matchScore = myPrefs ? Math.round(computeMatchScore(myPrefs, profile)) : null;
 
+  const displayName = profile.display_pref === 'full_name'
+    ? profile.full_name
+    : profile.display_pref === 'initials'
+      ? profile.full_name.split(' ').map(n => n[0]).join('.').toUpperCase()
+      : profile.full_name.split(' ')[0];
+  const initials = profile.full_name
+    .split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || 'PC';
+
+  const blurPhotos = profile.photo_visibility === 'blurred' && interestStatus !== 'accepted';
+  /* The server already applied the visibility and approval rules to this list,
+     so whatever arrived is safe to show. */
+  const primaryPhoto = media.find(m => m.is_primary) ?? media[0];
+
+  /** One value row. Missing values are dropped rather than shown as "N/A". */
+  const infoRow = (label: string, value?: string | null, capitalize = false) => {
+    if (!value || !String(value).trim()) return null;
+    return (
+      <div className="pp-row pp-row-static" key={label} style={{ minHeight: '3rem' }}>
+        <span className="pp-row-body">
+          <small>{label}</small>
+          <strong style={{ whiteSpace: 'normal', textTransform: capitalize ? 'capitalize' : 'none' }}>{value}</strong>
+        </span>
+      </div>
+    );
+  };
+
+  /** A group renders only when it has something to say. */
+  const group = (title: string, rows: (React.ReactNode | null)[], sub?: string) => {
+    const items = rows.filter(Boolean);
+    if (items.length === 0) return null;
+    return (
+      <section className="pp-group" key={title}>
+        <h2>{title}</h2>
+        {sub && <p className="pp-group-sub">{sub}</p>}
+        <div className="pp-group-card">{items}</div>
+      </section>
+    );
+  };
+
+  const shortlistButton = (
+    <button
+      type="button"
+      className="btn btn-outline"
+      onClick={handleToggleShortlist}
+      disabled={actionLoading}
+      aria-pressed={isShortlisted}
+      style={{ minHeight: 44, flexShrink: 0 }}
+    >
+      <Bookmark size={16} aria-hidden="true" fill={isShortlisted ? 'currentColor' : 'none'} />
+      {isShortlisted ? 'Shortlisted' : 'Shortlist'}
+    </button>
+  );
+
   return (
-    <div className="flex flex-col gap-6 animate-fade-in" style={{ maxWidth: 1000, margin: '0 auto', paddingBottom: 60, position: 'relative' }}>
-      {/* Back button */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Link href="/portal/member/matrimony/browse" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600, fontSize: '0.85rem' }}>
-          <ArrowLeft size={16} /> Back to Browse
+    <div className="pp2">
+      {/* ---- Hero ---- */}
+      <header className="pp-hero" style={{ paddingTop: 'calc(3.8rem + var(--sat))' }}>
+        <Link
+          href="/portal/member/matrimony/browse"
+          className="pp-chip pp-chip-light"
+          style={{
+            position: 'absolute', top: 'calc(1rem + var(--sat))', left: '1rem',
+            minHeight: 36, padding: '0 0.8rem', textDecoration: 'none',
+          }}
+        >
+          <ArrowLeft size={13} aria-hidden="true" /> Browse
         </Link>
-        
-        {/* Flag/Block actions */}
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button className="btn btn-ghost" onClick={() => setReportOpen(true)} style={{ color: 'var(--error-600)', fontSize: '0.8rem', padding: '6px 12px' }}>
-            <ShieldAlert size={14} /> Report
-          </button>
-          <button className="btn btn-ghost" onClick={handleBlock} style={{ color: 'var(--error-600)', fontSize: '0.8rem', padding: '6px 12px' }}>
-            <XCircle size={14} /> Block
-          </button>
+
+        <div className="hf-avatar" style={{ margin: '0 auto 0.6rem', overflow: 'hidden' }}>
+          {blurPhotos
+            ? <span style={{ filter: 'blur(7px)', fontSize: '1.15rem', fontWeight: 800 }} aria-hidden="true">{initials}</span>
+            : primaryPhoto
+              ? <img src={primaryPhoto.url} alt={`Photo of ${displayName}`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+              : initials}
         </div>
-      </div>
-
-      {/* Main Header Card */}
-      <div className="card" style={{
-        background: 'linear-gradient(145deg, var(--bg-card), rgba(232, 93, 4, 0.02))',
-        border: '1px solid var(--border-color)', borderRadius: 24, padding: 32,
-        display: 'flex', gap: 32, flexWrap: 'wrap', alignItems: 'center', position: 'relative'
-      }}>
-        {/* Avatar/Photo */}
-        <div style={{
-          width: 140, height: 140, borderRadius: 24, flexShrink: 0,
-          background: profile.gender?.toLowerCase() === 'female' ? 'linear-gradient(135deg, rgba(217,119,6,0.13), rgba(251,191,36,0.06))' : 'linear-gradient(135deg, rgba(232,93,4,0.13), rgba(249,115,22,0.06))',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 8px 30px rgba(0,0,0,0.04)', border: '1px solid var(--border-color)',
-          position: 'relative', overflow: 'hidden'
-        }}>
-          {profile.photo_visibility === 'blurred' && interestStatus !== 'accepted' ? (
-            <div style={{
-              width: '100%', height: '100%', filter: 'blur(8px)',
-              background: profile.gender?.toLowerCase() === 'female' ? 'linear-gradient(135deg, rgba(217,119,6,0.25), rgba(251,191,36,0.13))' : 'linear-gradient(135deg, rgba(232,93,4,0.25), rgba(249,115,22,0.13))',
-              display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}>
-              <User size={64} style={{ opacity: 0.3 }} />
-            </div>
-          ) : media.length > 0 ? (
-            /* The server already applied the visibility and approval rules to
-               this list, so whatever arrived is safe to show. */
-            <img
-              src={(media.find(m => m.is_primary) ?? media[0]).url}
-              alt={`Photo of ${profile.display_pref === 'full_name' ? profile.full_name : profile.full_name.split(' ')[0]}`}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          ) : (
-            <User size={64} style={{ color: profile.gender?.toLowerCase() === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
-          )}
-        </div>
-
-        {/* Basic info */}
-        <div style={{ flex: 1, minWidth: 260 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-display)', margin: 0 }}>
-              {profile.display_pref === 'full_name' ? profile.full_name
-                : profile.display_pref === 'initials'
-                  ? profile.full_name.split(' ').map(n => n[0]).join('.').toUpperCase()
-                  : profile.full_name.split(' ')[0]}
-            </h1>
-            {profile.is_verified_id && (
-              <span className="badge" style={{ background: 'rgba(232, 93, 4, 0.1)', color: 'var(--text-accent)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <CheckCircle2 size={12} /> ID Verified
-              </span>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 16 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Calendar size={16} /> {age} years</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MapPin size={16} /> {profile.city}, {profile.province}</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Briefcase size={16} /> {profile.occupation}</span>
-          </div>
-
-          {/* Action buttons */}
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            {interestStatus === 'none' && (
-              <button className="btn btn-primary" onClick={handleSendInterest} disabled={actionLoading} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <Heart size={16} /> Express Interest
-              </button>
-            )}
-            {interestStatus === 'sent' && (
-              <button className="btn btn-outline" disabled style={{ display: 'inline-flex', alignItems: 'center', gap: 8, opacity: 0.7 }}>
-                <Send size={16} /> Interest Sent
-              </button>
-            )}
-            {interestStatus === 'received' && (
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn" onClick={handleAcceptInterest} disabled={actionLoading} style={{ background: 'var(--success-500)', color: 'white', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  Accept
-                </button>
-                <button className="btn btn-outline" onClick={handleDeclineInterest} disabled={actionLoading} style={{ borderColor: 'var(--error-500)', color: 'var(--error-600)' }}>
-                  Decline
-                </button>
-              </div>
-            )}
-            {interestStatus === 'accepted' && (
-              <Link href="/portal/member/matrimony/messages" className="btn btn-primary" style={{ background: 'var(--success-500)', borderColor: 'var(--success-500)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <MessageCircle size={16} /> Start Chatting
-              </Link>
-            )}
-            {interestStatus === 'declined' && (
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                Interest Declined
-              </span>
-            )}
-            {profile.photo_visibility === 'on_request' && interestStatus !== 'accepted' && (
-              <button
-                className="btn btn-outline"
-                onClick={handleRequestPhotoAccess}
-                disabled={photoRequesting || photoRequestSent}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
-              >
-                <ImageIcon size={16} />
-                {photoRequestSent ? 'Photo access requested' : photoRequesting ? 'Sending request...' : 'Request photo access'}
-              </button>
-            )}
-            <button
-              className="btn btn-outline"
-              onClick={handleToggleShortlist}
-              disabled={actionLoading}
-              aria-label={isShortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
-              aria-pressed={isShortlisted}
-              style={{ minWidth: 44, padding: 10 }}
+        <h1>{displayName}</h1>
+        <p>
+          {age} · {[profile.city, profile.province].filter(Boolean).join(', ')}
+          {profile.occupation ? ` · ${profile.occupation}` : ''}
+        </p>
+        <div className="pp-hero-chips">
+          {matchScore !== null && (
+            <span
+              className="pp-chip"
+              style={{
+                background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.16)',
+                color: matchScore >= 80 ? 'var(--lime-300)' : matchScore >= 60 ? '#fff' : 'rgba(255,255,255,0.8)',
+              }}
             >
-              <Bookmark size={18} fill={isShortlisted ? 'currentColor' : 'none'} />
-            </button>
-          </div>
-
-          {photoRequestError && (
-            <p role="alert" className="community-error" style={{ marginTop: 12 }}>{photoRequestError}</p>
+              <Sparkles size={12} aria-hidden="true" /> {matchScore}% match
+            </span>
           )}
-          {photoRequestSent && !photoRequestError && (
-            <p className="community-notice">
-              <CheckCircle2 size={14} /> Request sent. This member decides whether to share their photos.
-            </p>
+          {profile.is_verified_id && (
+            <span className="pp-chip pp-chip-light"><BadgeCheck size={12} aria-hidden="true" /> ID verified</span>
           )}
         </div>
+      </header>
 
-        {/* Match Score Indicator */}
-        {matchScore !== null && (
-          <div style={{
-            position: 'absolute', top: 24, right: 24, display: 'flex', flexDirection: 'column', alignItems: 'center',
-            background: 'var(--bg-glass)', border: '1px solid var(--border-color)', borderRadius: 16, padding: '12px 18px',
-            boxShadow: '0 8px 30px rgba(0,0,0,0.04)'
-          }}>
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>Match Score</span>
-            <div style={{
-              fontSize: '1.75rem', fontWeight: 800,
-              color: matchScore >= 80 ? 'var(--success-500)' : matchScore >= 60 ? 'var(--accent-400)' : 'var(--error-500)'
-            }}>
-              {matchScore}%
-            </div>
-          </div>
+      {/* ---- Interest actions ---- */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: '0.9rem' }}>
+        {interestStatus === 'none' && (
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleSendInterest}
+            disabled={actionLoading}
+            style={{ flex: 1, minWidth: 170, minHeight: 44 }}
+          >
+            <Heart size={16} aria-hidden="true" /> Express interest
+          </button>
         )}
+
+        {interestStatus === 'sent' && (
+          <span
+            className="pp-chip"
+            style={{ flex: 1, minWidth: 170, minHeight: 44, justifyContent: 'center', fontSize: '0.8rem', background: 'rgba(217,119,6,0.10)', color: 'var(--accent-700)' }}
+          >
+            <Send size={13} aria-hidden="true" /> Interest sent, awaiting their reply
+          </span>
+        )}
+
+        {interestStatus === 'received' && (
+          <>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleAcceptInterest}
+              disabled={actionLoading}
+              style={{ flex: 1, minWidth: 130, minHeight: 44 }}
+            >
+              <Check size={16} aria-hidden="true" /> Accept
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={handleDeclineInterest}
+              disabled={actionLoading}
+              style={{ flex: 1, minWidth: 110, minHeight: 44, color: 'var(--error-600)', borderColor: 'rgba(240,73,35,0.35)' }}
+            >
+              Decline
+            </button>
+          </>
+        )}
+
+        {interestStatus === 'accepted' && (
+          <Link
+            href="/portal/member/matrimony/messages"
+            className="btn btn-primary"
+            style={{ flex: 1, minWidth: 170, minHeight: 44, textDecoration: 'none' }}
+          >
+            <MessageCircle size={16} aria-hidden="true" /> Message
+          </Link>
+        )}
+
+        {interestStatus === 'declined' && (
+          <span
+            className="pp-chip"
+            style={{ flex: 1, minWidth: 170, minHeight: 44, justifyContent: 'center', fontSize: '0.8rem', background: 'var(--error-50)', color: 'var(--error-600)' }}
+          >
+            <XCircle size={13} aria-hidden="true" /> Interest declined
+          </span>
+        )}
+
+        {shortlistButton}
       </div>
 
-      {/* Grid of detail sections */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24, alignItems: 'start' }}>
-        {/* Left Column: Details */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          {/* About Me */}
-          <div className="card" style={{ padding: 24 }}>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Smile size={18} style={{ color: 'var(--text-accent)' }} /> About Me
-            </h2>
-            <p style={{ lineHeight: 1.7, color: 'var(--text-secondary)', whiteSpace: 'pre-line', margin: 0, fontSize: '0.95rem' }}>
-              {profile.about_me || 'No bio written.'}
-            </p>
-          </div>
+      {profile.photo_visibility === 'on_request' && interestStatus !== 'accepted' && (
+        <button
+          type="button"
+          className="btn btn-outline"
+          onClick={handleRequestPhotoAccess}
+          disabled={photoRequesting || photoRequestSent}
+          style={{ width: '100%', minHeight: 44, marginBottom: '0.9rem' }}
+        >
+          <ImageIcon size={16} aria-hidden="true" />
+          {photoRequestSent ? 'Photo access requested' : photoRequesting ? 'Sending request…' : 'Request photo access'}
+        </button>
+      )}
 
-          {/* Background Details */}
-          <div className="card" style={{ padding: 24 }}>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Users size={18} style={{ color: '#04724d' }} /> Religious & Cultural Background
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
-              {[
-                { label: 'Religion', value: profile.religion },
-                { label: 'Denomination / Sect', value: profile.denomination || 'N/A' },
-                { label: 'Community / Caste', value: profile.community || 'N/A' },
-                { label: 'Sub-Caste', value: profile.sub_caste || 'N/A' },
-                { label: 'Gothra', value: profile.gothra || 'N/A' },
-                { label: 'Mother Tongue', value: profile.mother_tongue },
-                { label: 'Languages Spoken', value: profile.languages?.join(', ') || 'N/A' },
-              ].map(item => (
-                <div key={item.label}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>{item.label}</div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{item.value}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Education & Career */}
-          <div className="card" style={{ padding: 24 }}>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Briefcase size={18} style={{ color: 'var(--accent-400)' }} /> Education & Career
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
-              {[
-                { label: 'Qualification', value: profile.qualification },
-                { label: 'Field of Study', value: profile.field_of_study || 'N/A' },
-                { label: 'Institution', value: profile.institution || 'N/A' },
-                { label: 'Occupation', value: profile.occupation },
-                { label: 'Employer', value: profile.employer || 'N/A' },
-                { label: 'Industry', value: profile.industry },
-                { label: 'Employment Type', value: profile.employment_type?.replace('_', ' ') },
-                { label: 'Work Location', value: profile.work_location || 'N/A' },
-                { label: 'Income Range', value: profile.income_range },
-              ].map(item => (
-                <div key={item.label}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>{item.label}</div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 600, textTransform: 'capitalize' }}>{item.value}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Family details */}
-          <div className="card" style={{ padding: 24 }}>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <HeartHandshake size={18} style={{ color: 'var(--primary-700)' }} /> Family & Lifestyle
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
-              {[
-                { label: 'Family Type', value: profile.family_type },
-                { label: 'Family Status', value: profile.family_status },
-                { label: 'Family Values', value: profile.family_values },
-                { label: 'Father\'s Occupation', value: profile.father_occupation || 'N/A' },
-                { label: 'Mother\'s Occupation', value: profile.mother_occupation || 'N/A' },
-                { label: 'Native Place', value: profile.native_place || 'N/A' },
-                { label: 'Diet', value: profile.diet },
-                { label: 'Smoking', value: profile.smoking },
-                { label: 'Drinking', value: profile.drinking },
-              ].map(item => (
-                <div key={item.label}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>{item.label}</div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 600, textTransform: 'capitalize' }}>{item.value || 'N/A'}</div>
-                </div>
-              ))}
-            </div>
-            {profile.family_about && (
-              <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>About Family</div>
-                <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{profile.family_about}</p>
-              </div>
-            )}
-          </div>
+      {photoRequestError && (
+        <div role="alert" className="community-error" style={{ marginBottom: '0.9rem' }}>
+          <AlertCircle size={15} aria-hidden="true" /> {photoRequestError}
         </div>
+      )}
+      {photoRequestSent && !photoRequestError && (
+        <p className="community-notice" style={{ marginBottom: '0.9rem' }}>
+          <CheckCircle2 size={14} aria-hidden="true" /> Request sent. This member decides whether to share their photos.
+        </p>
+      )}
+      {actionError && (
+        <div role="alert" className="community-error" style={{ marginBottom: '0.9rem' }}>
+          <AlertCircle size={15} aria-hidden="true" /> {actionError}
+        </div>
+      )}
 
-        {/* Right Column: Preferences & contact */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          {/* Contact details */}
-          <div className="card" style={{ padding: 24, border: '1px solid rgba(232, 93, 4, 0.15)', background: 'rgba(232, 93, 4, 0.01)' }}>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Phone size={18} style={{ color: 'var(--text-accent)' }} /> Contact Details
-            </h2>
+      <div className="pp-groups">
+        {/* ---- About ---- */}
+        {profile.about_me && (
+          <section className="pp-group">
+            <h2>About {displayName}</h2>
+            <div className="pp-group-card">
+              <p style={{ margin: 0, padding: '1rem', fontSize: '0.92rem', lineHeight: 1.65, color: 'var(--text-secondary)', whiteSpace: 'pre-line' }}>
+                {profile.about_me}
+              </p>
+            </div>
+          </section>
+        )}
+
+        {group('Religion and culture', [
+          infoRow('Religion', profile.religion),
+          infoRow('Denomination or sect', profile.denomination),
+          infoRow('Community', profile.community),
+          infoRow('Sub-caste', profile.sub_caste),
+          infoRow('Gothra', profile.gothra),
+          infoRow('Mother tongue', profile.mother_tongue),
+          infoRow('Languages spoken', profile.languages?.join(', ')),
+        ])}
+
+        {group('Education and work', [
+          infoRow('Qualification', profile.qualification),
+          infoRow('Field of study', profile.field_of_study),
+          infoRow('Institution', profile.institution),
+          infoRow('Occupation', profile.occupation),
+          infoRow('Employer', profile.employer),
+          infoRow('Industry', profile.industry),
+          infoRow('Employment type', profile.employment_type?.replace(/_/g, ' '), true),
+          infoRow('Work location', profile.work_location),
+          infoRow('Income range', profile.income_range),
+        ])}
+
+        {group('Family and lifestyle', [
+          infoRow('Family type', profile.family_type, true),
+          infoRow('Family status', profile.family_status, true),
+          infoRow('Family values', profile.family_values, true),
+          infoRow("Father's occupation", profile.father_occupation),
+          infoRow("Mother's occupation", profile.mother_occupation),
+          infoRow('Native place', profile.native_place),
+          infoRow('Diet', profile.diet, true),
+          infoRow('Smoking', profile.smoking, true),
+          infoRow('Drinking', profile.drinking, true),
+          profile.family_about ? (
+            <div className="pp-row pp-row-static" key="family_about" style={{ alignItems: 'flex-start', padding: '0.85rem 0.9rem' }}>
+              <span className="pp-row-body">
+                <small>About the family</small>
+                <strong style={{ whiteSpace: 'normal', fontWeight: 600, lineHeight: 1.55 }}>{profile.family_about}</strong>
+              </span>
+            </div>
+          ) : null,
+        ])}
+
+        {/* ---- Contact ---- */}
+        <section className="pp-group">
+          <h2>Contact details</h2>
+          <div className="pp-group-card">
             {interestStatus === 'accepted' ? (
-              contactLoading ? (
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Loading contact info...</p>
-              ) : candidateContact ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Phone size={16} style={{ color: 'var(--text-muted)' }} />
-                    <div>
-                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>Phone</div>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{candidateContact.phone || 'Not provided'}</div>
-                    </div>
+              candidateContact ? (
+                <>
+                  <div className="pp-row pp-row-static" style={{ minHeight: '3.2rem' }}>
+                    <span className="pp-row-icon"><Phone size={17} aria-hidden="true" /></span>
+                    <span className="pp-row-body">
+                      <small>Phone</small>
+                      <strong>{candidateContact.phone || 'Not provided'}</strong>
+                    </span>
                   </div>
                   {candidateContact.alt_phone && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <Phone size={16} style={{ color: 'var(--text-muted)' }} />
-                      <div>
-                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>Alt Phone</div>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{candidateContact.alt_phone}</div>
-                      </div>
+                    <div className="pp-row pp-row-static" style={{ minHeight: '3.2rem' }}>
+                      <span className="pp-row-icon"><Phone size={17} aria-hidden="true" /></span>
+                      <span className="pp-row-body">
+                        <small>Alternate phone</small>
+                        <strong>{candidateContact.alt_phone}</strong>
+                      </span>
                     </div>
                   )}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Mail size={16} style={{ color: 'var(--text-muted)' }} />
-                    <div>
-                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>Email</div>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{candidateContact.email || 'Not provided'}</div>
-                    </div>
+                  <div className="pp-row pp-row-static" style={{ minHeight: '3.2rem' }}>
+                    <span className="pp-row-icon"><Mail size={17} aria-hidden="true" /></span>
+                    <span className="pp-row-body">
+                      <small>Email</small>
+                      <strong>{candidateContact.email || 'Not provided'}</strong>
+                    </span>
                   </div>
-                </div>
+                </>
               ) : (
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>No contact info available.</p>
+                <div className="pp-row pp-row-static">
+                  <span className="pp-row-body"><strong>No contact details on this profile.</strong></span>
+                </div>
               )
             ) : (
-              <div style={{ textAlign: 'center', padding: '12px 0' }}>
-                <Shield size={28} style={{ color: 'var(--text-muted)', marginBottom: 8 }} />
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-                  Contact details are locked. Express interest and once accepted, details will be revealed here.
+              <div style={{ textAlign: 'center', padding: '1.4rem 1rem' }}>
+                <Shield size={28} aria-hidden="true" style={{ opacity: 0.35 }} />
+                <p style={{ margin: '0.7rem 0 0', fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+                  Phone and email appear here once an interest between you is accepted.
                 </p>
               </div>
             )}
           </div>
+        </section>
 
-          {/* Preferences Summary */}
-          <div className="card" style={{ padding: 24 }}>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Star size={18} style={{ color: 'var(--accent-400)' }} /> Partner Preferences
-            </h2>
-            {preferences ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {[
-                  { label: 'Age Range', value: `${preferences.age_min} to ${preferences.age_max} years` },
-                  { label: 'Religion', value: preferences.religion?.join(', ') || 'Any' },
-                  { label: 'Mother Tongue', value: preferences.mother_tongue?.join(', ') || 'Any' },
-                  { label: 'Marital Status', value: preferences.marital_status?.join(', ')?.replace(/_/g, ' ') || 'Any' },
-                  { label: 'Diet', value: preferences.diet?.join(', ') || 'Any' },
-                  { label: 'Residency Status', value: preferences.residency_status?.join(', ')?.toUpperCase() || 'Any' },
-                ].map(item => (
-                  <div key={item.label} style={{ fontSize: '0.82rem', paddingBottom: 10, borderBottom: '1px solid var(--border-color)' }}>
-                    <div style={{ color: 'var(--text-muted)', marginBottom: 2 }}>{item.label}</div>
-                    <div style={{ fontWeight: 600, color: 'var(--text-primary)', textTransform: 'capitalize' }}>{item.value}</div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
-                Preferences not set by candidate.
-              </p>
-            )}
+        {group('Their partner preferences', [
+          infoRow('Age range', preferences ? `${preferences.age_min} to ${preferences.age_max}` : ''),
+          infoRow('Religion', preferences?.religion?.join(', ') || (preferences ? 'Any' : '')),
+          infoRow('Mother tongue', preferences?.mother_tongue?.join(', ') || (preferences ? 'Any' : '')),
+          infoRow('Marital status', preferences?.marital_status?.join(', ')?.replace(/_/g, ' ') || (preferences ? 'Any' : ''), true),
+          infoRow('Diet', preferences?.diet?.join(', ') || (preferences ? 'Any' : ''), true),
+          infoRow('Residency', preferences?.residency_status?.join(', ')?.toUpperCase() || (preferences ? 'Any' : '')),
+        ])}
+
+        {/* ---- Safety ---- */}
+        <section className="pp-group">
+          <h2>Safety</h2>
+          <p className="pp-group-sub">
+            Reports go to the matrimony admins. Blocking is immediate and hides you both from each other.
+          </p>
+          <div className="pp-group-card">
+            <button type="button" className="pp-row pp-row-danger" onClick={() => setReportOpen(true)}>
+              <span className="pp-row-icon"><ShieldAlert size={17} aria-hidden="true" /></span>
+              <span className="pp-row-body"><strong>Report this profile</strong></span>
+              <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
+            </button>
+            <button type="button" className="pp-row pp-row-danger" onClick={handleBlock} disabled={actionLoading}>
+              <span className="pp-row-icon"><XCircle size={17} aria-hidden="true" /></span>
+              <span className="pp-row-body"><strong>Block this member</strong></span>
+              <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
+            </button>
           </div>
-        </div>
+        </section>
       </div>
 
-      {/* Report Modal */}
+      {/* ---- Report sheet ---- */}
       {reportOpen && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-          background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex',
-          alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)'
-        }}>
-          <div className="card animate-fade-in-up" style={{ width: '90%', maxWidth: 500, padding: 28 }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <AlertTriangle size={20} color="var(--error-500)" /> Report Profile
-            </h3>
+        <div className="hf-sheet-scrim" onClick={(e) => { if (e.target === e.currentTarget) setReportOpen(false); }}>
+          <div className="hf-sheet pp-sheet" role="dialog" aria-modal="true" aria-label="Report this profile">
+            <div className="hf-sheet-head">
+              <h2>Report this profile</h2>
+              <button type="button" className="portal-sheet-close" onClick={() => setReportOpen(false)} aria-label="Close">
+                <X size={18} />
+              </button>
+            </div>
+
             {reportSubmitted ? (
-              <div style={{ textAlign: 'center', padding: '24px 0' }}>
-                <CheckCircle2 size={44} color="var(--success-500)" style={{ marginBottom: 12 }} />
-                <p style={{ fontWeight: 600, margin: 0 }}>Report Submitted</p>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: 4 }}>Thank you. Our admins will investigate this profile.</p>
+              <div style={{ textAlign: 'center', padding: '1.6rem 0.5rem 0.8rem' }}>
+                <CheckCircle2 size={28} aria-hidden="true" style={{ color: 'var(--success-600)' }} />
+                <p style={{ margin: '0.7rem 0 0', fontSize: '0.92rem', fontWeight: 700 }}>Report sent</p>
+                <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  An admin will look into this profile.
+                </p>
               </div>
             ) : (
               <form onSubmit={handleReport}>
-                <div className="input-group" style={{ marginBottom: 16 }}>
-                  <label>Reason for reporting</label>
-                  <select className="input" value={reportReason} onChange={e => setReportReason(e.target.value)} required>
-                    <option value="">Select a reason</option>
-                    <option value="fake_profile">Fake Profile / Identity Theft</option>
-                    <option value="inappropriate_content">Inappropriate Content / Photos</option>
-                    <option value="abusive_behavior">Abusive Behavior / Harassment</option>
-                    <option value="solicitation">Spam / Solicitation / Scam</option>
-                    <option value="other">Other</option>
-                  </select>
+                <p className="hf-sheet-sub">
+                  Tell us what is wrong. Only the admins see this, never the member.
+                </p>
+                <div className="pp-sheet-fields">
+                  <div className="pp-field">
+                    <label htmlFor="report-reason">Reason</label>
+                    <div className="pp-select">
+                      <select id="report-reason" value={reportReason} onChange={e => setReportReason(e.target.value)} required>
+                        <option value="">Pick a reason</option>
+                        {REPORT_REASONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                      </select>
+                      <ChevronRight size={14} aria-hidden="true" className="pp-select-chevron" />
+                    </div>
+                  </div>
+                  <div className="pp-field">
+                    <label htmlFor="report-details">What happened (optional)</label>
+                    <textarea
+                      id="report-details"
+                      rows={4}
+                      value={reportDetails}
+                      onChange={e => setReportDetails(e.target.value)}
+                      placeholder="Anything that helps the admins understand."
+                    />
+                  </div>
                 </div>
-                <div className="input-group" style={{ marginBottom: 20 }}>
-                  <label>Details</label>
-                  <textarea className="input" rows={4} value={reportDetails} onChange={e => setReportDetails(e.target.value)} placeholder="Provide any additional details or context..." />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-                  <button type="button" className="btn btn-outline" onClick={() => setReportOpen(false)} disabled={actionLoading}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" style={{ background: 'var(--error-500)', borderColor: 'var(--error-500)' }} disabled={actionLoading}>Submit Report</button>
-                </div>
+                <button type="submit" className="pp-sheet-save" disabled={actionLoading || !reportReason}>
+                  {actionLoading ? 'Sending…' : <><ShieldAlert size={16} aria-hidden="true" /> Send report</>}
+                </button>
               </form>
             )}
           </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="pp-toast" role="status">
+          <Check size={15} aria-hidden="true" /> {toast}
         </div>
       )}
     </div>

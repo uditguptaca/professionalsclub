@@ -6,11 +6,16 @@ import { useApp } from '@/context/app-context';
 import { getMyMatrimony, saveMatrimonyProfile, deleteMyMatrimonyProfile } from '@/app/actions/matrimony';
 import type { MatrimonyProfile } from '@/types/matrimony';
 import {
-  Settings, ArrowLeft, Shield, Eye, PauseCircle, Trash2, CheckCircle2,
-  AlertCircle, EyeOff, Save, Loader2
+  ArrowLeft, Eye, EyeOff, Trash2, Check, AlertCircle, Save, ChevronRight, Heart,
 } from 'lucide-react';
 import PortalLoading from '@/components/portal/PortalLoading';
 import { useConfirm } from '@/components/portal/confirm';
+
+const PHOTO_OPTIONS: { value: 'all' | 'blurred' | 'on_request'; label: string; desc: string }[] = [
+  { value: 'all',        label: 'Visible to approved members', desc: 'Anyone browsing matrimony can see your photos.' },
+  { value: 'blurred',    label: 'Blurred until you allow it',  desc: 'Photos appear blurred until you grant access.' },
+  { value: 'on_request', label: 'On request only',             desc: 'Photos stay hidden. Members have to ask you.' },
+];
 
 export default function MatrimonySettingsPage() {
   const router = useRouter();
@@ -19,7 +24,7 @@ export default function MatrimonySettingsPage() {
 
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<MatrimonyProfile | null>(null);
-  
+
   // Settings values
   const [photoVisibility, setPhotoVisibility] = useState<'all' | 'on_request' | 'blurred'>('all');
   const [isHidden, setIsHidden] = useState(false);
@@ -34,20 +39,17 @@ export default function MatrimonySettingsPage() {
   useEffect(() => {
     async function loadSettings() {
       if (!currentUserId) { setLoading(false); return; }
-      try {
-        const result = await getMyMatrimony();
-        const data = result.ok ? result.data.profile : null;
+      const result = await getMyMatrimony();
+      const data = result.ok ? result.data.profile : null;
 
-        if (data) {
-          setProfile(data);
-          setPhotoVisibility(data.photo_visibility);
-          setIsHidden(data.is_hidden);
-        }
-      } catch (err) {
-        console.error('Error loading settings:', err);
-      } finally {
-        setLoading(false);
+      if (data) {
+        setProfile(data);
+        setPhotoVisibility(data.photo_visibility);
+        setIsHidden(data.is_hidden);
+      } else if (!result.ok) {
+        setSaveError(result.error);
       }
+      setLoading(false);
     }
     loadSettings();
   }, [currentUserId]);
@@ -111,135 +113,143 @@ export default function MatrimonySettingsPage() {
 
   if (!profile) {
     return (
-      <div className="flex flex-col gap-6" style={{ maxWidth: 600, margin: '40px auto', textAlign: 'center' }}>
-        <h2 style={{ fontWeight: 800 }}>Profile Required</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>
-          Please create a matrimony profile first to access settings.
+      <div className="pp2" style={{ textAlign: 'center', padding: '2.5rem 0' }}>
+        <Heart size={28} aria-hidden="true" style={{ opacity: 0.35, marginBottom: 12 }} />
+        <p style={{ margin: '0 0 1.1rem', fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
+          Create a matrimony profile to manage its privacy settings.
         </p>
-        <Link href="/portal/member/matrimony/create" className="btn btn-primary" style={{ alignSelf: 'center', textDecoration: 'none' }}>
-          Create Profile
+        <Link href="/portal/member/matrimony/create" className="btn btn-primary" style={{ textDecoration: 'none' }}>
+          Create profile
         </Link>
+        {saveError && (
+          <div role="alert" className="community-error" style={{ marginTop: 16, textAlign: 'left' }}>
+            <AlertCircle size={15} aria-hidden="true" /> {saveError}
+          </div>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6 animate-fade-in" style={{ maxWidth: 700, margin: '0 auto', paddingBottom: 60 }}>
-      {/* Header */}
-      <div>
-        <Link href="/portal/member/matrimony" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600, fontSize: '0.85rem' }}>
-          <ArrowLeft size={16} /> Back to Dashboard
-        </Link>
-      </div>
-      <div>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-display)', marginBottom: 6 }}>
-          Matrimony Settings
+    <div className="pp2">
+      <Link
+        href="/portal/member/matrimony"
+        className="pp-chip"
+        style={{
+          background: 'var(--bg-primary)', border: '1px solid rgba(27,67,50,0.08)',
+          color: 'var(--text-secondary)', textDecoration: 'none',
+          minHeight: 40, padding: '0 0.9rem', marginBottom: '0.9rem',
+        }}
+      >
+        <ArrowLeft size={14} aria-hidden="true" /> Matrimony
+      </Link>
+
+      <header style={{ marginBottom: '1.2rem' }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.01em', margin: '0 0 0.25rem' }}>
+          Matrimony settings
         </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          Configure your privacy, visibility, and account options.
+        <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
+          You decide who sees your photos and whether your listing is live.
         </p>
-      </div>
+      </header>
 
-      <form onSubmit={handleSaveSettings} className="flex flex-col gap-6">
-        {/* Privacy Settings Card */}
-        <div className="card" style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Shield size={18} style={{ color: 'var(--text-accent)' }} /> Privacy Settings
-          </h2>
+      <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1.35rem' }}>
+        <section className="pp-group">
+          <h2>Photo visibility</h2>
+          <p className="pp-group-sub">Applies to every photo on your listing. You can change it any time.</p>
+          <div className="pp-group-card">
+            {PHOTO_OPTIONS.map((opt) => (
+              <label
+                key={opt.value}
+                className="pp-row"
+                htmlFor={`photo-vis-${opt.value}`}
+                style={{ alignItems: 'flex-start', padding: '0.85rem 0.9rem' }}
+              >
+                <input
+                  id={`photo-vis-${opt.value}`}
+                  type="radio"
+                  name="photo_visibility"
+                  value={opt.value}
+                  checked={photoVisibility === opt.value}
+                  onChange={e => setPhotoVisibility(e.target.value as 'all' | 'on_request' | 'blurred')}
+                  style={{ width: 18, height: 18, marginTop: 2, flexShrink: 0, accentColor: 'var(--primary-700)' }}
+                />
+                <span className="pp-row-body">
+                  <strong style={{ whiteSpace: 'normal' }}>{opt.label}</strong>
+                  <small style={{ marginTop: 2, fontWeight: 500 }}>{opt.desc}</small>
+                </span>
+              </label>
+            ))}
+          </div>
+        </section>
 
-          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
-            {/* Photo Visibility */}
-            <div className="input-group" style={{ marginBottom: 20 }}>
-              <label style={{ fontWeight: 600, display: 'block', marginBottom: 6 }}>Photo Visibility</label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {[
-                  { value: 'all', label: 'Visible to all approved members', desc: 'Anyone can view your photos.' },
-                  { value: 'blurred', label: 'Show blurred placeholder', desc: 'Photos appear blurred until you grant permission.' },
-                  { value: 'on_request', label: 'Visible on request only', desc: 'Photos are hidden. Members must ask to view.' }
-                ].map(opt => (
-                  <label key={opt.value} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}>
-                    <input
-                      type="radio"
-                      name="photo_visibility"
-                      value={opt.value}
-                      checked={photoVisibility === opt.value}
-                      onChange={e => setPhotoVisibility(e.target.value as 'all' | 'on_request' | 'blurred')}
-                      style={{ marginTop: 4 }}
-                    />
-                    <div>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{opt.label}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{opt.desc}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
+        <section className="pp-group">
+          <h2>Your listing</h2>
+          <p className="pp-group-sub">
+            While paused, your listing is out of browse and search. Members you already
+            matched with, or sent an interest to, can still see it.
+          </p>
+          <div className="pp-group-card">
+            <div className="pp-row pp-row-static">
+              <span className="pp-row-icon">
+                {isHidden ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
+              </span>
+              <span className="pp-row-body">
+                <small>Status</small>
+                <strong>{isHidden ? 'Paused' : 'Live in browse and search'}</strong>
+              </span>
+              <button
+                type="button"
+                className={`pp-toggle ${isHidden ? '' : 'is-on'}`}
+                onClick={() => setIsHidden(v => !v)}
+                aria-pressed={!isHidden}
+                aria-label={isHidden ? 'Make my listing live' : 'Pause my listing'}
+              >
+                <span className="pp-toggle-dot" aria-hidden="true" />
+                {isHidden ? 'Paused' : 'Live'}
+              </button>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Profile Visibility Card */}
-        <div className="card" style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Eye size={18} style={{ color: '#04724d' }} /> Profile Visibility
-          </h2>
-
-          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
-            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={isHidden}
-                onChange={e => setIsHidden(e.target.checked)}
-                style={{ marginTop: 4 }}
-              />
-              <div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  Pause Profile (Hide from search) {isHidden && <EyeOff size={14} style={{ color: 'var(--error-600)' }} />}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.5, marginTop: 2 }}>
-                  When paused, your profile will be hidden from search results and browse catalogs.
-                  Members you have already matched with or shown interest in will still be able to view it.
-                </div>
-              </div>
-            </label>
+        {saveError && (
+          <div role="alert" className="community-error">
+            <AlertCircle size={15} aria-hidden="true" /> {saveError}
           </div>
-        </div>
+        )}
 
-        {/* Save Settings Trigger */}
-        {saveError && <p role="alert" className="community-error">{saveError}</p>}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <button type="submit" className="btn btn-primary" disabled={saving}>
-            {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-            Save Settings
-          </button>
-          {savedMsg && (
-            <span style={{ fontSize: '0.8rem', color: '#04724d', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <CheckCircle2 size={14} /> Settings saved.
-            </span>
-          )}
-        </div>
+        <button type="submit" className="pp-sheet-save" disabled={saving}>
+          {saving ? 'Saving…' : <><Save size={16} aria-hidden="true" /> Save settings</>}
+        </button>
       </form>
 
-      {/* Danger Zone */}
-      <div className="card" style={{
-        padding: 28, border: '1px solid rgba(240,73,35,0.2)', background: 'rgba(240,73,35,0.01)',
-        display: 'flex', flexDirection: 'column', gap: 16, marginTop: 24
-      }}>
-        <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--error-600)' }}>
-          <Trash2 size={18} /> Danger Zone
-        </h2>
-        <div style={{ borderTop: '1px solid rgba(240,73,35,0.1)', paddingTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-          <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Delete Matrimony Profile</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
-              Permanently delete all matrimony data. This will not affect your core portal account.
-            </div>
-          </div>
-          <button className="btn" onClick={handleDeleteProfile} disabled={deleting} style={{ background: 'var(--error-500)', color: 'white', border: 'none' }}>
-            {deleting ? 'Deleting...' : 'Delete Profile'}
+      <section className="pp-group" style={{ marginTop: '1.6rem' }}>
+        <h2>Delete</h2>
+        <p className="pp-group-sub">
+          This removes your matrimony listing and everything attached to it. Your
+          Professionals Club account is not affected.
+        </p>
+        <div className="pp-group-card">
+          <button type="button" className="pp-row pp-row-danger" onClick={handleDeleteProfile} disabled={deleting}>
+            <span className="pp-row-icon"><Trash2 size={17} aria-hidden="true" /></span>
+            <span className="pp-row-body">
+              <strong>{deleting ? 'Deleting…' : 'Delete matrimony profile'}</strong>
+            </span>
+            <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
           </button>
         </div>
-        {deleteError && <p role="alert" className="community-error">{deleteError}</p>}
-      </div>
+        {deleteError && (
+          <div role="alert" className="community-error" style={{ marginTop: 10 }}>
+            <AlertCircle size={15} aria-hidden="true" /> {deleteError}
+          </div>
+        )}
+      </section>
+
+      {savedMsg && (
+        <div className="pp-toast" role="status">
+          <Check size={15} aria-hidden="true" /> Settings saved
+        </div>
+      )}
     </div>
   );
 }

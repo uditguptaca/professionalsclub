@@ -7,7 +7,47 @@ import { useApp } from '@/context/app-context';
 import { submitHelpRequest } from '@/app/actions/portal';
 import { AttachmentField, type Attachment } from '@/components/portal/AttachmentField';
 import { SUPPORT_CATEGORIES } from '@/types';
-import { CheckCircle2, AlertCircle, ArrowLeft, ArrowRight } from 'lucide-react';
+import {
+  AlertCircle, ArrowLeft, ArrowRight, BadgeCheck, Check, ChevronRight, Clock,
+  Mail, MapPin, Paperclip, Phone, Repeat, ShieldCheck, Tag, User, Users, FileText,
+} from 'lucide-react';
+
+/**
+ * Request help, restyled to the portal's row-and-sheet language: one question
+ * per step, grouped cards, tappable category tiles instead of a select, and
+ * segmented pills instead of bordered radio buttons. The flow, the payload and
+ * the guards around it are unchanged.
+ */
+
+const STEP_NAMES = ['About you', 'Topic', 'Details', 'Review'];
+const TOTAL_STEPS = 4;
+
+const URGENCIES = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'critical', label: 'Critical' },
+] as const;
+
+const SUPPORT_TYPES = [
+  { value: 'one_time', label: 'One-time help' },
+  { value: 'ongoing_mentorship', label: 'Ongoing mentorship' },
+] as const;
+
+/** Segmented pill group, per the portal's filter/choice pattern. */
+const segWrap: React.CSSProperties = {
+  display: 'flex', gap: 4, padding: 4,
+  background: 'var(--bg-primary)', borderRadius: 999,
+  border: '1px solid rgba(27,67,50,0.08)',
+  width: 'fit-content', maxWidth: '100%', overflowX: 'auto',
+};
+const segPill = (on: boolean): React.CSSProperties => ({
+  minHeight: 44, border: 0, borderRadius: 999, padding: '0 16px',
+  font: 'inherit', fontSize: '0.85rem', cursor: 'pointer', whiteSpace: 'nowrap',
+  background: on ? 'var(--green-950)' : 'none',
+  color: on ? '#fff' : 'var(--text-secondary)',
+  fontWeight: on ? 700 : 600,
+});
 
 export default function RequestHelpPage() {
   const router = useRouter();
@@ -34,7 +74,7 @@ export default function RequestHelpPage() {
   const [documents, setDocuments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(0);
 
-  const totalSteps = 4;
+  const totalSteps = TOTAL_STEPS;
 
   // The profile arrives from the server on first render; seed the name once it does.
   useEffect(() => {
@@ -84,236 +124,368 @@ export default function RequestHelpPage() {
     router.push('/portal/member/my-requests');
   };
 
+  /** One read-only summary row: icon, label, value. */
+  const infoRow = (icon: React.ReactNode, label: string, value: string, empty = 'Not on file') => (
+    <div className="pp-row pp-row-static" key={label}>
+      <span className="pp-row-icon">{icon}</span>
+      <span className="pp-row-body">
+        <small>{label}</small>
+        {value
+          ? <strong>{value}</strong>
+          : <strong style={{ color: 'var(--text-muted)', fontWeight: 650 }}>{empty}</strong>}
+      </span>
+    </div>
+  );
+
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto' }} className="animate-fade-in">
-      <div style={{ marginBottom: 32 }}>
-        <h1 className="text-3xl font-bold font-display mb-2">Request Help</h1>
-        <p className="text-secondary">Tell us what you need. Your request will be securely reviewed and routed to the right volunteer.</p>
+    <div className="pp2 animate-fade-in">
+      <header style={{ marginBottom: 18 }}>
+        <h1 style={{
+          fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 800,
+          letterSpacing: '-0.01em', margin: '0 0 6px',
+        }}>
+          Request help
+        </h1>
+        <p style={{ margin: 0, fontSize: '0.88rem', lineHeight: 1.55, color: 'var(--text-secondary)' }}>
+          Tell us what you need. An admin reads every request and routes it to the
+          right volunteer.
+        </p>
+      </header>
+
+      {/* Progress: a hairline bar, not a row of numbered circles. */}
+      <div style={{ marginBottom: 22 }}>
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+          marginBottom: 8, fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-secondary)',
+        }}>
+          <span>Step {step} of {totalSteps}</span>
+          <span>{STEP_NAMES[step - 1]}</span>
+        </div>
+        <div
+          role="progressbar"
+          aria-valuenow={step}
+          aria-valuemin={1}
+          aria-valuemax={totalSteps}
+          aria-label="Request progress"
+          style={{ height: 4, borderRadius: 999, background: 'rgba(27,67,50,0.08)', overflow: 'hidden' }}
+        >
+          <div style={{
+            height: '100%', width: `${(step / totalSteps) * 100}%`, borderRadius: 999,
+            background: 'var(--primary-700)', transition: 'width 0.3s cubic-bezier(0.22,1,0.36,1)',
+          }} />
+        </div>
       </div>
 
-      {/* Progress */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 32 }}>
-        {Array.from({ length: totalSteps }).map((_, i) => (
-          <React.Fragment key={i}>
-            <div style={{
-              width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 700, fontSize: '0.85rem', border: '3px solid',
-              borderColor: step > i + 1 ? 'var(--success-600)' : step === i + 1 ? 'var(--primary-500)' : 'var(--border-color)',
-              background: step > i + 1 ? 'var(--success-600)' : step === i + 1 ? 'var(--primary-500)' : 'transparent',
-              color: step >= i + 1 ? 'white' : 'var(--text-muted)',
-            }}>
-              {step > i + 1 ? <CheckCircle2 size={18} /> : i + 1}
-            </div>
-            {i < totalSteps - 1 && (
-              <div style={{ width: 48, height: 3, borderRadius: 2, background: step > i + 1 ? 'var(--success-600)' : 'var(--border-color)' }} />
-            )}
-          </React.Fragment>
-        ))}
-      </div>
+      <div className="pp-groups">
 
-      <div className="card" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
-
-        {/* Step 1: Identity */}
+        {/* ---- Step 1: who is asking ---- */}
         {step === 1 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <h2 className="text-xl font-bold">Your Information</h2>
-            <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <div className="input-group"><label>First Name</label><input className="input" value={firstName} onChange={e => setFirstName(e.target.value)} /></div>
-              <div className="input-group"><label>Last Name</label><input className="input" value={lastName} onChange={e => setLastName(e.target.value)} /></div>
-            </div>
-
-            <div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>
-                Contact details from your profile
-              </div>
-              <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                {[
-                  { label: 'Email', value: profile?.email },
-                  { label: 'Phone', value: profile?.phone },
-                  { label: 'PC Member Number', value: profile?.pcNumber },
-                  { label: 'City', value: profile?.city },
-                ].map(field => (
-                  <div key={field.label} style={{ padding: 16, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{field.label}</div>
-                    <div style={{ fontWeight: 600, fontSize: '0.85rem', color: field.value ? undefined : 'var(--text-muted)' }}>
-                      {field.value || 'Not on file'}
-                    </div>
+          <>
+            <section className="pp-group">
+              <h2>Your name</h2>
+              <p className="pp-group-sub">This is the name the reviewing admin sees on the case.</p>
+              <div className="pp-group-card" style={{ padding: '0.95rem' }}>
+                <div className="pp-sheet-fields" style={{ margin: 0 }}>
+                  <div className="pp-field">
+                    <label htmlFor="rh-first">First name</label>
+                    <input
+                      id="rh-first" autoComplete="given-name" value={firstName}
+                      onChange={e => setFirstName(e.target.value)}
+                    />
                   </div>
-                ))}
+                  <div className="pp-field">
+                    <label htmlFor="rh-last">Last name</label>
+                    <input
+                      id="rh-last" autoComplete="family-name" value={lastName}
+                      onChange={e => setLastName(e.target.value)}
+                    />
+                  </div>
+                </div>
               </div>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 10 }}>
-                The reviewing admin reads these from your member record.{' '}
-                <Link href="/portal/member/profile" style={{ color: 'var(--text-accent)', fontWeight: 600 }}>
-                  Update your profile
-                </Link>{' '}
-                to change them.
-              </p>
-            </div>
+            </section>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button className="btn btn-primary" onClick={() => setStep(2)} disabled={!firstName || !lastName}>
+            <section className="pp-group">
+              <h2>From your profile</h2>
+              <p className="pp-group-sub">
+                The reviewing admin reads these from your member record. Change them in your profile.
+              </p>
+              <div className="pp-group-card">
+                {infoRow(<Mail size={17} />, 'Email', profile?.email ?? '')}
+                {infoRow(<Phone size={17} />, 'Phone', profile?.phone ?? '')}
+                {infoRow(<BadgeCheck size={17} />, 'Member number', profile?.pcNumber ?? '')}
+                {infoRow(<MapPin size={17} />, 'City', profile?.city ?? '')}
+                <Link href="/portal/member/profile" className="pp-row">
+                  <span className="pp-row-icon"><User size={17} /></span>
+                  <span className="pp-row-body"><strong>Update your profile</strong></span>
+                  <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
+                </Link>
+              </div>
+            </section>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                className="btn btn-primary" style={{ flex: 1 }}
+                onClick={() => setStep(2)} disabled={!firstName || !lastName}
+              >
                 Continue <ArrowRight size={16} />
               </button>
             </div>
-          </div>
+          </>
         )}
 
-        {/* Step 2: Category */}
+        {/* ---- Step 2: the topic, as tappable tiles ---- */}
         {step === 2 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <h2 className="text-xl font-bold">What do you need help with?</h2>
-            
-            <div className="input-group">
-              <select 
-                className="input" 
-                value={category} 
-                onChange={e => setCategory(e.target.value)}
-                style={{ padding: '14px', fontSize: '0.95rem' }}
+          <>
+            <section className="pp-group">
+              <h2>What do you need help with?</h2>
+              <p className="pp-group-sub">Pick the closest match — an admin can re-route it later.</p>
+              <div
+                role="radiogroup"
+                aria-label="Support category"
+                style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(9.5rem, 1fr))', gap: 10 }}
               >
-                <option value="" disabled>Select a category...</option>
-                {SUPPORT_CATEGORIES.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
+                {SUPPORT_CATEGORIES.map(cat => {
+                  const on = category === cat;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      onClick={() => setCategory(cat)}
+                      style={{
+                        display: 'flex', flexDirection: 'column', gap: 10,
+                        minHeight: '6rem', padding: '0.85rem 0.9rem',
+                        textAlign: 'left', cursor: 'pointer', font: 'inherit',
+                        borderRadius: '1rem',
+                        border: `1.5px solid ${on ? 'var(--primary-700)' : 'rgba(27,67,50,0.08)'}`,
+                        background: on ? 'rgba(232,93,4,0.06)' : 'var(--bg-primary)',
+                        color: on ? 'var(--primary-800)' : 'var(--text-primary)',
+                        fontSize: '0.86rem', fontWeight: on ? 750 : 650, lineHeight: 1.35,
+                        boxShadow: on ? 'none' : '0 6px 20px -14px rgba(15,35,24,0.25)',
+                        transition: 'border-color 0.15s ease, background 0.15s ease',
+                      }}
+                    >
+                      <span style={{
+                        display: 'grid', placeItems: 'center', flexShrink: 0,
+                        width: '1.5rem', height: '1.5rem', borderRadius: '50%',
+                        background: on ? 'var(--primary-700)' : 'rgba(27,67,50,0.06)',
+                        color: on ? '#fff' : 'transparent',
+                      }}>
+                        <Check size={13} aria-hidden="true" />
+                      </span>
+                      <span>{cat}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12 }}>
-              <button className="btn btn-outline" onClick={() => setStep(1)}><ArrowLeft size={16} /> Back</button>
-              <button className="btn btn-primary" onClick={() => setStep(3)} disabled={!category}>Continue <ArrowRight size={16} /></button>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn btn-outline" onClick={() => setStep(1)}>
+                <ArrowLeft size={16} /> Back
+              </button>
+              <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => setStep(3)} disabled={!category}>
+                Continue <ArrowRight size={16} />
+              </button>
             </div>
-          </div>
+          </>
         )}
 
-        {/* Step 3: Details */}
+        {/* ---- Step 3: the details ---- */}
         {step === 3 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <h2 className="text-xl font-bold">Request Details</h2>
-            <div className="input-group">
-              <label>Title of Request</label>
-              <input className="input" placeholder="Brief title for your request" value={title} onChange={e => setTitle(e.target.value)} />
-            </div>
-            <div className="input-group">
-              <label>Detailed Description</label>
-              <textarea className="input" rows={4} placeholder="Describe your situation and what kind of help you need..." value={description} onChange={e => setDescription(e.target.value)} />
-              {description.length > 0 && description.length < 20 ? (
-                <span role="alert" style={{ fontSize: '0.72rem', color: 'var(--accent-700)', marginTop: 4, display: 'block' }}>
-                  {20 - description.length} more {20 - description.length === 1 ? 'character' : 'characters'} needed before you can continue.
-                </span>
-              ) : (
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                  At least 20 characters.
-                </span>
-              )}
-            </div>
-            <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <div className="input-group">
-                <label>Urgency</label>
-                <select className="input" value={urgency} onChange={e => setUrgency(e.target.value as any)}>
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="critical">Critical</option>
-                </select>
+          <>
+            <section className="pp-group">
+              <h2>Your request</h2>
+              <p className="pp-group-sub">A short title, then as much context as you can give.</p>
+              <div className="pp-group-card" style={{ padding: '0.95rem' }}>
+                <div className="pp-sheet-fields" style={{ margin: 0 }}>
+                  <div className="pp-field">
+                    <label htmlFor="rh-title">Title</label>
+                    <input
+                      id="rh-title" placeholder="e.g. Resume review for a data role"
+                      value={title} onChange={e => setTitle(e.target.value)}
+                    />
+                  </div>
+                  <div className="pp-field">
+                    <label htmlFor="rh-description">What is going on?</label>
+                    <textarea
+                      id="rh-description" rows={5}
+                      placeholder="Describe your situation and the kind of help you are looking for."
+                      value={description} onChange={e => setDescription(e.target.value)}
+                    />
+                    {description.length > 0 && description.length < 20 ? (
+                      <span role="alert" style={{
+                        display: 'block', marginTop: 6, marginLeft: '0.2rem',
+                        fontSize: '0.74rem', fontWeight: 650, color: 'var(--accent-700)',
+                      }}>
+                        {20 - description.length} more {20 - description.length === 1 ? 'character' : 'characters'} needed before you can continue.
+                      </span>
+                    ) : (
+                      <span style={{
+                        display: 'block', marginTop: 6, marginLeft: '0.2rem',
+                        fontSize: '0.74rem', color: 'var(--text-muted)',
+                      }}>
+                        At least 20 characters.
+                      </span>
+                    )}
+                  </div>
+                  <div className="pp-field">
+                    <label htmlFor="rh-timeline">Preferred timeline</label>
+                    <input
+                      id="rh-timeline" placeholder="e.g. Within 2 weeks"
+                      value={timeline} onChange={e => setTimeline(e.target.value)}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="input-group">
-                <label>Preferred Timeline</label>
-                <input className="input" placeholder="e.g. Within 2 weeks" value={timeline} onChange={e => setTimeline(e.target.value)} />
+            </section>
+
+            <section className="pp-group">
+              <h2>How urgent is it?</h2>
+              <div role="radiogroup" aria-label="Urgency" style={segWrap}>
+                {URGENCIES.map(u => (
+                  <button
+                    key={u.value} type="button" role="radio" aria-checked={urgency === u.value}
+                    onClick={() => setUrgency(u.value)} style={segPill(urgency === u.value)}
+                  >
+                    {u.label}
+                  </button>
+                ))}
               </div>
-            </div>
-            <div className="input-group">
-              <label>Support Type</label>
-              <div style={{ display: 'flex', gap: 12 }}>
-                <button onClick={() => setSupportType('one_time')} style={{ padding: '10px 16px', borderRadius: 8, border: '2px solid', borderColor: supportType === 'one_time' ? 'var(--primary-500)' : 'var(--border-color)', background: supportType === 'one_time' ? 'rgba(232, 93, 4, 0.06)' : 'white', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>
-                  One-time help
-                </button>
-                <button onClick={() => setSupportType('ongoing_mentorship')} style={{ padding: '10px 16px', borderRadius: 8, border: '2px solid', borderColor: supportType === 'ongoing_mentorship' ? 'var(--primary-500)' : 'var(--border-color)', background: supportType === 'ongoing_mentorship' ? 'rgba(232, 93, 4, 0.06)' : 'white', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>
-                  Ongoing mentorship
-                </button>
+            </section>
+
+            <section className="pp-group">
+              <h2>What kind of support?</h2>
+              <div role="radiogroup" aria-label="Support type" style={segWrap}>
+                {SUPPORT_TYPES.map(t => (
+                  <button
+                    key={t.value} type="button" role="radio" aria-checked={supportType === t.value}
+                    onClick={() => setSupportType(t.value)} style={segPill(supportType === t.value)}
+                  >
+                    {t.label}
+                  </button>
+                ))}
               </div>
+              <div className="pp-group-card" style={{ marginTop: 12 }}>
+                <div className="pp-row pp-row-static">
+                  <span className="pp-row-icon"><Users size={17} /></span>
+                  <span className="pp-row-body">
+                    <small>Instead of 1:1 support</small>
+                    <strong>Group resources are fine</strong>
+                  </span>
+                  <button
+                    type="button"
+                    className={`pp-toggle ${openToGroup ? 'is-on' : ''}`}
+                    onClick={() => setOpenToGroup(!openToGroup)}
+                    aria-pressed={openToGroup}
+                    aria-label="I am open to group resources instead of 1:1 support"
+                  >
+                    <span className="pp-toggle-dot" aria-hidden="true" />
+                    {openToGroup ? 'Yes' : 'No'}
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <section className="pp-group">
+              <h2>Attachments</h2>
+              <p className="pp-group-sub">
+                Optional. A resume, a letter, a screenshot — anything that helps the volunteer.
+              </p>
+              <AttachmentField
+                label="Choose files or drop them here"
+                maxFiles={5}
+                files={documents}
+                setFiles={setDocuments}
+                pending={uploading}
+                setPending={setUploading}
+              />
+            </section>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn btn-outline" onClick={() => setStep(2)}>
+                <ArrowLeft size={16} /> Back
+              </button>
+              <button
+                className="btn btn-primary" style={{ flex: 1 }} onClick={() => setStep(4)}
+                disabled={!title || description.length < 20 || uploading > 0}
+              >
+                Review <ArrowRight size={16} />
+              </button>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <input type="checkbox" id="group" checked={openToGroup} onChange={() => setOpenToGroup(!openToGroup)} />
-              <label htmlFor="group" style={{ fontSize: '0.85rem', cursor: 'pointer' }}>I am open to group resources instead of 1:1 support</label>
-            </div>
-            <AttachmentField
-              label="Upload supporting documents (optional)"
-              maxFiles={5}
-              files={documents}
-              setFiles={setDocuments}
-              pending={uploading}
-              setPending={setUploading}
-            />
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <button className="btn btn-outline" onClick={() => setStep(2)}><ArrowLeft size={16} /> Back</button>
-              <button className="btn btn-primary" onClick={() => setStep(4)} disabled={!title || description.length < 20 || uploading > 0}>Review <ArrowRight size={16} /></button>
-            </div>
-          </div>
+          </>
         )}
 
-        {/* Step 4: Review & Submit */}
+        {/* ---- Step 4: review & submit ---- */}
         {step === 4 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <h2 className="text-xl font-bold">Review & Submit</h2>
+          <>
+            <section className="pp-group">
+              <h2>Check and submit</h2>
+              <p className="pp-group-sub">One last look before this goes to the review queue.</p>
+              <div className="pp-group-card">
+                {infoRow(<User size={17} />, 'From', `${firstName} ${lastName}`.trim())}
+                {infoRow(<Tag size={17} />, 'Category', category)}
+                {infoRow(<FileText size={17} />, 'Title', title)}
+                {infoRow(<AlertCircle size={17} />, 'Urgency', urgency.charAt(0).toUpperCase() + urgency.slice(1))}
+                {infoRow(<Repeat size={17} />, 'Support type', supportType === 'one_time' ? 'One-time help' : 'Ongoing mentorship')}
+                {timeline.trim() !== '' && infoRow(<Clock size={17} />, 'Preferred timeline', timeline)}
+                {openToGroup && infoRow(<Users size={17} />, 'Format', 'Group resources are fine')}
+                {documents.length > 0 && infoRow(<Paperclip size={17} />, 'Attachments', documents.map(d => d.name).join(', '))}
+              </div>
+            </section>
 
-            <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div style={{ padding: 16, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Name</div>
-                <div style={{ fontWeight: 600 }}>{firstName} {lastName}</div>
-              </div>
-              <div style={{ padding: 16, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Category</div>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{category}</div>
-              </div>
-              <div style={{ padding: 16, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', gridColumn: '1 / -1' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Request Title</div>
-                <div style={{ fontWeight: 600 }}>{title}</div>
-              </div>
-              <div style={{ padding: 16, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Urgency</div>
-                <div style={{ fontWeight: 600, textTransform: 'capitalize' }}>{urgency}</div>
-              </div>
-              <div style={{ padding: 16, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Support Type</div>
-                <div style={{ fontWeight: 600 }}>{supportType === 'one_time' ? 'One-time' : 'Ongoing Mentorship'}</div>
-              </div>
-              {documents.length > 0 && (
-                <div style={{ padding: 16, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', gridColumn: '1 / -1' }}>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Attachments</div>
-                  <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{documents.map(d => d.name).join(', ')}</div>
-                </div>
-              )}
+            <div style={{
+              display: 'flex', gap: 10, padding: '0.9rem 1rem', borderRadius: '1rem',
+              background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.22)',
+            }}>
+              <ShieldCheck size={17} aria-hidden="true" style={{ color: 'var(--accent-700)', flexShrink: 0, marginTop: 2 }} />
+              <p style={{ margin: 0, fontSize: '0.82rem', lineHeight: 1.6, color: 'var(--text-secondary)' }}>
+                Your request goes to a secure review, and a volunteer may be assigned
+                to help. Everything is routed through the club — nobody will contact
+                you directly outside the platform.
+              </p>
             </div>
 
-            {/* Disclaimers */}
-            <div style={{ padding: 16, borderRadius: 10, background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', gap: 12 }}>
-              <AlertCircle size={18} style={{ color: 'var(--accent-700)', flexShrink: 0, marginTop: 2 }} />
-              <div style={{ fontSize: '0.8rem', color: 'var(--primary-800)', lineHeight: 1.6 }}>
-                <strong>Important:</strong> Your request will be sent for secure review. A volunteer may be assigned to assist you. All communication will be securely routed — no one will contact you directly outside the platform.
-              </div>
-            </div>
-
-            {/* Consent */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 16px', borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
-              <input type="checkbox" id="consent" checked={consent} onChange={() => setConsent(!consent)} style={{ marginTop: 3 }} />
-              <label htmlFor="consent" style={{ fontSize: '0.8rem', cursor: 'pointer', lineHeight: 1.5 }}>
-                I agree to the platform terms and conditions. I understand that all support is community-based, securely routed, and does not constitute professional advice. I consent to the platform reviewing my request and assigning a volunteer if appropriate.
-              </label>
-            </div>
+            <label
+              htmlFor="rh-consent"
+              style={{
+                display: 'flex', alignItems: 'flex-start', gap: 10,
+                padding: '0.9rem 1rem', borderRadius: '1rem',
+                border: '1px solid rgba(27,67,50,0.08)', background: 'var(--bg-primary)',
+                fontSize: '0.82rem', lineHeight: 1.55, cursor: 'pointer',
+              }}
+            >
+              <input
+                id="rh-consent" type="checkbox" checked={consent} onChange={() => setConsent(!consent)}
+                style={{ width: 18, height: 18, flexShrink: 0, marginTop: 2, accentColor: 'var(--primary-700)' }}
+              />
+              <span>
+                I agree to the platform terms. I understand support is community-based,
+                securely routed, and is not professional advice, and I consent to the
+                club reviewing my request and assigning a volunteer if appropriate.
+              </span>
+            </label>
 
             {submitError && (
-              <div role="alert" style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(240,73,35,0.1)', color: 'var(--error-600)', fontSize: '0.85rem', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+              <div role="alert" className="community-error" style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                <AlertCircle size={15} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
                 <span>{submitError}</span>
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <button className="btn btn-outline" onClick={() => setStep(3)}><ArrowLeft size={16} /> Edit</button>
-              <button className="btn btn-primary btn-lg" onClick={handleSubmit} disabled={isSubmitting || !consent || uploading > 0}>
-                {isSubmitting ? 'Submitting…' : 'Submit Request'}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn btn-outline" onClick={() => setStep(3)}>
+                <ArrowLeft size={16} /> Edit
+              </button>
+              <button
+                className="btn btn-primary" style={{ flex: 1 }} onClick={handleSubmit}
+                disabled={isSubmitting || !consent || uploading > 0}
+              >
+                {isSubmitting ? 'Submitting…' : 'Submit request'}
               </button>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>

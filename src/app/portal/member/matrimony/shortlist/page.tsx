@@ -5,10 +5,37 @@ import { useApp } from '@/context/app-context';
 import { getMyMatrimony, listShortlist, removeFromShortlist } from '@/app/actions/matrimony';
 import type { MatrimonyProfile, MatrimonyProfileCard } from '@/types/matrimony';
 import {
-  Bookmark, ArrowLeft, Trash2, User, Calendar, MapPin, Briefcase,
-  ChevronRight, UserCheck, Smile
+  Bookmark, ArrowLeft, Trash2, User, MapPin, Briefcase, BadgeCheck,
+  AlertCircle, Check, Loader2,
 } from 'lucide-react';
 import PortalLoading from '@/components/portal/PortalLoading';
+
+const pageTitleStyle: React.CSSProperties = {
+  fontFamily: 'var(--font-display)', fontSize: 'clamp(1.35rem, 4vw, 1.55rem)',
+  fontWeight: 800, letterSpacing: '-0.01em', margin: 0,
+};
+
+const backLinkStyle: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: 6, alignSelf: 'flex-start',
+  minHeight: 44, fontSize: '0.84rem', fontWeight: 700,
+  color: 'var(--text-accent)', textDecoration: 'none',
+};
+
+function getAge(dob: string): number {
+  const birthDate = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+  return age;
+}
+
+function getDisplayName(name: string, pref: string) {
+  if (!name) return 'Member';
+  if (pref === 'first_name') return name.split(' ')[0];
+  if (pref === 'initials') return name.split(' ').map(w => w[0]).join('').toUpperCase();
+  return name;
+}
 
 export default function ShortlistPage() {
   const { currentUserId } = useApp();
@@ -17,13 +44,15 @@ export default function ShortlistPage() {
   const [myProfile, setMyProfile] = useState<MatrimonyProfile | null>(null);
   const [list, setList] = useState<MatrimonyProfileCard[]>([]);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const [toast, setToast] = useState('');
 
   // Cards come from matrimony_visible_profiles server-side; the shortlist is
   // scoped to the caller's own listing, so no owner id is sent.
   async function loadShortlist() {
     const result = await listShortlist();
     if (result.ok) setList(result.data);
-    else console.error('Error fetching shortlist:', result.error);
+    else setError(result.error);
   }
 
   useEffect(() => {
@@ -34,140 +63,170 @@ export default function ShortlistPage() {
       if (mine.ok && mine.data.profile) {
         setMyProfile(mine.data.profile);
         await loadShortlist();
+      } else if (!mine.ok) {
+        setError(mine.error);
       }
       setLoading(false);
     }
     loadData();
   }, [currentUserId]);
 
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(''), 2600);
+    return () => clearTimeout(t);
+  }, [toast]);
+
   const handleRemove = async (targetProfileId: string) => {
-    if (!myProfile) return;
+    if (!myProfile || actionLoading) return;
     setActionLoading(targetProfileId);
+    setError('');
     const result = await removeFromShortlist(targetProfileId);
-    if (result.ok) await loadShortlist();
-    else console.error('Error removing from shortlist:', result.error);
+    if (result.ok) {
+      await loadShortlist();
+      setToast('Removed from shortlist');
+    } else {
+      // Surfaced inline: a silent console.error left the row looking unchanged
+      // with no explanation.
+      setError(result.error);
+    }
     setActionLoading(null);
   };
 
-  function getAge(dob: string): number {
-    const birthDate = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
-    return age;
-  }
-
-  function getDisplayName(name: string, pref: string) {
-    if (!name) return 'Member';
-    if (pref === 'first_name') return name.split(' ')[0];
-    if (pref === 'initials') return name.split(' ').map(w => w[0]).join('').toUpperCase();
-    return name;
-  }
-
   if (loading) {
-    return (
-      <PortalLoading label="Loading shortlist" />
-    );
+    return <PortalLoading label="Loading shortlist" />;
   }
 
   if (!myProfile) {
     return (
-      <div className="flex flex-col gap-6" style={{ maxWidth: 600, margin: '40px auto', textAlign: 'center' }}>
-        <h2 style={{ fontWeight: 800 }}>Profile Required</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>
-          Please create a matrimony profile first to save and shortlist candidates.
+      <div className="pp2" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+        <Bookmark size={28} aria-hidden="true" style={{ opacity: 0.35, marginBottom: 12 }} />
+        <h1 style={{ ...pageTitleStyle, marginBottom: 8 }}>Create a profile first</h1>
+        <p style={{ margin: '0 0 20px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+          A matrimony profile lets you save candidates for later.
         </p>
-        <Link href="/portal/member/matrimony/create" className="btn btn-primary" style={{ alignSelf: 'center', textDecoration: 'none' }}>
-          Create Profile
+        <Link href="/portal/member/matrimony/create" className="btn btn-primary" style={{ textDecoration: 'none' }}>
+          Create profile
         </Link>
+        {error && (
+          <div role="alert" className="community-error" style={{ textAlign: 'center', marginTop: 18 }}>
+            <AlertCircle size={15} aria-hidden="true" /> {error}
+          </div>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6 animate-fade-in" style={{ maxWidth: 1000, margin: '0 auto', paddingBottom: 60 }}>
-      {/* Header */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+      <Link href="/portal/member/matrimony" style={backLinkStyle}>
+        <ArrowLeft size={15} aria-hidden="true" /> Matrimony
+      </Link>
+
       <div>
-        <Link href="/portal/member/matrimony" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600, fontSize: '0.85rem' }}>
-          <ArrowLeft size={16} /> Back to Dashboard
-        </Link>
-      </div>
-      <div>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-display)', marginBottom: 6 }}>
-          Shortlisted Profiles
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          View and manage the profiles you&apos;ve favorited for later.
+        <h1 style={pageTitleStyle}>Shortlist</h1>
+        <p className="pp-group-sub" style={{ margin: '0.35rem 0 0' }}>
+          {list.length === 0
+            ? 'Profiles you save while browsing land here.'
+            : `${list.length} profile${list.length === 1 ? '' : 's'} you saved for later.`}
         </p>
       </div>
 
-      {/* Grid */}
+      {error && (
+        <div role="alert" className="community-error">
+          <AlertCircle size={15} aria-hidden="true" /> {error}
+        </div>
+      )}
+
       {list.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
-          <Bookmark size={48} style={{ color: 'var(--text-muted)', marginBottom: 16, opacity: 0.4 }} />
-          <h3 style={{ fontWeight: 700, marginBottom: 8 }}>Your shortlist is empty</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Browse profiles and tap the bookmark icon to save candidates here.
+        <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+          <Bookmark size={28} aria-hidden="true" style={{ opacity: 0.35, marginBottom: 12 }} />
+          <p style={{ margin: '0 auto 18px', maxWidth: '24rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+            Nothing saved yet. Tap the bookmark on a profile to keep it here.
           </p>
-          <Link href="/portal/member/matrimony/browse" className="btn btn-primary" style={{ display: 'inline-flex', alignSelf: 'center', marginTop: 20, textDecoration: 'none' }}>
-            Browse Profiles
+          <Link href="/portal/member/matrimony/browse" className="btn btn-primary" style={{ textDecoration: 'none' }}>
+            Browse profiles
           </Link>
         </div>
       ) : (
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24
-        }}>
-          {list.map((cand) => (
-            <div key={cand.id} className="card card-clickable animate-fade-in-up" style={{
-              display: 'flex', flexDirection: 'column', height: '100%', padding: 24,
-              border: '1px solid var(--border-color)', position: 'relative'
-            }}>
-              {/* Delete button */}
-              <button
-                className="btn btn-ghost"
-                onClick={() => handleRemove(cand.id)}
-                disabled={actionLoading === cand.id}
-                style={{
-                  position: 'absolute', top: 16, right: 16, color: 'var(--error-600)',
-                  padding: 8, borderRadius: 10, background: 'none'
-                }}
-                title="Remove from Shortlist"
-              >
-                <Trash2 size={16} />
-              </button>
+        <div className="hf-events">
+          {list.map((cand) => {
+            const href = `/portal/member/matrimony/profile/${cand.id}`;
+            const name = getDisplayName(cand.full_name, cand.display_pref);
+            const photo = cand.primary_photo_url;
+            const open = cand.photo_visibility === 'all' && photo;
+            const blurred = cand.photo_visibility === 'blurred' && photo;
+            const busy = actionLoading === cand.id;
+            return (
+              <div key={cand.id} className="hf-event card">
+                <Link href={href} className="hf-event-media" aria-label={`View ${name}`}>
+                  {open || blurred ? (
+                    <img
+                      src={photo} alt="" aria-hidden="true"
+                      style={blurred ? { filter: 'blur(20px)', transform: 'scale(1.12)' } : undefined}
+                    />
+                  ) : (
+                    <span className="hf-event-fallback" aria-hidden="true"><User size={30} /></span>
+                  )}
+                  <span className="hf-chip">{getAge(cand.dob)} · {cand.city}</span>
+                  {cand.is_verified_id && (
+                    <span
+                      role="img" aria-label="ID verified"
+                      style={{
+                        position: 'absolute', top: '0.7rem', right: '0.7rem',
+                        display: 'grid', placeItems: 'center', width: 26, height: 26,
+                        borderRadius: '50%', background: 'rgba(255,255,255,0.94)', color: 'var(--green-800)',
+                      }}
+                    >
+                      <BadgeCheck size={14} />
+                    </span>
+                  )}
+                </Link>
 
-              {/* Avatar placeholder */}
-              <div style={{
-                width: 60, height: 60, borderRadius: 16,
-                background: cand.gender?.toLowerCase() === 'female' ? 'linear-gradient(135deg, rgba(217,119,6,0.13), rgba(251,191,36,0.06))' : 'linear-gradient(135deg, rgba(232,93,4,0.13), rgba(249,115,22,0.06))',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16
-              }}>
-                <User size={30} style={{ color: cand.gender?.toLowerCase() === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
-              </div>
+                <div className="hf-event-body">
+                  <strong>{name}</strong>
+                  <small>
+                    <MapPin size={12} aria-hidden="true" />
+                    <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {[cand.city, cand.province].filter(Boolean).join(', ')}
+                    </span>
+                  </small>
+                  <small>
+                    <Briefcase size={12} aria-hidden="true" />
+                    <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {cand.occupation || 'Not stated'}
+                    </span>
+                  </small>
 
-              {/* Profile Details */}
-              <div style={{ flex: 1 }}>
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                  {getDisplayName(cand.full_name, cand.display_pref)}
-                  {cand.is_verified_id && <UserCheck size={14} style={{ color: 'var(--text-accent)' }} />}
-                </h3>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Calendar size={14} /> {getAge(cand.dob)} yrs</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MapPin size={14} /> {cand.city}, {cand.province}</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Briefcase size={14} /> {cand.occupation || 'N/A'}</span>
+                  <div style={{ display: 'flex', gap: 8, marginTop: '0.5rem' }}>
+                    <Link
+                      href={href} className="btn btn-primary"
+                      style={{ flex: 1, minHeight: 44, justifyContent: 'center', textDecoration: 'none', fontSize: '0.85rem' }}
+                    >
+                      View profile
+                    </Link>
+                    <button
+                      type="button" className="btn btn-outline"
+                      style={{ minHeight: 44, minWidth: 44, color: 'var(--error-600)' }}
+                      onClick={() => handleRemove(cand.id)}
+                      disabled={busy}
+                      aria-label={`Remove ${name} from shortlist`}
+                    >
+                      {busy
+                        ? <Loader2 size={16} className="spin" aria-hidden="true" />
+                        : <Trash2 size={16} aria-hidden="true" />}
+                    </button>
+                  </div>
                 </div>
               </div>
+            );
+          })}
+        </div>
+      )}
 
-              {/* CTA */}
-              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border-color)' }}>
-                <Link href={`/portal/member/matrimony/profile/${cand.id}`} className="btn btn-sm btn-primary" style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}>
-                  View Profile <ChevronRight size={14} />
-                </Link>
-              </div>
-            </div>
-          ))}
+      {toast && (
+        <div className="pp-toast" role="status">
+          <Check size={15} aria-hidden="true" /> {toast}
         </div>
       )}
     </div>

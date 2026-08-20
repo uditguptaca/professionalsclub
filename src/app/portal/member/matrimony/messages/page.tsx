@@ -5,8 +5,8 @@ import { useApp } from '@/context/app-context';
 import { getMyMatrimony, listConversations, listMessages, sendMatrimonyMessage } from '@/app/actions/matrimony';
 import type { MatrimonyProfile, MatrimonyConversation, MatrimonyMessage, MatrimonyProfileCard } from '@/types/matrimony';
 import {
-  MessageCircle, ArrowLeft, Send, User, ChevronRight, UserCheck, ShieldCheck,
-  Clock, Shield, AlertCircle
+  MessageCircle, ArrowLeft, Send, User, ChevronRight, UserCheck,
+  Shield, AlertCircle, Heart,
 } from 'lucide-react';
 import PortalLoading from '@/components/portal/PortalLoading';
 
@@ -25,20 +25,21 @@ export default function MessagesPage() {
   const [messages, setMessages] = useState<MatrimonyMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Conversation cards are joined server-side from
   // matrimony_visible_profiles; matrimony_profiles exposes only your own row.
   async function loadConversations() {
     const result = await listConversations();
     if (result.ok) setConversations(result.data.conversations as unknown as PopulatedConversation[]);
-    else console.error('Error loading conversations:', result.error);
+    else setError(result.error);
   }
 
   // Load messages for a conversation
   async function loadMessages(convId: string) {
     const result = await listMessages(convId);
     if (result.ok) setMessages(result.data);
-    else console.error('Error loading messages:', result.error);
+    else setError(result.error);
   }
 
   // Initial load
@@ -90,10 +91,12 @@ export default function MessagesPage() {
     const result = await sendMatrimonyMessage(selectedConv.id, newMessage.trim());
 
     if (result.ok) {
+      setError(null);
       setNewMessage('');
       setMessages(prev => [...prev, result.data]);
     } else {
-      console.error('Error sending message:', result.error);
+      // Never clear what they typed on a failure.
+      setError(result.error);
     }
 
     setSending(false);
@@ -114,203 +117,213 @@ export default function MessagesPage() {
 
   if (!myProfile) {
     return (
-      <div className="flex flex-col gap-6" style={{ maxWidth: 600, margin: '40px auto', textAlign: 'center' }}>
-        <h2 style={{ fontWeight: 800 }}>Profile Required</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>
-          Please create a matrimony profile first to message connections.
+      <div className="pp2" style={{ textAlign: 'center', padding: '2.5rem 0' }}>
+        <Heart size={28} aria-hidden="true" style={{ opacity: 0.35, marginBottom: 12 }} />
+        <p style={{ margin: '0 0 1.1rem', fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
+          Create a matrimony profile to message your matches.
         </p>
-        <Link href="/portal/member/matrimony/create" className="btn btn-primary" style={{ alignSelf: 'center', textDecoration: 'none' }}>
-          Create Profile
+        <Link href="/portal/member/matrimony/create" className="btn btn-primary" style={{ textDecoration: 'none' }}>
+          Create profile
         </Link>
       </div>
     );
   }
 
-  return (
-    <div className="flex flex-col gap-6 animate-fade-in" style={{ maxWidth: 1100, margin: '0 auto', height: 'calc(100vh - 180px)', minHeight: 500 }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <Link href="/portal/member/matrimony" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600, fontSize: '0.85rem' }}>
-          <ArrowLeft size={16} /> Back to Dashboard
-        </Link>
-      </div>
+  const backChip = (label: string, onClick?: () => void, href?: string) => {
+    const style: React.CSSProperties = {
+      background: 'var(--bg-primary)', border: '1px solid rgba(27,67,50,0.08)',
+      color: 'var(--text-secondary)', textDecoration: 'none',
+      minHeight: 40, padding: '0 0.9rem', marginBottom: '0.9rem', cursor: 'pointer',
+    };
+    return href
+      ? <Link href={href} className="pp-chip" style={style}><ArrowLeft size={14} aria-hidden="true" /> {label}</Link>
+      : <button type="button" className="pp-chip" style={{ ...style, fontFamily: 'inherit' }} onClick={onClick}><ArrowLeft size={14} aria-hidden="true" /> {label}</button>;
+  };
 
-      {/* Main chat layout wrapper */}
-      <div className="card" style={{
-        display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 0, padding: 0, overflow: 'hidden', height: '100%',
-        background: 'var(--bg-glass)', border: '1px solid var(--border-color)', borderRadius: 20,
-      }}>
-        {/* Left Sidebar: Conversations List */}
-        <div style={{ borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', height: '100%' }}>
-          <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-color)' }}>
-            <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <MessageCircle size={18} style={{ color: 'var(--text-accent)' }} /> Messages
-            </h2>
+  // ---- Thread view --------------------------------------------------------
+  if (selectedConv) {
+    const other = selectedConv.otherProfile;
+    const name = getDisplayName(other.full_name, other.display_pref);
+
+    return (
+      <div className="pp2">
+        {backChip('All chats', () => setSelectedConv(null))}
+
+        <div
+          className="pp-group-card"
+          style={{ display: 'flex', flexDirection: 'column', height: 'calc(100dvh - 13rem)', minHeight: '22rem' }}
+        >
+          {/* Thread header */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
+            padding: '0.7rem 0.9rem', borderBottom: '1px solid rgba(27,67,50,0.08)',
+          }}>
+            <span className="pp-row-icon" style={{ borderRadius: '50%' }}><User size={17} aria-hidden="true" /></span>
+            <span className="pp-row-body">
+              <strong style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                {other.is_verified_id && (
+                  <UserCheck size={13} aria-label="ID verified" style={{ color: 'var(--text-accent)', flexShrink: 0 }} />
+                )}
+              </strong>
+              <small style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {[other.city, other.province].filter(Boolean).join(', ')}
+              </small>
+            </span>
+            <Link
+              href={`/portal/member/matrimony/profile/${other.id}`}
+              className="btn btn-sm btn-outline"
+              style={{ textDecoration: 'none', flexShrink: 0 }}
+            >
+              Profile
+            </Link>
           </div>
 
-          {conversations.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, flex: 1, justifyContent: 'center' }}>
-              <MessageCircle size={32} style={{ opacity: 0.3 }} />
-              <p style={{ fontSize: '0.85rem', margin: 0 }}>No conversations yet.</p>
-              <p style={{ fontSize: '0.75rem', margin: 0, color: 'var(--text-secondary)' }}>Accept mutual interests to start chatting.</p>
-            </div>
-          ) : (
-            <div style={{ overflowY: 'auto', flex: 1 }}>
-              {conversations.map((conv) => {
-                const isSelected = selectedConv?.id === conv.id;
-                return (
-                  <button
-                    key={conv.id}
-                    type="button"
-                    onClick={() => setSelectedConv(conv)}
-                    style={{
-                      width: '100%', textAlign: 'left', border: 'none', borderRadius: 0,
-                      font: 'inherit', color: 'inherit',
-                      padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12,
-                      background: isSelected ? 'rgba(232, 93, 4, 0.06)' : 'transparent',
-                      borderBottom: '1px solid var(--border-color)', cursor: 'pointer',
-                      transition: 'background 0.2s',
-                    }}
-                  >
-                    <div style={{
-                      width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                      background: conv.otherProfile.gender?.toLowerCase() === 'female' ? 'linear-gradient(135deg, rgba(217,119,6,0.13), rgba(251,191,36,0.06))' : 'linear-gradient(135deg, rgba(232,93,4,0.13), rgba(249,115,22,0.06))',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+          {/* Messages */}
+          {/* minHeight 0 so the scroll area can shrink and the composer stays put */}
+          <div style={{
+            flex: 1, minHeight: 0, overflowY: 'auto', background: 'var(--bg-secondary)',
+            padding: '1rem 0.9rem', display: 'flex', flexDirection: 'column', gap: 10,
+          }}>
+            <span
+              className="pp-chip"
+              style={{ alignSelf: 'center', background: 'rgba(0,168,107,0.10)', color: 'var(--success-600)', marginBottom: 4 }}
+            >
+              <Shield size={12} aria-hidden="true" /> Private chat, unlocked by mutual interest
+            </span>
+
+            {messages.map((msg) => {
+              const isMine = msg.sender_profile_id === myProfile.id;
+              return (
+                <div key={msg.id} style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start' }}>
+                  <div style={{
+                    maxWidth: '80%',
+                    padding: '0.6rem 0.85rem',
+                    borderRadius: isMine ? '1.1rem 1.1rem 0.3rem 1.1rem' : '1.1rem 1.1rem 1.1rem 0.3rem',
+                    background: isMine ? 'var(--green-950)' : 'var(--bg-primary)',
+                    color: isMine ? '#fff' : 'var(--text-primary)',
+                    border: isMine ? '1px solid transparent' : '1px solid rgba(27,67,50,0.08)',
+                    fontSize: '0.9rem', lineHeight: 1.45, overflowWrap: 'anywhere',
+                  }}>
+                    {msg.body}
+                    <span style={{
+                      display: 'block', marginTop: 3, fontSize: '0.68rem', textAlign: 'right',
+                      color: isMine ? 'rgba(255,255,255,0.8)' : 'var(--text-muted)',
                     }}>
-                      <User size={20} style={{ color: conv.otherProfile.gender?.toLowerCase() === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                          {getDisplayName(conv.otherProfile.full_name, conv.otherProfile.display_pref)}
-                        </span>
-                        {conv.otherProfile.is_verified_id && <UserCheck size={12} style={{ color: 'var(--text-accent)' }} />}
-                      </div>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {conv.otherProfile.occupation}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Right Pane: Thread View */}
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-          {selectedConv ? (
-            <>
-              {/* Header */}
-              <div style={{
-                padding: '16px 24px', borderBottom: '1px solid var(--border-color)',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.1)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{
-                    width: 38, height: 38, borderRadius: 10,
-                    background: selectedConv.otherProfile.gender?.toLowerCase() === 'female' ? 'linear-gradient(135deg, rgba(217,119,6,0.13), rgba(251,191,36,0.06))' : 'linear-gradient(135deg, rgba(232,93,4,0.13), rgba(249,115,22,0.06))',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                  }}>
-                    <User size={18} style={{ color: selectedConv.otherProfile.gender?.toLowerCase() === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
-                  </div>
-                  <div>
-                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      {getDisplayName(selectedConv.otherProfile.full_name, selectedConv.otherProfile.display_pref)}
-                      {selectedConv.otherProfile.is_verified_id && <UserCheck size={14} style={{ color: 'var(--text-accent)' }} />}
-                    </h3>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{selectedConv.otherProfile.city}, {selectedConv.otherProfile.province}</span>
+                      {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
                 </div>
-                <Link href={`/portal/member/matrimony/profile/${selectedConv.otherProfile.id}`} className="btn btn-sm btn-outline">
-                  View Profile
-                </Link>
-              </div>
+              );
+            })}
+            <div ref={messagesEndRef} />
+          </div>
 
-              {/* Message History */}
-              <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: 16, background: 'rgba(232, 93, 4, 0.01)' }}>
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                    padding: '6px 12px', borderRadius: 8, background: 'rgba(0,168,107,0.08)',
-                    color: '#04724d', fontSize: '0.72rem', fontWeight: 600
-                  }}>
-                    <Shield size={12} /> Private chat, unlocked by mutual interest
-                  </div>
-                </div>
-
-                {messages.map((msg) => {
-                  const isMine = msg.sender_profile_id === myProfile.id;
-                  return (
-                    <div
-                      key={msg.id}
-                      style={{
-                        display: 'flex',
-                        justifyContent: isMine ? 'flex-end' : 'flex-start',
-                      }}
-                    >
-                      <div
-                        style={{
-                          maxWidth: '70%',
-                          padding: '12px 16px',
-                          borderRadius: isMine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                          background: isMine ? 'var(--primary-700)' : 'white',
-                          color: isMine ? 'white' : 'var(--text-primary)',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-                          border: isMine ? 'none' : '1px solid var(--border-color)',
-                          fontSize: '0.85rem',
-                          lineHeight: 1.5,
-                        }}
-                      >
-                        <div>{msg.body}</div>
-                        <div style={{
-                          fontSize: '10px',
-                          color: isMine ? 'rgba(255,255,255,0.6)' : 'var(--text-muted)',
-                          textAlign: 'right',
-                          marginTop: 4
-                        }}>
-                          {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Message Input Box */}
-              <form onSubmit={handleSendMessage} style={{
-                padding: 16, borderTop: '1px solid var(--border-color)',
-                display: 'flex', gap: 12, background: 'var(--bg-primary)'
-              }}>
-                <input
-                  type="text"
-                  className="input"
-                  value={newMessage}
-                  onChange={e => setNewMessage(e.target.value)}
-                  placeholder="Type a message..."
-                  style={{ borderRadius: 12, flex: 1 }}
-                  disabled={sending}
-                />
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  aria-label="Send message"
-                  style={{ borderRadius: 12, width: 44, height: 44, padding: 0, justifyContent: 'center' }}
-                  disabled={!newMessage.trim() || sending}
-                >
-                  <Send size={18} />
-                </button>
-              </form>
-            </>
-          ) : (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, color: 'var(--text-muted)' }}>
-              <MessageCircle size={48} style={{ opacity: 0.2 }} />
-              <p style={{ fontSize: '0.9rem', margin: 0 }}>Select a chat conversation from the list to start messaging.</p>
-            </div>
-          )}
+          {/* Composer */}
+          <form
+            onSubmit={handleSendMessage}
+            style={{
+              display: 'flex', alignItems: 'flex-end', gap: 8, flexShrink: 0,
+              padding: '0.7rem 0.75rem', borderTop: '1px solid rgba(27,67,50,0.08)',
+              background: 'var(--bg-primary)',
+            }}
+          >
+            <input
+              id="matrimony-composer"
+              type="text"
+              aria-label={`Message ${name}`}
+              value={newMessage}
+              onChange={e => setNewMessage(e.target.value)}
+              placeholder="Write a message"
+              disabled={sending}
+              style={{
+                flex: 1, minWidth: 0, minHeight: 46, padding: '0.7rem 1rem',
+                border: '1.5px solid transparent', borderRadius: 999,
+                background: 'var(--bg-secondary)', color: 'var(--text-primary)',
+                fontFamily: 'inherit',
+                /* 16px, or iOS zooms the page when the composer takes focus. */
+                fontSize: '16px',
+              }}
+            />
+            <button
+              type="submit"
+              aria-label="Send message"
+              disabled={!newMessage.trim() || sending}
+              style={{
+                display: 'grid', placeItems: 'center', flexShrink: 0,
+                width: 46, height: 46, border: 0, borderRadius: '50%',
+                background: 'var(--green-950)', color: '#fff', cursor: 'pointer',
+                opacity: !newMessage.trim() || sending ? 0.5 : 1,
+              }}
+            >
+              <Send size={18} aria-hidden="true" />
+            </button>
+          </form>
         </div>
+
+        {error && (
+          <div role="alert" className="community-error" style={{ marginTop: 12 }}>
+            <AlertCircle size={15} aria-hidden="true" /> {error}
+          </div>
+        )}
       </div>
+    );
+  }
+
+  // ---- Conversation list --------------------------------------------------
+  return (
+    <div className="pp2">
+      {backChip('Matrimony', undefined, '/portal/member/matrimony')}
+
+      <header style={{ marginBottom: '1.1rem' }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.01em', margin: '0 0 0.25rem' }}>
+          Messages
+        </h1>
+        <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
+          A chat opens once both of you have accepted an interest.
+        </p>
+      </header>
+
+      {error && (
+        <div role="alert" className="community-error" style={{ marginBottom: 12 }}>
+          <AlertCircle size={15} aria-hidden="true" /> {error}
+        </div>
+      )}
+
+      {conversations.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '2.5rem 1rem' }}>
+          <MessageCircle size={28} aria-hidden="true" style={{ opacity: 0.35 }} />
+          <p style={{ margin: '0.8rem 0 1.1rem', fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
+            No chats yet. Accept an interest and the conversation opens here.
+          </p>
+          <Link href="/portal/member/matrimony/interests" className="btn btn-primary" style={{ textDecoration: 'none' }}>
+            View interests
+          </Link>
+        </div>
+      ) : (
+        <div className="pp-group-card">
+          {conversations.map((conv) => {
+            const name = getDisplayName(conv.otherProfile.full_name, conv.otherProfile.display_pref);
+            return (
+              <button key={conv.id} type="button" className="pp-row" onClick={() => setSelectedConv(conv)}>
+                <span className="pp-row-icon" style={{ borderRadius: '50%' }}><User size={17} aria-hidden="true" /></span>
+                <span className="pp-row-body">
+                  <strong style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                    {conv.otherProfile.is_verified_id && (
+                      <UserCheck size={13} aria-label="ID verified" style={{ color: 'var(--text-accent)', flexShrink: 0 }} />
+                    )}
+                  </strong>
+                  <small style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {conv.otherProfile.occupation}
+                  </small>
+                </span>
+                <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

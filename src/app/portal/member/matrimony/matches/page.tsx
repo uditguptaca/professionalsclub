@@ -6,8 +6,8 @@ import { getMyMatrimony, browseProfiles } from '@/app/actions/matrimony';
 import type { MatrimonyProfile, MatrimonyPreferences, MatrimonyProfileCard } from '@/types/matrimony';
 import { computeMatchScore } from '@/lib/matrimony/matching';
 import {
-  Sparkles, MapPin, Briefcase, Calendar, UserCheck, ArrowLeft,
-  ChevronRight, Smile, Users, User, SlidersHorizontal,
+  MapPin, Briefcase, BadgeCheck, ArrowLeft, ChevronRight, Smile,
+  User, SlidersHorizontal, Camera,
 } from 'lucide-react';
 import PortalLoading from '@/components/portal/PortalLoading';
 
@@ -27,6 +27,21 @@ type MatchTab = 'recommended' | 'all';
 const RECOMMENDED_MIN = 60;
 
 type ScoredCandidate = MatrimonyProfileCard & { score: number | null };
+
+const pageTitleStyle: React.CSSProperties = {
+  fontFamily: 'var(--font-display)', fontSize: 'clamp(1.35rem, 4vw, 1.55rem)',
+  fontWeight: 800, letterSpacing: '-0.01em', margin: 0,
+};
+
+const backLinkStyle: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: 6, alignSelf: 'flex-start',
+  minHeight: 44, fontSize: '0.84rem', fontWeight: 700,
+  color: 'var(--text-accent)', textDecoration: 'none',
+};
+
+/** Small green / amber / red, per the design law's text tokens. */
+const scoreTone = (score: number): string =>
+  score >= 80 ? 'var(--success-600)' : score >= 60 ? 'var(--accent-700)' : 'var(--error-600)';
 
 export default function MatchesPage() {
   const { currentUserId } = useApp();
@@ -68,10 +83,12 @@ export default function MatchesPage() {
       .sort((a, b) => b.score - a.score);
   }, [candidates, myPrefs]);
 
-  const visible = useMemo(
-    () => (activeTab === 'recommended' ? scored.filter(c => c.score !== null && c.score >= RECOMMENDED_MIN) : scored),
-    [activeTab, scored]
+  const recommended = useMemo(
+    () => scored.filter(c => c.score !== null && c.score >= RECOMMENDED_MIN),
+    [scored]
   );
+
+  const visible = activeTab === 'recommended' ? recommended : scored;
 
   function getAge(dob: string): number {
     const birthDate = new Date(dob);
@@ -90,70 +107,67 @@ export default function MatchesPage() {
   }
 
   if (loading) {
-    return (
-      <PortalLoading label="Finding matches" />
-    );
+    return <PortalLoading label="Finding matches" />;
   }
 
   if (!myProfile) {
     return (
-      <div className="flex flex-col gap-6" style={{ maxWidth: 600, margin: '40px auto', textAlign: 'center' }}>
-        <h2 style={{ fontWeight: 800 }}>Profile Required</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>
-          Please create a matrimony profile first to find compatible matches.
+      <div className="pp2" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+        <Smile size={28} aria-hidden="true" style={{ opacity: 0.35, marginBottom: 12 }} />
+        <h1 style={{ ...pageTitleStyle, marginBottom: 8 }}>Create a profile first</h1>
+        <p style={{ margin: '0 0 20px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+          Matches are scored against your own listing and preferences.
         </p>
-        <Link href="/portal/member/matrimony/create" className="btn btn-primary" style={{ alignSelf: 'center', textDecoration: 'none' }}>
-          Create Profile
+        <Link href="/portal/member/matrimony/create" className="btn btn-primary" style={{ textDecoration: 'none' }}>
+          Create profile
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6 animate-fade-in" style={{ maxWidth: 1000, margin: '0 auto', paddingBottom: 60 }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <Link href="/portal/member/matrimony" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)', textDecoration: 'none' }}>
-          <ArrowLeft size={16} /> Back
-        </Link>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+      <Link href="/portal/member/matrimony" style={backLinkStyle}>
+        <ArrowLeft size={15} aria-hidden="true" /> Matrimony
+      </Link>
+
       <div>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-display)', marginBottom: 6 }}>
-          Your Compatible Matches
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+        <h1 style={pageTitleStyle}>Your matches</h1>
+        <p className="pp-group-sub" style={{ margin: '0.35rem 0 0' }}>
           {myPrefs
-            ? 'Members you can see, scored against your partner preferences.'
+            ? `Members you can see, scored against your partner preferences. Recommended means ${RECOMMENDED_MIN}% and up.`
             : 'Members you can see, most recently active first.'}
         </p>
       </div>
 
       {myPrefs ? (
         /* Tabs — a threshold on the same score, nothing else */
-        <div style={{
-          display: 'flex', gap: 8, borderBottom: '1px solid var(--border-color)',
-          overflowX: 'auto', paddingBottom: 1
-        }}>
+        <div
+          style={{
+            display: 'flex', gap: 4, padding: 4,
+            background: 'var(--bg-primary)', borderRadius: 999,
+            border: '1px solid rgba(27,67,50,0.08)',
+            width: 'fit-content', maxWidth: '100%', overflowX: 'auto',
+          }}
+        >
           {([
-            { key: 'recommended', label: `Recommended (${RECOMMENDED_MIN}% and up)`, icon: Sparkles },
-            { key: 'all', label: 'All Profiles', icon: Users },
-          ] as { key: MatchTab; label: string; icon: React.ElementType }[]).map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.key;
+            { key: 'recommended', label: `Recommended (${recommended.length})` },
+            { key: 'all', label: `Everyone (${scored.length})` },
+          ] as { key: MatchTab; label: string }[]).map((tab) => {
+            const active = activeTab === tab.key;
             return (
               <button
-                key={tab.key}
+                key={tab.key} type="button"
+                aria-pressed={active}
                 onClick={() => setActiveTab(tab.key)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '12px 20px', background: 'none', border: 'none',
-                  borderBottom: isActive ? '3px solid var(--primary-600)' : '3px solid transparent',
-                  color: isActive ? 'var(--primary-600)' : 'var(--text-muted)',
-                  fontWeight: isActive ? 700 : 500, fontSize: '0.85rem',
-                  cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s'
+                  minHeight: 44, padding: '0 16px', border: 0, whiteSpace: 'nowrap',
+                  borderRadius: 999, font: 'inherit', fontSize: '0.85rem', cursor: 'pointer',
+                  background: active ? 'var(--green-950)' : 'none',
+                  color: active ? '#fff' : 'var(--text-secondary)',
+                  fontWeight: active ? 700 : 600,
                 }}
               >
-                <Icon size={16} />
                 {tab.label}
               </button>
             );
@@ -161,92 +175,122 @@ export default function MatchesPage() {
         </div>
       ) : (
         /* No preferences saved: say so rather than showing an invented score */
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 20 }}>
-          <SlidersHorizontal size={20} style={{ color: 'var(--text-accent)', flexShrink: 0 }} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>No partner preferences yet</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-              Match scores are calculated from your preferences. Set them to rank these profiles.
-            </div>
-          </div>
-          <Link href="/portal/member/matrimony/edit" className="btn btn-sm btn-outline" style={{ textDecoration: 'none', flexShrink: 0 }}>
-            Set Preferences
+        <div className="pp-group-card">
+          <Link href="/portal/member/matrimony/edit" className="pp-row pp-row-add">
+            <span className="pp-row-icon"><SlidersHorizontal size={17} /></span>
+            <span className="pp-row-body">
+              <small>No partner preferences yet</small>
+              <strong>Set them to rank these profiles</strong>
+            </span>
+            <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
           </Link>
         </div>
       )}
 
-      {/* Matches Grid */}
       {visible.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
-          <Smile size={48} style={{ color: 'var(--text-muted)', marginBottom: 16, opacity: 0.4 }} />
-          <h3 style={{ fontWeight: 700, marginBottom: 8 }}>No matches yet</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: 450, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+          <Smile size={28} aria-hidden="true" style={{ opacity: 0.35, marginBottom: 12 }} />
+          <p style={{ margin: '0 auto 18px', maxWidth: '26rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
             {activeTab === 'recommended' && scored.length > 0
-              ? `Nobody currently scores ${RECOMMENDED_MIN}% or higher. Widening your partner preferences will bring more profiles in.`
-              : 'There are no approved profiles for you to see right now. New listings appear here once our team reviews them.'}
+              ? `Nobody scores ${RECOMMENDED_MIN}% or higher yet. Widening your preferences brings more profiles in.`
+              : 'There are no approved profiles for you to see right now. New listings appear once our team reviews them.'}
           </p>
-          <Link href="/portal/member/matrimony/edit" className="btn btn-outline" style={{ display: 'inline-flex', alignSelf: 'center', marginTop: 20, textDecoration: 'none' }}>
-            Adjust Preferences
+          <Link href="/portal/member/matrimony/edit" className="btn btn-outline" style={{ textDecoration: 'none' }}>
+            Adjust preferences
           </Link>
         </div>
       ) : (
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24
-        }}>
-          {visible.map((cand) => (
-            <div key={cand.id} className="card card-clickable" style={{
-              display: 'flex', flexDirection: 'column', height: '100%', padding: 24,
-              border: '1px solid var(--border-color)', position: 'relative', overflow: 'hidden'
-            }}>
-              {/* Match score bubble — only where a score exists */}
-              {cand.score !== null && (
-                <div style={{
-                  position: 'absolute', top: 16, right: 16,
-                  background: cand.score >= 80 ? 'rgba(0,168,107,0.1)' : cand.score >= 60 ? 'rgba(255,191,0,0.1)' : 'rgba(240,73,35,0.1)',
-                  color: cand.score >= 80 ? 'var(--success-500)' : cand.score >= 60 ? '#b28500' : 'var(--error-500)',
-                  padding: '4px 10px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 800
-                }}>
-                  {cand.score}% match
-                </div>
-              )}
-
-              {/* Photo, or the fallback mark when there is none to show */}
-              <div style={{
-                width: 60, height: 60, borderRadius: 16, overflow: 'hidden',
-                background: cand.gender?.toLowerCase() === 'female' ? 'linear-gradient(135deg, rgba(217,119,6,0.13), rgba(251,191,36,0.06))' : 'linear-gradient(135deg, rgba(232,93,4,0.13), rgba(249,115,22,0.06))',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16
-              }}>
-                {cand.photo_visibility === 'all' && cand.primary_photo_url ? (
-                  <img src={cand.primary_photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <User size={30} style={{ color: cand.gender?.toLowerCase() === 'female' ? 'var(--accent-600)' : 'var(--primary-600)' }} />
-                )}
-              </div>
-
-              {/* Profile Details */}
-              <div style={{ flex: 1 }}>
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                  {getDisplayName(cand.full_name, cand.display_pref)}
-                  {cand.is_verified_id && <UserCheck size={14} style={{ color: 'var(--text-accent)' }} />}
-                </h3>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Calendar size={14} /> {getAge(cand.dob)} yrs</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MapPin size={14} /> {cand.city}, {cand.province}</span>
-                  {cand.occupation && (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Briefcase size={14} /> {cand.occupation}</span>
+        <div className="hf-events">
+          {visible.map((cand) => {
+            const photo = cand.primary_photo_url;
+            const open = cand.photo_visibility === 'all' && photo;
+            const blurred = cand.photo_visibility === 'blurred' && photo;
+            return (
+              <Link key={cand.id} href={`/portal/member/matrimony/profile/${cand.id}`} className="hf-event card">
+                <span className="hf-event-media">
+                  {open || blurred ? (
+                    <img
+                      src={photo} alt="" aria-hidden="true"
+                      style={blurred ? { filter: 'blur(20px)', transform: 'scale(1.12)' } : undefined}
+                    />
+                  ) : (
+                    <span className="hf-event-fallback" aria-hidden="true"><User size={30} /></span>
                   )}
-                </div>
-              </div>
 
-              {/* CTA */}
-              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border-color)' }}>
-                <Link href={`/portal/member/matrimony/profile/${cand.id}`} className="btn btn-sm btn-primary" style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}>
-                  View Profile <ChevronRight size={14} />
-                </Link>
-              </div>
-            </div>
-          ))}
+                  <span className="hf-chip">{getAge(cand.dob)} · {cand.city}</span>
+
+                  {cand.score !== null && (
+                    <span
+                      style={{
+                        position: 'absolute', top: '0.7rem', left: '0.7rem',
+                        padding: '0.25rem 0.6rem', borderRadius: 999,
+                        background: 'rgba(255,255,255,0.94)', color: scoreTone(cand.score),
+                        fontSize: '0.7rem', fontWeight: 800,
+                      }}
+                    >
+                      {cand.score}% match
+                    </span>
+                  )}
+
+                  {(cand.is_verified_id || cand.is_verified_photo) && (
+                    <span style={{ position: 'absolute', top: '0.7rem', right: '0.7rem', display: 'flex', gap: 5 }}>
+                      {cand.is_verified_id && (
+                        <span
+                          role="img" aria-label="ID verified"
+                          style={{
+                            display: 'grid', placeItems: 'center', width: 26, height: 26,
+                            borderRadius: '50%', background: 'rgba(255,255,255,0.94)', color: 'var(--green-800)',
+                          }}
+                        >
+                          <BadgeCheck size={14} />
+                        </span>
+                      )}
+                      {cand.is_verified_photo && (
+                        <span
+                          role="img" aria-label="Photo verified"
+                          style={{
+                            display: 'grid', placeItems: 'center', width: 26, height: 26,
+                            borderRadius: '50%', background: 'rgba(255,255,255,0.94)', color: 'var(--green-800)',
+                          }}
+                        >
+                          <Camera size={13} />
+                        </span>
+                      )}
+                    </span>
+                  )}
+                </span>
+
+                <span className="hf-event-body">
+                  <strong>{getDisplayName(cand.full_name, cand.display_pref)}</strong>
+                  <small>
+                    <MapPin size={12} aria-hidden="true" />
+                    <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {[cand.city, cand.province].filter(Boolean).join(', ')}
+                    </span>
+                  </small>
+                  {cand.occupation && (
+                    <small>
+                      <Briefcase size={12} aria-hidden="true" />
+                      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {cand.occupation}
+                      </span>
+                    </small>
+                  )}
+                  <span style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: '0.15rem' }}>
+                    {[cand.religion, cand.mother_tongue].filter(Boolean).map(f => (
+                      <span
+                        key={f} className="pp-chip"
+                        style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
+                      >
+                        {f}
+                      </span>
+                    ))}
+                  </span>
+                  <span className="hf-join">View profile</span>
+                </span>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
