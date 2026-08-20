@@ -137,6 +137,24 @@ export default function PortalShell({
       ? [adminLinks[0], adminLinks.find((l) => l.href.endsWith('/community'))!, adminLinks.find((l) => l.href.endsWith('/requests'))!, adminLinks.find((l) => l.href.endsWith('/messages'))!]
       : [memberLinks[0], memberLinks.find((l) => l.href.endsWith('/community'))!, memberLinks.find((l) => l.href.endsWith('/events'))!, memberLinks.find((l) => l.href.endsWith('/jobs'))!];
 
+  // The More sheet: what the tab bar does NOT already show, in small groups.
+  // Repeating the four tab destinations here was pure clutter - the bar is
+  // visible right behind the sheet. My Profile lives on the user card.
+  const pick = (links: NavLink[], suffixes: string[]) =>
+    suffixes.flatMap((sfx) => links.find((l) => l.href.endsWith(sfx)) ?? []);
+  const tabHrefs = new Set(tabs.map((t) => t.href));
+  const sheetGroups: { title: string; links: NavLink[] }[] =
+    role === 'admin'
+      ? [
+          { title: 'Manage', links: adminLinks.filter((l) => !tabHrefs.has(l.href)) },
+          { title: 'Content manager', links: adminContentLinks },
+        ]
+      : [
+          { title: 'Career & connections', links: pick(memberLinks, ['/referrals', '/businesses', '/matrimony']) },
+          { title: 'Help desk', links: pick(memberLinks, ['/request-help', '/my-requests', '/messages']) },
+          { title: 'Volunteering', links: pick(memberLinks, ['/volunteer', '/my-volunteer']) },
+        ];
+
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
   const renderSidebarLink = (link: NavLink) => {
@@ -254,39 +272,44 @@ export default function PortalShell({
           </button>
         </div>
 
-        <div className="portal-sheet-user">
-          <UserCircle size={28} aria-hidden="true" />
-          <div>
-            <strong>{userName}</strong>
-            <small>{role === 'admin' ? 'Administrator' : 'Member'}</small>
+        {role === 'admin' ? (
+          <div className="portal-sheet-user">
+            <UserCircle size={28} aria-hidden="true" />
+            <div>
+              <strong>{userName}</strong>
+              <small>Administrator</small>
+            </div>
           </div>
-        </div>
+        ) : (
+          <Link href="/portal/member/profile" className="portal-sheet-user">
+            <UserCircle size={28} aria-hidden="true" />
+            <div>
+              <strong>{userName}</strong>
+              <small>Member &middot; View profile</small>
+            </div>
+            <ChevronRight size={16} aria-hidden="true" className="sheet-arrow" />
+          </Link>
+        )}
 
         <nav className="portal-sheet-links" aria-label="All destinations">
-          {navLinks.map((link) => {
-            const Icon = link.icon;
-            return (
-              <Link key={link.href} href={link.href} className={isActive(link.href) ? 'active' : undefined}>
-                <Icon size={18} aria-hidden="true" />
-                <span>{link.label}</span>
-                <ChevronRight size={15} aria-hidden="true" className="sheet-arrow" />
-              </Link>
-            );
-          })}
-          {role === 'admin' && (
-            <>
-              <div className="portal-sheet-section">Content manager</div>
-              {adminContentLinks.map((link) => {
-                const Icon = link.icon;
-                return (
-                  <Link key={link.href} href={link.href} className={isActive(link.href) ? 'active' : undefined}>
-                    <Icon size={18} aria-hidden="true" />
-                    <span>{link.label}</span>
-                    <ChevronRight size={15} aria-hidden="true" className="sheet-arrow" />
-                  </Link>
-                );
-              })}
-            </>
+          {sheetGroups.map((group) =>
+            group.links.length === 0 ? null : (
+              <React.Fragment key={group.title}>
+                <div className="portal-sheet-section">{group.title}</div>
+                <div className="portal-sheet-group">
+                  {group.links.map((link) => {
+                    const Icon = link.icon;
+                    return (
+                      <Link key={link.href} href={link.href} className={isActive(link.href) ? 'active' : undefined}>
+                        <Icon size={18} aria-hidden="true" />
+                        <span>{link.label}</span>
+                        <ChevronRight size={15} aria-hidden="true" className="sheet-arrow" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              </React.Fragment>
+            )
           )}
         </nav>
 
