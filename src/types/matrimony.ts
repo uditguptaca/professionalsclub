@@ -271,9 +271,26 @@ export interface MatrimonyMessage {
   id: string;
   conversation_id: string;
   sender_profile_id: string;
-  body: string;
+  /** Plaintext. Null when the message is end-to-end encrypted. */
+  body: string | null;
+  /** AES-GCM ciphertext + IV (base64). Null on plaintext/legacy messages. */
+  cipher?: string | null;
+  iv?: string | null;
   read_at?: string;
   created_at: string;
+}
+
+// ========== SWIPE DECK ==========
+/** A browse card plus what the deck needs to react to a right-swipe. */
+export interface MatrimonyDeckCard extends MatrimonyProfileCard {
+  /** Set when this profile already sent ME a pending interest — a right
+      swipe is then an accept, i.e. an instant match. */
+  incoming_interest_id?: string | null;
+}
+
+export interface SwipeResult {
+  matched: boolean;
+  conversation_id: string | null;
 }
 
 // ========== PROFILE VIEW ==========

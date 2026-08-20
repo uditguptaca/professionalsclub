@@ -9,6 +9,7 @@ import {
   CANADIAN_PROVINCES, HEIGHT_OPTIONS,
 } from '@/lib/matrimony/constants';
 import PortalLoading from '@/components/portal/PortalLoading';
+import MatrimonyTabs from '@/components/portal/MatrimonyTabs';
 import {
   Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, RotateCcw,
   Save, BadgeCheck, Camera, MapPin, Briefcase, Clock, User, Check, AlertCircle,
@@ -61,11 +62,13 @@ function getAge(dob: string): number {
   return age;
 }
 
+/**
+ * Round to whole inches FIRST, then split. Rounding the remainder instead
+ * printed 5'12" for 182cm and 4'12" for 152cm — both common heights.
+ */
 function cmToFtIn(cm: number): string {
-  const totalInches = cm / 2.54;
-  const ft = Math.floor(totalInches / 12);
-  const inch = Math.round(totalInches % 12);
-  return `${ft}'${inch}"`;
+  const totalInches = Math.round(cm / 2.54);
+  return `${Math.floor(totalInches / 12)}'${totalInches % 12}"`;
 }
 
 function getDisplayName(fullName: string, pref: string): string {
@@ -392,6 +395,11 @@ export default function MatrimonyBrowsePage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.3rem' }}>
+      {/* The deck is the front door; this page is its "see everyone" view.
+          The wrapper cancels the nav's own bottom margin — this column already
+          has a gap. */}
+      <div style={{ marginBottom: '-1rem' }}><MatrimonyTabs active="discover" /></div>
+
       {/* ---- Heading + filter entry ---- */}
       <div className="hf-section-head" style={{ alignItems: 'center' }}>
         <h1 style={pageTitleStyle}>Browse profiles</h1>

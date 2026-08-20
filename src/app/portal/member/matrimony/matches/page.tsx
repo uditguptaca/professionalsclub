@@ -10,6 +10,7 @@ import {
   User, SlidersHorizontal, Camera,
 } from 'lucide-react';
 import PortalLoading from '@/components/portal/PortalLoading';
+import MatrimonyTabs from '@/components/portal/MatrimonyTabs';
 
 /**
  * Matches: the visible profiles this member can see, ranked by how well they
@@ -113,6 +114,7 @@ export default function MatchesPage() {
   if (!myProfile) {
     return (
       <div className="pp2" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'center' }}><MatrimonyTabs active="likes" /></div>
         <Smile size={28} aria-hidden="true" style={{ opacity: 0.35, marginBottom: 12 }} />
         <h1 style={{ ...pageTitleStyle, marginBottom: 8 }}>Create a profile first</h1>
         <p style={{ margin: '0 0 20px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
@@ -127,8 +129,10 @@ export default function MatchesPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-      <Link href="/portal/member/matrimony" style={backLinkStyle}>
-        <ArrowLeft size={15} aria-hidden="true" /> Matrimony
+      {/* The wrapper cancels the nav's own bottom margin — this column has a gap. */}
+      <div style={{ marginBottom: '-1.1rem' }}><MatrimonyTabs active="likes" /></div>
+      <Link href="/portal/member/matrimony/interests" style={backLinkStyle}>
+        <ArrowLeft size={15} aria-hidden="true" /> Back to Likes
       </Link>
 
       <div>

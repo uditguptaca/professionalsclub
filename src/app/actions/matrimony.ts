@@ -150,12 +150,39 @@ export async function listMessages(conversationId: string) {
   return run('Loading messages', (uid) => repo.listMessages(uid, conversationId));
 }
 
-export async function sendMatrimonyMessage(conversationId: string, body: string) {
-  return run('Sending message', (uid) => {
-    const trimmed = body.trim();
-    if (!trimmed) throw new Error('Message cannot be empty.');
-    return repo.sendMatrimonyMessage(uid, conversationId, trimmed);
-  });
+export async function sendMatrimonyMessage(
+  conversationId: string,
+  content: { body?: string; cipher?: string; iv?: string }
+) {
+  return run('Sending message', (uid) => repo.sendMatrimonyMessage(uid, conversationId, content));
+}
+
+// ========== SWIPE DECK ==========
+
+export async function listDeck() {
+  return run('Loading profiles', (uid) => repo.listDeck(uid));
+}
+
+export async function swipeRight(targetProfileId: string) {
+  return run('Sending your like', (uid) => repo.swipeRight(uid, targetProfileId));
+}
+
+export async function passProfile(targetProfileId: string) {
+  return run('Passing', (uid) => repo.passProfile(uid, targetProfileId));
+}
+
+export async function undoPass(targetProfileId: string) {
+  return run('Undoing', (uid) => repo.undoPass(uid, targetProfileId));
+}
+
+// ========== END-TO-END ENCRYPTION ==========
+
+export async function publishE2EKey(publicKeyJwk: string) {
+  return run('Publishing your key', (uid) => repo.publishE2EKey(uid, publicKeyJwk));
+}
+
+export async function getE2EKey(profileId: string) {
+  return run('Fetching key', (uid) => repo.getE2EKey(uid, profileId));
 }
 
 // ========== NOTIFICATIONS ==========

@@ -2,6 +2,7 @@ import 'server-only';
 import { withUser, withUserRead, one, type Db } from '@/server/db';
 import { insertRow, updateRow, type ColumnMap } from '@/server/query';
 import type {
+  MatrimonyDeckCard, SwipeResult,
   MatrimonyProfile, MatrimonyPreferences, MatrimonyContact, MatrimonyMedia,
   MatrimonyInterest, MatrimonyShortlist, MatrimonyProfileCard,
   MatrimonyConversation, MatrimonyMessage, MatrimonyReport,
@@ -449,8 +450,8 @@ export async function respondToInterest(
   userId: string,
   interestId: string,
   accept: boolean
-): Promise<void> {
-  await withUser(userId, async (db) => {
+): Promise<string | null> {
+  return withUser(userId, async (db) => {
     const mine = await myProfileId(db);
     if (!mine) throw new Error('Create your profile first.');
 
@@ -467,12 +468,16 @@ export async function respondToInterest(
       // Stored in a fixed order so the unique constraint actually prevents a
       // duplicate thread — otherwise A->B and B->A would be two rows.
       const [a, b] = [mine, rows[0].sender_profile_id].sort();
-      await db`
+      const convo = await db<{ id: string }>`
         insert into public.matrimony_conversations (profile_a_id, profile_b_id)
         values (${a}::uuid, ${b}::uuid)
-        on conflict (profile_a_id, profile_b_id) do nothing
+        on conflict (profile_a_id, profile_b_id)
+          do update set last_message_at = public.matrimony_conversations.last_message_at
+        returning id
       `;
+      return convo[0]?.id ?? null;
     }
+    return null;
   });
 }
 
@@ -641,18 +646,168 @@ export async function listMessages(userId: string, conversationId: string): Prom
 export async function sendMatrimonyMessage(
   userId: string,
   conversationId: string,
-  body: string
+  content: { body?: string; cipher?: string; iv?: string }
 ): Promise<MatrimonyMessage> {
   return withUser(userId, async (db) => {
     const mine = await myProfileId(db);
     if (!mine) throw new Error('Create your profile first.');
 
+    // Exactly one representation. The table constraint enforces the same rule
+    // one layer down, so a bug here fails loudly instead of storing plaintext
+    // where ciphertext was intended.
+    const encrypted = Boolean(content.cipher && content.iv);
+    if (!encrypted && !content.body?.trim()) throw new Error('Message cannot be empty.');
+    if (encrypted && content.body) throw new Error('A message is plaintext or ciphertext, never both.');
+    if (encrypted && (content.cipher!.length > 20000 || content.iv!.length > 64)) {
+      throw new Error('Message too long.');
+    }
+
     const rows = await db`
-      insert into public.matrimony_messages (conversation_id, sender_profile_id, body)
-      values (${conversationId}::uuid, ${mine}::uuid, ${body})
+      insert into public.matrimony_messages (conversation_id, sender_profile_id, body, cipher, iv)
+      values (${conversationId}::uuid, ${mine}::uuid,
+              ${encrypted ? null : content.body!.trim()},
+              ${encrypted ? content.cipher! : null},
+              ${encrypted ? content.iv! : null})
       returning *
     `;
     return norm<MatrimonyMessage>(rows[0]);
+  });
+}
+
+// ========== SWIPE DECK ==========
+
+/**
+ * The discovery deck. Same security boundary as browse — only
+ * matrimony_visible_profiles — minus everyone the member has already dealt
+ * with: passed, liked, or matched. Profiles that already like the member are
+ * dealt first so a right swipe lands as an instant match. Opposite gender by
+ * default, matching the product's matrimonial intent.
+ */
+export async function listDeck(userId: string): Promise<MatrimonyDeckCard[]> {
+  return withUserRead(userId, async (db) => {
+    const mine = await myProfileId(db);
+    if (!mine) return [];
+
+    const rows = await db`
+      select v.*, i.id as incoming_interest_id
+        from public.matrimony_visible_profiles v
+        left join public.matrimony_interests i
+          on i.sender_profile_id = v.id
+         and i.receiver_profile_id = ${mine}::uuid
+         and i.status = 'pending'
+       where v.id <> ${mine}::uuid
+         and lower(v.gender) is distinct from
+             (select lower(p.gender) from public.matrimony_profiles p where p.id = ${mine}::uuid)
+         and not exists (select 1 from public.matrimony_passes x
+                          where x.owner_profile_id = ${mine}::uuid and x.target_profile_id = v.id)
+         and not exists (select 1 from public.matrimony_interests s
+                          where s.sender_profile_id = ${mine}::uuid and s.receiver_profile_id = v.id)
+         and not public.has_accepted_interest(${mine}::uuid, v.id)
+       order by (i.id is not null) desc, v.last_active_at desc nulls last
+       limit 40
+    `;
+    return normAll<MatrimonyDeckCard>(rows);
+  });
+}
+
+/** Swipe left: hide this profile from the deck. Idempotent. */
+export async function passProfile(userId: string, targetProfileId: string): Promise<void> {
+  await withUser(userId, async (db) => {
+    const mine = await myProfileId(db);
+    if (!mine) throw new Error('Create your profile first.');
+    await db`
+      insert into public.matrimony_passes (owner_profile_id, target_profile_id)
+      values (${mine}::uuid, ${targetProfileId}::uuid)
+      on conflict do nothing
+    `;
+  });
+}
+
+/** Undo the last pass so the card can come back. */
+export async function undoPass(userId: string, targetProfileId: string): Promise<void> {
+  await withUser(userId, async (db) => {
+    const mine = await myProfileId(db);
+    if (!mine) return;
+    await db`
+      delete from public.matrimony_passes
+       where owner_profile_id = ${mine}::uuid and target_profile_id = ${targetProfileId}::uuid
+    `;
+  });
+}
+
+/**
+ * Swipe right. If the target already likes the member, this is an accept and
+ * the pair matches on the spot (conversation created). Otherwise it records a
+ * pending interest. Handles the race where their like lands between deck load
+ * and the swipe.
+ */
+export async function swipeRight(userId: string, targetProfileId: string): Promise<SwipeResult> {
+  return withUser(userId, async (db) => {
+    const mine = await myProfileId(db);
+    if (!mine) throw new Error('Create your profile first.');
+
+    // Their pending like, if any. The guard trigger lets us accept it because
+    // we ARE the receiver.
+    const incoming = await db<{ id: string }>`
+      select id from public.matrimony_interests
+       where sender_profile_id = ${targetProfileId}::uuid
+         and receiver_profile_id = ${mine}::uuid
+         and status = 'pending'
+    `;
+
+    if (incoming[0]) {
+      await db`
+        update public.matrimony_interests set status = 'accepted'
+         where id = ${incoming[0].id}::uuid
+      `;
+      const [a, b] = [mine, targetProfileId].sort();
+      const convo = await db<{ id: string }>`
+        insert into public.matrimony_conversations (profile_a_id, profile_b_id)
+        values (${a}::uuid, ${b}::uuid)
+        on conflict (profile_a_id, profile_b_id)
+          do update set last_message_at = public.matrimony_conversations.last_message_at
+        returning id
+      `;
+      return { matched: true, conversation_id: convo[0]?.id ?? null };
+    }
+
+    try {
+      await db`
+        insert into public.matrimony_interests (sender_profile_id, receiver_profile_id)
+        values (${mine}::uuid, ${targetProfileId}::uuid)
+      `;
+    } catch (err) {
+      if ((err as { code?: string }).code !== '23505') throw err; // already liked: fine
+    }
+    return { matched: false, conversation_id: null };
+  });
+}
+
+// ========== END-TO-END ENCRYPTION KEYS ==========
+
+/** Publish (or rotate) the member's public key. The private key never leaves
+    their device. */
+export async function publishE2EKey(userId: string, publicKeyJwk: string): Promise<void> {
+  await withUser(userId, async (db) => {
+    const mine = await myProfileId(db);
+    if (!mine) throw new Error('Create your profile first.');
+    if (publicKeyJwk.length > 2000) throw new Error('Invalid key.');
+    await db`
+      insert into public.matrimony_e2e_keys (profile_id, public_key_jwk)
+      values (${mine}::uuid, ${publicKeyJwk})
+      on conflict (profile_id)
+        do update set public_key_jwk = excluded.public_key_jwk, updated_at = now()
+    `;
+  });
+}
+
+/** A profile's public key, or null while they have never opened the chat. */
+export async function getE2EKey(userId: string, profileId: string): Promise<string | null> {
+  return withUserRead(userId, async (db) => {
+    const rows = await db<{ public_key_jwk: string }>`
+      select public_key_jwk from public.matrimony_e2e_keys where profile_id = ${profileId}::uuid
+    `;
+    return rows[0]?.public_key_jwk ?? null;
   });
 }
 

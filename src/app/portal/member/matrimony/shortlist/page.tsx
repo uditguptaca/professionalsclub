@@ -9,6 +9,7 @@ import {
   AlertCircle, Check, Loader2,
 } from 'lucide-react';
 import PortalLoading from '@/components/portal/PortalLoading';
+import MatrimonyTabs from '@/components/portal/MatrimonyTabs';
 
 const pageTitleStyle: React.CSSProperties = {
   fontFamily: 'var(--font-display)', fontSize: 'clamp(1.35rem, 4vw, 1.55rem)',
@@ -100,6 +101,7 @@ export default function ShortlistPage() {
   if (!myProfile) {
     return (
       <div className="pp2" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'center' }}><MatrimonyTabs active="likes" /></div>
         <Bookmark size={28} aria-hidden="true" style={{ opacity: 0.35, marginBottom: 12 }} />
         <h1 style={{ ...pageTitleStyle, marginBottom: 8 }}>Create a profile first</h1>
         <p style={{ margin: '0 0 20px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
@@ -119,8 +121,10 @@ export default function ShortlistPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-      <Link href="/portal/member/matrimony" style={backLinkStyle}>
-        <ArrowLeft size={15} aria-hidden="true" /> Matrimony
+      {/* The wrapper cancels the nav's own bottom margin — this column has a gap. */}
+      <div style={{ marginBottom: '-1.1rem' }}><MatrimonyTabs active="likes" /></div>
+      <Link href="/portal/member/matrimony/interests" style={backLinkStyle}>
+        <ArrowLeft size={15} aria-hidden="true" /> Back to Likes
       </Link>
 
       <div>
@@ -142,10 +146,10 @@ export default function ShortlistPage() {
         <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
           <Bookmark size={28} aria-hidden="true" style={{ opacity: 0.35, marginBottom: 12 }} />
           <p style={{ margin: '0 auto 18px', maxWidth: '24rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-            Nothing saved yet. Tap the bookmark on a profile to keep it here.
+            Nothing saved yet. Tap the star while swiping to keep someone here for later.
           </p>
-          <Link href="/portal/member/matrimony/browse" className="btn btn-primary" style={{ textDecoration: 'none' }}>
-            Browse profiles
+          <Link href="/portal/member/matrimony" className="btn btn-primary" style={{ textDecoration: 'none' }}>
+            Open Discover
           </Link>
         </div>
       ) : (
