@@ -465,17 +465,24 @@ export async function respondToInterest(
     `;
 
     if (accept && rows[0]) {
-      // Stored in a fixed order so the unique constraint actually prevents a
-      // duplicate thread — otherwise A->B and B->A would be two rows.
-      const [a, b] = [mine, rows[0].sender_profile_id].sort();
-      const convo = await db<{ id: string }>`
-        insert into public.matrimony_conversations (profile_a_id, profile_b_id)
-        values (${a}::uuid, ${b}::uuid)
-        on conflict (profile_a_id, profile_b_id)
-          do update set last_message_at = public.matrimony_conversations.last_message_at
-        returning id
+      // A match now chats in the MEMBER chat hub (0018): map both matrimony
+      // profiles to their user ids and open that conversation. The RLS insert
+      // passes through is_chat_allowed's matrimony branch.
+      const users = await db<{ user_id: string }>`
+        select user_id from public.matrimony_profiles
+         where id in (${mine}::uuid, ${rows[0].sender_profile_id}::uuid)
       `;
-      return convo[0]?.id ?? null;
+      const pair = users.map((u) => u.user_id).sort();
+      if (pair.length === 2) {
+        const convo = await db<{ id: string }>`
+          insert into public.member_conversations (member_a_id, member_b_id)
+          values (${pair[0]}::uuid, ${pair[1]}::uuid)
+          on conflict (member_a_id, member_b_id)
+            do update set last_message_at = public.member_conversations.last_message_at
+          returning id
+        `;
+        return convo[0]?.id ?? null;
+      }
     }
     return null;
   });
@@ -760,12 +767,17 @@ export async function swipeRight(userId: string, targetProfileId: string): Promi
         update public.matrimony_interests set status = 'accepted'
          where id = ${incoming[0].id}::uuid
       `;
-      const [a, b] = [mine, targetProfileId].sort();
+      // The match's chat lives in the member chat hub (0018).
+      const users = await db<{ user_id: string }>`
+        select user_id from public.matrimony_profiles
+         where id in (${mine}::uuid, ${targetProfileId}::uuid)
+      `;
+      const pair = users.map((u) => u.user_id).sort();
       const convo = await db<{ id: string }>`
-        insert into public.matrimony_conversations (profile_a_id, profile_b_id)
-        values (${a}::uuid, ${b}::uuid)
-        on conflict (profile_a_id, profile_b_id)
-          do update set last_message_at = public.matrimony_conversations.last_message_at
+        insert into public.member_conversations (member_a_id, member_b_id)
+        values (${pair[0]}::uuid, ${pair[1]}::uuid)
+        on conflict (member_a_id, member_b_id)
+          do update set last_message_at = public.member_conversations.last_message_at
         returning id
       `;
       return { matched: true, conversation_id: convo[0]?.id ?? null };

@@ -10,7 +10,7 @@ import {
   Home, HelpCircle, HandHeart, FileText, ClipboardList, MessageSquare,
   LogOut, BarChart3, Users, FolderKanban, Shield, ScrollText,
   UserCircle, Building2, Inbox, BookOpen, Calendar,
-  UsersRound, Newspaper, Heart, Briefcase, X, LayoutGrid, ChevronRight, Megaphone, Mail, Send,
+  UsersRound, Newspaper, Heart, Briefcase, X, LayoutGrid, ChevronRight, Megaphone, Mail, Send, MessageCircle,
 } from 'lucide-react';
 
 /**
@@ -91,6 +91,7 @@ export default function PortalShell({
     { label: 'Community', href: '/portal/member/community', icon: UsersRound },
     { label: 'Jobs', href: '/portal/member/jobs', icon: Briefcase },
     { label: 'Events', href: '/portal/member/events', icon: Calendar },
+    { label: 'Chats', href: '/portal/member/chats', icon: MessageCircle },
     { label: 'Referrals', href: '/portal/member/referrals', icon: Send },
     { label: 'My Profile', href: '/portal/member/profile', icon: UserCircle },
     ...(isMatrimonyEnabled ? [{ label: 'Matrimony', href: '/portal/member/matrimony', icon: Heart }] : []),
@@ -135,7 +136,7 @@ export default function PortalShell({
   const tabs: NavLink[] =
     role === 'admin'
       ? [adminLinks[0], adminLinks.find((l) => l.href.endsWith('/community'))!, adminLinks.find((l) => l.href.endsWith('/requests'))!, adminLinks.find((l) => l.href.endsWith('/messages'))!]
-      : [memberLinks[0], memberLinks.find((l) => l.href.endsWith('/community'))!, memberLinks.find((l) => l.href.endsWith('/events'))!, memberLinks.find((l) => l.href.endsWith('/jobs'))!];
+      : [memberLinks[0], memberLinks.find((l) => l.href.endsWith('/community'))!, memberLinks.find((l) => l.href.endsWith('/events'))!, memberLinks.find((l) => l.href.endsWith('/jobs'))!, memberLinks.find((l) => l.href.endsWith('/chats'))!];
 
   // The More sheet: what the tab bar does NOT already show, in small groups.
   // Repeating the four tab destinations here was pure clutter - the bar is

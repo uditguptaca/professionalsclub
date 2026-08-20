@@ -531,7 +531,7 @@ export interface CommunityReport {
 // Company referrals (0013)
 //
 // Camel-cased like the rest of this file; src/server/case.ts converts at the
-// repository boundary. The nullable identity fields on ReferralInboxItem are
+// repository boundary. Identity fields on referral types are
 // nullable for a reason: the database NULLs them until the insider accepts, so
 // the type tells you the same thing the schema does.
 // ============================================================================
@@ -608,49 +608,9 @@ export interface ReferralJobRef {
 }
 
 /** An insider who agreed to help. Only ever built from accepted rows. */
-export interface ReferralHelper {
-  recipientId: string;
-  name: string | null;
-  title: string | null;
-  email: string | null;
-  linkedin: string | null;
-  respondedAt: string | null;
-}
+
 
 export type ReferralRequestStatus = 'open' | 'matched' | 'closed' | 'withdrawn';
 
-export interface MyReferralRequest {
-  id: string;
-  headline: string;
-  note: string | null;
-  status: ReferralRequestStatus;
-  notifiedCount: number;
-  createdAt: string;
-  companyId: string;
-  companyName: string;
-  companyLogo: string | null;
-  jobs: ReferralJobRef[];
-  helpers: ReferralHelper[];
-}
+// MyReferralRequest / ReferralInboxItem removed with the 0019 fan-out drop.
 
-export interface ReferralInboxItem {
-  recipientId: string;
-  myStatus: 'pending' | 'accepted' | 'declined';
-  respondedAt: string | null;
-  requestId: string;
-  /** The anonymous descriptor, e.g. "A QA Analyst (4-6 years)". */
-  headline: string;
-  note: string | null;
-  requestStatus: ReferralRequestStatus;
-  createdAt: string;
-  companyId: string;
-  companyName: string;
-  companyLogo: string | null;
-  jobs: ReferralJobRef[];
-  /** All null until myStatus === 'accepted'. Enforced by the view, not the UI. */
-  seekerName: string | null;
-  seekerEmail: string | null;
-  seekerPhone: string | null;
-  seekerLinkedin: string | null;
-  resumeUrl: string | null;
-}

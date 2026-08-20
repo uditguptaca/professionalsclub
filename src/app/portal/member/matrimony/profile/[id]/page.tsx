@@ -436,7 +436,7 @@ export default function CandidateProfilePage() {
 
         {interestStatus === 'accepted' && (
           <Link
-            href="/portal/member/matrimony/messages"
+            href="/portal/member/chats"
             className="btn btn-primary"
             style={{ flex: 1, minWidth: 170, minHeight: 44, textDecoration: 'none' }}
           >

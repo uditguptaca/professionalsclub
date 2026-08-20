@@ -3,11 +3,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/app-context';
 import { fetchHomeFeed, updateMyCity } from '@/app/actions/portal';
+import { followMember, unfollowMember } from '@/app/actions/chat';
 import type { HomeFeed } from '@/server/repos/home';
 import { COMMUNITY_CITIES, cityInfo } from '@/lib/cities';
 import {
   MapPin, ChevronDown, Calendar, Users, ArrowRight, Briefcase, ShieldCheck,
   FileText, Send, Bookmark, Mail, Store, Check, Loader2, UsersRound, X,
+  UserPlus,
 } from 'lucide-react';
 
 /**
@@ -70,6 +72,9 @@ function Ring({ pct }: { pct: number }) {
 export default function MemberHomePage() {
   const { profile } = useApp();
   const [feed, setFeed] = useState<HomeFeed | null>(null);
+  // Optimistic overrides for the follow buttons; server truth arrives on the
+  // next feed load.
+  const [followed, setFollowed] = useState<Record<string, 'none' | 'pending' | 'accepted'>>({});
   const [error, setError] = useState('');
   const [cityOpen, setCityOpen] = useState(false);
   const [switching, setSwitching] = useState(false);
@@ -196,12 +201,35 @@ export default function MemberHomePage() {
                 {feed.newMembers.slice(0, 4).map((m) => (
                   <div key={m.id} className="hf-member">
                     <span className="hf-member-avatar" aria-hidden="true">{initials(m.firstName, m.lastName)}</span>
-                    <div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <strong>{m.firstName} {m.lastName}</strong>
                       <small>
                         {[m.jobTitle, m.city].filter(Boolean).join(' · ') || 'Member'} · {joinedAgo(m.createdAt)}
                       </small>
                     </div>
+                    {(() => {
+                      // Follows are requests now: none -> Requested -> Following.
+                      const state = followed[m.id] ?? m.followState;
+                      const label = state === 'accepted' ? 'Following' : state === 'pending' ? 'Requested' : 'Follow';
+                      return (
+                        <button
+                          type="button"
+                          className={`pp-toggle ${state === 'accepted' ? 'is-on' : ''}`}
+                          style={{ padding: '0.32rem 0.75rem', opacity: state === 'pending' ? 0.75 : 1 }}
+                          aria-pressed={state !== 'none'}
+                          onClick={() => {
+                            const next = state === 'none' ? 'pending' : 'none';
+                            setFollowed((f) => ({ ...f, [m.id]: next }));
+                            void (state === 'none' ? followMember(m.id) : unfollowMember(m.id)).then((r) => {
+                              if (!r.ok) setFollowed((f) => ({ ...f, [m.id]: state }));
+                            });
+                          }}
+                        >
+                          {state === 'accepted' ? <Check size={13} aria-hidden="true" /> : <UserPlus size={13} aria-hidden="true" />}
+                          {label}
+                        </button>
+                      );
+                    })()}
                   </div>
                 ))}
                 <Link href="/portal/member/community" className="btn btn-primary hf-members-cta">

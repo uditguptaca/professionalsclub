@@ -21,7 +21,7 @@ import { withUserRead, one } from '@/server/db';
 export interface HomeFeed {
   city: string | null;
   completenessPct: number;
-  newMembers: { id: string; firstName: string; lastName: string; jobTitle: string | null; city: string | null; createdAt: string }[];
+  newMembers: { id: string; firstName: string; lastName: string; jobTitle: string | null; city: string | null; createdAt: string; followState: 'none' | 'pending' | 'accepted' }[];
   events: { id: string; title: string; date: string | null; time: string | null; location: string | null; eventType: string; attendees: number; image: string | null; rsvpUrl: string | null; inCity: boolean }[];
   groups: { id: string; slug: string; name: string; description: string; memberCount: number; isMember: boolean; inCity: boolean }[];
   jobs: { companyId: string; companyName: string; companyLogo: string | null; companySlug: string; helperCount: number; cityJobs: number; sample: string | null }[];
@@ -61,7 +61,9 @@ export async function fetchHomeFeed(userId: string): Promise<HomeFeed> {
         -- New members in my city (me excluded), newest first. Falls back to
         -- newest anywhere so a small hub still sees a living club.
         (select coalesce(json_agg(t), '[]'::json) from (
-          select id, first_name, last_name, job_title, city, created_at
+          select id, first_name, last_name, job_title, city, created_at,
+                 coalesce((select f.status from public.member_follows f
+                            where f.follower_id = $1 and f.followee_id = n.id), 'none') as follow_state
             from public.member_names n
            where n.id <> $1
            order by (lower(coalesce(n.city, '')) = lower(coalesce((select city from me), ''))) desc,
@@ -132,8 +134,8 @@ export async function fetchHomeFeed(userId: string): Promise<HomeFeed> {
         (select count(*) from public.help_requests r
           where r.member_id = $1
             and r.status not in ('resolved', 'closed', 'rejected'))::int as open_requests,
-        (select count(*) from public.referral_inbox i
-          where i.my_status = 'pending' and i.request_status = 'open')::int as pending_referral_asks,
+        (select count(*) from public.referral_direct_requests r
+          where r.insider_id = $1 and r.status = 'pending')::int as pending_referral_asks,
         (select count(*) from public.events e
           where e.status = 'upcoming' and e.is_published)::int as my_upcoming_events,
         (select count(*) from public.member_saved_businesses s
@@ -153,7 +155,7 @@ export async function fetchHomeFeed(userId: string): Promise<HomeFeed> {
       newMembers: j(row?.new_members).map((m: Record<string, unknown>) => ({
         id: m.id as string, firstName: m.first_name as string, lastName: m.last_name as string,
         jobTitle: (m.job_title as string | null) ?? null, city: (m.city as string | null) ?? null,
-        createdAt: iso(m.created_at) as string,
+        createdAt: iso(m.created_at) as string, followState: (m.follow_state as 'none' | 'pending' | 'accepted') ?? 'none',
       })),
       events: j(row?.events).map((e: Record<string, unknown>) => ({
         id: e.id as string, title: e.title as string, date: iso(e.date), time: (e.time as string | null) ?? null,

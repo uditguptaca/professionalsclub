@@ -1,39 +1,29 @@
 'use client';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/app-context';
+import { fetchReferralHome, saveWhereIWork, removeWhereIWork } from '@/app/actions/referrals';
+import { myDirectReferrals } from '@/app/actions/chat';
+import type { Company, CompanyInsider } from '@/types';
+import type { MyDirectReferral } from '@/server/repos/chat';
 import {
-  fetchReferralHome, respondToReferralRequest, withdrawReferral,
-  saveWhereIWork, removeWhereIWork,
-} from '@/app/actions/referrals';
-import type {
-  Company, CompanyInsider, MyReferralRequest, ReferralInboxItem, ReferralJobRef,
-} from '@/types';
-import {
-  Inbox, Send, Building2, Check, X, Loader2, ShieldCheck, Mail, Phone, Link2,
-  FileText, ExternalLink, Trash2, Plus, HelpCircle, EyeOff, ChevronRight, Briefcase,
+  Send, Building2, Check, X, Loader2, ShieldCheck, Mail, MessageCircle,
+  ChevronRight, Plus, ArrowRight,
 } from 'lucide-react';
 import { useConfirm } from '@/components/portal/confirm';
 import PortalLoading from '@/components/portal/PortalLoading';
 
 /**
- * Both sides of a referral, plus the opt-in that makes someone an insider.
+ * Referrals, overview only.
  *
- * I can help        the anonymous asks waiting on me
- * Requests I sent   what I asked for, how many were asked, and who said yes
- * Where I work      my employers, and whether I am open to helping
+ * The asks themselves live in chat now: a request opens a conversation with the
+ * person you asked, and the referral card in it is where they answer. So this
+ * page is two lists — what I asked for, and where I work — and the second one is
+ * the consent switch that puts my name in front of job seekers.
  *
- * Second pass, in the profile-hub language: the page is a glanceable list of
- * rows, and everything with detail or a decision in it (an ask, a request I
- * sent) opens in a focused bottom sheet. Nothing on the page is a form except
- * the two fields that add an employer.
- *
- * The anonymity is not implemented here. The server sends null for a seeker's
- * name until this member has accepted, so there is nothing to hide in the
- * markup: if it renders, it was revealed.
+ * Profile-hub grammar throughout: glanceable rows in rounded cards, no tabs, no
+ * page-long form except the two fields that add an employer.
  */
-
-type Tab = 'inbox' | 'sent' | 'work';
 
 const when = (iso: string | null): string => {
   if (!iso) return '';
@@ -53,41 +43,37 @@ const TONES = {
   mute: { background: 'var(--bg-secondary)', color: 'var(--text-muted)' },
 } as const;
 
+const STATUS: Record<MyDirectReferral['status'], { label: string; tone: keyof typeof TONES }> = {
+  pending:  { label: 'Waiting',  tone: 'wait' },
+  accepted: { label: 'Accepted', tone: 'done' },
+  declined: { label: 'Declined', tone: 'mute' },
+};
+
 /** Row sub-labels carry a company name and a timestamp; keep them one line. */
 const ONE_LINE: React.CSSProperties = { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' };
 
-const chip = (label: string, tone: keyof typeof TONES, icon?: React.ReactNode) => (
-  <span className="pp-chip" style={{ ...TONES[tone], flexShrink: 0 }}>{icon}{label}</span>
+const chip = (label: string, tone: keyof typeof TONES) => (
+  <span className="pp-chip" style={{ ...TONES[tone], flexShrink: 0 }}>{label}</span>
 );
 
-/** What a sent request's status should say to the person who sent it. */
-const SENT_STATUS: Record<string, { label: string; tone: keyof typeof TONES }> = {
-  open: { label: 'Waiting', tone: 'wait' },
-  matched: { label: 'Someone can help', tone: 'done' },
-  closed: { label: 'Closed', tone: 'mute' },
-  withdrawn: { label: 'Withdrawn', tone: 'mute' },
+const HEAD_LINK: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: 5,
+  minHeight: 44, fontSize: '0.85rem', fontWeight: 700,
+  color: 'var(--text-accent)', textDecoration: 'none',
 };
 
 export default function ReferralsPage() {
   const { currentUserId } = useApp();
   const confirm = useConfirm();
 
-  const [tab, setTab] = useState<Tab>('inbox');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
+  const [busy, setBusy] = useState<string | null>(null);
 
   const [companies, setCompanies] = useState<Company[]>([]);
   const [myRoles, setMyRoles] = useState<CompanyInsider[]>([]);
-  const [requests, setRequests] = useState<MyReferralRequest[]>([]);
-  const [inbox, setInbox] = useState<ReferralInboxItem[]>([]);
-
-  const [busy, setBusy] = useState<string | null>(null);
-
-  // Open sheets are held by id, not by object, so the sheet re-reads the list
-  // it came from after a save instead of showing a stale copy.
-  const [openAsk, setOpenAsk] = useState<string | null>(null);
-  const [openReq, setOpenReq] = useState<string | null>(null);
+  const [requests, setRequests] = useState<MyDirectReferral[]>([]);
 
   // Where-I-work form
   const [addCompany, setAddCompany] = useState('');
@@ -95,27 +81,31 @@ export default function ReferralsPage() {
   const [addRefer, setAddRefer] = useState(true);
   const [addEmail, setAddEmail] = useState(true);
 
+  const workRef = useRef<HTMLElement>(null);
+
   useEffect(() => {
     if (!currentUserId) { setLoading(false); return; }
-    fetchReferralHome().then((r) => {
-      if (r.ok) {
-        setCompanies(r.data.companies);
-        setMyRoles(r.data.myRoles);
-        setRequests(r.data.myRequests);
-        setInbox(r.data.inbox);
-        // An explicit ?tab= wins (the profile hub deep-links to Where I
-        // work); otherwise land on whichever tab has something waiting.
-        const asked = new URLSearchParams(window.location.search).get('tab');
-        if (asked === 'work' || asked === 'inbox' || asked === 'sent') setTab(asked);
-        else if (r.data.inbox.some((i) => i.myStatus === 'pending')) setTab('inbox');
-        else if (r.data.myRequests.length) setTab('sent');
-        else if (!r.data.myRoles.length) setTab('work');
-      } else {
-        setError(r.error);
-      }
+    (async () => {
+      // Next runs a client's Server Action calls one at a time, so these are
+      // sequential either way.
+      const home = await fetchReferralHome();
+      const mine = await myDirectReferrals();
+      if (home.ok) { setCompanies(home.data.companies); setMyRoles(home.data.myRoles); }
+      else setError(home.error);
+      if (mine.ok) setRequests(mine.data);
+      else if (home.ok) setError(mine.error);
       setLoading(false);
-    });
+    })();
   }, [currentUserId]);
+
+  // The profile hub deep-links here with ?tab=work. Tabs are gone, so honour it
+  // by taking the member to that section instead.
+  useEffect(() => {
+    if (loading) return;
+    if (new URLSearchParams(window.location.search).get('tab') !== 'work') return;
+    workRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    workRef.current?.focus({ preventScroll: true });
+  }, [loading]);
 
   useEffect(() => {
     if (!toast) return;
@@ -123,61 +113,10 @@ export default function ReferralsPage() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const ask = useMemo(() => inbox.find((i) => i.recipientId === openAsk) ?? null, [inbox, openAsk]);
-  const req = useMemo(() => requests.find((r) => r.id === openReq) ?? null, [requests, openReq]);
-  const sheetOpen = Boolean(ask || req);
-
-  // An open sheet locks background scroll and closes on Escape, same as the
-  // profile hub and the city switcher.
-  useEffect(() => {
-    if (!sheetOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { setOpenAsk(null); setOpenReq(null); }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey); };
-  }, [sheetOpen]);
-
-  const closeSheets = () => { setOpenAsk(null); setOpenReq(null); };
-
-  const pending = useMemo(() => inbox.filter((i) => i.myStatus === 'pending'), [inbox]);
-  const answered = useMemo(() => inbox.filter((i) => i.myStatus !== 'pending'), [inbox]);
   const unlisted = useMemo(
     () => companies.filter((c) => !myRoles.some((r) => r.companyId === c.id)),
     [companies, myRoles]
   );
-
-  const respond = async (requestId: string, accept: boolean) => {
-    if (busy) return;
-    setBusy(requestId);
-    setError('');
-    const r = await respondToReferralRequest(requestId, accept);
-    if (r.ok) {
-      setInbox(r.data);
-      setToast(accept ? 'They can reach you now' : 'Passed on this one');
-      // Saying yes reveals their details in the same sheet; saying no is done.
-      if (!accept) closeSheets();
-    } else setError(r.error);
-    setBusy(null);
-  };
-
-  const withdraw = async (requestId: string) => {
-    if (busy) return;
-    const ok = await confirm({
-      title: 'Withdraw this request?',
-      message: 'Anyone who has not answered yet stops seeing it. People who already offered to help keep your details.',
-      confirmLabel: 'Withdraw',
-    });
-    if (!ok) return;
-    setBusy(requestId);
-    setError('');
-    const r = await withdrawReferral(requestId);
-    if (r.ok) { setRequests(r.data); setToast('Request withdrawn'); closeSheets(); }
-    else setError(r.error);
-    setBusy(null);
-  };
 
   const addRole = async () => {
     if (!addCompany || busy) return;
@@ -200,6 +139,7 @@ export default function ReferralsPage() {
   const updateRole = async (role: CompanyInsider, patch: Partial<CompanyInsider>) => {
     if (busy) return;
     setBusy(role.id);
+    setError('');
     const r = await saveWhereIWork({
       companyId: role.companyId,
       jobTitle: (patch.jobTitle ?? role.jobTitle) || undefined,
@@ -214,64 +154,23 @@ export default function ReferralsPage() {
     if (busy) return;
     const ok = await confirm({
       title: `Remove ${role.companyName}?`,
-      message: 'You will stop receiving referral requests for this employer. You can add it back any time.',
+      message: 'You will stop being listed as a referrer there, and stop receiving requests. You can add it back any time.',
       confirmLabel: 'Remove',
       tone: 'danger',
     });
     if (!ok) return;
     setBusy(role.id);
+    setError('');
     const r = await removeWhereIWork(role.companyId);
     if (r.ok) { setMyRoles(r.data); setToast('Employer removed'); } else setError(r.error);
     setBusy(null);
   };
-
-  const tabs: { id: Tab; label: string; count: number }[] = [
-    { id: 'inbox', label: 'I can help', count: pending.length },
-    { id: 'sent', label: 'Requests I sent', count: requests.length },
-    { id: 'work', label: 'Where I work', count: myRoles.length },
-  ];
 
   /** A company badge that sits where a row icon would. */
   const logo = (text: string | null, name: string) => (
     <span className="pp-row-icon" aria-hidden="true" style={{ fontWeight: 800, fontSize: '0.95rem' }}>
       {text || name.charAt(0).toUpperCase()}
     </span>
-  );
-
-  /** The roles a request covers, as rows inside a card. Postings are public. */
-  const jobRows = (jobs: ReferralJobRef[]) => (
-    <div className="pp-group-card">
-      {jobs.map((j) => (
-        <a
-          key={j.id}
-          className="pp-row"
-          href={j.applyUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span className="pp-row-icon"><Briefcase size={17} /></span>
-          <span className="pp-row-body">
-            <small>{[j.location, j.isOpen ? null : 'no longer listed'].filter(Boolean).join(' · ') || 'Open role'}</small>
-            <strong>{j.title}</strong>
-          </span>
-          <ExternalLink size={15} aria-hidden="true" className="pp-row-go" />
-        </a>
-      ))}
-    </div>
-  );
-
-  const emptyState = (icon: React.ReactNode, line: string, cta: React.ReactNode) => (
-    <div
-      className="pp-group-card"
-      style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
-        padding: '2.2rem 1.25rem', textAlign: 'center',
-      }}
-    >
-      {icon}
-      <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)', maxWidth: '24rem' }}>{line}</p>
-      {cta}
-    </div>
   );
 
   /** Toggle row, matching the profile hub: static row + pill toggle. */
@@ -316,208 +215,112 @@ export default function ReferralsPage() {
         }}>
           Referrals
         </h1>
-        <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-secondary)', maxWidth: '34rem' }}>
-          A member already inside a company can get an application looked at. Both sides stay
-          anonymous until someone agrees to help.
+        <p style={{ margin: 0, fontSize: '0.86rem', lineHeight: 1.6, color: 'var(--text-secondary)', maxWidth: '34rem' }}>
+          Ask someone who already works at a company to refer you — by name, in a chat with them.
         </p>
-        <Link
-          href="/portal/member/jobs"
-          className="btn btn-quiet"
-          style={{ display: 'inline-flex', minHeight: 44, marginTop: 2 }}
-        >
-          Browse jobs by company
-        </Link>
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <Link href="/portal/member/jobs" style={HEAD_LINK}>
+            Browse employers <ArrowRight size={14} aria-hidden="true" />
+          </Link>
+          <Link href="/portal/member/chats" style={HEAD_LINK}>
+            Chats <MessageCircle size={14} aria-hidden="true" />
+          </Link>
+        </div>
       </header>
 
-      <div
-        role="tablist"
-        aria-label="Referrals"
-        style={{
-          display: 'flex', gap: 4, padding: 4, marginBottom: 18,
-          background: 'var(--bg-primary)', borderRadius: 999,
-          border: '1px solid rgba(27,67,50,0.08)',
-          width: 'fit-content', maxWidth: '100%', overflowX: 'auto',
-        }}
-      >
-        {tabs.map((t) => {
-          const active = tab === t.id;
-          return (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => setTab(t.id)}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                minHeight: 44, padding: '0 16px', border: 0, borderRadius: 999,
-                font: 'inherit', fontSize: '0.85rem', whiteSpace: 'nowrap', cursor: 'pointer',
-                ...(active
-                  ? { background: 'var(--green-950)', color: '#fff', fontWeight: 700 }
-                  : { background: 'none', color: 'var(--text-secondary)', fontWeight: 600 }),
-              }}
-            >
-              {t.label}
-              {t.count > 0 && (
-                <span style={{
-                  padding: '0 6px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 800,
-                  ...(active
-                    ? { background: 'rgba(255,255,255,0.18)', color: '#fff' }
-                    : { background: 'var(--bg-secondary)', color: 'var(--text-muted)' }),
-                }}>
-                  {t.count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {error && !sheetOpen && (
+      {error && (
         <p role="alert" className="community-error" style={{ marginBottom: 14 }}>{error}</p>
       )}
 
       {loading && <PortalLoading label="Loading your referrals" />}
 
-      {/* ------------------------------------------------------------ inbox */}
-      {!loading && tab === 'inbox' && (
+      {!loading && (
         <div className="pp-groups">
-          {inbox.length === 0 && emptyState(
-            <Inbox size={28} aria-hidden="true" style={{ opacity: 0.35 }} />,
-            'Nothing is waiting on you. Add the company you work at and say you are open to helping, and asks will land here.',
-            <button
-              type="button"
-              className="btn btn-primary"
-              style={{ minHeight: 48, borderRadius: 999 }}
-              onClick={() => setTab('work')}
-            >
-              Add where I work
-            </button>,
-          )}
-
-          {pending.length > 0 && (
-            <section className="pp-group">
-              <h2>Waiting on you</h2>
-              <p className="pp-group-sub">
-                You will see who is asking only if you agree to help. Saying no tells them nothing.
-              </p>
-              <div className="pp-group-card">
-                {pending.map((item) => (
-                  <button
-                    key={item.recipientId}
-                    type="button"
-                    className="pp-row"
-                    onClick={() => { setOpenReq(null); setOpenAsk(item.recipientId); }}
-                  >
-                    {logo(item.companyLogo, item.companyName)}
-                    <span className="pp-row-body">
-                      <small style={ONE_LINE}>{item.companyName} · {when(item.createdAt)}</small>
-                      <strong>{item.headline}</strong>
-                    </span>
-                    {chip('Anonymous', 'wait', <EyeOff size={11} aria-hidden="true" />)}
-                    <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {answered.length > 0 && (
-            <section className="pp-group">
-              <h2>Already answered</h2>
-              <div className="pp-group-card">
-                {answered.map((item) => (
-                  <button
-                    key={item.recipientId}
-                    type="button"
-                    className="pp-row"
-                    onClick={() => { setOpenReq(null); setOpenAsk(item.recipientId); }}
-                  >
-                    {logo(item.companyLogo, item.companyName)}
-                    <span className="pp-row-body">
-                      <small style={ONE_LINE}>{item.companyName} · {when(item.respondedAt)}</small>
-                      <strong>{item.seekerName ?? item.headline}</strong>
-                    </span>
-                    {item.myStatus === 'accepted'
-                      ? chip('You helped', 'done')
-                      : chip('Passed', 'mute')}
-                    <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
-      )}
-
-      {/* ------------------------------------------------------------- sent */}
-      {!loading && tab === 'sent' && (
-        <div className="pp-groups">
-          {requests.length === 0 && emptyState(
-            <Send size={28} aria-hidden="true" style={{ opacity: 0.35 }} />,
-            'You have not asked for a referral yet. Pick an employer, choose the roles you are going for, and we will pass it on.',
-            <Link
-              href="/portal/member/jobs"
-              className="btn btn-primary"
-              style={{ minHeight: 48, borderRadius: 999 }}
-            >
-              Browse jobs by company
-            </Link>,
-          )}
-
-          {requests.length > 0 && (
-            <section className="pp-group">
-              <h2>Requests I sent</h2>
-              <p className="pp-group-sub">
-                Tap a request to see the roles, who offered to help, and how to reach them.
-              </p>
-              <div className="pp-group-card">
-                {requests.map((r) => {
-                  const status = SENT_STATUS[r.status] ?? SENT_STATUS.open;
-                  return (
-                    <button
-                      key={r.id}
-                      type="button"
-                      className="pp-row"
-                      onClick={() => { setOpenAsk(null); setOpenReq(r.id); }}
-                    >
-                      {logo(r.companyLogo, r.companyName)}
-                      <span className="pp-row-body">
-                        <small style={ONE_LINE}>
-                          {r.notifiedCount === 0
-                            ? 'nobody inside yet'
-                            : `${r.notifiedCount} ${r.notifiedCount === 1 ? 'member' : 'members'} asked`}
-                          {' · '}{when(r.createdAt)}
-                        </small>
-                        <strong>{r.companyName}</strong>
-                      </span>
-                      {chip(status.label, status.tone)}
-                      <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-        </div>
-      )}
-
-      {/* ------------------------------------------------------------- work */}
-      {!loading && tab === 'work' && (
-        <div className="pp-groups">
+          {/* ------------------------------------------------- requests I sent */}
           <section className="pp-group">
+            <h2>Your requests</h2>
+            {requests.length === 0 ? (
+              <div
+                className="pp-group-card"
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+                  padding: '2.2rem 1.25rem', textAlign: 'center',
+                }}
+              >
+                <Send size={28} aria-hidden="true" style={{ opacity: 0.35 }} />
+                <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.6, color: 'var(--text-secondary)', maxWidth: '24rem' }}>
+                  You have not asked anyone for a referral yet. Pick an employer, choose the roles
+                  you are going for, then choose who to ask.
+                </p>
+                <Link
+                  href="/portal/member/jobs"
+                  className="btn btn-primary"
+                  style={{ minHeight: 48, borderRadius: 999 }}
+                >
+                  Browse employers
+                </Link>
+              </div>
+            ) : (
+              <>
+                <p className="pp-group-sub">Tap a request to open the chat where it lives.</p>
+                <div className="pp-group-card">
+                  {requests.map((r) => {
+                    const status = STATUS[r.status] ?? STATUS.pending;
+                    const name = `${r.insiderFirstName} ${r.insiderLastName}`.trim();
+                    const body = (
+                      <>
+                        {logo(
+                          `${r.insiderFirstName.charAt(0)}${r.insiderLastName.charAt(0)}`.toUpperCase(),
+                          name,
+                        )}
+                        <span className="pp-row-body">
+                          <small style={ONE_LINE}>{r.companyName} · {when(r.createdAt)}</small>
+                          <strong>{name}</strong>
+                        </span>
+                        {chip(status.label, status.tone)}
+                      </>
+                    );
+                    return r.conversationId ? (
+                      <Link
+                        key={r.id}
+                        className="pp-row"
+                        href={`/portal/member/chats?c=${r.conversationId}`}
+                        aria-label={`Open chat with ${name} about ${r.companyName}`}
+                      >
+                        {body}
+                        <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
+                      </Link>
+                    ) : (
+                      <div key={r.id} className="pp-row pp-row-static">{body}</div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </section>
+
+          {/* ----------------------------------------------------- where I work */}
+          <section className="pp-group" id="where-i-work" ref={workRef} tabIndex={-1}>
             <h2>Where I work</h2>
             <p className="pp-group-sub">
-              Other people only ever see a count, something like “3 members here can help”, never
-              who. Your name reaches a job seeker only when you open a request and say you can help.
+              Turning referrals on lists you by name to members looking at that employer&apos;s jobs.
+              Turn it off and you appear nowhere.
             </p>
 
             {myRoles.length === 0 ? (
-              emptyState(
-                <Building2 size={28} aria-hidden="true" style={{ opacity: 0.35 }} />,
-                'No employers yet. Add the company you work at below and choose whether you are open to helping.',
-                null,
-              )
+              <div
+                className="pp-group-card"
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+                  padding: '2.2rem 1.25rem', textAlign: 'center',
+                }}
+              >
+                <Building2 size={28} aria-hidden="true" style={{ opacity: 0.35 }} />
+                <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.6, color: 'var(--text-secondary)', maxWidth: '24rem' }}>
+                  No employers yet. Add the company you work at below and choose whether you are
+                  open to referring.
+                </p>
+              </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {myRoles.map((role) => (
@@ -525,7 +328,9 @@ export default function ReferralsPage() {
                     <div className="pp-row pp-row-static">
                       {logo(role.companyLogo, role.companyName)}
                       <span className="pp-row-body">
-                        <small style={ONE_LINE}>{role.jobTitle || 'Employer'}{role.verifiedByAdmin ? ' · verified' : ''}</small>
+                        <small style={ONE_LINE}>
+                          {role.jobTitle || 'Employer'}{role.verifiedByAdmin ? ' · verified' : ''}
+                        </small>
                         <strong>{role.companyName}</strong>
                       </span>
                       <button
@@ -552,9 +357,17 @@ export default function ReferralsPage() {
                           : <X size={15} aria-hidden="true" />}
                       </button>
                     </div>
+                    <p style={{
+                      margin: 0, padding: '0.6rem 0.9rem',
+                      borderBottom: '1px solid rgba(27, 67, 50, 0.06)',
+                      fontSize: '0.78rem', lineHeight: 1.5, color: 'var(--text-muted)',
+                    }}>
+                      Turning referrals on lists you by name to members looking at{' '}
+                      {role.companyName}&apos;s jobs.
+                    </p>
                     {toggleRow(
                       <Mail size={17} />,
-                      role.canRefer ? 'Notifications' : 'Paused, nobody is sent to you',
+                      role.canRefer ? 'Notifications' : 'Paused, nobody can ask you',
                       'Email me about requests',
                       role.notifyEmail,
                       'On', 'Off',
@@ -568,10 +381,11 @@ export default function ReferralsPage() {
             )}
           </section>
 
+          {/* ------------------------------------------------- add an employer */}
           <section className="pp-group">
             <h2>Add an employer</h2>
             {unlisted.length === 0 ? (
-              <div className="pp-group-card" style={{ padding: '1.1rem 1.1rem' }}>
+              <div className="pp-group-card" style={{ padding: '1.1rem' }}>
                 <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
                   {companies.length === 0
                     ? 'No employers are listed yet. An admin adds them.'
@@ -612,12 +426,19 @@ export default function ReferralsPage() {
                 {toggleRow(
                   <ShieldCheck size={17} />,
                   'Referrals',
-                  'Open to helping',
+                  'Open to referring',
                   addRefer,
                   'Yes', 'No',
                   () => setAddRefer(!addRefer),
-                  'Open to helping people applying here',
+                  'Open to referring people applying here',
                 )}
+                <p style={{
+                  margin: 0, padding: '0.6rem 0.9rem',
+                  borderBottom: '1px solid rgba(27, 67, 50, 0.06)',
+                  fontSize: '0.78rem', lineHeight: 1.5, color: 'var(--text-muted)',
+                }}>
+                  Turning referrals on lists you by name to members looking at that company&apos;s jobs.
+                </p>
                 {toggleRow(
                   <Mail size={17} />,
                   'Notifications',
@@ -645,211 +466,6 @@ export default function ReferralsPage() {
               </div>
             )}
           </section>
-        </div>
-      )}
-
-      {/* -------------------------------------------------- ask detail sheet */}
-      {ask && (
-        <div className="hf-sheet-scrim" onClick={(e) => { if (e.target === e.currentTarget) closeSheets(); }}>
-          <div className="hf-sheet pp-sheet" role="dialog" aria-modal="true" aria-label={`Referral request at ${ask.companyName}`}>
-            <div className="hf-sheet-head">
-              <h2>{ask.companyName}</h2>
-              <button type="button" className="portal-sheet-close" onClick={closeSheets} aria-label="Close">
-                <X size={18} />
-              </button>
-            </div>
-            <p className="hf-sheet-sub">
-              {ask.myStatus === 'pending'
-                ? `${ask.headline} · ${when(ask.createdAt)}`
-                : ask.myStatus === 'accepted'
-                  ? `${ask.seekerName ?? ask.headline} · you offered to help ${when(ask.respondedAt)}`
-                  : `${ask.headline} · you passed ${when(ask.respondedAt)}`}
-            </p>
-
-            {ask.myStatus === 'accepted' && (
-              <div className="pp-group-card" style={{ marginBottom: 12 }}>
-                {ask.seekerEmail && (
-                  <a className="pp-row" href={`mailto:${ask.seekerEmail}`}>
-                    <span className="pp-row-icon"><Mail size={17} /></span>
-                    <span className="pp-row-body"><small>Email</small><strong>{ask.seekerEmail}</strong></span>
-                    <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
-                  </a>
-                )}
-                {ask.seekerPhone && (
-                  <a className="pp-row" href={`tel:${ask.seekerPhone}`}>
-                    <span className="pp-row-icon"><Phone size={17} /></span>
-                    <span className="pp-row-body"><small>Phone</small><strong>{ask.seekerPhone}</strong></span>
-                    <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
-                  </a>
-                )}
-                {ask.seekerLinkedin && (
-                  <a className="pp-row" href={ask.seekerLinkedin} target="_blank" rel="noopener noreferrer">
-                    <span className="pp-row-icon"><Link2 size={17} /></span>
-                    <span className="pp-row-body"><small>Profile</small><strong>LinkedIn</strong></span>
-                    <ExternalLink size={15} aria-hidden="true" className="pp-row-go" />
-                  </a>
-                )}
-                {ask.resumeUrl && (
-                  <a className="pp-row" href={ask.resumeUrl} target="_blank" rel="noopener noreferrer">
-                    <span className="pp-row-icon"><FileText size={17} /></span>
-                    <span className="pp-row-body"><small>Attachment</small><strong>Resume</strong></span>
-                    <ExternalLink size={15} aria-hidden="true" className="pp-row-go" />
-                  </a>
-                )}
-              </div>
-            )}
-
-            <p className="pp-group-sub" style={{ margin: '0 0 6px', paddingLeft: 0 }}>
-              {ask.jobs.length === 1 ? 'The role' : 'The roles'}
-            </p>
-            {jobRows(ask.jobs)}
-
-            {ask.note && (
-              <p style={{
-                margin: '12px 0 0', padding: '0.85rem 1rem', borderRadius: '0.85rem',
-                background: 'var(--bg-secondary)', fontSize: '0.88rem', color: 'var(--text-secondary)',
-              }}>
-                “{ask.note}”
-              </p>
-            )}
-
-            {error && (
-              <p role="alert" className="community-error" style={{ marginTop: 12 }}>{error}</p>
-            )}
-
-            {ask.myStatus === 'pending' ? (
-              <>
-                <p style={{ margin: '14px 0 10px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  Saying yes shares your name and email with them, and shows you theirs. Saying no
-                  tells them nothing at all.
-                </p>
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button
-                    type="button"
-                    className="btn btn-outline"
-                    style={{ flex: 1, minHeight: 48, borderRadius: 999 }}
-                    disabled={busy !== null}
-                    onClick={() => respond(ask.requestId, false)}
-                  >
-                    {busy === ask.requestId
-                      ? <Loader2 size={14} className="spin" aria-hidden="true" />
-                      : <X size={14} aria-hidden="true" />}
-                    Not me
-                  </button>
-                  <button
-                    type="button"
-                    className="pp-sheet-save"
-                    style={{ flex: 1 }}
-                    disabled={busy !== null}
-                    onClick={() => respond(ask.requestId, true)}
-                  >
-                    <Check size={16} aria-hidden="true" /> I can help
-                  </button>
-                </div>
-              </>
-            ) : (
-              <p style={{ margin: '14px 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                {ask.myStatus === 'accepted'
-                  ? 'They have your name and email, and you have theirs.'
-                  : 'You passed on this one. They were told nothing about you.'}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ------------------------------------------------- sent detail sheet */}
-      {req && (
-        <div className="hf-sheet-scrim" onClick={(e) => { if (e.target === e.currentTarget) closeSheets(); }}>
-          <div className="hf-sheet pp-sheet" role="dialog" aria-modal="true" aria-label={`My referral request at ${req.companyName}`}>
-            <div className="hf-sheet-head">
-              <h2>{req.companyName}</h2>
-              <button type="button" className="portal-sheet-close" onClick={closeSheets} aria-label="Close">
-                <X size={18} />
-              </button>
-            </div>
-            <p className="hf-sheet-sub">
-              {req.notifiedCount === 0
-                ? 'nobody inside yet'
-                : `${req.notifiedCount} ${req.notifiedCount === 1 ? 'member' : 'members'} asked`}
-              {' · '}{when(req.createdAt)}
-            </p>
-
-            <div style={{ marginBottom: 12 }}>
-              {chip((SENT_STATUS[req.status] ?? SENT_STATUS.open).label, (SENT_STATUS[req.status] ?? SENT_STATUS.open).tone)}
-            </div>
-
-            <p className="pp-group-sub" style={{ margin: '0 0 6px', paddingLeft: 0 }}>
-              {req.jobs.length === 1 ? 'The role' : 'The roles'}
-            </p>
-            {jobRows(req.jobs)}
-
-            {req.helpers.length > 0 ? (
-              <>
-                <p className="pp-group-sub" style={{ margin: '14px 0 6px', paddingLeft: 0 }}>Can help you</p>
-                <div className="pp-group-card">
-                  {req.helpers.map((h) => (
-                    <div key={h.recipientId} className="pp-row pp-row-static">
-                      <span className="pp-row-icon"><ShieldCheck size={17} /></span>
-                      <span className="pp-row-body">
-                        <small>{h.title || 'Works there'}</small>
-                        <strong>{h.name ?? 'A member'}</strong>
-                      </span>
-                      {h.email && (
-                        <a
-                          href={`mailto:${h.email}`}
-                          aria-label={`Email ${h.name ?? 'this member'}`}
-                          style={{ display: 'grid', placeItems: 'center', width: 44, height: 44, borderRadius: 999, color: 'var(--green-800)', flexShrink: 0 }}
-                        >
-                          <Mail size={17} aria-hidden="true" />
-                        </a>
-                      )}
-                      {h.linkedin && (
-                        <a
-                          href={h.linkedin}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label={`LinkedIn profile for ${h.name ?? 'this member'}`}
-                          style={{ display: 'grid', placeItems: 'center', width: 44, height: 44, borderRadius: 999, color: 'var(--green-800)', flexShrink: 0 }}
-                        >
-                          <Link2 size={17} aria-hidden="true" />
-                        </a>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <p style={{
-                display: 'flex', alignItems: 'flex-start', gap: 8,
-                margin: '14px 0 0', fontSize: '0.82rem', color: 'var(--text-muted)',
-              }}>
-                <HelpCircle size={14} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
-                {req.notifiedCount === 0
-                  ? 'No member there has offered to help yet. We will pass this on if that changes.'
-                  : 'Waiting on a reply. You will be notified the moment someone agrees.'}
-              </p>
-            )}
-
-            {error && (
-              <p role="alert" className="community-error" style={{ marginTop: 12 }}>{error}</p>
-            )}
-
-            {(req.status === 'open' || req.status === 'matched') && (
-              <button
-                type="button"
-                className="btn btn-outline"
-                style={{ marginTop: 16, minHeight: 48, borderRadius: 999, color: 'var(--error-600)' }}
-                disabled={busy !== null}
-                onClick={() => withdraw(req.id)}
-              >
-                {busy === req.id
-                  ? <Loader2 size={14} className="spin" aria-hidden="true" />
-                  : <Trash2 size={14} aria-hidden="true" />}
-                Withdraw this request
-              </button>
-            )}
-          </div>
         </div>
       )}
 

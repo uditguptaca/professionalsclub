@@ -1,10 +1,7 @@
 import 'server-only';
 import { withUser, withUserRead, withAnon, one } from '@/server/db';
 import { toDomainAll, toDomain } from '@/server/case';
-import type {
-  Company, CompanyJob, CompanyInsider, ReferralInboxItem,
-  MyReferralRequest, ReferralHelper,
-} from '@/types';
+import type { Company, CompanyJob, CompanyInsider } from '@/types';
 
 /**
  * Company referrals.
@@ -245,115 +242,5 @@ export async function removeInsiderRole(userId: string, companyId: string): Prom
 
 // ============================================================ Requests
 
-/**
- * Ask for a referral. The fan-out, the notifications and the queued mail all
- * happen inside create_referral_request, because a member holds no grant to
- * write another member's rows.
- */
-export async function createReferralRequest(
-  userId: string,
-  input: { companyId: string; jobIds: string[]; note?: string; resumeUrl?: string }
-): Promise<{ requestId: string; notified: number }> {
-  return withUser(userId, async (db) => {
-    const ids = (Array.isArray(input.jobIds) ? input.jobIds : [])
-      .filter((v): v is string => typeof v === 'string')
-      .slice(0, 20);
-    if (ids.length === 0) throw new Error('Choose at least one open role.');
-
-    const row = await one(await db`
-      select * from public.create_referral_request(
-        ${input.companyId}::uuid, ${ids}::uuid[],
-        ${input.note?.trim().slice(0, 2000) || null},
-        ${input.resumeUrl?.trim() || null}
-      )
-    `);
-    const r = row as { request_id: string; notified: number } | null;
-    if (!r) throw new Error('Could not send the request.');
-    return { requestId: r.request_id, notified: Number(r.notified) };
-  });
-}
-
-/** The caller's own requests, with the roles and whoever has agreed to help. */
-export async function listMyReferralRequests(userId: string): Promise<MyReferralRequest[]> {
-  return withUserRead(userId, async (db) => {
-    const rows = await db`
-      select r.id, r.headline, r.note, r.status, r.notified_count, r.created_at,
-             c.id as company_id, c.name as company_name, c.logo as company_logo,
-             coalesce((
-               select json_agg(json_build_object(
-                 'id', j.id, 'title', j.title, 'location', j.location,
-                 'applyUrl', j.apply_url, 'isOpen', j.is_open
-               ) order by j.title)
-                 from public.referral_request_jobs rj
-                 join public.company_jobs j on j.id = rj.job_id
-                where rj.request_id = r.id
-             ), '[]'::json) as jobs,
-             -- referral_helpers only ever contains accepted rows, so this can
-             -- never leak who was asked and declined.
-             coalesce((
-               select json_agg(json_build_object(
-                 'recipientId', h.recipient_id, 'name', h.helper_name,
-                 'title', h.helper_title, 'email', h.helper_email,
-                 'linkedin', h.helper_linkedin, 'respondedAt', h.responded_at
-               ) order by h.responded_at)
-                 from public.referral_helpers h
-                where h.request_id = r.id
-             ), '[]'::json) as helpers
-        from public.referral_requests r
-        join public.companies c on c.id = r.company_id
-       where r.seeker_id = ${userId}::uuid
-       order by r.created_at desc
-    `;
-    return toDomainAll<MyReferralRequest>(rows);
-  });
-}
-
-export async function withdrawReferralRequest(userId: string, requestId: string): Promise<void> {
-  await withUser(userId, async (db) => {
-    await db`select public.withdraw_own_referral_request(${requestId}::uuid)`;
-  });
-}
-
-// ============================================================ Insider inbox
-
-/**
- * What this member has been asked to help with.
- *
- * Straight off referral_inbox: the identity columns are already NULL for
- * anything this insider has not accepted, so there is no filtering to get
- * wrong here.
- */
-export async function listReferralInbox(userId: string): Promise<ReferralInboxItem[]> {
-  return withUserRead(userId, async (db) => {
-    const rows = await db`
-      select * from public.referral_inbox
-       where request_status in ('open', 'matched')
-       order by (my_status = 'pending') desc, created_at desc
-       limit 100
-    `;
-    return toDomainAll<ReferralInboxItem>(rows);
-  });
-}
-
-export async function respondToReferral(
-  userId: string,
-  requestId: string,
-  accept: boolean
-): Promise<void> {
-  await withUser(userId, async (db) => {
-    await db`select public.respond_to_referral(${requestId}::uuid, ${accept})`;
-  });
-}
-
-/** How many asks are waiting on this member, for the nav badge. */
-export async function countPendingReferrals(userId: string): Promise<number> {
-  return withUserRead(userId, async (db) => {
-    const row = await one(await db`
-      select count(*)::int as n from public.referral_inbox
-       where my_status = 'pending' and request_status = 'open'
-    `);
-    return (row as { n: number } | null)?.n ?? 0;
-  });
-}
-
-export type { ReferralHelper };
+// The anonymous fan-out flow (create/inbox/respond/withdraw) was retired in
+// 0018/0019: referrals are direct requests now (src/server/repos/chat.ts).

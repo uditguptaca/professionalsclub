@@ -674,14 +674,14 @@ export default function MatrimonyDiscoverPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: '20rem' }}>
             {match.conversationId ? (
               <Link
-                href={`/portal/member/matrimony/messages?c=${match.conversationId}`}
+                href={`/portal/member/chats?c=${match.conversationId}`}
                 className="pp-sheet-save"
                 style={{ textDecoration: 'none' }}
               >
                 <MessageCircle size={17} aria-hidden="true" /> Say hello
               </Link>
             ) : (
-              <Link href="/portal/member/matrimony/messages" className="pp-sheet-save" style={{ textDecoration: 'none' }}>
+              <Link href="/portal/member/chats" className="pp-sheet-save" style={{ textDecoration: 'none' }}>
                 <MessageCircle size={17} aria-hidden="true" /> Open your chats
               </Link>
             )}

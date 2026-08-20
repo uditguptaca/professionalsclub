@@ -190,6 +190,7 @@ body {
   --z-sticky: 100;
   --z-drawer: 200;
   --z-overlay: 300;
+  --z-modal-backdrop: 390;
   --z-modal: 400;
   --z-toast: 500;
   --z-grain: 600;

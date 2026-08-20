@@ -292,7 +292,7 @@ export default function MatrimonyLikesPage() {
           </span>
           {item.status === 'accepted' && (
             <Link
-              href="/portal/member/matrimony/messages"
+              href="/portal/member/chats"
               className="btn btn-sm btn-outline"
               style={{ marginLeft: 'auto', textDecoration: 'none' }}
             >
@@ -381,8 +381,8 @@ export default function MatrimonyLikesPage() {
           </span>
           <Link
             href={matched.conversationId
-              ? `/portal/member/matrimony/messages?c=${matched.conversationId}`
-              : '/portal/member/matrimony/messages'}
+              ? `/portal/member/chats?c=${matched.conversationId}`
+              : '/portal/member/chats'}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 40,
               padding: '0 14px', borderRadius: 999, background: 'var(--lime-300)',

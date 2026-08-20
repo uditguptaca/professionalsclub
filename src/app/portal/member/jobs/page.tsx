@@ -1,27 +1,28 @@
 'use client';
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/app-context';
-import {
-  fetchCompanies, fetchCompanyJobs, requestReferral,
-} from '@/app/actions/referrals';
+import { fetchCompanies, fetchCompanyJobs } from '@/app/actions/referrals';
+import { listCompanyInsiders, requestReferral } from '@/app/actions/chat';
 import type { Company, CompanyJob } from '@/types';
+import type { CompanyInsiderEntry } from '@/server/repos/chat';
 import {
   Search, Building2, Users, Briefcase, ArrowLeft, ArrowRight, ExternalLink,
-  Check, Loader2, ShieldCheck, Send, AlertCircle, ChevronRight, X,
+  Check, Loader2, ShieldCheck, Send, AlertCircle, ChevronRight, BadgeCheck, UserPlus,
 } from 'lucide-react';
 
 /**
- * Jobs, by company.
+ * Jobs, by company. Three steps: pick an employer, pick the roles, pick who you
+ * are asking.
  *
- * Three steps: pick an employer, pick the roles, ask. The thing that makes it
- * worth using is the helper count on each company row — "3 members here can
- * help" — and the club's whole promise is that the count is all anyone ever
- * sees. No insider is named on this screen, because the server never sends one.
+ * Step three is the whole product now. Members who opt into referring are
+ * listed BY NAME, so the ask is a direct one: you choose the person, the request
+ * opens a chat with them, and the referral card lands in it. Nothing about this
+ * flow is anonymous, and the copy says so before anyone taps send.
  *
  * Styled in the profile-hub grammar: one narrow column, grouped rows in rounded
- * cards, segmented pills for filters, and the ask itself in a bottom sheet so
- * the roles list is never buried under a form.
+ * cards, segmented pills for filters.
  */
 
 const relative = (iso: string | null): string | null => {
@@ -63,6 +64,13 @@ const QUIET_LINK: React.CSSProperties = {
   textDecoration: 'none',
 };
 
+const BACK_BTN: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: 6,
+  minHeight: 44, padding: '0 4px', marginBottom: 4,
+  background: 'none', border: 0, cursor: 'pointer',
+  font: 'inherit', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)',
+};
+
 const SEARCH_WRAP: React.CSSProperties = { position: 'relative', marginBottom: 10 };
 const SEARCH_ICON: React.CSSProperties = {
   position: 'absolute', left: 15, top: '50%', transform: 'translateY(-50%)',
@@ -100,24 +108,49 @@ const EMPTY_TEXT: React.CSSProperties = {
   fontSize: '0.9rem', lineHeight: 1.6, color: 'var(--text-secondary)',
 };
 
+/** What my standing request with this person should say on their row. */
+const ASKED: Record<string, { label: string; style: React.CSSProperties }> = {
+  pending:  { label: 'Requested', style: { background: 'rgba(232, 93, 4, 0.09)', color: 'var(--primary-800)' } },
+  accepted: { label: 'Accepted',  style: { background: 'var(--green-50)', color: 'var(--success-600)' } },
+  declined: { label: 'Declined',  style: { background: 'var(--bg-secondary)', color: 'var(--text-muted)' } },
+};
+
 function HelperBadge({ count }: { count: number }) {
   if (count === 0) {
     return (
       <span className="ref-helpers ref-helpers-none">
-        <Users size={13} aria-hidden="true" /> No members here yet
+        <Users size={13} aria-hidden="true" /> No one here is referring yet
       </span>
     );
   }
   return (
     <span className="ref-helpers">
       <ShieldCheck size={13} aria-hidden="true" />
-      {count === 1 ? '1 member here can help' : `${count} members here can help`}
+      {count === 1 ? '1 member here can refer you' : `${count} members here can refer you`}
     </span>
   );
 }
 
+const RowShimmer = ({ rows }: { rows: number }) => (
+  <div className="pp-group-card" aria-hidden="true">
+    {[...Array(rows)].map((_, i) => (
+      <div key={i} className="pp-row pp-row-static">
+        <span
+          className="community-shimmer"
+          style={{ width: '2.35rem', height: '2.35rem', borderRadius: '0.75rem', flexShrink: 0 }}
+        />
+        <span className="pp-row-body">
+          <span className="community-line-shimmer community-shimmer" style={{ width: '62%' }} />
+          <span className="community-line-shimmer community-shimmer" style={{ width: '38%' }} />
+        </span>
+      </div>
+    ))}
+  </div>
+);
+
 export default function MemberJobsPage() {
   const { currentUserId } = useApp();
+  const router = useRouter();
 
   const [companies, setCompanies] = useState<Company[] | null>(null);
   const [error, setError] = useState('');
@@ -125,15 +158,19 @@ export default function MemberJobsPage() {
   const [industry, setIndustry] = useState('all');
 
   const [selected, setSelected] = useState<Company | null>(null);
+  const [step, setStep] = useState<'roles' | 'people'>('roles');
   const [jobs, setJobs] = useState<CompanyJob[] | null>(null);
   const [jobsError, setJobsError] = useState('');
   const [jobSearch, setJobSearch] = useState('');
   const [picked, setPicked] = useState<Set<string>>(new Set());
 
+  const [insiders, setInsiders] = useState<CompanyInsiderEntry[] | null>(null);
+  const [insidersError, setInsidersError] = useState('');
+  const [people, setPeople] = useState<Set<string>>(new Set());
   const [note, setNote] = useState('');
-  const [askOpen, setAskOpen] = useState(false);
   const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState<{ notified: number } | null>(null);
+  const [sendError, setSendError] = useState('');
+  const [toast, setToast] = useState('');
 
   useEffect(() => {
     if (!currentUserId) return;
@@ -142,17 +179,6 @@ export default function MemberJobsPage() {
       else setError(r.error);
     });
   }, [currentUserId]);
-
-  // The ask sheet locks background scroll and closes on Escape, same as every
-  // other sheet in the portal.
-  useEffect(() => {
-    if (!askOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setAskOpen(false); };
-    window.addEventListener('keydown', onKey);
-    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey); };
-  }, [askOpen]);
 
   const industries = useMemo(
     () => ['all', ...[...new Set((companies ?? []).map((c) => c.industry).filter(Boolean))].sort()] as string[],
@@ -172,12 +198,15 @@ export default function MemberJobsPage() {
 
   const openCompany = async (company: Company) => {
     setSelected(company);
+    setStep('roles');
     setJobs(null);
     setJobsError('');
     setPicked(new Set());
+    setInsiders(null);
+    setInsidersError('');
+    setPeople(new Set());
     setNote('');
-    setAskOpen(false);
-    setSent(null);
+    setSendError('');
     const r = await fetchCompanyJobs(company.id);
     if (r.ok) setJobs(r.data);
     else setJobsError(r.error);
@@ -189,6 +218,11 @@ export default function MemberJobsPage() {
       !q || j.title.toLowerCase().includes(q) || (j.location ?? '').toLowerCase().includes(q));
   }, [jobs, jobSearch]);
 
+  const pickedTitles = useMemo(
+    () => (jobs ?? []).filter((j) => picked.has(j.id)).map((j) => j.title),
+    [jobs, picked]
+  );
+
   const toggle = (id: string) =>
     setPicked((prev) => {
       const next = new Set(prev);
@@ -196,18 +230,67 @@ export default function MemberJobsPage() {
       return next;
     });
 
-  const send = async () => {
-    if (!selected || picked.size === 0 || sending) return;
-    setSending(true);
-    setJobsError('');
-    const r = await requestReferral({
-      companyId: selected.id,
-      jobIds: [...picked],
-      note: note.trim() || undefined,
+  const togglePerson = (id: string) =>
+    setPeople((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
     });
-    if (r.ok) { setAskOpen(false); setSent({ notified: r.data.notified }); }
-    else setJobsError(r.error);
-    setSending(false);
+
+  /** Step 3 loads the named directory once per company. */
+  const goPeople = async () => {
+    setStep('people');
+    setSendError('');
+    if (!selected || insiders !== null || insidersError) return;
+    const r = await listCompanyInsiders(selected.id);
+    if (r.ok) setInsiders(r.data); else setInsidersError(r.error);
+  };
+
+  /**
+   * One request per person, sequentially — Next runs a client's Server Action
+   * calls one at a time anyway, and a partial failure has to be reportable.
+   */
+  const send = async () => {
+    if (!selected || people.size === 0 || sending) return;
+    setSending(true);
+    setSendError('');
+    const ids = [...people];
+    const done: { id: string; conversationId: string }[] = [];
+    let failure = '';
+    for (const id of ids) {
+      const r = await requestReferral({
+        insiderId: id,
+        companyId: selected.id,
+        jobIds: [...picked],
+        note: note.trim() || undefined,
+      });
+      if (r.ok) done.push({ id, conversationId: r.data.conversationId });
+      else if (!failure) failure = r.error;
+    }
+
+    if (done.length > 0) {
+      const sentTo = new Set(done.map((d) => d.id));
+      setInsiders((prev) => prev?.map((p) =>
+        sentTo.has(p.memberId) ? { ...p, requestStatus: 'pending' as const } : p) ?? prev);
+      setPeople(new Set(ids.filter((id) => !sentTo.has(id))));
+    }
+
+    if (failure) {
+      // Stay put so the failure is readable; the ones that went through now
+      // show a Requested chip, so it is clear what still needs doing.
+      setSendError(done.length === 0
+        ? failure
+        : `${failure} ${done.length} of ${ids.length} went through.`);
+      setSending(false);
+      return;
+    }
+
+    if (done.length === 1) {
+      router.push(`/portal/member/chats?c=${done[0].conversationId}`);
+      return;
+    }
+    setToast(`Sent to ${done.length} people at ${selected.name}`);
+    setTimeout(() => router.push('/portal/member/chats'), 1200);
   };
 
   // ------------------------------------------------------------ company list
@@ -217,9 +300,8 @@ export default function MemberJobsPage() {
         <header style={{ marginBottom: 14 }}>
           <h1 style={TITLE}>Jobs by company</h1>
           <p style={SUB}>
-            Pick an employer to see their open roles. Where a club member works there and has
-            offered to help, we pass your request along without giving them your details or you
-            theirs, until they agree.
+            Pick an employer to see their open roles, then ask someone who works there to refer
+            you. Members who offer to refer are listed by name, so you choose who you ask.
           </p>
           <Link href="/portal/member/referrals" style={QUIET_LINK}>
             My referral requests <ArrowRight size={14} aria-hidden="true" />
@@ -260,22 +342,7 @@ export default function MemberJobsPage() {
           </div>
         )}
 
-        {companies === null && !error && (
-          <div className="pp-group-card" aria-hidden="true">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="pp-row pp-row-static">
-                <span
-                  className="community-shimmer"
-                  style={{ width: '2.35rem', height: '2.35rem', borderRadius: '0.75rem', flexShrink: 0 }}
-                />
-                <span className="pp-row-body">
-                  <span className="community-line-shimmer community-shimmer" style={{ width: '62%' }} />
-                  <span className="community-line-shimmer community-shimmer" style={{ width: '38%' }} />
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
+        {companies === null && !error && <RowShimmer rows={5} />}
 
         {companies?.length === 0 && (
           <div style={EMPTY}>
@@ -335,47 +402,192 @@ export default function MemberJobsPage() {
     );
   }
 
-  // ------------------------------------------------------------- sent state
-  if (sent) {
+  // ------------------------------------------------- step 3: who can refer you
+  if (step === 'people') {
+    const askable = insiders?.filter((p) => p.requestStatus === null).length ?? 0;
     return (
-      <div className="pp2">
-        <div className="pp-group-card" style={{ padding: '2.25rem 1.25rem', textAlign: 'center' }}>
-          <span
-            aria-hidden="true"
+      <div className="pp2" style={{ paddingBottom: '0.75rem' }}>
+        <button type="button" onClick={() => { setStep('roles'); setSendError(''); }} style={BACK_BTN}>
+          <ArrowLeft size={16} aria-hidden="true" /> Roles at {selected.name}
+        </button>
+
+        <header style={{ marginBottom: 14 }}>
+          <h1 style={{ ...TITLE, fontSize: '1.35rem' }}>Who can refer you</h1>
+          <p style={SUB}>These members chose to be visible as referrers.</p>
+          <p style={{ ...SUB, marginTop: 6, fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+            Whoever you pick sees your name and your request straight away, in a chat with you.
+          </p>
+        </header>
+
+        {pickedTitles.length > 0 && (
+          <p
             style={{
-              display: 'inline-grid', placeItems: 'center', width: 56, height: 56,
-              marginBottom: 14, borderRadius: '50%',
-              background: 'rgba(27, 67, 50, 0.09)', color: 'var(--green-800)',
+              margin: '0 0 14px', padding: '0.7rem 0.9rem', borderRadius: '0.85rem',
+              background: 'var(--bg-secondary)', fontSize: '0.82rem', lineHeight: 1.5,
+              color: 'var(--text-secondary)',
             }}
           >
-            <Check size={26} />
-          </span>
-          <h1 style={{ ...TITLE, fontSize: '1.4rem' }}>Request sent</h1>
-          <p style={{ ...EMPTY_TEXT, margin: '0 auto 0.7rem', maxWidth: '26rem' }}>
-            {sent.notified === 0
-              ? `Nobody at ${selected.name} has offered to help yet. Your request is saved, and we will notify you if that changes.`
-              : sent.notified === 1
-                ? `One member at ${selected.name} has been asked.`
-                : `${sent.notified} members at ${selected.name} have been asked.`}
+            <strong style={{ fontWeight: 750 }}>
+              {pickedTitles.length === 1 ? '1 role' : `${pickedTitles.length} roles`}
+            </strong>
+            {' · '}{pickedTitles.join(', ')}
           </p>
-          <p style={{ margin: '0 auto', maxWidth: '26rem', fontSize: '0.82rem', lineHeight: 1.6, color: 'var(--text-muted)' }}>
-            They can see the roles you picked and your note, but not your name or contact details.
-            If one of them agrees to help, you will both see each other then, and not before.
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 20 }}>
-            <Link href="/portal/member/referrals" className="btn btn-primary" style={{ justifyContent: 'center' }}>
-              Track this request
-            </Link>
-            <button
-              type="button"
-              className="btn btn-outline"
-              style={{ justifyContent: 'center' }}
-              onClick={() => setSelected(null)}
-            >
-              Browse other employers
-            </button>
+        )}
+
+        {insidersError && (
+          <div role="alert" className="community-error" style={{ marginBottom: 12 }}>
+            <AlertCircle size={15} aria-hidden="true" /> {insidersError}
           </div>
-        </div>
+        )}
+
+        {insiders === null && !insidersError && <RowShimmer rows={3} />}
+
+        {insiders?.length === 0 && (
+          <div style={EMPTY}>
+            <UserPlus size={28} aria-hidden="true" style={EMPTY_ICON} />
+            <p style={EMPTY_TEXT}>
+              No one at {selected.name} is taking referral requests yet. You can still apply
+              directly — every role links to the employer's own posting.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{ justifyContent: 'center' }}
+                onClick={() => setStep('roles')}
+              >
+                Back to the roles
+              </button>
+              {selected.careersUrl && (
+                <a
+                  href={selected.careersUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-outline"
+                  style={{ justifyContent: 'center' }}
+                >
+                  Open {selected.name} careers <ExternalLink size={13} aria-hidden="true" />
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
+        {insiders && insiders.length > 0 && (
+          <>
+            <section className="pp-group">
+              <h2>{insiders.length === 1 ? '1 member here' : `${insiders.length} members here`}</h2>
+              <p className="pp-group-sub">
+                Pick everyone you want to ask. Each one gets their own chat with you.
+              </p>
+              <div className="pp-group-card">
+                {insiders.map((p) => {
+                  const on = people.has(p.memberId);
+                  const asked = p.requestStatus ? ASKED[p.requestStatus] : null;
+                  const name = `${p.firstName} ${p.lastName}`.trim();
+                  return (
+                    <button
+                      key={p.memberId}
+                      type="button"
+                      className="pp-row"
+                      onClick={() => togglePerson(p.memberId)}
+                      aria-pressed={on}
+                      disabled={Boolean(asked) || sending}
+                      style={{
+                        background: on ? 'rgba(232, 93, 4, 0.045)' : undefined,
+                        ...(asked ? { opacity: 0.65, cursor: 'default' } : null),
+                      }}
+                    >
+                      <span
+                        className="pp-row-icon"
+                        aria-hidden="true"
+                        style={{
+                          fontWeight: 800, fontSize: '0.85rem',
+                          ...(on ? { background: 'var(--primary-700)', color: '#fff' } : null),
+                        }}
+                      >
+                        {on
+                          ? <Check size={17} />
+                          : `${p.firstName.charAt(0)}${p.lastName.charAt(0)}`.toUpperCase()}
+                      </span>
+                      <span className="pp-row-body">
+                        <strong>
+                          {name}
+                          {p.verifiedByAdmin && (
+                            <BadgeCheck
+                              size={14}
+                              role="img"
+                              aria-label="Verified by an admin"
+                              style={{ display: 'inline', marginLeft: 5, marginBottom: -2, color: 'var(--green-800)' }}
+                            />
+                          )}
+                        </strong>
+                        <small style={ELLIPSIS}>{p.jobTitle || `Works at ${selected.name}`}</small>
+                      </span>
+                      {asked && (
+                        <span className="pp-chip" style={{ ...asked.style, flexShrink: 0 }}>{asked.label}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            {askable > 0 && (
+              <section className="pp-group" style={{ marginTop: 18 }}>
+                <div className="pp-sheet-fields" style={{ margin: 0 }}>
+                  <div className="pp-field">
+                    <label htmlFor="jb-note">Note (optional)</label>
+                    <textarea
+                      id="jb-note"
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      maxLength={2000}
+                      rows={4}
+                      placeholder="Be specific: what you do now, why these roles, and what you would like them to do — pass on your resume, or answer a question about the team."
+                    />
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {sendError && (
+              <div role="alert" className="community-error" style={{ marginBottom: 12 }}>
+                <AlertCircle size={15} aria-hidden="true" /> {sendError}
+              </div>
+            )}
+
+            {askable > 0 && (
+              <button
+                type="button"
+                className="pp-sheet-save"
+                style={{ width: '100%' }}
+                onClick={send}
+                disabled={people.size === 0 || sending}
+              >
+                {sending
+                  ? <><Loader2 size={16} className="spin" aria-hidden="true" /> Sending</>
+                  : <>
+                      <Send size={16} aria-hidden="true" />
+                      Send referral request{people.size > 1 ? `s (${people.size})` : ''}
+                    </>}
+              </button>
+            )}
+
+            {askable === 0 && (
+              <p style={{ ...EMPTY_TEXT, textAlign: 'center' }}>
+                You have already asked everyone listed here. Your requests are in
+                {' '}<Link href="/portal/member/chats" style={{ color: 'var(--text-accent)', fontWeight: 700 }}>Chats</Link>.
+              </p>
+            )}
+          </>
+        )}
+
+        {toast && (
+          <div className="pp-toast" role="status">
+            <Check size={15} aria-hidden="true" /> {toast}
+          </div>
+        )}
       </div>
     );
   }
@@ -386,16 +598,7 @@ export default function MemberJobsPage() {
 
   return (
     <div className="pp2" style={{ paddingBottom: '0.75rem' }}>
-      <button
-        type="button"
-        onClick={() => setSelected(null)}
-        style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          minHeight: 44, padding: '0 4px', marginBottom: 4,
-          background: 'none', border: 0, cursor: 'pointer',
-          font: 'inherit', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)',
-        }}
-      >
+      <button type="button" onClick={() => setSelected(null)} style={BACK_BTN}>
         <ArrowLeft size={16} aria-hidden="true" /> All employers
       </button>
 
@@ -428,42 +631,28 @@ export default function MemberJobsPage() {
         </a>
       )}
 
-      {jobsError && !askOpen && (
+      {jobsError && (
         <div role="alert" className="community-error" style={{ marginBottom: 12 }}>
           <AlertCircle size={15} aria-hidden="true" /> {jobsError}
         </div>
       )}
 
-      {jobs === null && !jobsError && (
-        <div className="pp-group-card" aria-hidden="true">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="pp-row pp-row-static">
-              <span
-                className="community-shimmer"
-                style={{ width: '2.35rem', height: '2.35rem', borderRadius: '0.75rem', flexShrink: 0 }}
-              />
-              <span className="pp-row-body">
-                <span className="community-line-shimmer community-shimmer" style={{ width: '55%' }} />
-                <span className="community-line-shimmer community-shimmer" style={{ width: '30%' }} />
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
+      {jobs === null && !jobsError && <RowShimmer rows={4} />}
 
       {jobs?.length === 0 && (
         <div style={EMPTY}>
           <Briefcase size={28} aria-hidden="true" style={EMPTY_ICON} />
           <p style={EMPTY_TEXT}>
             No roles are cached for {selected.name}. We only list roles an employer publishes in a
-            machine-readable feed, so search their careers page directly.
+            machine-readable feed, so search their careers page directly. You can still ask a
+            member there for a referral.
           </p>
           {selected.careersUrl && (
             <a
               href={selected.careersUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn btn-primary"
+              className="btn btn-outline"
               style={{ marginTop: 14, justifyContent: 'center' }}
             >
               Open {selected.name} careers <ExternalLink size={13} aria-hidden="true" />
@@ -563,9 +752,9 @@ export default function MemberJobsPage() {
         </>
       )}
 
-      {/* The ask. A sticky summary bar keeps the count in view; the note and the
-          send button live in a sheet, so the roles list is never buried. */}
-      {picked.size > 0 && (
+      {/* Step 3 is reachable with no roles picked: a link-only employer has no
+          feed to pick from, and asking a person there is still the point. */}
+      {jobs !== null && !jobsError && (
         <div
           className="ref-ask"
           style={{
@@ -574,72 +763,21 @@ export default function MemberJobsPage() {
           }}
         >
           <span style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', minWidth: 0 }}>
-            <strong style={{ color: 'var(--text-accent)', fontWeight: 800 }}>{picked.size}</strong>
-            {picked.size === 1 ? ' role selected' : ' roles selected'}
+            {picked.size === 0
+              ? 'No roles picked yet'
+              : <>
+                  <strong style={{ color: 'var(--text-accent)', fontWeight: 800 }}>{picked.size}</strong>
+                  {picked.size === 1 ? ' role selected' : ' roles selected'}
+                </>}
           </span>
           <button
             type="button"
             className="btn btn-primary"
             style={{ marginLeft: 'auto', whiteSpace: 'nowrap' }}
-            onClick={() => setAskOpen(true)}
+            onClick={goPeople}
           >
-            <Send size={15} aria-hidden="true" /> Ask for a referral
+            Who can refer you <ArrowRight size={15} aria-hidden="true" />
           </button>
-        </div>
-      )}
-
-      {/* ---- Ask sheet ---- */}
-      {askOpen && (
-        <div
-          className="hf-sheet-scrim"
-          onClick={(e) => { if (e.target === e.currentTarget) setAskOpen(false); }}
-        >
-          <div className="hf-sheet pp-sheet" role="dialog" aria-modal="true" aria-label="Ask for a referral">
-            <div className="hf-sheet-head">
-              <h2>Ask for a referral</h2>
-              <button type="button" className="portal-sheet-close" onClick={() => setAskOpen(false)} aria-label="Close">
-                <X size={18} />
-              </button>
-            </div>
-            <p className="hf-sheet-sub">
-              {picked.size === 1 ? '1 role' : `${picked.size} roles`} at {selected.name}. Whoever can
-              help sees the roles and your note, never your name or contact details, until they agree.
-            </p>
-
-            <div className="pp-sheet-fields">
-              <div className="pp-field">
-                <label htmlFor="jb-note">Note (optional)</label>
-                <textarea
-                  id="jb-note"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  maxLength={2000}
-                  rows={4}
-                  placeholder="Keep it short: what you do, and why these roles. Leave out your name and number, they are added automatically once someone agrees to help."
-                />
-              </div>
-            </div>
-
-            {selected.helperCount === 0 && (
-              <p className="ref-warn" style={{ marginBottom: 12 }}>
-                <AlertCircle size={13} aria-hidden="true" />
-                Nobody at {selected.name} has offered to help yet. You can still send this, and we
-                will pass it on if someone joins.
-              </p>
-            )}
-
-            {jobsError && (
-              <div role="alert" className="community-error" style={{ marginTop: 0, marginBottom: 12 }}>
-                <AlertCircle size={15} aria-hidden="true" /> {jobsError}
-              </div>
-            )}
-
-            <button type="button" className="pp-sheet-save" onClick={send} disabled={sending}>
-              {sending
-                ? <><Loader2 size={16} className="spin" aria-hidden="true" /> Sending</>
-                : <><Send size={16} aria-hidden="true" /> Send request</>}
-            </button>
-          </div>
         </div>
       )}
     </div>

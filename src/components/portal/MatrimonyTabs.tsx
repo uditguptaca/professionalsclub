@@ -11,7 +11,7 @@ import { Flame, Heart, MessageCircle, UserCircle } from 'lucide-react';
 const TABS = [
   { id: 'discover', label: 'Discover', href: '/portal/member/matrimony', icon: Flame },
   { id: 'likes', label: 'Likes', href: '/portal/member/matrimony/interests', icon: Heart },
-  { id: 'chats', label: 'Chats', href: '/portal/member/matrimony/messages', icon: MessageCircle },
+  { id: 'chats', label: 'Chats', href: '/portal/member/chats', icon: MessageCircle },
   { id: 'profile', label: 'Profile', href: '/portal/member/matrimony/profile', icon: UserCircle },
 ] as const;
 

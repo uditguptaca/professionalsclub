@@ -5,9 +5,7 @@ import * as repo from '@/server/repos/referrals';
 import { drainOutbox } from '@/server/email';
 import { syncCompany } from '@/server/jobs/sync';
 import { detectSource, type SourceKind } from '@/server/jobs/sources';
-import type {
-  Company, CompanyJob, CompanyInsider, MyReferralRequest, ReferralInboxItem,
-} from '@/types';
+import type { Company, CompanyJob, CompanyInsider } from '@/types';
 
 /**
  * Referral actions.
@@ -54,16 +52,12 @@ export async function fetchCompanyJobs(companyId: string): Promise<ActionResult<
 export async function fetchReferralHome(): Promise<ActionResult<{
   companies: Company[];
   myRoles: CompanyInsider[];
-  myRequests: MyReferralRequest[];
-  inbox: ReferralInboxItem[];
 }>> {
   return run('Loading referrals', async () => {
     const uid = await requireUserId();
     return {
       companies: await repo.listCompanies(uid),
       myRoles: await repo.listMyInsiderRoles(uid),
-      myRequests: await repo.listMyReferralRequests(uid),
-      inbox: await repo.listReferralInbox(uid),
     };
   });
 }
@@ -98,50 +92,8 @@ export async function removeWhereIWork(companyId: string): Promise<ActionResult<
 
 // ========================================================== Requests
 
-export async function requestReferral(input: {
-  companyId: string;
-  jobIds: string[];
-  note?: string;
-  resumeUrl?: string;
-}): Promise<ActionResult<{ notified: number; requests: MyReferralRequest[] }>> {
-  return run('Sending your request', async () => {
-    const uid = await requireUserId();
-    const { notified } = await repo.createReferralRequest(uid, input);
-
-    // Send now rather than waiting for the cron tick. Deliberately not awaited
-    // into the response path beyond this: a mail failure must not fail the
-    // request, and the row stays queued for the next drain either way.
-    if (notified > 0) {
-      await drainOutbox(notified * 2).catch((e) => console.error('[referrals] drain', e));
-    }
-
-    return { notified, requests: await repo.listMyReferralRequests(uid) };
-  });
-}
-
-export async function withdrawReferral(requestId: string): Promise<ActionResult<MyReferralRequest[]>> {
-  return run('Withdrawing the request', async () => {
-    const uid = await requireUserId();
-    await repo.withdrawReferralRequest(uid, requestId);
-    return repo.listMyReferralRequests(uid);
-  });
-}
-
-// ========================================================== Insider inbox
-
-export async function respondToReferralRequest(
-  requestId: string,
-  accept: boolean
-): Promise<ActionResult<ReferralInboxItem[]>> {
-  return run('Recording your answer', async () => {
-    const uid = await requireUserId();
-    await repo.respondToReferral(uid, requestId, accept);
-    if (accept) {
-      await drainOutbox(4).catch((e) => console.error('[referrals] drain', e));
-    }
-    return repo.listReferralInbox(uid);
-  });
-}
+// requestReferral / withdrawReferral / respondToReferralRequest retired in the
+// 0018 overhaul - direct referrals live in src/app/actions/chat.ts.
 
 // ========================================================== Admin
 

@@ -15,7 +15,6 @@ npm run lint     # eslint (flat config)
 npx tsc --noEmit # typecheck; the build does not fail on type errors alone
 
 node db/migrate.mjs           # apply pending migrations
-node db/verify-referrals.mjs  # assert the referral privacy boundary (33 checks)
 node db/seed-demo.mjs         # demo data for showing the app (idempotent)
 node db/seed-demo.mjs --clean # remove it again
 ```
@@ -114,13 +113,13 @@ dates only.
 `matrimony_visible_profiles`.** The base table carries moderation columns and is
 restricted to your own row plus admins.
 
-**Who works where is not a question the database will answer.** `company_insiders`
-(0013) is readable only by the member themself and admins. The public gets
-`company_helper_counts`, which is a count with no identity. A referral request
-stays anonymous both ways until an insider accepts, and that is enforced by CASE
-expressions inside `referral_inbox` / `referral_helpers` — the identity columns
-are NULL, not hidden. `db/verify-referrals.mjs` asserts all of this against real
-`app_authenticated` connections; run it after touching any of those objects.
+**Referrals are direct and named (0018).** A member who sets `can_refer` on a
+`company_insiders` row is listed BY NAME to signed-in members through
+`company_insider_directory` — that visibility is the deal the flow offers, a
+deliberate 2026-08-21 product decision that replaced the old anonymous fan-out
+(dropped in 0019). The public site still gets only `company_helper_counts`.
+A referral request opens a member chat carrying a referral card;
+`referral_direct_requests` is gated by RLS (seeker inserts, insider answers).
 
 ## Styling
 
