@@ -216,11 +216,11 @@ export default function MemberHomePage() {
             <section className="hf-section">
               <div className="hf-section-head">
                 <h2>Events for you</h2>
-                <Link href="/events">All events <ArrowRight size={14} aria-hidden="true" /></Link>
+                <Link href="/portal/member/events">All events <ArrowRight size={14} aria-hidden="true" /></Link>
               </div>
               <div className="hf-events">
                 {feed.events.map((e) => (
-                  <a key={e.id} href={e.rsvpUrl ?? '/events'} className="hf-event card"
+                  <a key={e.id} href={e.rsvpUrl ?? '/portal/member/events'} className="hf-event card"
                      target={e.rsvpUrl ? '_blank' : undefined} rel={e.rsvpUrl ? 'noopener noreferrer' : undefined}>
                     <span className="hf-event-media">
                       {e.image
@@ -268,7 +268,7 @@ export default function MemberHomePage() {
               {[
                 { n: feed.counters.openRequests, label: 'Open requests', href: '/portal/member/my-requests', img: '/img/mentoring-1.jpg', icon: <FileText size={14} /> },
                 { n: feed.counters.pendingReferralAsks, label: 'Referral asks waiting', href: '/portal/member/referrals', img: '/img/resume-review.jpg', icon: <Send size={14} /> },
-                { n: feed.counters.myUpcomingEvents, label: 'Upcoming events', href: '/events', img: '/img/event-wide-1.jpg', icon: <Calendar size={14} /> },
+                { n: feed.counters.myUpcomingEvents, label: 'Upcoming events', href: '/portal/member/events', img: '/img/event-wide-1.jpg', icon: <Calendar size={14} /> },
                 { n: feed.counters.savedBusinesses, label: 'Saved businesses', href: '/portal/member/businesses', img: '/img/community-hall-1.jpg', icon: <Bookmark size={14} /> },
               ].map((t) => (
                 <Link key={t.label} href={t.href} className="hf-tile">

@@ -189,3 +189,40 @@ export async function fetchHomeFeed(userId: string): Promise<HomeFeed> {
     };
   });
 }
+
+export interface MemberEvent {
+  id: string; title: string; date: string | null; time: string | null;
+  location: string | null; eventType: string; attendees: number;
+  image: string | null; rsvpUrl: string | null; inCity: boolean;
+}
+
+/** Every upcoming event for the portal Events tab, the member's city first. */
+export async function listMemberEvents(userId: string): Promise<{ city: string | null; events: MemberEvent[] }> {
+  return withUserRead(userId, async (db) => {
+    const rows = await db.run(
+      `
+      with me as (select city from public.profiles where id = $1)
+      select e.id, e.title, e.event_date as date, e.event_time as time,
+             e.location, e.event_type, e.attendees, e.image, e.rsvp_url,
+             (coalesce((select city from me), '') <> '' and
+              e.location ilike '%' || (select city from me) || '%') as in_city,
+             (select city from me) as my_city
+        from public.events e
+       where e.status = 'upcoming' and e.is_published
+       order by in_city desc, e.event_date asc nulls last
+      `,
+      [userId]
+    );
+    const iso = (v: unknown) => (v instanceof Date ? v.toISOString() : (v as string | null));
+    return {
+      city: ((rows[0] as Record<string, unknown> | undefined)?.my_city as string | null) ?? null,
+      events: (rows as Record<string, unknown>[]).map((e) => ({
+        id: e.id as string, title: e.title as string, date: iso(e.date),
+        time: (e.time as string | null) ?? null, location: (e.location as string | null) ?? null,
+        eventType: e.event_type as string, attendees: Number(e.attendees ?? 0),
+        image: (e.image as string | null) ?? null, rsvpUrl: (e.rsvp_url as string | null) ?? null,
+        inCity: Boolean(e.in_city),
+      })),
+    };
+  });
+}

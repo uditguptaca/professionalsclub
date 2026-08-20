@@ -2240,11 +2240,13 @@ html { -webkit-text-size-adjust: 100%; }
 @media (max-width: 1023px) {
   .sidebar { display: none !important; transform: none !important; }
   .portal-main { margin-left: 0 !important; width: 100%; }
-  .portal-topbar-brand { display: block; }
-  .portal-topbar-notice { display: none; }
+  /* Phones are the app: no web-style topbar. Identity and logout live in the
+     More sheet; each screen owns its heading, native-style. */
+  .portal-topbar { display: none !important; }
   .tabbar { display: grid; }
-  /* keep content clear of the tab bar */
+  /* keep content clear of the status bar above and the tab bar below */
   .portal-content-area {
+    padding-top: calc(clamp(1.25rem, 3vw, 2.5rem) + var(--sat));
     padding-bottom: calc(4.5rem + var(--sab));
   }
 }
@@ -3677,8 +3679,8 @@ html { -webkit-text-size-adjust: 100%; }
 /* --- City hero -------------------------------------------------------------- */
 .hf-hero {
   position: relative;
-  margin: calc(-1 * clamp(1.25rem, 3vw, 2.5rem)) calc(-1 * clamp(1rem, 3vw, 2.5rem)) 0;
-  padding: clamp(2.2rem, 6vw, 3.5rem) clamp(1rem, 3vw, 2.5rem) 4.2rem;
+  margin: calc(-1 * (clamp(1.25rem, 3vw, 2.5rem) + var(--sat))) calc(-1 * clamp(1rem, 3vw, 2.5rem)) 0;
+  padding: calc(clamp(2.2rem, 6vw, 3.5rem) + var(--sat)) clamp(1rem, 3vw, 2.5rem) 4.2rem;
   text-align: center;
   overflow: hidden;
   color: #fff;

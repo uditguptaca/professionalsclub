@@ -90,6 +90,7 @@ export default function PortalShell({
     { label: 'Dashboard', href: '/portal/member/dashboard', icon: Home },
     { label: 'Community', href: '/portal/member/community', icon: UsersRound },
     { label: 'Jobs', href: '/portal/member/jobs', icon: Briefcase },
+    { label: 'Events', href: '/portal/member/events', icon: Calendar },
     { label: 'Referrals', href: '/portal/member/referrals', icon: Send },
     { label: 'My Profile', href: '/portal/member/profile', icon: UserCircle },
     ...(isMatrimonyEnabled ? [{ label: 'Matrimony', href: '/portal/member/matrimony', icon: Heart }] : []),
@@ -134,7 +135,7 @@ export default function PortalShell({
   const tabs: NavLink[] =
     role === 'admin'
       ? [adminLinks[0], adminLinks.find((l) => l.href.endsWith('/community'))!, adminLinks.find((l) => l.href.endsWith('/requests'))!, adminLinks.find((l) => l.href.endsWith('/messages'))!]
-      : [memberLinks[0], memberLinks.find((l) => l.href.endsWith('/community'))!, memberLinks.find((l) => l.href.endsWith('/jobs'))!, memberLinks.find((l) => l.href.endsWith('/referrals'))!];
+      : [memberLinks[0], memberLinks.find((l) => l.href.endsWith('/community'))!, memberLinks.find((l) => l.href.endsWith('/events'))!, memberLinks.find((l) => l.href.endsWith('/jobs'))!];
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
@@ -224,7 +225,7 @@ export default function PortalShell({
           return (
             <Link key={tab.href} href={tab.href} className={`tabbar-item ${active ? 'active' : ''}`} aria-current={active ? 'page' : undefined}>
               <Icon size={21} aria-hidden="true" />
-              <span>{tab.label.replace('My Requests', 'Requests').replace('Request Help', 'Get Help').replace('Message Center', 'Messages').replace('Admin Messages', 'Messages')}</span>
+              <span>{tab.label.replace('Dashboard', 'Home').replace('Overview', 'Home').replace('My Requests', 'Requests').replace('Request Help', 'Get Help').replace('Message Center', 'Messages').replace('Admin Messages', 'Messages')}</span>
             </Link>
           );
         })}
