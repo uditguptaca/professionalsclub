@@ -557,6 +557,9 @@ export async function requestReferral(
       if ((err as { code?: string }).code === '42501') {
         throw new Error('That person is not taking referral requests right now.');
       }
+      if (err instanceof Error && err.message.includes('weekly referral request limit')) {
+        throw new Error('You have used both referral requests for this week.');
+      }
       throw err;
     }
 
@@ -606,6 +609,32 @@ export async function respondReferral(userId: string, requestId: string, accept:
       [requestId, userId, accept ? 'accepted' : 'declined']
     );
     if (!rows[0]) throw new Error('This request was already answered.');
+  });
+}
+
+export interface ReferralQuota {
+  used: number;
+  limit: number;
+  /** When the oldest counted request ages out - i.e. when a slot frees up. */
+  resetsAt: string | null;
+}
+
+/** The rolling 7-day allowance (2 requests, trigger-enforced in 0023). */
+export async function referralQuota(userId: string): Promise<ReferralQuota> {
+  return withUserRead(userId, async (db) => {
+    const rows = await db.run<{ used: string; oldest: Date | null }>(
+      `select count(*) as used, min(created_at) as oldest
+         from public.referral_direct_requests
+        where seeker_id = $1 and created_at > now() - interval '7 days'`,
+      [userId]
+    );
+    const used = Number(rows[0]?.used ?? 0);
+    const oldest = rows[0]?.oldest;
+    return {
+      used,
+      limit: 2,
+      resetsAt: used > 0 && oldest ? new Date(new Date(oldest).getTime() + 7 * 86400000).toISOString() : null,
+    };
   });
 }
 

@@ -21,6 +21,7 @@ function fail(context: string, error: unknown): { ok: false; error: string } {
     detail.startsWith('You can chat once') ||
     detail.startsWith('You already asked') ||
     detail.startsWith('That person is not taking') ||
+    detail.startsWith('You have used both referral') ||
     detail.startsWith('This request was already') ||
     detail.startsWith('That upload was not recognised') ||
     detail.startsWith('You can only chat') ||
@@ -145,6 +146,10 @@ export async function requestReferral(input: { insiderId: string; companyId: str
 
 export async function respondReferral(requestId: string, accept: boolean) {
   return run('Answering referral request', (uid) => repo.respondReferral(uid, requestId, accept));
+}
+
+export async function referralQuota() {
+  return run('Checking your referral allowance', (uid) => repo.referralQuota(uid));
 }
 
 export async function myDirectReferrals() {
