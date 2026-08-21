@@ -142,20 +142,8 @@ export async function listBlockedIds() {
 
 // ========== MESSAGES ==========
 
-export async function listConversations() {
-  return run('Loading conversations', (uid) => repo.listConversations(uid));
-}
-
-export async function listMessages(conversationId: string) {
-  return run('Loading messages', (uid) => repo.listMessages(uid, conversationId));
-}
-
-export async function sendMatrimonyMessage(
-  conversationId: string,
-  content: { body?: string; cipher?: string; iv?: string }
-) {
-  return run('Sending message', (uid) => repo.sendMatrimonyMessage(uid, conversationId, content));
-}
+// Matrimony chat actions retired in 0024 - matches use the member chat hub
+// (src/app/actions/chat.ts).
 
 // ========== SWIPE DECK ==========
 
@@ -173,16 +161,6 @@ export async function passProfile(targetProfileId: string) {
 
 export async function undoPass(targetProfileId: string) {
   return run('Undoing', (uid) => repo.undoPass(uid, targetProfileId));
-}
-
-// ========== END-TO-END ENCRYPTION ==========
-
-export async function publishE2EKey(publicKeyJwk: string) {
-  return run('Publishing your key', (uid) => repo.publishE2EKey(uid, publicKeyJwk));
-}
-
-export async function getE2EKey(profileId: string) {
-  return run('Fetching key', (uid) => repo.getE2EKey(uid, profileId));
 }
 
 // ========== NOTIFICATIONS ==========

@@ -603,83 +603,10 @@ export interface PopulatedConversation extends MatrimonyConversation {
   otherProfile: MatrimonyProfileCard;
 }
 
-export async function listConversations(userId: string) {
-  return withUserRead(userId, async (db) => {
-    const mine = await myProfileId(db);
-    if (!mine) return { conversations: [] as PopulatedConversation[], myProfileId: null };
-
-    const convos = await db`
-      select id, profile_a_id, profile_b_id, last_message_at, created_at
-        from public.matrimony_conversations
-       where profile_a_id = ${mine}::uuid or profile_b_id = ${mine}::uuid
-       order by last_message_at desc
-    `;
-
-    const otherIds = convos.map((c) => {
-      const row = c as { profile_a_id: string; profile_b_id: string };
-      return row.profile_a_id === mine ? row.profile_b_id : row.profile_a_id;
-    });
-
-    const cards = new Map<string, MatrimonyProfileCard>();
-    if (otherIds.length > 0) {
-      const rows = await db`
-        select * from public.matrimony_visible_profiles where id = any(${[...new Set(otherIds)]}::uuid[])
-      `;
-      for (const row of normAll<MatrimonyProfileCard>(rows)) cards.set(row.id, row);
-    }
-
-    const conversations = normAll<MatrimonyConversation>(convos)
-      .map((c) => ({
-        ...c,
-        otherProfile: cards.get(c.profile_a_id === mine ? c.profile_b_id : c.profile_a_id),
-      }))
-      .filter((c) => c.otherProfile != null) as PopulatedConversation[];
-
-    return { conversations, myProfileId: mine };
-  });
-}
-
-export async function listMessages(userId: string, conversationId: string): Promise<MatrimonyMessage[]> {
-  return withUserRead(userId, async (db) => {
-    const rows = await db`
-      select * from public.matrimony_messages
-       where conversation_id = ${conversationId}::uuid
-       order by created_at asc
-    `;
-    return normAll<MatrimonyMessage>(rows);
-  });
-}
-
-export async function sendMatrimonyMessage(
-  userId: string,
-  conversationId: string,
-  content: { body?: string; cipher?: string; iv?: string }
-): Promise<MatrimonyMessage> {
-  return withUser(userId, async (db) => {
-    const mine = await myProfileId(db);
-    if (!mine) throw new Error('Create your profile first.');
-
-    // Exactly one representation. The table constraint enforces the same rule
-    // one layer down, so a bug here fails loudly instead of storing plaintext
-    // where ciphertext was intended.
-    const encrypted = Boolean(content.cipher && content.iv);
-    if (!encrypted && !content.body?.trim()) throw new Error('Message cannot be empty.');
-    if (encrypted && content.body) throw new Error('A message is plaintext or ciphertext, never both.');
-    if (encrypted && (content.cipher!.length > 20000 || content.iv!.length > 64)) {
-      throw new Error('Message too long.');
-    }
-
-    const rows = await db`
-      insert into public.matrimony_messages (conversation_id, sender_profile_id, body, cipher, iv)
-      values (${conversationId}::uuid, ${mine}::uuid,
-              ${encrypted ? null : content.body!.trim()},
-              ${encrypted ? content.cipher! : null},
-              ${encrypted ? content.iv! : null})
-      returning *
-    `;
-    return norm<MatrimonyMessage>(rows[0]);
-  });
-}
+// Matrimony conversation moved into the member chat hub in 0018: threads live
+// in member_conversations and are served by src/server/repos/chat.ts. The old
+// listConversations / listMessages / sendMatrimonyMessage / E2E-key helpers
+// were removed with 0024 once nothing called them.
 
 // ========== SWIPE DECK ==========
 
@@ -792,34 +719,6 @@ export async function swipeRight(userId: string, targetProfileId: string): Promi
       if ((err as { code?: string }).code !== '23505') throw err; // already liked: fine
     }
     return { matched: false, conversation_id: null };
-  });
-}
-
-// ========== END-TO-END ENCRYPTION KEYS ==========
-
-/** Publish (or rotate) the member's public key. The private key never leaves
-    their device. */
-export async function publishE2EKey(userId: string, publicKeyJwk: string): Promise<void> {
-  await withUser(userId, async (db) => {
-    const mine = await myProfileId(db);
-    if (!mine) throw new Error('Create your profile first.');
-    if (publicKeyJwk.length > 2000) throw new Error('Invalid key.');
-    await db`
-      insert into public.matrimony_e2e_keys (profile_id, public_key_jwk)
-      values (${mine}::uuid, ${publicKeyJwk})
-      on conflict (profile_id)
-        do update set public_key_jwk = excluded.public_key_jwk, updated_at = now()
-    `;
-  });
-}
-
-/** A profile's public key, or null while they have never opened the chat. */
-export async function getE2EKey(userId: string, profileId: string): Promise<string | null> {
-  return withUserRead(userId, async (db) => {
-    const rows = await db<{ public_key_jwk: string }>`
-      select public_key_jwk from public.matrimony_e2e_keys where profile_id = ${profileId}::uuid
-    `;
-    return rows[0]?.public_key_jwk ?? null;
   });
 }
 

@@ -1,6 +1,8 @@
 'use client';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { openChat } from '@/app/actions/chat';
 import { useApp } from '@/context/app-context';
 import {
   getMyMatrimony, listInterests, respondToInterest, listShortlist,
@@ -80,6 +82,17 @@ const pillStyle = (active: boolean): React.CSSProperties => ({
 export default function MatrimonyLikesPage() {
   const { currentUserId } = useApp();
   const confirm = useConfirm();
+  const router = useRouter();
+  const [opening, setOpening] = useState<string | null>(null);
+
+  /** Matrimony matches chat in the member hub; the thread is created on demand
+      (RLS allows it because the interest was accepted). */
+  const openThread = async (partnerUserId: string) => {
+    setOpening(partnerUserId);
+    const r = await openChat(partnerUserId);
+    if (r.ok) router.push(`/portal/member/chats?c=${r.data}`);
+    else { setError(r.error); setOpening(null); }
+  };
 
   const [lane, setLane] = useState<Lane>('received');
   const [loading, setLoading] = useState(true);
@@ -291,13 +304,19 @@ export default function MatrimonyLikesPage() {
             <ChipIcon size={12} aria-hidden="true" /> {chip.text}
           </span>
           {item.status === 'accepted' && (
-            <Link
-              href="/portal/member/chats"
+            // Opens (or finds) the member chat for this match and lands IN it.
+            // A plain link to the chat list left older matches - matched before
+            // chat moved into the hub - staring at a list without their thread.
+            <button
+              type="button"
               className="btn btn-sm btn-outline"
-              style={{ marginLeft: 'auto', textDecoration: 'none' }}
+              style={{ marginLeft: 'auto' }}
+              disabled={opening === item.profile.user_id}
+              onClick={() => void openThread(item.profile.user_id)}
             >
-              <MessageCircle size={14} aria-hidden="true" /> Message
-            </Link>
+              <MessageCircle size={14} aria-hidden="true" />
+              {opening === item.profile.user_id ? 'Opening…' : 'Message'}
+            </button>
           )}
         </div>
       </div>

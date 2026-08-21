@@ -292,11 +292,9 @@ export async function listChats(userId: string): Promise<ChatThread[]> {
              exists (select 1 from public.referral_direct_requests r
                       where (r.seeker_id, r.insider_id) in ((c.member_a_id, c.member_b_id), (c.member_b_id, c.member_a_id))
                     ) as is_referral,
-             exists (select 1 from public.matrimony_profiles pa
-                       join public.matrimony_profiles pb on pb.user_id = c.member_b_id
-                      where pa.user_id = c.member_a_id
-                        and public.has_accepted_interest(pa.id, pb.id)
-                    ) as is_matrimony
+             -- Definer helper, not an inline EXISTS: matrimony_profiles is
+             -- self-only under RLS, so the peer's row is invisible here (0025).
+             public.is_matrimony_match(c.member_a_id, c.member_b_id) as is_matrimony
         from public.member_conversations c
         join public.member_names n
           on n.id = case when c.member_a_id = $1 then c.member_b_id else c.member_a_id end
