@@ -197,6 +197,40 @@ export async function listPeople(userId: string): Promise<{
   });
 }
 
+/**
+ * People search for the community People tab. Same directory view as the
+ * lists (member_names: names, titles, join dates - no contact columns), with
+ * my follow state on each row so the UI can render Follow / Requested /
+ * Following without a second call.
+ */
+export async function searchPeople(userId: string, query: string): Promise<ChatPerson[]> {
+  return withUserRead(userId, async (db) => {
+    const q = query.trim().slice(0, 80);
+    const rows = await db.run<Record<string, unknown>>(
+      `
+      with me as (select city from public.profiles where id = $1)
+      select n.id, n.first_name, n.last_name, n.job_title, n.city,
+             (select f.status from public.member_follows f
+               where f.follower_id = $1 and f.followee_id = n.id) as outgoing,
+             (select f.status from public.member_follows f
+               where f.follower_id = n.id and f.followee_id = $1) as incoming
+        from public.member_names n
+       where n.id <> $1
+         and not public.is_blocked_between_members($1, n.id)
+         and ($2::text is null
+              or n.first_name ilike $2 or n.last_name ilike $2
+              or coalesce(n.job_title, '') ilike $2 or coalesce(n.city, '') ilike $2
+              or (n.first_name || ' ' || n.last_name) ilike $2)
+       order by (lower(coalesce(n.city, '')) = lower(coalesce((select city from me), ''))) desc,
+                n.created_at desc
+       limit 40
+      `,
+      [userId, q === '' ? null : `%${q}%`]
+    );
+    return rows.map(toPerson);
+  });
+}
+
 /** Send a follow request (idempotent). It stays pending until accepted. */
 export async function follow(userId: string, targetId: string): Promise<void> {
   await withUser(userId, async (db) => {

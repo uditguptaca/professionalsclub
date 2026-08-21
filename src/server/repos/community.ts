@@ -47,6 +47,122 @@ const GROUP_SELECT = `
      where m.group_id = g.id and m.member_id = app.current_user_id()) as my_role
 `;
 
+/**
+ * The personalised feed (Instagram's contract, club-flavoured):
+ *   - my own posts,
+ *   - posts by people whose follow request I had ACCEPTED,
+ *   - posts in groups I joined,
+ *   - a sprinkle from groups I have not joined but probably want (city or
+ *     interest match), tagged so the UI can offer Join inline.
+ *
+ * One round trip, cursor-paginated on created_at. RLS still decides what is
+ * readable at all (0005): this only decides what is RELEVANT.
+ */
+export async function listPersonalFeed(
+  userId: string,
+  opts: { before?: string; limit?: number } = {}
+): Promise<CommunityPost[]> {
+  const limit = Math.min(Math.max(opts.limit ?? 20, 1), 50);
+  return withUserRead(userId, async (db) => {
+    const params: unknown[] = [userId];
+    let beforeClause = '';
+    if (opts.before) { params.push(opts.before); beforeClause = `and p.created_at < $${params.length}`; }
+    params.push(limit);
+
+    const rows = await db.run(
+      `
+      with me as (select city from public.profiles where id = $1),
+      followed as (
+        select followee_id as id from public.member_follows
+         where follower_id = $1 and status = 'accepted'
+      ),
+      mine as (
+        select group_id as id from public.community_group_members where member_id = $1
+      ),
+      suggested_groups as (
+        select g.id
+          from public.community_groups g
+         where not g.is_archived
+           and g.id not in (select id from mine)
+           and (coalesce((select city from me), '') <> ''
+                and (g.name ilike '%' || (select city from me) || '%'
+                     or g.description ilike '%' || (select city from me) || '%'))
+      )
+      select ${POST_SELECT},
+             g.slug as group_slug,
+             (p.group_id is not null and p.group_id in (select id from mine)) as in_group,
+             case
+               when p.author_id = $1 then 'mine'
+               when p.group_id in (select id from mine) then 'group'
+               when p.group_id in (select id from suggested_groups) then 'suggested_group'
+               else 'followed'
+             end as source
+        from public.community_posts p
+        join public.member_names n on n.id = p.author_id
+        left join public.community_groups g on g.id = p.group_id
+       where p.status = 'active'
+         and (
+           p.author_id = $1
+           or (p.group_id is null and p.author_id in (select id from followed))
+           or p.group_id in (select id from mine)
+           or p.group_id in (select id from suggested_groups)
+         )
+         ${beforeClause}
+       order by p.created_at desc
+       limit $${params.length}
+      `,
+      params
+    );
+    return toDomainAll<CommunityPost>(rows);
+  });
+}
+
+/**
+ * Groups for the Groups tab: searchable, mine first, then suggestions ranked
+ * by city/interest match and size. suggest_reason is the honest explanation
+ * shown on the card.
+ */
+export async function exploreGroups(userId: string, query = ''): Promise<CommunityGroup[]> {
+  return withUserRead(userId, async (db) => {
+    const q = query.trim().slice(0, 80);
+    const params: unknown[] = [userId, q === '' ? null : `%${q}%`];
+    const rows = await db.run(
+      `
+      with me as (select city, industry, job_title from public.profiles where id = $1)
+      select ${GROUP_SELECT},
+             case
+               when exists (select 1 from public.community_group_members m
+                             where m.group_id = g.id and m.member_id = $1) then null
+               when coalesce((select city from me), '') <> ''
+                    and (g.name ilike '%' || (select city from me) || '%'
+                         or g.description ilike '%' || (select city from me) || '%')
+                 then 'Popular in ' || (select city from me)
+               when coalesce((select industry from me), '') <> ''
+                    and (g.name ilike '%' || (select industry from me) || '%'
+                         or g.description ilike '%' || (select industry from me) || '%')
+                 then 'Matches your industry'
+               else null
+             end as suggest_reason
+        from public.community_groups g
+       where not g.is_archived
+         and ($2::text is null or g.name ilike $2 or g.description ilike $2)
+       order by exists (select 1 from public.community_group_members m
+                         where m.group_id = g.id and m.member_id = $1) desc,
+                member_count desc
+       limit 60
+      `,
+      params
+    );
+    return toDomainAll<CommunityGroup>(rows);
+  });
+}
+
+/** Groups to suggest inside the feed: not joined, best match first. */
+export async function suggestedGroups(userId: string, limit = 6): Promise<CommunityGroup[]> {
+  const all = await exploreGroups(userId);
+  return all.filter((g) => !g.isMember).slice(0, limit);
+}
+
 // ========== FEED ==========
 
 /**

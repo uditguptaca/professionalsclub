@@ -72,6 +72,30 @@ export async function fetchFeed(opts: {
   });
 }
 
+/** The personalised feed: me, people I follow, my groups, plus suggestions. */
+export async function fetchPersonalFeed(opts: { before?: string } = {}): Promise<ActionResult<CommunityPost[]>> {
+  return run('Loading your feed', async () => {
+    const uid = await requireUserId();
+    return repo.listPersonalFeed(uid, opts);
+  });
+}
+
+/** Searchable group directory for the Groups tab. */
+export async function fetchGroupsExplore(query = ''): Promise<ActionResult<CommunityGroup[]>> {
+  return run('Loading groups', async () => {
+    const uid = await requireUserId();
+    return repo.exploreGroups(uid, query);
+  });
+}
+
+/** Groups to weave into the feed as suggestion cards. */
+export async function fetchSuggestedGroups(): Promise<ActionResult<CommunityGroup[]>> {
+  return run('Loading suggestions', async () => {
+    const uid = await requireUserId();
+    return repo.suggestedGroups(uid);
+  });
+}
+
 /**
  * Media pointers are validated hard: only URLs from our own storage (the
  * public Vercel Blob store or the dev uploads folder), correctly typed, and

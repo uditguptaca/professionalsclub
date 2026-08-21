@@ -47,6 +47,10 @@ export async function listPeople() {
   return run('Loading people', (uid) => repo.listPeople(uid));
 }
 
+export async function searchPeople(query: string) {
+  return run('Searching members', (uid) => repo.searchPeople(uid, query));
+}
+
 export async function followMember(targetId: string) {
   return run('Sending follow request', (uid) => repo.follow(uid, targetId));
 }

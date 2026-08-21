@@ -480,6 +480,8 @@ export interface CommunityGroup {
   memberCount: number;
   isMember: boolean;
   myRole: 'owner' | 'member' | null;
+  /** Set on explore/suggestion lists: why we are showing this group. */
+  suggestReason?: string | null;
 }
 
 export interface CommunityMedia {
@@ -502,6 +504,11 @@ export interface CommunityPost {
   likeCount: number;
   commentCount: number;
   likedByMe: boolean;
+  /** Why this post is in MY feed. 'suggested_group' posts carry a join CTA. */
+  source?: 'mine' | 'followed' | 'group' | 'suggested_group';
+  /** For group posts: whether I am already in that group. */
+  inGroup?: boolean;
+  groupSlug?: string | null;
 }
 
 export interface CommunityComment {
