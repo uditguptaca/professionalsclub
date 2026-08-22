@@ -11,24 +11,40 @@ create tables; they do not migrate an existing dataset.
    references by foreign key. **Do this before running the migrations**, or 0001
    will fail on a missing table.
 
-## 2. Apply, in order
+## 2. Apply the migrations
 
-Neon Console → SQL Editor → paste each file → Run.
+```bash
+node db/migrate.mjs
+```
 
-| # | File | What it does |
-|---|------|--------------|
-| 0 | `migrations/0000_neon_roles.sql` | `app` schema, `app.current_user_id()`, and the two least-privilege roles |
-| 1 | `migrations/0001_core_schema.sql` | `profiles` keyed to `neon_auth."user"`, help desk, business directory, public content, audit log |
-| 2 | `migrations/0002_matrimony_schema.sql` | Matrimony module |
-| 3 | `migrations/0003_rls_policies.sql` | Row Level Security for every table, plus the matrimony visibility view |
-| 4 | `migrations/0004_bootstrap_admin.sql` | Promotes one existing account to admin |
+That applies every pending file in `migrations/` in order and records it in
+`schema_migrations`, so re-running it is a no-op. There are 30 of them now;
+pasting them by hand into the Neon SQL editor is no longer practical, and a
+partial paste leaves the database in a state no code expects.
 
-Before running #4, create the admin account: sign up at `/portal/signup`, or add
-the user from the Neon Console under **Auth → Users**. Then put that email in the
-`v_admin_email` variable at the top of the file.
+**One manual step remains.** `0004_bootstrap_admin.sql` promotes an existing
+account to admin, so before the first run: create that account (sign up at
+`/portal/signup`, or add the user in the Neon Console under **Auth → Users**),
+then put its email in the `v_admin_email` variable at the top of that file.
 
-#4 ends with a query listing every table, whether RLS is on, and how many
-policies it has. `rls_enabled` must be `true` on every row.
+Roughly what the files cover:
+
+| Range | What it does |
+|---|---|
+| `0000`-`0004` | `app` schema and least-privilege roles, core tables, matrimony, RLS for every table, admin bootstrap |
+| `0005`-`0014` | Community feed and groups, public submissions, saved businesses, matrimony moderation, company referrals, city home feed |
+| `0015`-`0029` | Swipe deck and E2E keys, follows and the member chat hub, the direct-referral model (with the old anonymous fan-out dropped), chat settings, reactions, referral caps, and the RLS hardening that followed the 2026-08 audit |
+
+After the first run, check that RLS is on everywhere:
+
+```sql
+select c.relname, c.relrowsecurity
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace
+ where n.nspname = 'public' and c.relkind = 'r'
+ order by 1;
+```
+
+`relrowsecurity` must be `true` on every application table.
 
 ## 3. Configure the app
 

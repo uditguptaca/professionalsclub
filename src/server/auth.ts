@@ -141,15 +141,23 @@ export async function requireUserId(): Promise<string> {
   const session = await getSession();
   if (!session) throw new Error('Not signed in.');
 
-  // No database round trip here on purpose. The session cookie (verified
-  // locally) proves identity; account status and every permission are
-  // enforced authoritatively inside Postgres by the RLS policies on the very
-  // query this action is about to run — a suspended account gets nothing
-  // back regardless of what this function believes. The cached profile is
-  // only consulted to fail fast with a friendlier message when we already
-  // know the account is inactive.
+  // Account status is enforced authoritatively in Postgres: every write policy
+  // carries public.is_active_member() (0003/0005 from the start, and 0027 for
+  // the social and chat tables that had missed it). This layer only turns that
+  // into a clean message instead of a policy violation.
+  //
+  // A cache HIT is used as-is; a MISS loads the profile rather than assuming
+  // the best. That order matters: suspending a member DELETES their cache
+  // entry, so "miss means allow" made this check unreachable for exactly the
+  // account it existed to stop.
   const cached = profileCache.get(session.userId);
-  if (cached && cached.expires > Date.now() && cached.profile.accountStatus !== 'active') {
+  if (cached && cached.expires > Date.now()) {
+    if (cached.profile.accountStatus !== 'active') throw new Error('This account is not active.');
+    return session.userId;
+  }
+
+  const profile = await getCurrentProfile();
+  if (!profile || profile.accountStatus !== 'active') {
     throw new Error('This account is not active.');
   }
   return session.userId;

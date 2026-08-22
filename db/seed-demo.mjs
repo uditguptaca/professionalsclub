@@ -336,6 +336,18 @@ const REQUESTS = [
   { seeker: 11, slug: 'td-bank',         jobs: 1, note: 'Logistics background moving into branch operations. Happy to start at the counter.',                     accept: null, days: 7, withdraw: true },
 ];
 
+// The weekly cap (0023) is a BEFORE INSERT trigger, so it fires even for rows
+// ON CONFLICT would have swallowed. The demo therefore has to respect the
+// product rule by construction: at most two live asks per seeker.
+async function referralSlotsLeft(seekerId) {
+  const [row] = await q(
+    `select 2 - count(*)::int as left from public.referral_direct_requests
+      where seeker_id = $1 and created_at > now() - interval '7 days'`,
+    [seekerId]
+  );
+  return row.left;
+}
+
 async function seedReferrals(ids) {
   const memberId = (i) => ids[email(MEMBERS[i])];
   const companies = Object.fromEntries(
@@ -380,76 +392,89 @@ async function seedReferrals(ids) {
     );
   }
 
-  // Requests are built directly rather than through create_referral_request:
-  // that function reads app.current_user_id(), which a seed script has no way to
-  // be. The rows it would have written are written here instead, including the
-  // recipient fan-out and the anonymous headline built the same way.
+  // Direct requests, the 0018 model: a seeker asks NAMED insiders, and each
+  // ask opens a member chat carrying a referral card. Built row by row rather
+  // than through the app so the seed can backdate everything.
+  //
+  // Two per seeker at most: enforce_referral_weekly_cap (0023) is a trigger,
+  // so it fires for the seed too - which is the point, the demo should not be
+  // able to hold a state the product forbids.
   for (const r of REQUESTS) {
     const companyId = companies[r.slug];
     const seeker = memberId(r.seeker);
     if (!companyId || !seeker) continue;
 
-    const m = MEMBERS[r.seeker];
-    const headline = `A ${m.title} (${m.exp})`;
     const created = daysAgo(r.days, 11);
+    const [company] = await q('select name from public.companies where id = $1', [companyId]);
 
-    const existing = await q(
-      'select id from public.referral_requests where seeker_id = $1 and company_id = $2',
-      [seeker, companyId]
+    // company_insiders is the base table: member_names (and the directory view
+    // built on it) filter by is_active_member(), which is false when no
+    // app.user_id is set, so a seed reading the view would see nothing.
+    // One named insider per demo ask: the seeker's other slot is left for the
+    // real-account section below, so no demo member ends up over the cap.
+    if (await referralSlotsLeft(seeker) < 1) continue;
+    const insiders = await q(
+      `select member_id from public.company_insiders
+        where company_id = $1 and can_refer and member_id <> $2
+        order by member_id limit 1`,
+      [companyId, seeker]
     );
-    if (existing.length) continue;
+    if (!insiders.length) continue;
 
     const jobs = await q(
-      `select id from public.company_jobs where company_id = $1 and is_open
+      `select id, title from public.company_jobs where company_id = $1 and is_open
        order by posted_at desc nulls last limit $2`,
       [companyId, r.jobs]
     );
     if (!jobs.length) continue;
 
-    const status = r.withdraw ? 'withdrawn' : r.accept !== null ? 'matched' : 'open';
-    const requestId = (await q(
-      `insert into public.referral_requests
-         (seeker_id, company_id, headline, note, status, created_at, updated_at)
-       values ($1,$2,$3,$4,$5,$6,$6) returning id`,
-      [seeker, companyId, headline, r.note, status, created]
-    ))[0].id;
-
-    for (const j of jobs) {
-      await q(
-        `insert into public.referral_request_jobs (request_id, job_id) values ($1,$2)
-         on conflict do nothing`,
-        [requestId, j.id]
-      );
-    }
-
-    // Everyone at that company who will help, minus the seeker.
-    const insiders = await q(
-      `select member_id from public.company_insiders
-        where company_id = $1 and can_refer and member_id <> $2`,
-      [companyId, seeker]
-    );
     for (const ins of insiders) {
       const accepted = r.accept !== null && ins.member_id === memberId(r.accept);
-      // A withdrawn request keeps only rows that were already answered.
-      if (r.withdraw && !accepted) continue;
+      const status = accepted ? 'accepted' : r.withdraw ? 'declined' : 'pending';
+      const respondedAt = status === 'pending' ? null : daysAgo(Math.max(0, r.days - 1), 15);
+
+      const inserted = await q(
+        `insert into public.referral_direct_requests
+           (seeker_id, insider_id, company_id, job_ids, note, status, created_at, responded_at)
+         values ($1,$2,$3,$4::uuid[],$5,$6,$7,$8)
+         on conflict (seeker_id, insider_id, company_id) do nothing
+         returning id`,
+        [seeker, ins.member_id, companyId, jobs.map((j) => j.id), r.note, status, created, respondedAt]
+      );
+      if (!inserted.length) continue;
+
+      // The chat the request opens, and the referral card inside it. Sorted
+      // ids because member_conversations enforces member_a_id < member_b_id.
+      const [a, b] = [seeker, ins.member_id].sort();
+      const [convo] = await q(
+        `insert into public.member_conversations (member_a_id, member_b_id, last_message_at, created_at)
+         values ($1,$2,$3,$3)
+         on conflict (member_a_id, member_b_id)
+           do update set last_message_at = greatest(public.member_conversations.last_message_at, excluded.last_message_at)
+         returning id`,
+        [a, b, created]
+      );
       await q(
-        `insert into public.referral_recipients (request_id, insider_id, status, responded_at, created_at)
-         values ($1,$2,$3,$4,$5) on conflict do nothing`,
-        [requestId, ins.member_id, accepted ? 'accepted' : 'pending',
-         accepted ? daysAgo(Math.max(0, r.days - 1), 15) : null, created]
+        `insert into public.member_messages
+           (conversation_id, sender_id, kind, meta, created_at)
+         values ($1,$2,'referral',$3::jsonb,$4)`,
+        [convo.id, seeker, JSON.stringify({
+          request_id: inserted[0].id,
+          company_id: companyId,
+          company_name: company?.name ?? '',
+          job_titles: jobs.map((j) => j.title),
+          note: r.note,
+        }), created]
       );
     }
-    await q('update public.referral_requests set notified_count = $2 where id = $1',
-      [requestId, insiders.length]);
 
     // A notification for the accepted case, so the bell is not empty.
     if (r.accept !== null) {
       const helper = MEMBERS[r.accept];
-      const [company] = await q('select name from public.companies where id = $1', [companyId]);
       await q(
         `insert into public.in_app_notifications (user_id, type, title, body, link, created_at)
-         values ($1,'referral_accepted',$2,$3,'/portal/member/referrals',$4)`,
-        [seeker, `${helper.first} ${helper.last} can help at ${company.name}`,
+         values ($1,'referral_accepted',$2,$3,'/portal/member/chats',$4)`,
+        [seeker, `${helper.first} ${helper.last} can help at ${company?.name ?? 'the company'}`,
          'They work there and agreed to help with your request.',
          daysAgo(Math.max(0, r.days - 1), 15)]
       );
@@ -871,106 +896,116 @@ async function seedRealAccounts(ids) {
     );
   }
 
-  // Asks waiting in volunteer@'s inbox, from demo members, still anonymous.
+  // Asks waiting in volunteer@'s chat: direct requests from demo members, each
+  // one a referral card in its own conversation (the 0018 model). Named, not
+  // anonymous - that is the deal the current flow offers.
   const INBOUND = [
     [0,  'cibc',    'Six years in retail banking operations, CSC certified. Targeting the analytics side.'],
     [4,  'shopify', 'Product designer, three years, portfolio is mostly fintech dashboards.'],
-    [10, 'cibc',    'Data scientist moving from telecom into financial services. Happy to explain the overlap.'],
   ];
   for (const [seekerIdx, slug, note] of INBOUND) {
     const company = companies[slug];
     const from = memberId(seekerIdx);
     if (!company || !from) continue;
     const m = MEMBERS[seekerIdx];
-
-    const existing = await q(
-      'select id from public.referral_requests where seeker_id = $1 and company_id = $2',
-      [from, company.id]
-    );
     const created = daysAgo(1 + (seekerIdx % 4), 11);
-    const requestId = existing.length ? existing[0].id : (await q(
-      `insert into public.referral_requests
-         (seeker_id, company_id, headline, note, status, created_at, updated_at)
-       values ($1,$2,$3,$4,'open',$5,$5) returning id`,
-      [from, company.id, 'A ' + m.title + ' (' + m.exp + ')', note, created]
-    ))[0].id;
 
     const jobs = await q(
-      `select id from public.company_jobs where company_id = $1 and is_open
+      `select id, title from public.company_jobs where company_id = $1 and is_open
        order by posted_at desc nulls last limit 2`, [company.id]
     );
-    for (const j of jobs) {
-      await q(
-        `insert into public.referral_request_jobs (request_id, job_id) values ($1,$2)
-         on conflict do nothing`, [requestId, j.id]);
-    }
+    if (!jobs.length) continue;
+
+    if (await referralSlotsLeft(from) < 1) continue;
+    const inserted = await q(
+      `insert into public.referral_direct_requests
+         (seeker_id, insider_id, company_id, job_ids, note, status, created_at)
+       values ($1,$2,$3,$4::uuid[],$5,'pending',$6)
+       on conflict (seeker_id, insider_id, company_id) do nothing
+       returning id`,
+      [from, helper.id, company.id, jobs.map((j) => j.id), note, created]
+    );
+    if (!inserted.length) continue;
+
+    const [a, b] = [from, helper.id].sort();
+    const [convo] = await q(
+      `insert into public.member_conversations (member_a_id, member_b_id, last_message_at, created_at)
+       values ($1,$2,$3,$3)
+       on conflict (member_a_id, member_b_id)
+         do update set last_message_at = greatest(public.member_conversations.last_message_at, excluded.last_message_at)
+       returning id`,
+      [a, b, created]
+    );
     await q(
-      `insert into public.referral_recipients (request_id, insider_id, status, created_at)
-       values ($1,$2,'pending',$3) on conflict do nothing`,
-      [requestId, helper.id, created]
+      `insert into public.member_messages (conversation_id, sender_id, kind, meta, created_at)
+       values ($1,$2,'referral',$3::jsonb,$4)`,
+      [convo.id, from, JSON.stringify({
+        request_id: inserted[0].id,
+        company_id: company.id,
+        company_name: company.name,
+        job_titles: jobs.map((j) => j.title),
+        note,
+      }), created]
     );
     await q(
       `insert into public.in_app_notifications (user_id, type, title, body, link, created_at)
-       values ($1,'referral_request',$2,$3,'/portal/member/referrals',$4)`,
-      [helper.id, 'Someone needs a referral at ' + company.name,
+       values ($1,'referral_request',$2,$3,'/portal/member/chats',$4)`,
+      [helper.id, m.first + ' ' + m.last + ' asked for a referral at ' + company.name,
        'A ' + m.title + ' asked about ' + jobs.length + (jobs.length === 1 ? ' role.' : ' roles.'),
        created]
     );
-    const recipients = await q(
-      'select count(*)::int n from public.referral_recipients where request_id = $1', [requestId]);
-    await q('update public.referral_requests set notified_count = $2 where id = $1',
-      [requestId, recipients[0].n]);
   }
 
-  // member@ has asks of her own: one already matched, one still waiting.
-  const OUTBOUND = [
-    ['telus',           'Six years in QA, moving towards data quality work. Open to Toronto or remote.', true],
-    ['deloitte-canada', 'Interested in the technology consulting stream. Two references from Canadian managers.', false],
-  ];
-  for (const [slug, note, matched] of OUTBOUND) {
-    const company = companies[slug];
-    if (!company) continue;
-    const existing = await q(
-      'select id from public.referral_requests where seeker_id = $1 and company_id = $2',
-      [seeker.id, company.id]
-    );
-    if (existing.length) continue;
-
-    const created = daysAgo(matched ? 4 : 2, 10);
-    const requestId = (await q(
-      `insert into public.referral_requests
-         (seeker_id, company_id, headline, note, status, created_at, updated_at)
-       values ($1,$2,'A QA Analyst (4-6 years)',$3,$4,$5,$5) returning id`,
-      [seeker.id, company.id, note, matched ? 'matched' : 'open', created]
-    ))[0].id;
-
-    const jobs = await q(
-      `select id from public.company_jobs where company_id = $1 and is_open
-       order by posted_at desc nulls last limit 2`, [company.id]
-    );
-    for (const j of jobs) {
-      await q(
-        `insert into public.referral_request_jobs (request_id, job_id) values ($1,$2)
-         on conflict do nothing`, [requestId, j.id]);
-    }
-
-    const insiders = await q(
+  // member@ has one ask of her own, already accepted, so the seeker side of a
+  // referral card shows its "they will help" state.
+  {
+    const company = companies['telus'];
+    const insiders = company ? await q(
       `select member_id from public.company_insiders
-        where company_id = $1 and can_refer and member_id <> $2`,
+        where company_id = $1 and can_refer and member_id <> $2
+        order by member_id limit 1`,
       [company.id, seeker.id]
-    );
-    for (const [k, ins] of insiders.entries()) {
-      const accepted = matched && k === 0;
-      await q(
-        `insert into public.referral_recipients
-           (request_id, insider_id, status, responded_at, created_at)
-         values ($1,$2,$3,$4,$5) on conflict do nothing`,
-        [requestId, ins.member_id, accepted ? 'accepted' : 'pending',
-         accepted ? daysAgo(3, 15) : null, created]
+    ) : [];
+    if (company && insiders.length) {
+      const created = daysAgo(4, 10);
+      const jobs = await q(
+        `select id, title from public.company_jobs where company_id = $1 and is_open
+         order by posted_at desc nulls last limit 2`, [company.id]
       );
+      const budget = await referralSlotsLeft(seeker.id);
+      const inserted = jobs.length && budget >= 1 ? await q(
+        `insert into public.referral_direct_requests
+           (seeker_id, insider_id, company_id, job_ids, note, status, created_at, responded_at)
+         values ($1,$2,$3,$4::uuid[],$5,'accepted',$6,$7)
+         on conflict (seeker_id, insider_id, company_id) do nothing
+         returning id`,
+        [seeker.id, insiders[0].member_id, company.id, jobs.map((j) => j.id),
+         'Six years in QA, moving towards data quality work. Open to Toronto or remote.',
+         created, daysAgo(3, 15)]
+      ) : [];
+      if (inserted.length) {
+        const [a, b] = [seeker.id, insiders[0].member_id].sort();
+        const [convo] = await q(
+          `insert into public.member_conversations (member_a_id, member_b_id, last_message_at, created_at)
+           values ($1,$2,$3,$3)
+           on conflict (member_a_id, member_b_id)
+             do update set last_message_at = greatest(public.member_conversations.last_message_at, excluded.last_message_at)
+           returning id`,
+          [a, b, created]
+        );
+        await q(
+          `insert into public.member_messages (conversation_id, sender_id, kind, meta, created_at)
+           values ($1,$2,'referral',$3::jsonb,$4)`,
+          [convo.id, seeker.id, JSON.stringify({
+            request_id: inserted[0].id,
+            company_id: company.id,
+            company_name: company.name,
+            job_titles: jobs.map((j) => j.title),
+            note: 'Six years in QA, moving towards data quality work. Open to Toronto or remote.',
+          }), created]
+        );
+      }
     }
-    await q('update public.referral_requests set notified_count = $2 where id = $1',
-      [requestId, insiders.length]);
   }
 
   // A help request each, so My Requests is not empty either.
@@ -1195,7 +1230,9 @@ async function cleanAll() {
     `select id from public.profiles where email in
        ('member@professionalsclub.ca','volunteer@professionalsclub.ca')`);
   for (const r of real.map((x) => x.id)) {
-    await q('delete from public.referral_requests where seeker_id = $1', [r]);
+    await q('delete from public.referral_direct_requests where seeker_id = $1 or insider_id = $1', [r]);
+    await q(`delete from public.member_conversations where member_a_id = $1 or member_b_id = $1`, [r]);
+    await q('delete from public.member_follows where follower_id = $1 or followee_id = $1', [r]);
     await q('delete from public.company_insiders where member_id = $1', [r]);
     await q('delete from public.matrimony_profiles where user_id = $1', [r]);
     await q("delete from public.help_requests where reference like 'PC-47%' and member_id = $1", [r]);
@@ -1249,7 +1286,8 @@ async function main() {
     union all select 'community_groups', count(*)::int from public.community_groups
     union all select 'company_insiders', count(*)::int from public.company_insiders
     union all select 'company_jobs', count(*)::int from public.company_jobs
-    union all select 'referral_requests', count(*)::int from public.referral_requests
+    union all select 'referral_requests', count(*)::int from public.referral_direct_requests
+    union all select 'member_conversations', count(*)::int from public.member_conversations
     union all select 'help_requests', count(*)::int from public.help_requests
     union all select 'volunteer_applications', count(*)::int from public.volunteer_applications
     union all select 'businesses', count(*)::int from public.businesses

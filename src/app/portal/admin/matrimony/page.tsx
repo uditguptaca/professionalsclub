@@ -348,7 +348,7 @@ export default function AdminMatrimonyPage() {
           </p>
         </div>
         <button className="btn btn-outline" onClick={handleRefresh} disabled={refreshing} style={{ gap: 6 }}>
-          <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} style={refreshing ? { animation: 'spin 1s linear infinite' } : {}} />
+          <RefreshCw size={14} className={refreshing ? 'spin' : ''} style={refreshing ? { animation: 'spin 1s linear infinite' } : {}} />
           Refresh
         </button>
       </div>

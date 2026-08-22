@@ -197,6 +197,9 @@ export default function MatrimonyCreatePage() {
   // submit, because a media row needs a profile to hang off.
   const [photos, setPhotos] = useState<MatrimonyMedia[]>([]);
   const [photoError, setPhotoError] = useState('');
+  // Design law: failures are surfaced inline, never through a native dialog -
+  // the WebView captions those "localhost says...".
+  const [saveError, setSaveError] = useState('');
   const [uploading, setUploading] = useState(0);
   const [removingPhoto, setRemovingPhoto] = useState<string | null>(null);
   const [hasProfile, setHasProfile] = useState(false);
@@ -382,7 +385,7 @@ export default function MatrimonyCreatePage() {
       setTimeout(() => setDraftSavedMsg(false), 3000);
     } catch (err) {
       console.error('Draft save error:', err);
-      alert('Failed to save draft. Please try again.');
+      setSaveError('Could not save your draft. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -440,6 +443,7 @@ export default function MatrimonyCreatePage() {
 
   // ── Final Submit ───────────────────────────────────────
   const handleSubmit = useCallback(async () => {
+    setSaveError('');
     // Validate step 7 (about + contact + consent)
     if (!validateStep(6)) return;
     // Validate step 8 (preferences)
@@ -478,7 +482,11 @@ export default function MatrimonyCreatePage() {
       setSubmitted(true);
     } catch (err) {
       console.error('Submit error:', err);
-      alert('Failed to submit profile. Please try again.');
+      setSaveError(
+        err instanceof Error && err.message
+          ? err.message
+          : 'Could not submit your profile. Please try again.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -683,12 +691,17 @@ export default function MatrimonyCreatePage() {
 
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           {draftSavedMsg && (
-            <span style={{ fontSize: 'var(--text-xs)', color: '#04724d', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--success-600)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
               <CheckCircle2 size={14} /> Draft saved!
             </span>
           )}
+          {saveError && (
+            <p role="alert" className="community-error" style={{ flexBasis: '100%', margin: 0 }}>
+              {saveError}
+            </p>
+          )}
           <button className="btn btn-ghost" onClick={saveDraft} disabled={saving} style={{ fontSize: 'var(--text-sm)' }}>
-            {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+            {saving ? <Loader2 size={16} className="spin" /> : <Save size={16} />}
             Save Draft
           </button>
           {step < 7 ? (
@@ -696,9 +709,11 @@ export default function MatrimonyCreatePage() {
               Continue <ChevronRight size={16} />
             </button>
           ) : (
+            // No gradient: the lighter stop dropped the white label to ~3.1:1.
+            // A flat --success-600 keeps the completion green and passes AA.
             <button className="btn btn-primary btn-lg" onClick={handleSubmit} disabled={submitting}
-              style={{ background: 'linear-gradient(135deg, var(--success-600), var(--success-500))' }}>
-              {submitting ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
+              style={{ background: 'var(--success-600)' }}>
+              {submitting ? <Loader2 size={18} className="spin" /> : <CheckCircle2 size={18} />}
               {editingReviewed ? 'Save & Resubmit for Review' : 'Submit Profile'}
             </button>
           )}
@@ -1238,7 +1253,7 @@ function StepAbout({
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}
               >
-                {removingPhoto === photo.id ? <Loader2 size={13} className="animate-spin" /> : <X size={13} />}
+                {removingPhoto === photo.id ? <Loader2 size={13} className="spin" /> : <X size={13} />}
               </button>
               {i === 0 && (
                 <span style={{
@@ -1257,7 +1272,7 @@ function StepAbout({
               width: 104, height: 104, borderRadius: 'var(--radius-lg)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <Loader2 size={18} className="animate-spin" style={{ color: 'var(--text-muted)' }} />
+              <Loader2 size={18} className="spin" style={{ color: 'var(--text-muted)' }} />
             </div>
           ))}
 
