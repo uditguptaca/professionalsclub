@@ -344,13 +344,33 @@ export async function sendMessage(
   input: Record<string, unknown>
 ): Promise<AdminMessage> {
   return withUser(userId, async (db) => {
+    // WHO IS SPEAKING is never taken from the payload. sender_user_id was
+    // already stamped from the session and guard_message_routing pins the
+    // recipient, but sender_role and sender_name came straight from the
+    // caller - so a member could post a message that RENDERED as
+    // "Portal Admin (admin)" in the admin inbox, which shows exactly those
+    // two fields. Both are now derived from the caller's own profile row.
+    const me = await one<{ role: string; first_name: string; last_name: string; is_volunteer: boolean }>(
+      await db`
+        select role, first_name, last_name, is_volunteer
+          from public.profiles where id = ${userId}::uuid
+      `
+    );
+    if (!me) throw new Error('Profile not found');
+    const claimed = String(input.senderRole ?? '');
+    const senderRole =
+      me.role === 'admin' ? 'admin'
+      : claimed === 'volunteer' && me.is_volunteer ? 'volunteer'
+      : 'member';
+    const senderName = `${me.first_name} ${me.last_name}`.trim();
+
     const rows = await db`
       insert into public.messages (
         case_id, case_title, sender_role, sender_user_id, sender_name,
         recipient_user_id, recipient_role, visibility_scope, body, attachments
       ) values (
-        ${input.caseId ?? null}, ${input.caseTitle ?? ''}, ${input.senderRole},
-        ${userId}::uuid, ${input.senderName ?? ''},
+        ${input.caseId ?? null}, ${input.caseTitle ?? ''}, ${senderRole},
+        ${userId}::uuid, ${senderName},
         ${input.recipientUserId ?? null}, ${input.recipientRole},
         ${input.visibilityScope ?? 'all'}, ${input.body}, ${(input.attachments as string[]) ?? []}
       )

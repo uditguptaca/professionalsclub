@@ -198,15 +198,25 @@ export default function CommunityPage() {
   }, [tab, feedEnd, loadMore]);
 
   // ---- Mutations ----------------------------------------------------------
+  // State and cache move TOGETHER. Updating only state left the cached copy
+  // stale, so navigating away and back re-painted a Join button for a group
+  // the member had already joined until the background refresh landed.
+  const commitPosts = (fn: (prev: CommunityPost[]) => CommunityPost[]) =>
+    setPosts((prev) => { const next = fn(prev ?? []); writeCache('community-feed', next); return next; });
+  const commitGroups = (fn: (prev: CommunityGroup[]) => CommunityGroup[]) =>
+    setGroups((prev) => { const next = fn(prev ?? []); writeCache('community-groups', next); return next; });
+  const commitPeople = (fn: (prev: ChatPerson[]) => ChatPerson[]) =>
+    setPeople((prev) => { const next = fn(prev ?? []); writeCache('community-people', next); return next; });
+
   const joinGroupById = async (group: { id: string; name: string }) => {
     setBusyId(group.id);
     const r = await joinCommunityGroup(group.id);
     if (r.ok) {
       // Every post from that group is now "mine", so the Join CTA disappears
       // from all of them at once, not just the one that was tapped.
-      setPosts((ps) => (ps ?? []).map((p) => (p.groupId === group.id ? { ...p, source: 'group', inGroup: true } : p)));
+      commitPosts((ps) => ps.map((p) => (p.groupId === group.id ? { ...p, source: 'group' as const, inGroup: true } : p)));
       setRailGroups((gs) => gs.filter((g) => g.id !== group.id));
-      setGroups((gs) => (gs ?? []).map((g) => (
+      commitGroups((gs) => gs.map((g) => (
         g.id === group.id
           ? { ...g, isMember: true, memberCount: g.memberCount + 1, myRole: 'member' as const, suggestReason: null }
           : g
@@ -229,12 +239,12 @@ export default function CommunityPage() {
     setBusyId(group.id);
     const r = await leaveCommunityGroup(group.id);
     if (r.ok) {
-      setGroups((gs) => (gs ?? []).map((g) => (
+      commitGroups((gs) => gs.map((g) => (
         g.id === group.id
           ? { ...g, isMember: false, memberCount: Math.max(0, g.memberCount - 1), myRole: null }
           : g
       )));
-      setPosts((ps) => (ps ?? []).filter((p) => p.groupId !== group.id));
+      commitPosts((ps) => ps.filter((p) => p.groupId !== group.id));
       setToast(`Left ${group.name}`);
     } else {
       setGroupsError(r.error);
@@ -248,7 +258,7 @@ export default function CommunityPage() {
     setFormError('');
     const r = await startGroup(form);
     if (r.ok) {
-      setGroups((g) => [r.data, ...(g ?? [])]);
+      commitGroups((g) => [r.data, ...g]);
       setForm({ name: '', description: '' });
       setCreating(false);
       setToast('Group created');
@@ -260,7 +270,7 @@ export default function CommunityPage() {
 
   /** Optimistic follow-state flip, shared by the People tab and the feed rail. */
   const setFollowState = (id: string, outgoing: ChatPerson['outgoing']) => {
-    setPeople((ps) => (ps ?? []).map((p) => (p.id === id ? { ...p, outgoing } : p)));
+    commitPeople((ps) => ps.map((p) => (p.id === id ? { ...p, outgoing } : p)));
     setRailPeople((ps) => ps.map((p) => (p.id === id ? { ...p, outgoing } : p)));
   };
 
@@ -473,7 +483,7 @@ export default function CommunityPage() {
       <PostComposer
         groupId={null}
         placeholder="Share something with the club…"
-        onPosted={(post) => setPosts((ps) => [{ ...post, source: 'mine' }, ...(ps ?? [])])}
+        onPosted={(post) => commitPosts((ps) => [{ ...post, source: 'mine' as const }, ...ps])}
       />
 
       {feedError && (
@@ -530,8 +540,8 @@ export default function CommunityPage() {
                 )}
                 <PostCard
                   post={post}
-                  onDeleted={(id) => setPosts((ps) => (ps ?? []).filter((p) => p.id !== id))}
-                  onAuthorBlocked={(authorId) => setPosts((ps) => (ps ?? []).filter((p) => p.authorId !== authorId))}
+                  onDeleted={(id) => commitPosts((ps) => ps.filter((p) => p.id !== id))}
+                  onAuthorBlocked={(authorId) => commitPosts((ps) => ps.filter((p) => p.authorId !== authorId))}
                 />
               </div>
             );

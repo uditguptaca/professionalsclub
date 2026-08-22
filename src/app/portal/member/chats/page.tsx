@@ -72,6 +72,9 @@ const GROUP_GAP_MS = 5 * 60 * 1000;
 const MUTUAL_ERROR = 'You can only chat while you follow each other.';
 const TYPING_EVERY_MS = 2500;
 const TYPING_FRESH_MS = 6000;
+/** How long a locally-sent message may outrun the poll before we stop
+    re-adding it (it is either echoed by then, or it failed). */
+const JUST_SENT_MS = 20000;
 
 /** .portal-content-area padding, to be negated — same bleed as .pp-hero. */
 const PAD_X = 'clamp(1rem, 2.5vw, 2rem)';
@@ -607,11 +610,19 @@ export default function MemberChatsPage() {
         if (!convKeyRef.current && r.data.messages.some((m) => m.body == null && m.cipher)) {
           setKeyProbe((n) => n + 1);
         }
-        // Merge rather than replace: a just-sent message can be newer than the
-        // poll that is already in flight.
+        // Merge, but ONLY to cover a message this device just sent that the
+        // poll in flight could not have seen yet. Keeping every unmatched row
+        // was wrong twice over: switching threads bled the previous
+        // conversation's messages into the new one, and Clear chat was undone
+        // permanently, because the cleared rows stayed "extra" forever.
         setMessages((prev) => {
           const ids = new Set(r.data.messages.map((m) => m.id));
-          const extra = prev.filter((m) => !ids.has(m.id));
+          const fresh = Date.now() - JUST_SENT_MS;
+          const extra = prev.filter((m) =>
+            !ids.has(m.id)
+            && m.conversationId === openId
+            && new Date(m.createdAt).getTime() > fresh
+          );
           return extra.length ? [...r.data.messages, ...extra] : r.data.messages;
         });
         setPollOpen(r.data.open);
@@ -636,6 +647,9 @@ export default function MemberChatsPage() {
 
   // ---- Thread: reset per-thread state when switching threads ----------------
   useEffect(() => {
+    // The previous thread's messages must not survive into this one.
+    setMessages([]);
+    setPlain({});
     setConvKey(null);
     convKeyRef.current = null;
     setNoteOpen(true);

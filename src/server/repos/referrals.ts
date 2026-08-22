@@ -8,13 +8,14 @@ import type { Company, CompanyJob, CompanyInsider } from '@/types';
  *
  * Two rules run through this file, both of them the point of the feature:
  *
- *   - Which members work where is never read from company_insiders except for
- *     the caller's own rows. The public number comes from
- *     company_helper_counts, which carries a count and no identity.
- *   - An insider's view of a request comes from referral_inbox and a seeker's
- *     view of their helpers from referral_helpers. Both are security_barrier
- *     views that NULL out identity until the insider has accepted, so the
- *     anonymity is not something this layer has to remember to apply.
+ *   - The PUBLIC site still learns only a count: company_helper_counts carries
+ *     a number and no identity.
+ *   - Signed-in members see referrers BY NAME through
+ *     company_insider_directory (0018). That is the deal the current flow
+ *     offers - turning can_refer on means being listed - and it replaced the
+ *     anonymous fan-out that 0019 dropped. Requests themselves live in
+ *     referral_direct_requests and are served from src/server/repos/chat.ts,
+ *     because each one opens a chat.
  *
  * Nothing here takes a member id as an argument for "who I am".
  */

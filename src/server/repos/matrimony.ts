@@ -465,14 +465,15 @@ export async function respondToInterest(
     `;
 
     if (accept && rows[0]) {
-      // A match now chats in the MEMBER chat hub (0018): map both matrimony
-      // profiles to their user ids and open that conversation. The RLS insert
-      // passes through is_chat_allowed's matrimony branch.
-      const users = await db<{ user_id: string }>`
-        select user_id from public.matrimony_profiles
-         where id in (${mine}::uuid, ${rows[0].sender_profile_id}::uuid)
+      // A match chats in the MEMBER hub (0018). The ids come from
+      // matrimony_owner(), a definer lookup: matrimony_profiles is self-only
+      // under RLS, so querying it directly saw one row and the chat was never
+      // created (0026).
+      const users = await db<{ a: string | null; b: string | null }>`
+        select public.matrimony_owner(${mine}::uuid) as a,
+               public.matrimony_owner(${rows[0].sender_profile_id}::uuid) as b
       `;
-      const pair = users.map((u) => u.user_id).sort();
+      const pair = [users[0]?.a, users[0]?.b].filter((v): v is string => Boolean(v)).sort();
       if (pair.length === 2) {
         const convo = await db<{ id: string }>`
           insert into public.member_conversations (member_a_id, member_b_id)
@@ -694,12 +695,15 @@ export async function swipeRight(userId: string, targetProfileId: string): Promi
         update public.matrimony_interests set status = 'accepted'
          where id = ${incoming[0].id}::uuid
       `;
-      // The match's chat lives in the member chat hub (0018).
-      const users = await db<{ user_id: string }>`
-        select user_id from public.matrimony_profiles
-         where id in (${mine}::uuid, ${targetProfileId}::uuid)
+      // The match's chat lives in the member hub (0018), and the ids come
+      // from the definer lookup for the reason spelled out in 0026: a direct
+      // read of matrimony_profiles cannot see the peer's row.
+      const users = await db<{ a: string | null; b: string | null }>`
+        select public.matrimony_owner(${mine}::uuid) as a,
+               public.matrimony_owner(${targetProfileId}::uuid) as b
       `;
-      const pair = users.map((u) => u.user_id).sort();
+      const pair = [users[0]?.a, users[0]?.b].filter((v): v is string => Boolean(v)).sort();
+      if (pair.length < 2) return { matched: true, conversation_id: null };
       const convo = await db<{ id: string }>`
         insert into public.member_conversations (member_a_id, member_b_id)
         values (${pair[0]}::uuid, ${pair[1]}::uuid)
