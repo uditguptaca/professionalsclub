@@ -626,6 +626,10 @@ export async function requestReferral(
       })]
     );
 
+    // The insider hears about it: an in-app notification and a queued email.
+    // Definer function, because it writes their notification row (0030).
+    await db.run(`select public.notify_referral_request($1::uuid)`, [requestId]);
+
     return { conversationId };
   });
 }
@@ -641,6 +645,8 @@ export async function respondReferral(userId: string, requestId: string, accept:
       [requestId, userId, accept ? 'accepted' : 'declined']
     );
     if (!rows[0]) throw new Error('This request was already answered.');
+    // Only an acceptance is pushed; a decline stays in the chat (0030).
+    await db.run(`select public.notify_referral_response($1::uuid)`, [requestId]);
   });
 }
 

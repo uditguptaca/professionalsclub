@@ -109,43 +109,43 @@ type Payload = Record<string, unknown>;
 const TEMPLATES: Record<string, (payload: Payload) => Omit<Message, 'to'>> = {
   referral_request: (d) => {
     const company = esc(d.company);
-    const headline = esc(d.headline);
+    const seeker = esc(d.seeker ?? 'A member');
     const count = Number(d.jobCount ?? 0);
     const roles = count === 1 ? '1 open role' : `${count} open roles`;
-    const link = `${SITE}/portal/member/referrals`;
+    const link = `${SITE}/portal/member/chats`;
     return {
-      subject: `Someone needs a referral at ${company}`,
+      subject: `${seeker} asked you for a referral at ${company}`,
       html: shell(
-        `A member is asking about ${roles} at ${company}`,
-        p(`<strong>${headline}</strong> has asked whether anyone inside ${company} can help with their application.`) +
-        p('You are being asked because you told us you work there and are open to helping. We have not shared your name, your email or anything else about you with them.') +
-        p('If you can help, open the request and say so — only then do they see who you are, and only then do you see who they are.'),
-        { href: link, label: 'Open the request' }
+        `${seeker} is asking about ${roles} at ${company}`,
+        p(`<strong>${seeker}</strong> asked whether you can help with an application at ${company}, and picked you because you chose to be listed as open to referring there.`) +
+        p('The request is waiting in your chat, with the roles and a note.') +
+        p('Accept if you can help, or pass. Either is a complete answer, and the conversation stays yours.'),
+        { href: link, label: 'Open the chat' }
       ),
       text:
-        `${headline} has asked whether anyone inside ${company} can help with ${roles}.\n\n` +
-        `You are being asked because you told us you work there and are open to helping.\n` +
-        `We have not shared your name or contact details with them.\n\n` +
-        `If you can help, open the request and say so. Only then do you see each other's details.\n\n${link}\n`,
+        `${seeker} asked whether you can help with ${roles} at ${company}.\n\n` +
+        `They picked you because you chose to be listed as open to referring there.\n` +
+        `The request is in your chat, with the roles and a note.\n\n` +
+        `Accept if you can help, or pass. Either is a complete answer.\n\n${link}\n`,
     };
   },
 
   referral_accepted: (d) => {
     const company = esc(d.company);
     const helper = esc(d.helper);
-    const link = `${SITE}/portal/member/referrals`;
+    const link = `${SITE}/portal/member/chats`;
     return {
       subject: `${helper} can help with your referral at ${company}`,
       html: shell(
         `Good news — someone at ${company} can help`,
         p(`<strong>${helper}</strong> works at ${company} and has agreed to help with your request.`) +
-        p('Their name and contact details are on your request now. Reach out, keep it short, and attach the role you are applying for.') +
+        p('Carry on in the chat you already share. Keep it short, say which role, and send your resume if they ask for it.') +
         p('A referral is a favour, not a guarantee — but it is the single most effective way to get an application read.'),
-        { href: link, label: 'See who can help' }
+        { href: link, label: 'Open the chat' }
       ),
       text:
         `${helper} works at ${company} and has agreed to help with your referral request.\n\n` +
-        `Their contact details are on your request now.\n\n${link}\n`,
+        `Carry on in the chat you already share.\n\n${link}\n`,
     };
   },
 };
