@@ -4,4 +4,6 @@
          primary-700 token from globals.css: the orange tone that carries white
          text at AA, rather than the brighter primary-600 used for fills. -->
     <color name="notification_color">#C2410C</color>
+    <!-- The forest ground the whole brand sits on (green-950). -->
+    <color name="loginBackground">#0F2318</color>
 </resources>

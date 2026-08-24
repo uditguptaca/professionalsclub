@@ -16,5 +16,5 @@ const adb = candidates.find((c) => c === 'adb' || existsSync(c));
 const run = (...args) => execFileSync(adb, args, { stdio: 'inherit' });
 
 run('reverse', 'tcp:3000', 'tcp:3000');
-run('shell', 'am', 'start', '-n', 'ca.professionalsclub.app/.MainActivity');
+run('shell', 'monkey', '-p', 'ca.professionalsclub.app', '-c', 'android.intent.category.LAUNCHER', '1');
 console.log('\nBridge up + app launched. Dev server must be running (npm run dev).');

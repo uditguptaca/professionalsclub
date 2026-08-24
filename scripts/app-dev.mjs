@@ -76,6 +76,8 @@ step('Bridging localhost and launching');
 // the usual cause of the offline screen.
 sh(adb, ['reverse', 'tcp:3000', 'tcp:3000']);
 sh(adb, ['shell', 'am', 'force-stop', 'ca.professionalsclub.app']);
-sh(adb, ['shell', 'am', 'start', '-n', 'ca.professionalsclub.app/.MainActivity']);
+// Launch via the LAUNCHER intent rather than naming an activity: the front
+// door is LoginActivity now, and MainActivity is deliberately not exported.
+sh(adb, ['shell', 'monkey', '-p', 'ca.professionalsclub.app', '-c', 'android.intent.category.LAUNCHER', '1']);
 
 console.log('\nRunning against the dev server. `npm run dev` must be up.');

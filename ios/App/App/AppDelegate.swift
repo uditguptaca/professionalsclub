@@ -1,5 +1,51 @@
 import UIKit
 import Capacitor
+import UserNotifications
+
+/**
+ Holds a tapped notification until a Capacitor bridge exists to receive it.
+
+ On iOS the tap is delivered once, to whatever object is
+ `UNUserNotificationCenter.current().delegate` at that moment, and Apple
+ requires that delegate to be set before didFinishLaunchingWithOptions returns.
+ Capacitor's NotificationRouter only takes that role inside CapacitorBridge.init
+ (CapacitorBridge.swift:210-211), which runs in CAPBridgeViewController.loadView
+ - so with a login screen in front, nothing is listening when the tap arrives
+ and the payload is simply lost. Unlike Android there is no Intent left behind
+ to re-read.
+
+ So: claim the delegate slot early, keep the response, and hand it to the real
+ router once PortalViewController builds the bridge. The bridge overwrites this
+ delegate itself (handleApplicationNotifications defaults to YES,
+ CAPInstanceDescriptor.m:42), so there is nothing to uninstall.
+
+ The plugin's own buffering covers only the next step - `didReceive` fires
+ notifyListeners with retainUntilConsumed (PushNotificationsHandler.swift:79),
+ which parks the payload until JS adds a listener (CAPPlugin.m:82-95, replayed
+ at CAPPlugin.m:42-56). That buffer never sees an event that no delegate
+ received.
+ */
+final class PendingPush: NSObject, UNUserNotificationCenterDelegate {
+    static let shared = PendingPush()
+
+    private var response: UNNotificationResponse?
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+        self.response = response
+        completionHandler()
+    }
+
+    /// Replay into Capacitor's router, whose delegate method is public
+    /// (NotificationRouter.swift:49-59), so the payload reaches
+    /// pushNotificationActionPerformed by the normal route.
+    func replay(into router: NotificationRouter) {
+        guard let response else { return }
+        self.response = nil
+        router.userNotificationCenter(.current(), didReceive: response, withCompletionHandler: {})
+    }
+}
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -7,8 +53,28 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Must happen before this method returns, or a tap that launched the app
+        // is delivered to nobody. See PendingPush.
+        UNUserNotificationCenter.current().delegate = PendingPush.shared
         return true
+    }
+
+    // Capacitor posts neither of these itself - grep the iOS runtime and the
+    // only hits for .capacitorDidRegisterForRemoteNotifications are the
+    // declaration (CAPNotifications.swift:12) and the plugin's observers
+    // (PushNotificationsPlugin.swift:39-47). Without these two methods the
+    // registration event never fires and getDeliveredNotifications rejects
+    // (PushNotificationsPlugin.swift:125-127).
+    func application(_ application: UIApplication,
+                     didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications,
+                                        object: deviceToken)
+    }
+
+    func application(_ application: UIApplication,
+                     didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications,
+                                        object: error)
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
