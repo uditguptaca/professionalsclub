@@ -73,3 +73,14 @@ mobile/test-apk/
 
 # Test credentials - never commit
 TEST-ACCOUNTS.md
+
+# Firebase service-account keys. These sign requests to send push on behalf of
+# the project: leaking one lets anyone push any message to every installed app.
+# google-services.json is NOT here on purpose - it ships inside the APK and is
+# not a secret, so it stays tracked and a fresh clone can still build.
+firebase-service-account*.json
+*-firebase-adminsdk-*.json
+service-account*.json
+# Apple push auth keys.
+*.p8
+AuthKey_*.p8

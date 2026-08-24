@@ -24,6 +24,9 @@ allprojects {
     }
 }
 
-task clean(type: Delete) {
-    delete rootProject.buildDir
+// Gradle 9 removed Project.buildDir. layout.buildDirectory is the replacement;
+// it is a lazily-evaluated provider rather than a File, which is why the old
+// property had to go.
+tasks.register('clean', Delete) {
+    delete rootProject.layout.buildDirectory
 }

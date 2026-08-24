@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android tints the notification silhouette with this. It is the
+         primary-700 token from globals.css: the orange tone that carries white
+         text at AA, rather than the brighter primary-600 used for fills. -->
+    <color name="notification_color">#C2410C</color>
+</resources>

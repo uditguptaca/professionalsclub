@@ -7,13 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "emu": "node scripts/emu.mjs"
+    "emu": "node scripts/emu.mjs",
+    "app:dev": "node scripts/app-dev.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",
     "@capacitor/app": "^8.1.1",
     "@capacitor/core": "^8.5.0",
     "@capacitor/ios": "^8.5.0",
+    "@capacitor/push-notifications": "^8.1.2",
     "@capacitor/status-bar": "^8.0.3",
     "@neondatabase/auth": "^0.4.2-beta",
     "@neondatabase/auth-ui": "^0.2.1-beta",

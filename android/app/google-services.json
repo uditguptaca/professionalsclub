@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "989098207805",
+    "project_id": "professionalsclub-170a1",
+    "storage_bucket": "professionalsclub-170a1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:989098207805:android:cf3b7d0ae0f2a9abbdd854",
+        "android_client_info": {
+          "package_name": "ca.professionalsclub.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcQNplpgPtAK5N9P11bQz9dptiW26dAIU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

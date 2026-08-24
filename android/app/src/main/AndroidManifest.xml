@@ -20,6 +20,17 @@
             </intent-filter>
         </activity>
 
+        <!-- Appearance of notifications FCM builds while the app is not running. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_notify" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_color" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="pc_general" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -32,4 +43,9 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Android 13+ runtime permission for showing notifications. The Capacitor
+         push plugin requests it, but declares it nowhere, so it has to live
+         here or requestPermissions() is refused without ever prompting. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>
