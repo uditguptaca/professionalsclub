@@ -54,8 +54,11 @@ step(`Syncing native project (server.url = ${SERVER_URL})`);
 sh('npx', ['cap', 'sync', 'android'], { env: { ...process.env, CAP_SERVER_URL: SERVER_URL } });
 
 step('Building debug APK');
-const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
-sh(gradlew, ['assembleDebug', '--console=plain'], { cwd: 'android', env: buildEnv });
+// Invoked from the repo root with -p, not via cwd: cmd.exe does not resolve an
+// executable from the working directory, so a bare gradlew.bat is 'not
+// recognized' even while sitting right there.
+const gradlew = join('android', process.platform === 'win32' ? 'gradlew.bat' : 'gradlew');
+sh(gradlew, ['-p', 'android', 'assembleDebug', '--console=plain'], { env: buildEnv });
 
 step('Installing');
 const apk = 'android/app/build/outputs/apk/debug/app-debug.apk';

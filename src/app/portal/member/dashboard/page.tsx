@@ -130,10 +130,14 @@ export default function MemberHomePage() {
           <NotificationBell variant="hero" />
         </div>
         <div className="hf-hero-body">
-          <span className="hf-avatar" aria-hidden="true">
+          {/* suppressHydrationWarning: the server pass has no AppProvider and
+              renders the signed-out shape ("M" / "there"), then the client
+              hydrates with the real profile. Both are correct for their pass;
+              without this React discards and re-renders the whole hero. */}
+          <span className="hf-avatar" aria-hidden="true" suppressHydrationWarning>
             {initials(profile?.firstName ?? '', profile?.lastName ?? '')}
           </span>
-          <h1>Hi {firstName}!</h1>
+          <h1 suppressHydrationWarning>Hi {firstName}!</h1>
           <p>What would you like to do today?</p>
           <button type="button" className="hf-city-pill" onClick={() => setCityOpen(true)}>
             <MapPin size={14} aria-hidden="true" />

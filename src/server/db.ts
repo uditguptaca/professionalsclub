@@ -1,5 +1,6 @@
 import 'server-only';
 import { Pool, type PoolClient } from '@neondatabase/serverless';
+import { schedulePush } from '@/server/push/schedule';
 
 /**
  * Database access.
@@ -126,6 +127,19 @@ async function run<T>(mode: Mode, fn: (db: Db) => Promise<T>, readOnly = false):
     }
     await client.query('COMMIT');
     client.release();
+    // A write committed, so a trigger may have written a notification. Nothing
+    // in the app layer can know that - notifications are produced entirely by
+    // Postgres triggers - so this is the only honest place to ask.
+    //
+    // Deliberately NOT the owner mode: the push drain itself runs elevated, so
+    // scheduling from there would have a drain schedule a drain, forever. The
+    // elevated call sites are counted and none of them produce notifications
+    // (signup profile create, delete own account, job-feed sync, email drain).
+    //
+    // Read-only transactions are excluded because a SELECT fires no trigger.
+    if (mode.kind === 'user' || mode.kind === 'anonymous') {
+      schedulePush();
+    }
     return result;
   } catch (error) {
     try {

@@ -1,10 +1,13 @@
 'use client';
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import {
   notificationCountsAction,
   markNotificationReadAction,
   markAllNotificationsReadAction,
 } from '@/app/actions/notifications';
+import { registerPushDeviceAction } from '@/app/actions/push';
+import { startPush, isNativePush } from '@/lib/push';
 import type { NotificationCounts } from '@/server/repos/notifications';
 
 /**
@@ -39,11 +42,41 @@ const NotificationContext = React.createContext<NotificationContextType | undefi
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const [counts, setCounts] = React.useState<NotificationCounts>(EMPTY);
+  const router = useRouter();
 
   const refresh = React.useCallback(async () => {
     const r = await notificationCountsAction();
     if (r.ok) setCounts(r.data);
   }, []);
+
+  /**
+   * Push registration, native shells only.
+   *
+   * This lives here rather than in a dedicated component because the provider
+   * is already mounted for the whole portal, is already the owner of the unread
+   * count, and is only ever rendered for a signed-in member - which is exactly
+   * the three things push registration needs. On a desktop browser isNativePush()
+   * is false and none of it runs.
+   */
+  React.useEffect(() => {
+    if (!isNativePush()) return;
+    void startPush({
+      onToken: async (token, platform) => {
+        const r = await registerPushDeviceAction(token, platform);
+        if (!r.ok) console.error('[push] could not register device:', r.error);
+      },
+      // A tapped notification carries the same in-app link the inbox row uses,
+      // so this lands on the conversation or post that caused it. Works from a
+      // cold start too: Capacitor replays the launch intent.
+      onOpen: (link) => {
+        void refresh();
+        router.push(link);
+      },
+      // Arrived while the app was open, so the OS showed nothing. The badge is
+      // the only cue the member gets.
+      onForeground: () => void refresh(),
+    });
+  }, [refresh, router]);
 
   React.useEffect(() => {
     let timer: ReturnType<typeof setInterval> | null = null;

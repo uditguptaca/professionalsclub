@@ -139,6 +139,38 @@ trigger that calls it with a sensible `category` and `group_key`, not new
 plumbing. Chat rows never carry message text (the body is "New message"), and
 opening a thread clears them inside `markChatRead`.
 
+**Push rides on the notification row, not a second queue (0038).** The row IS
+the queue: `pushed_at IS NULL` means a push is owed. `notify_member()` leaves it
+null on insert **and sets it back to null when it collapses onto an existing
+row**, so messages 2..12 of a conversation each buzz even though the inbox shows
+one line - a queue watching only INSERTs would go silent after the first. Push
+therefore inherits every rule notify_member enforces (no self-notification,
+silence between blocked members, `notification_prefs`, mute) instead of keeping a
+second copy to drift out of sync.
+
+Delivery is **at-most-once**: `claim_push_batch()` stamps `pushed_at` before the
+send, so a crash mid-flight drops that push rather than repeating it. For
+something already sitting in the member's inbox, a missed buzz beats a duplicate.
+Sending happens in `after()` at the end of the request whose write caused it
+(hooked once in `withUser`/`withAnon` in [src/server/db.ts](src/server/db.ts) -
+never the elevated path, or the drain would schedule itself forever). The hourly
+`/api/jobs/push` cron is a backstop for requests that died, not the delivery
+mechanism.
+
+**The fan-out must never hold a database connection.** `drainPush()` is
+deliberately claim (short transaction) -> HTTP with nothing held -> cleanup
+(short transaction). The pool is 8 and this runs after every authenticated write,
+so wrapping the sends in the claim's transaction would let one push storm stall
+every member request waiting on `pool.connect()`.
+
+**A push payload is lock-screen visible, so help-desk text is stripped.** Chat is
+safe by construction (the row says "New message"), but the help/volunteer/admin
+triggers put a request TITLE in the notification - and here those are immigration
+status, legal trouble, housing. `drainPush` substitutes a generic body for those
+categories, and the Android channel is `visibility: 0` (PRIVATE). Device tokens
+are treated like email addresses: no member session can read another member's,
+which is why the claim is `withElevated`.
+
 ## Styling
 
 One 4,300-line stylesheet, [src/app/globals.css](src/app/globals.css), in

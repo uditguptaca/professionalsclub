@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "emu": "node scripts/emu.mjs",
-    "app:dev": "node scripts/app-dev.mjs"
+    "app:dev": "node scripts/app-dev.mjs",
+    "fcm:key": "node scripts/fcm-key.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",

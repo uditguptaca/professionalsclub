@@ -7,6 +7,8 @@ import { readAuthError } from '@/lib/auth/errors';
 import { ConfirmProvider } from '@/components/portal/confirm';
 import { NotificationProvider, useNotifications } from '@/context/notification-context';
 import NotificationBell from '@/components/portal/NotificationBell';
+import { stopPush, registeredToken, isNativePush } from '@/lib/push';
+import { unregisterPushDeviceAction } from '@/app/actions/push';
 import type { UserRole } from '@/types';
 import {
   Home, HelpCircle, HandHeart, FileText, ClipboardList, MessageSquare,
@@ -66,6 +68,17 @@ function PortalChrome({
 
   const handleLogout = async () => {
     setSigningOut(true);
+    // Drop this device's token BEFORE the session goes away, or the action has
+    // no caller to authorise it. Otherwise the next person to open the app on a
+    // shared or handed-down phone keeps receiving this member's notifications.
+    if (isNativePush()) {
+      const token = registeredToken();
+      if (token) {
+        const r = await unregisterPushDeviceAction(token);
+        if (!r.ok) console.error('[push] could not remove this device:', r.error);
+      }
+      await stopPush();
+    }
     // signOut throws on failure like the rest of the client. Navigating anyway
     // is deliberate: if the cookie survived, the proxy sends the user straight
     // back to the dashboard, which is a truthful outcome.

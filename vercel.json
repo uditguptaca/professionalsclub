@@ -6,6 +6,10 @@
     {
       "path": "/api/jobs/refresh",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/jobs/push",
+      "schedule": "0 * * * *"
     }
   ]
 }
