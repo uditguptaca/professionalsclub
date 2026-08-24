@@ -68,9 +68,26 @@ final class PortalViewController: CAPBridgeViewController {
     private func maybeBounce() {
         guard !bounced,
               let url = webView?.url,
-              url.host == LoginViewController.origin.host,
-              url.path.hasPrefix("/portal/auth")
+              url.host == LoginViewController.origin.host
         else { return }
+
+        if let pending = startPath {
+            // Heading to a web-only flow (signup, password reset). Capacitor's
+            // default /portal/auth load races ours and, signed out, COMMITS -
+            // steer it to the requested page instead of bouncing. Once the
+            // target commits, the escort ends and the bounce rule resumes.
+            if url.path.hasPrefix("/portal/auth"),
+               let target = URL(string: pending, relativeTo: LoginViewController.origin) {
+                webView?.load(URLRequest(url: target))
+                return
+            }
+            if url.path.hasPrefix(pending) {
+                startPath = nil
+            }
+            return
+        }
+
+        guard url.path.hasPrefix("/portal/auth") else { return }
 
         // Exception: /portal/signup and /portal/forgot-password are deliberately
         // web pages a signed-out member reaches from the native login. Only the

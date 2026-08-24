@@ -24,6 +24,16 @@ import com.getcapacitor.BridgeWebViewClient;
 public class MainActivity extends BridgeActivity {
 
     private boolean bounced = false;
+    /**
+     * A web-only flow (signup, password reset) requested from the native
+     * login. Non-null until that page commits. While pending, the bounce is
+     * stood down and any /portal/auth commit is re-routed here instead:
+     * Capacitor always fires its default load of /portal/auth first, and for a
+     * signed-out member that page COMMITS - so without this, tapping "Create an
+     * account" raced the default load and usually lost, bouncing straight back
+     * to the native login.
+     */
+    private String pendingStartPath;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -34,9 +44,9 @@ public class MainActivity extends BridgeActivity {
 
         // "Create an account" / "Forgot password" from the native login open
         // the web flow at that path; everything else starts at the default URL.
-        String startPath = getIntent().getStringExtra(LoginActivity.EXTRA_START_PATH);
-        if (startPath != null) {
-            bridge.getWebView().loadUrl(origin + startPath);
+        pendingStartPath = getIntent().getStringExtra(LoginActivity.EXTRA_START_PATH);
+        if (pendingStartPath != null) {
+            bridge.getWebView().loadUrl(origin + pendingStartPath);
         }
 
         bridge.setWebViewClient(new BridgeWebViewClient(bridge) {
@@ -64,7 +74,25 @@ public class MainActivity extends BridgeActivity {
         if (bounced || url == null || !url.startsWith(origin)) return;
         Uri uri = Uri.parse(url);
         String path = uri.getPath();
-        if (path == null || !path.startsWith("/portal/auth")) return;
+        if (path == null) return;
+
+        if (pendingStartPath != null) {
+            // Heading to a web-only flow. The default /portal/auth load may
+            // commit before ours does - steer it to the requested page rather
+            // than treating it as a sign-out. Once the target commits, the
+            // escort ends and the normal bounce rule resumes (so finishing the
+            // flow and returning to /portal/auth lands on the NATIVE login).
+            if (path.startsWith("/portal/auth")) {
+                getBridge().getWebView().loadUrl(origin + pendingStartPath);
+                return;
+            }
+            if (path.startsWith(pendingStartPath)) {
+                pendingStartPath = null;
+            }
+            return;
+        }
+
+        if (!path.startsWith("/portal/auth")) return;
 
         // Exception: the signup and reset flows are deliberately web pages a
         // signed-out user reaches from the native login. Only the login page
