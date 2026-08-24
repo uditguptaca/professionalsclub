@@ -6,6 +6,7 @@ import { fetchHomeFeed, updateMyCity } from '@/app/actions/portal';
 import { followMember, unfollowMember } from '@/app/actions/chat';
 import type { HomeFeed } from '@/server/repos/home';
 import { COMMUNITY_CITIES, cityInfo } from '@/lib/cities';
+import NotificationBell from '@/components/portal/NotificationBell';
 import { readCache, writeCache } from '@/lib/swr-cache';
 import {
   MapPin, ChevronDown, Calendar, Users, ArrowRight, Briefcase, ShieldCheck,
@@ -91,7 +92,6 @@ export default function MemberHomePage() {
     const cached = readCache<HomeFeed>('home-feed');
     if (cached) setFeed(cached);
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const city = useMemo(() => cityInfo(feed?.city), [feed?.city]);
@@ -126,6 +126,9 @@ export default function MemberHomePage() {
       <header className="hf-hero">
         <img src={city.skyline} alt="" aria-hidden="true" className="hf-hero-img" />
         <div className="hf-hero-scrim" aria-hidden="true" />
+        <div className="hf-hero-top">
+          <NotificationBell variant="hero" />
+        </div>
         <div className="hf-hero-body">
           <span className="hf-avatar" aria-hidden="true">
             {initials(profile?.firstName ?? '', profile?.lastName ?? '')}

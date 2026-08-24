@@ -3706,6 +3706,12 @@ a.portal-sheet-user:active { background: var(--green-900, #14532d); }
   position: absolute; inset: 0;
   background: linear-gradient(180deg, rgba(15,35,24,0.55) 0%, rgba(15,35,24,0.35) 45%, var(--bg-secondary) 100%);
 }
+.hf-hero-top {
+  position: absolute;
+  top: calc(0.85rem + var(--sat));
+  right: clamp(1rem, 3vw, 2.5rem);
+  z-index: 2;
+}
 .hf-hero-body { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
 .hf-avatar {
   display: grid; place-items: center;
@@ -4072,4 +4078,245 @@ a.portal-sheet-user:active { background: var(--green-900, #14532d); }
 @media (prefers-reduced-motion: reduce) {
   .pp-toast { animation: none; }
   .pp-ring-fill { transition: none; }
+}
+
+
+/* ===== NOTIFICATIONS (nt-) ================================================== */
+/* The inbox and its entry points. Rows are quiet once read and carry a warm
+   tint while unread, so a glance down the list finds the new things without
+   reading a word of it. */
+
+/* --- The bell ---------------------------------------------------------------- */
+.nt-bell {
+  position: relative;
+  display: inline-grid; place-items: center;
+  width: 2.15rem; height: 2.15rem;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  flex: none;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.nt-bell:hover { background: var(--bg-secondary); color: var(--text-primary); }
+.nt-bell.is-hero {
+  width: 2.5rem; height: 2.5rem;
+  border-color: rgba(255,255,255,0.35);
+  background: rgba(15,35,24,0.55);
+  color: #fff;
+  backdrop-filter: blur(6px);
+}
+.nt-bell.is-hero:hover { background: rgba(15,35,24,0.78); color: #fff; }
+.nt-bell-dot {
+  position: absolute; top: -2px; right: -3px;
+  min-width: 1.05rem; height: 1.05rem; padding: 0 0.22rem;
+  display: grid; place-items: center;
+  border-radius: 99px;
+  background: var(--primary-700); color: #fff;
+  font-size: 0.62rem; font-weight: 800; line-height: 1;
+  border: 2px solid var(--bg-primary);
+}
+.nt-bell.is-hero .nt-bell-dot { border-color: rgba(15,35,24,0.85); }
+
+/* A count on the phone tab bar, and one on a More-sheet row. */
+.tabbar-item { position: relative; }
+.tabbar-dot {
+  position: absolute; top: 0.28rem; left: 50%;
+  transform: translateX(0.35rem);
+  min-width: 1rem; height: 1rem; padding: 0 0.2rem;
+  display: grid; place-items: center;
+  border-radius: 99px;
+  background: var(--primary-700); color: #fff;
+  font-size: 0.6rem; font-weight: 800; line-height: 1;
+}
+.nt-row-count {
+  margin-left: auto;
+  min-width: 1.25rem; height: 1.25rem; padding: 0 0.3rem;
+  display: grid; place-items: center;
+  border-radius: 99px;
+  background: var(--primary-700); color: #fff;
+  font-size: 0.68rem; font-weight: 800;
+}
+
+/* --- Header actions ---------------------------------------------------------- */
+.nt-action {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.42rem 0.7rem; min-height: 2.1rem;
+  border: 1px solid var(--border-color); border-radius: 99px;
+  background: var(--bg-primary); color: var(--text-secondary);
+  font: inherit; font-size: 0.8rem; font-weight: 700;
+  cursor: pointer; white-space: nowrap;
+}
+.nt-action:hover { background: var(--bg-secondary); color: var(--text-primary); }
+
+/* --- Module filter ---------------------------------------------------------- */
+.nt-filters {
+  display: flex; gap: 0.4rem;
+  overflow-x: auto; scrollbar-width: none;
+  margin: 0 -0.2rem 0.9rem; padding: 0.15rem 0.2rem 0.35rem;
+}
+.nt-filters::-webkit-scrollbar { display: none; }
+/* On a phone the row swipes sideways; on a desk there is width to spare, so
+   wrap instead of hiding half the modules behind a scroll nobody notices. */
+@media (min-width: 1024px) {
+  .nt-filters { flex-wrap: wrap; overflow-x: visible; }
+}
+.nt-filter {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.42rem 0.75rem; min-height: 2.1rem;
+  border: 1px solid var(--border-color); border-radius: 99px;
+  background: var(--bg-primary); color: var(--text-secondary);
+  font: inherit; font-size: 0.8rem; font-weight: 700;
+  cursor: pointer; white-space: nowrap; flex: none;
+}
+.nt-filter:hover { background: var(--bg-secondary); }
+.nt-filter.is-on {
+  background: var(--green-950); border-color: var(--green-950); color: #fff;
+}
+.nt-filter-n {
+  min-width: 1.15rem; padding: 0 0.28rem;
+  border-radius: 99px;
+  background: var(--primary-700); color: #fff;
+  font-size: 0.65rem; font-weight: 800; line-height: 1.15rem;
+  text-align: center;
+}
+.nt-filter.is-on .nt-filter-n { background: rgba(255,255,255,0.24); }
+
+/* --- The list --------------------------------------------------------------- */
+.nt-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.nt-row {
+  display: flex; align-items: flex-start; gap: 0.7rem;
+  width: 100%; padding: 0.8rem 0.85rem;
+  border: 1px solid var(--border-color); border-radius: 0.9rem;
+  background: var(--bg-primary);
+  font: inherit; text-align: left; cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+.nt-row:hover { background: var(--bg-secondary); }
+.nt-row.is-unread {
+  background: rgba(232, 93, 4, 0.045);
+  border-color: rgba(232, 93, 4, 0.2);
+}
+.nt-row.is-unread:hover { background: rgba(232, 93, 4, 0.085); }
+
+.nt-avatar {
+  position: relative; flex: none;
+  display: grid; place-items: center;
+  width: 2.5rem; height: 2.5rem; border-radius: 50%;
+  background: var(--green-950); color: #fff;
+  font-size: 0.82rem; font-weight: 800;
+}
+/* One hue per module, so the eye learns the shape of each kind of news. */
+.nt-avatar.cat-chat      { background: #1b4332; }
+.nt-avatar.cat-social    { background: #2d6a4f; }
+.nt-avatar.cat-referral  { background: #b45309; }
+.nt-avatar.cat-matrimony { background: #9d174d; }
+.nt-avatar.cat-community { background: #1e4e8c; }
+.nt-avatar.cat-help      { background: #6d28d9; }
+.nt-avatar.cat-volunteer { background: #0f766e; }
+.nt-avatar.cat-event     { background: #a16207; }
+.nt-avatar.cat-admin     { background: #334155; }
+.nt-avatar-badge {
+  position: absolute; right: -2px; bottom: -2px;
+  display: grid; place-items: center;
+  width: 1.05rem; height: 1.05rem; border-radius: 50%;
+  background: var(--bg-primary); color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.nt-row-body { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; flex: 1; }
+.nt-row-top { display: flex; align-items: baseline; gap: 0.5rem; }
+.nt-row-top strong {
+  font-size: 0.9rem; font-weight: 750; color: var(--text-primary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nt-row-top small { margin-left: auto; flex: none; font-size: 0.72rem; color: var(--text-muted); }
+.nt-row-sub {
+  font-size: 0.82rem; color: var(--text-secondary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nt-row-meta {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.7rem; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.nt-count {
+  padding: 0.05rem 0.4rem; border-radius: 99px;
+  background: rgba(232, 93, 4, 0.12); color: var(--text-accent);
+  letter-spacing: 0; text-transform: none; font-size: 0.68rem;
+}
+.nt-dot {
+  flex: none; align-self: center;
+  width: 0.5rem; height: 0.5rem; border-radius: 50%;
+  background: var(--primary-600);
+}
+.nt-foot {
+  margin: 0.9rem 0 0; font-size: 0.78rem; color: var(--text-muted); text-align: center;
+}
+
+/* --- Empty state ------------------------------------------------------------ */
+.nt-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 0.45rem;
+  padding: 2.6rem 1.2rem;
+  border: 1px dashed var(--border-color); border-radius: 1rem;
+  background: var(--bg-primary); text-align: center;
+}
+.nt-empty-icon {
+  display: grid; place-items: center;
+  width: 3.1rem; height: 3.1rem; border-radius: 50%;
+  background: var(--bg-secondary); color: var(--primary-600);
+  margin-bottom: 0.2rem;
+}
+.nt-empty strong { font-size: 1rem; font-weight: 750; color: var(--text-primary); }
+.nt-empty p { margin: 0; max-width: 26rem; font-size: 0.85rem; color: var(--text-secondary); }
+.nt-empty .btn { margin-top: 0.6rem; }
+
+/* --- Preferences sheet ------------------------------------------------------ */
+.nt-prefs { list-style: none; margin: 0; padding: 0; }
+.nt-prefs li {
+  display: flex; align-items: center; gap: 0.7rem;
+  padding: 0.75rem 0.1rem;
+  border-bottom: 1px solid rgba(27,67,50,0.08);
+}
+.nt-prefs li:last-child { border-bottom: 0; }
+.nt-pref-icon {
+  flex: none; display: grid; place-items: center;
+  width: 2.1rem; height: 2.1rem; border-radius: 0.65rem;
+  background: var(--bg-secondary); color: var(--primary-600);
+}
+.nt-pref-copy { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.nt-pref-copy strong { font-size: 0.9rem; font-weight: 750; color: var(--text-primary); }
+.nt-pref-copy small { font-size: 0.76rem; color: var(--text-secondary); }
+.nt-switch {
+  flex: none; position: relative;
+  width: 2.7rem; height: 1.55rem; padding: 0;
+  border: 1px solid var(--border-color); border-radius: 99px;
+  background: #e5e7eb;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+.nt-switch.is-on { background: var(--green-950); border-color: var(--green-950); }
+.nt-switch:disabled { opacity: 0.6; cursor: progress; }
+.nt-switch-knob {
+  position: absolute; top: 50%; left: 0.16rem;
+  transform: translateY(-50%);
+  width: 1.15rem; height: 1.15rem; border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  transition: left 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.nt-switch.is-on .nt-switch-knob { left: calc(100% - 1.31rem); }
+.nt-prefs-note {
+  margin: 0.8rem 0 0; font-size: 0.76rem; color: var(--text-muted); line-height: 1.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nt-switch-knob, .nt-row, .nt-bell { transition: none; }
+}
+
+/* The sheet sits under the fixed phone tab bar, so its last rows need to clear
+   it. Above 1024px there is no tab bar and the normal padding is right. */
+.nt-sheet { padding-bottom: calc(1.1rem + var(--sab)); }
+@media (max-width: 1023px) {
+  .nt-sheet { padding-bottom: calc(5.4rem + var(--sab)); }
 }

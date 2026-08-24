@@ -5,12 +5,15 @@ import { usePathname, useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth/client';
 import { readAuthError } from '@/lib/auth/errors';
 import { ConfirmProvider } from '@/components/portal/confirm';
+import { NotificationProvider, useNotifications } from '@/context/notification-context';
+import NotificationBell from '@/components/portal/NotificationBell';
 import type { UserRole } from '@/types';
 import {
   Home, HelpCircle, HandHeart, FileText, ClipboardList, MessageSquare,
   LogOut, BarChart3, Users, FolderKanban, Shield, ScrollText,
   UserCircle, Building2, Inbox, BookOpen, Calendar,
   UsersRound, Newspaper, Heart, Briefcase, X, LayoutGrid, ChevronRight, Megaphone, Mail, Send, MessageCircle,
+  Bell,
 } from 'lucide-react';
 
 /**
@@ -29,7 +32,21 @@ import {
 
 type NavLink = { label: string; href: string; icon: typeof Home };
 
-export default function PortalShell({
+export default function PortalShell(props: {
+  role: UserRole;
+  userName: string;
+  children: React.ReactNode;
+}) {
+  // The provider wraps the chrome, not just the page: the tab bar and the
+  // More sheet carry unread badges, so they are consumers too.
+  return (
+    <NotificationProvider>
+      <PortalChrome {...props} />
+    </NotificationProvider>
+  );
+}
+
+function PortalChrome({
   role,
   userName,
   children,
@@ -39,6 +56,7 @@ export default function PortalShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { counts } = useNotifications();
   const router = useRouter();
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const [signingOut, setSigningOut] = React.useState(false);
@@ -93,6 +111,7 @@ export default function PortalShell({
     { label: 'Events', href: '/portal/member/events', icon: Calendar },
     { label: 'Chats', href: '/portal/member/chats', icon: MessageCircle },
     { label: 'Referrals', href: '/portal/member/referrals', icon: Send },
+    { label: 'Notifications', href: '/portal/member/notifications', icon: Bell },
     { label: 'My Profile', href: '/portal/member/profile', icon: UserCircle },
     ...(isMatrimonyEnabled ? [{ label: 'Matrimony', href: '/portal/member/matrimony', icon: Heart }] : []),
     { label: 'Request Help', href: '/portal/member/request-help', icon: HelpCircle },
@@ -118,6 +137,7 @@ export default function PortalShell({
     { label: 'Audit Logs', href: '/portal/admin/audit', icon: ScrollText },
     { label: 'Businesses', href: '/portal/admin/businesses', icon: Building2 },
     { label: 'Biz Requests', href: '/portal/admin/business-requests', icon: Inbox },
+    { label: 'Notifications', href: '/portal/member/notifications', icon: Bell },
   ];
 
   const adminContentLinks: NavLink[] = [
@@ -151,10 +171,15 @@ export default function PortalShell({
           { title: 'Content manager', links: adminContentLinks },
         ]
       : [
+          { title: 'Activity', links: pick(memberLinks, ['/notifications']) },
           { title: 'Career & connections', links: pick(memberLinks, ['/referrals', '/businesses', '/matrimony']) },
           { title: 'Help desk', links: pick(memberLinks, ['/request-help', '/my-requests', '/messages']) },
           { title: 'Volunteering', links: pick(memberLinks, ['/volunteer', '/my-volunteer']) },
         ];
+
+  // Chats carries its own count, so More badges what is left. Otherwise the
+  // same message would be counted twice on one bar.
+  const moreBadge = Math.max(0, counts.total - (counts.byCategory.chat ?? 0));
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
@@ -224,6 +249,7 @@ export default function PortalShell({
           </div>
 
           <div className="portal-topbar-user">
+            <NotificationBell />
             <span className="portal-user-chip">
               <UserCircle size={14} aria-hidden="true" /> {userName}
             </span>
@@ -241,9 +267,15 @@ export default function PortalShell({
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const active = isActive(tab.href);
+          // Chats badges its own unread; everything else that made noise is
+          // counted on More, which is where the inbox lives on a phone.
+          const badge = tab.href.endsWith('/chats') ? (counts.byCategory.chat ?? 0) : 0;
           return (
             <Link key={tab.href} href={tab.href} className={`tabbar-item ${active ? 'active' : ''}`} aria-current={active ? 'page' : undefined}>
               <Icon size={21} aria-hidden="true" />
+              {badge > 0 && (
+                <span className="tabbar-dot" aria-label={`${badge} unread`}>{badge > 9 ? '9+' : badge}</span>
+              )}
               <span>{tab.label.replace('Dashboard', 'Home').replace('Overview', 'Home').replace('My Requests', 'Requests').replace('Request Help', 'Get Help').replace('Message Center', 'Messages').replace('Admin Messages', 'Messages')}</span>
             </Link>
           );
@@ -257,6 +289,9 @@ export default function PortalShell({
           aria-controls="portal-more-sheet"
         >
           <LayoutGrid size={21} aria-hidden="true" />
+          {moreBadge > 0 && (
+            <span className="tabbar-dot" aria-label={`${moreBadge} unread`}>{moreBadge > 9 ? '9+' : moreBadge}</span>
+          )}
           <span>More</span>
         </button>
       </nav>
@@ -304,6 +339,9 @@ export default function PortalShell({
                       <Link key={link.href} href={link.href} className={isActive(link.href) ? 'active' : undefined}>
                         <Icon size={18} aria-hidden="true" />
                         <span>{link.label}</span>
+                        {link.href.endsWith('/notifications') && counts.total > 0 && (
+                          <span className="nt-row-count">{counts.total > 99 ? '99+' : counts.total}</span>
+                        )}
                         <ChevronRight size={15} aria-hidden="true" className="sheet-arrow" />
                       </Link>
                     );

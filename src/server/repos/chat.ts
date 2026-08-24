@@ -512,6 +512,14 @@ export async function markChatRead(userId: string, conversationId: string): Prom
         where conversation_id = $1 and sender_id <> $2 and read_at is null`,
       [conversationId, userId]
     );
+    // The thread is open and read, so its inbox row has served its purpose.
+    // Same group_key member_messages_notify collapses on (0032); clearing it
+    // here is what stops the bell counting messages the member just read.
+    await db.run(
+      `update public.in_app_notifications set is_read = true
+        where user_id = $1 and group_key = $2 and not is_read`,
+      [userId, `chat:${conversationId}`]
+    );
   });
 }
 

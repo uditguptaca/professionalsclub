@@ -121,6 +121,24 @@ deliberate 2026-08-21 product decision that replaced the old anonymous fan-out
 A referral request opens a member chat carrying a referral card;
 `referral_direct_requests` is gated by RLS (seeker inserts, insider answers).
 
+**Notifications are produced only by triggers (0031-0037).** Every in-app
+notification is written by a `SECURITY DEFINER` trigger calling
+`notify_member()`, which is deliberately **not** executable by
+`app_authenticated` — a member-callable notifier is a phishing endpoint (any
+title, any link, into anyone's inbox), and 0033 dropped the old `notify_user()`
+that was exactly that. There is no "send a notification" Server Action, and
+there must never be one. A member's grant on `in_app_notifications` is SELECT
+plus `update (is_read)` only.
+
+`notify_member()` centralises the rules every producer needs: never notify the
+actor about their own action, stay silent between blocked members, honour
+`notification_prefs`, and **collapse** on `group_key` — twelve messages in one
+chat become one unread row with `event_count = 12`, enforced by the partial
+unique index `uq_notifications_group_live`. Adding a module event means adding a
+trigger that calls it with a sensible `category` and `group_key`, not new
+plumbing. Chat rows never carry message text (the body is "New message"), and
+opening a thread clears them inside `markChatRead`.
+
 ## Styling
 
 One 4,300-line stylesheet, [src/app/globals.css](src/app/globals.css), in
