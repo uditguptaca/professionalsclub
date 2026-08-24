@@ -31,8 +31,10 @@ final class LoginViewController: UIViewController {
      */
     private static let sessionMarker = "neon-auth.session_token"
 
-    /// capacitor.config.json `ios.backgroundColor`.
-    static let brand = UIColor(red: 0x0f / 255, green: 0x23 / 255, blue: 0x18 / 255, alpha: 1)
+    /// The warm cream the portal itself sits on (bg-secondary, #FFF7ED).
+    static let brand = UIColor(red: 0xff / 255, green: 0xf7 / 255, blue: 0xed / 255, alpha: 1)
+    static let ink = UIColor(red: 0x0c / 255, green: 0x0c / 255, blue: 0x0e / 255, alpha: 1)
+    static let muted = UIColor(red: 0x78 / 255, green: 0x71 / 255, blue: 0x6c / 255, alpha: 1)
 
     /**
      The origin the shell points at, read from the same bundled config the
@@ -307,13 +309,13 @@ final class LoginViewController: UIViewController {
         let title = UILabel()
         title.text = "Professionals Club"
         title.font = .systemFont(ofSize: 28, weight: .bold)
-        title.textColor = .white
+        title.textColor = Self.ink
         title.numberOfLines = 0
 
         let subtitle = UILabel()
         subtitle.text = "Sign in to your member portal."
         subtitle.font = .systemFont(ofSize: 15)
-        subtitle.textColor = UIColor(white: 1, alpha: 0.8)
+        subtitle.textColor = Self.muted
         subtitle.numberOfLines = 0
 
         style(emailField, placeholder: "Email", label: "Email address")
@@ -338,7 +340,7 @@ final class LoginViewController: UIViewController {
 
         // Failures are surfaced inline and never clear what the member typed.
         errorLabel.font = .systemFont(ofSize: 14)
-        errorLabel.textColor = UIColor(red: 1, green: 0.72, blue: 0.68, alpha: 1)
+        errorLabel.textColor = UIColor(red: 0xb3 / 255, green: 0x26 / 255, blue: 0x1e / 255, alpha: 1)
         errorLabel.numberOfLines = 0
         errorLabel.isHidden = true
 
@@ -365,21 +367,21 @@ final class LoginViewController: UIViewController {
     private func style(_ field: UITextField, placeholder: String, label: String) {
         // The placeholder is decoration, not a label; give assistive tech a real one.
         field.accessibilityLabel = label
-        field.backgroundColor = UIColor(white: 1, alpha: 0.1)
-        field.textColor = .white
+        field.backgroundColor = .white
+        field.textColor = Self.ink
         field.borderStyle = .roundedRect
         field.delegate = self
         field.heightAnchor.constraint(equalToConstant: 48).isActive = true
         field.attributedPlaceholder = NSAttributedString(
             string: placeholder,
-            attributes: [.foregroundColor: UIColor(white: 1, alpha: 0.55)]
+            attributes: [.foregroundColor: UIColor(red: 0xa8 / 255, green: 0xa2 / 255, blue: 0x9e / 255, alpha: 1)]
         )
     }
 
     private func link(_ text: String, _ action: Selector) -> UIButton {
         let button = UIButton(type: .system)
         button.setTitle(text, for: .normal)
-        button.setTitleColor(.white, for: .normal)
+        button.setTitleColor(Self.muted, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 15)
         button.contentHorizontalAlignment = .leading
         button.addTarget(self, action: action, for: .touchUpInside)

@@ -17,12 +17,17 @@
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+        <item name="android:background">@drawable/bg_splash</item>
+        <item name="windowSplashScreenBackground">@color/loginBackground</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
     <style name="LoginTheme" parent="AppTheme.NoActionBar">
         <item name="android:windowBackground">@color/loginBackground</item>
         <item name="android:statusBarColor">@color/loginBackground</item>
         <item name="android:navigationBarColor">@color/loginBackground</item>
-        <item name="android:windowLightStatusBar">false</item>
+        <!-- Light ground, so status/navigation icons must be dark. -->
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
     </style>
 </resources>
