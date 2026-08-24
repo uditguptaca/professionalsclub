@@ -68,7 +68,14 @@ export interface MyMatrimonyData {
  * every table to the caller's own row.
  */
 export async function getMine(userId: string): Promise<MyMatrimonyData> {
-  return withUserRead(userId, async (db) => {
+  return withUserRead(userId, (db) => mineOn(db, userId));
+}
+
+/**
+ * The `…On(db, …)` variants below carry no transaction of their own, so
+ * matrimonyStart can run them on ONE connection.
+ */
+export async function mineOn(db: Db, userId: string): Promise<MyMatrimonyData> {
     const row = await one<{
       profile: MatrimonyProfile | null;
       preferences: MatrimonyPreferences | null;
@@ -97,6 +104,79 @@ export async function getMine(userId: string): Promise<MyMatrimonyData> {
       preferences: row.preferences ? norm<MatrimonyPreferences>(row.preferences) : null,
       contact: row.contact ? norm<MatrimonyContact>(row.contact) : null,
       media: normAll<MatrimonyMedia>(row.media ?? []),
+    };
+}
+
+/**
+ * The matrimony tab's whole first paint: my own listing (with its media, so
+ * the header avatar is there) and the swipe deck.
+ *
+ * ONE statement. The page used to await getMyMatrimony() and only THEN
+ * listDeck(), which itself first had to look up my own profile id - a gated
+ * waterfall three round trips deep, to a remote database, with the whole page
+ * waiting on it. The `mine` CTE gives every branch the profile id and gender
+ * the deck needs, so nothing waits for anything.
+ *
+ * Other members' listings still come only from matrimony_visible_profiles.
+ */
+export async function matrimonyStart(userId: string): Promise<{
+  mine: MyMatrimonyData;
+  deck: MatrimonyDeckCard[];
+}> {
+  return withUserRead(userId, async (db) => {
+    const row = await one<{
+      profile: MatrimonyProfile | null;
+      preferences: MatrimonyPreferences | null;
+      contact: MatrimonyContact | null;
+      media: MatrimonyMedia[] | null;
+      deck: MatrimonyDeckCard[] | null;
+    }>(
+      await db`
+        with mine as (
+          select * from public.matrimony_profiles where user_id = ${userId}::uuid
+        )
+        select
+          (select to_json(m) from mine m) as profile,
+          (select to_json(p) from public.matrimony_preferences p
+            where p.profile_id = (select id from mine)) as preferences,
+          (select to_json(c) from public.matrimony_contacts c
+            where c.profile_id = (select id from mine)) as contact,
+          (select json_agg(md) from public.matrimony_media md
+            where md.profile_id = (select id from mine)) as media,
+          (select json_agg(t) from (
+            select v.*, i.id as incoming_interest_id
+              from public.matrimony_visible_profiles v
+              left join public.matrimony_interests i
+                on i.sender_profile_id = v.id
+               and i.receiver_profile_id = (select id from mine)
+               and i.status = 'pending'
+             where v.id <> (select id from mine)
+               -- Gender is stored 'Male'/'Female', so compare case-insensitively.
+               and lower(v.gender) is distinct from (select lower(gender) from mine)
+               and not exists (select 1 from public.matrimony_passes x
+                                where x.owner_profile_id = (select id from mine)
+                                  and x.target_profile_id = v.id)
+               and not exists (select 1 from public.matrimony_interests sn
+                                where sn.sender_profile_id = (select id from mine)
+                                  and sn.receiver_profile_id = v.id)
+               and not public.has_accepted_interest((select id from mine), v.id)
+             order by (i.id is not null) desc, v.last_active_at desc nulls last
+             limit 40
+          ) t) as deck
+      `
+    );
+
+    if (!row?.profile) {
+      return { mine: { profile: null, preferences: null, contact: null, media: [] }, deck: [] };
+    }
+    return {
+      mine: {
+        profile: norm<MatrimonyProfile>(row.profile),
+        preferences: row.preferences ? norm<MatrimonyPreferences>(row.preferences) : null,
+        contact: row.contact ? norm<MatrimonyContact>(row.contact) : null,
+        media: normAll<MatrimonyMedia>(row.media ?? []),
+      },
+      deck: normAll<MatrimonyDeckCard>(row.deck ?? []),
     };
   });
 }
@@ -619,9 +699,13 @@ export interface PopulatedConversation extends MatrimonyConversation {
  * default, matching the product's matrimonial intent.
  */
 export async function listDeck(userId: string): Promise<MatrimonyDeckCard[]> {
-  return withUserRead(userId, async (db) => {
-    const mine = await myProfileId(db);
-    if (!mine) return [];
+  return withUserRead(userId, (db) => deckOn(db, userId));
+}
+
+export async function deckOn(db: Db, userId: string): Promise<MatrimonyDeckCard[]> {
+  const mine = await myProfileId(db);
+  if (!mine) return [];
+  {
 
     const rows = await db`
       select v.*, i.id as incoming_interest_id
@@ -642,7 +726,7 @@ export async function listDeck(userId: string): Promise<MatrimonyDeckCard[]> {
        limit 40
     `;
     return normAll<MatrimonyDeckCard>(rows);
-  });
+  }
 }
 
 /** Swipe left: hide this profile from the deck. Idempotent. */

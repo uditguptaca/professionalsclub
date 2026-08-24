@@ -55,6 +55,29 @@ const nextConfig: NextConfig = {
   // production builds.
   allowedDevOrigins: ['192.168.1.3', '10.0.2.2', '192.168.1.10'],
 
+  /**
+   * Client Router Cache lifetimes.
+   *
+   * Every portal route is force-dynamic (the root layout reads cookies), and
+   * Next's default for a dynamic segment is `dynamic: 0` — no client cache at
+   * all. So tapping Community, then Jobs, then Community again refetched the
+   * RSC payload all three times, on top of whatever data the page asked for.
+   *
+   * 120s is the window a member actually moves around the tab bar in. It only
+   * governs the RSC payload; every page still revalidates its own data through
+   * its start action on mount, so nothing here can show stale content for
+   * longer than one round trip. `static` is the floor Next allows (>= 30s) and
+   * is what router.prefetch() results are held under.
+   *
+   * Confirmed present in this version: next@16.2.3 declares
+   * experimental.staleTimes in server/config-shared.d.ts and validates it in
+   * config-schema — see node_modules/next/dist/docs/01-app/03-api-reference/
+   * 05-config/01-next-config-js/staleTimes.md.
+   */
+  experimental: {
+    staleTimes: { dynamic: 120, static: 180 },
+  },
+
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

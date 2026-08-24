@@ -2467,7 +2467,7 @@ tr:last-child td { border-bottom: none; }
   content: '';
   position: absolute;
   inset: 0;
-  background: url('/toronto-skyline.png') center/cover no-repeat;
+  background: url('/toronto-skyline.webp') center/cover no-repeat;
   opacity: 0.08;
   z-index: 0;
 }
@@ -4302,3 +4302,326 @@ tr:last-child td { border-bottom: none; }
 
 
 
+
+/* ===== SIGNUP MOBILE ===== */
+/* The signup wizard renders inside the Android/iOS WebView shells reached from
+   the native login screen's "Create an account" link. Everything here is scoped
+   to `.onboarding-page` because `.chip`, `.form-grid-2` and friends are global
+   utilities used on twenty-odd other pages. Desktop is untouched apart from the
+   logo size, which moved out of an inline style so the phone can shrink it. */
+
+.onboarding-page .onboarding-logo img {
+  width: 32px;
+  height: 32px;
+}
+/* Above 768px the wrapper adds no box of its own, so the header, the progress
+   strip and the step row lay out exactly as they did before it existed. */
+.onboarding-signup-top {
+  display: contents;
+}
+/* Only ever visible under 768px, where it replaces the seven-icon step row. */
+.onboarding-mobile-progress {
+  display: none;
+}
+/* Lifted verbatim out of an inline style on the signup form's role="alert" so
+   the phone layout can pin it above the fixed action bar. */
+.onboarding-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--error-600);
+  background: rgba(240, 73, 35, 0.1);
+}
+
+@media (max-width: 768px) {
+  /* Full-height column so a short step still fills the screen instead of
+     ending in a white seam above the pinned action bar. */
+  .onboarding-page {
+    /* The two fixed bars' heights, excluding the safe-area insets — these are
+       what keeps content out from under them. Measured, then rounded up:
+       top = 60 header + 35.4 step row + 3 progress strip; bottom = 11 + 52
+       button + 11 + 1 border. Re-measure if either bar's contents change. */
+    --signup-top-h: 99px;
+    --signup-bar-h: 75px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: linear-gradient(180deg, #fff7ed 0%, #ffffff 140px);
+  }
+
+  /* ─── Pinned top bar: header + step label + progress ─── */
+  /* Fixed rather than sticky: `body` carries `overflow-x: hidden`, so its used
+     overflow-y is `auto` and body — which never scrolls, html does — is the
+     nearest scrolling ancestor. Sticky inside it never activates, which is why
+     the old sticky header scrolled away on a phone. */
+  .onboarding-page .onboarding-signup-top {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    /* Opaque, not translucent: form copy scrolling under a frosted bar was
+       still legible through it and read as a rendering fault. */
+    background: #fff;
+  }
+  /* The status bar sat on top of the logo in the native shell: the shell writes
+     the real inset onto <body>, --sat picks up whichever of env()/that is
+     larger. The 3px progress strip below doubles as the bar's bottom border. */
+  .onboarding-page .onboarding-header {
+    position: static;
+    min-height: calc(60px + var(--sat, 0px));
+    padding: calc(9px + var(--sat, 0px)) 16px 7px;
+    background: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom: 0;
+    gap: 12px;
+  }
+  .onboarding-page .onboarding-logo {
+    font-size: 0.9rem;
+    gap: 8px;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .onboarding-page .onboarding-logo img {
+    width: 26px;
+    height: 26px;
+  }
+  /* "Already have an account?" wrapped to a second line and put the link under
+     the camera cutout. Two words cannot wrap. */
+  .onboarding-page .login-link-prefix {
+    display: none;
+  }
+  .onboarding-page .onboarding-login-link {
+    flex: none;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-left: 8px;
+  }
+
+  .onboarding-page .onboarding-mobile-progress {
+    order: 1;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 34px;
+    padding: 0 16px 9px;
+  }
+  .onboarding-page .omp-name {
+    order: -1;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+  }
+  .onboarding-page .omp-count {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-accent);
+    white-space: nowrap;
+  }
+  .onboarding-page .onboarding-progress-bar {
+    order: 2;
+    height: 3px;
+  }
+  /* Seven icons wrapped onto two lines and read as clutter. */
+  .onboarding-page .onboarding-steps {
+    display: none;
+  }
+
+  /* ─── Form: edge-to-edge, native-feeling ─── */
+  .onboarding-page .onboarding-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-width: none;
+    /* Clearance for the fixed top bar. */
+    padding: calc(var(--signup-top-h) + var(--sat, 0px)) 0 0;
+  }
+  .onboarding-page .onboarding-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    /* Clearance for the fixed action bar, so the last field is never under it. */
+    padding: 22px 18px calc(var(--signup-bar-h) + 12px + var(--sab, 0px));
+  }
+  .onboarding-page .onboarding-step-content {
+    flex: 1;
+    gap: 18px;
+  }
+  .onboarding-page .step-header h2 {
+    font-size: 1.4rem;
+    line-height: 1.25;
+  }
+  .onboarding-page .step-header p {
+    font-size: 0.9rem;
+  }
+
+  .onboarding-page .form-field label {
+    font-size: 0.85rem;
+  }
+  /* 1rem is the floor: iOS Safari zooms the whole page on focus below 16px. */
+  .onboarding-page .form-input {
+    font-size: 1rem;
+    min-height: 50px;
+    padding: 13px 14px;
+    border-radius: 12px;
+  }
+  .onboarding-page .select-wrapper .form-input {
+    padding-right: 42px;
+  }
+  .onboarding-page .form-textarea {
+    min-height: 100px;
+  }
+  .onboarding-page .form-grid-2,
+  .onboarding-page .form-grid-3 {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .onboarding-page .input-with-icon .form-input {
+    padding-right: 50px;
+  }
+  .onboarding-page .input-icon-btn {
+    right: 4px;
+    width: 44px;
+    height: 44px;
+  }
+  .onboarding-page .field-hint {
+    font-size: 0.78rem;
+  }
+
+  .onboarding-page .chip,
+  .onboarding-page .chip-grid.compact .chip {
+    min-height: 46px;
+    font-size: 0.9rem;
+    padding: 11px 16px;
+  }
+
+  /* Icon beside the copy instead of above it: three stacked squares of centred
+     text is a lot of vertical scroll for one radio group. */
+  .onboarding-page .intent-cards {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .onboarding-page .intent-card {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 3px 14px;
+    text-align: left;
+    padding: 16px 46px 16px 16px;
+    border-radius: 14px;
+  }
+  .onboarding-page .intent-emoji {
+    grid-row: 1 / span 2;
+    display: flex;
+    align-items: center;
+  }
+  .onboarding-page .intent-title,
+  .onboarding-page .intent-desc {
+    grid-column: 2;
+  }
+  .onboarding-page .intent-desc {
+    font-size: 0.8rem;
+  }
+  .onboarding-page .intent-check {
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
+  }
+  .onboarding-page .intent-section {
+    padding: 16px;
+  }
+
+  .onboarding-page .consent-item {
+    padding: 13px 12px;
+    gap: 14px;
+  }
+  .onboarding-page .consent-text {
+    font-size: 0.9rem;
+  }
+  .onboarding-page .consent-check-visual {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* Sits on top of the action bar it belongs to. Left in the flow it rendered
+     ~90px below the fold, so tapping Continue on an invalid step looked like
+     nothing happened at all. Opaque because form copy scrolls behind it. */
+  .onboarding-page .onboarding-error {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--signup-bar-h) + var(--sab, 0px));
+    z-index: 98;
+    margin: 0;
+    padding: 11px 18px;
+    border-radius: 0;
+    border-top: 1px solid rgba(185, 28, 28, 0.16);
+    background: #fdeceb;
+    font-size: 0.88rem;
+  }
+
+  /* ─── Action bar within thumb reach ─── */
+  /* Fixed, not sticky: the bar is the card's last child with no padding under
+     it, so a sticky bar has zero travel range and never leaves the fold. */
+  .onboarding-page .onboarding-actions {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 99;
+    margin: 0;
+    padding: 11px 18px calc(11px + var(--sab, 0px));
+    background: #fff;
+    border-top: 1px solid var(--gray-100);
+    box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.05);
+    gap: 10px;
+  }
+  /* The step position now lives in the sticky header, and at 360px this counter
+     wrapped to three lines between the two buttons. */
+  .onboarding-page .step-counter,
+  .onboarding-page .onboarding-actions-spacer {
+    display: none;
+  }
+  .onboarding-page .btn-next,
+  .onboarding-page .btn-submit {
+    flex: 1;
+    justify-content: center;
+    min-height: 52px;
+    padding: 0 20px;
+    font-size: 1rem;
+    border-radius: 14px;
+  }
+  .onboarding-page .btn-back {
+    flex: 0 0 auto;
+    justify-content: center;
+    min-height: 52px;
+    padding: 0 18px;
+    font-size: 0.95rem;
+    border-radius: 14px;
+  }
+  /* Four labelled arrows overflowed 360px horizontally, and it repeated what the
+     header progress already says. */
+  .onboarding-page .onboarding-flow-note {
+    display: none;
+  }
+}

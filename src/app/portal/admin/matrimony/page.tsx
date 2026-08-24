@@ -618,7 +618,7 @@ export default function AdminMatrimonyPage() {
                   }}>
                     <img
                       src={photo.url}
-                      alt="Member photo awaiting approval"
+                      alt="Member photo awaiting approval" loading="lazy" decoding="async"
                       style={{ width: '100%', height: 150, objectFit: 'cover', background: 'var(--gray-100)', display: 'block' }}
                     />
                     <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>

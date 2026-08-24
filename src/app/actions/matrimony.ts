@@ -54,6 +54,15 @@ export async function getMyMatrimony() {
   return run('Loading your profile', (uid) => repo.getMine(uid));
 }
 
+/**
+ * My listing and the swipe deck together. The page used to await the profile
+ * and only then ask for the deck - two round trips, the second one gated on
+ * the first.
+ */
+export async function matrimonyStart() {
+  return run('Loading your profile', (uid) => repo.matrimonyStart(uid));
+}
+
 export async function saveMatrimonyProfile(
   data: Record<string, unknown>,
   status?: MatrimonyProfileStatus

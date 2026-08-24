@@ -80,7 +80,7 @@ export default function JobsManagementPage() {
     const data = {
       title: String(form.title).trim(),
       company: String(form.company).trim(),
-      companyLogo: String(form.companyLogo || '/career-mentorship.png'),
+      companyLogo: String(form.companyLogo || '/career-mentorship.webp'),
       location: String(form.location).trim(),
       province: String(form.province || 'Ontario'),
       salaryMin: Number(form.salaryMin) || 0,
@@ -251,7 +251,7 @@ export default function JobsManagementPage() {
               {/* Company / Logo */}
               <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div><label style={labelStyle}>Company Name *</label><input style={inputStyle} value={String(form.company || '')} onChange={e => handleChange('company', e.target.value)} /></div>
-                <div><label style={labelStyle}>Company Logo (image path)</label><input style={inputStyle} value={String(form.companyLogo || '')} onChange={e => handleChange('companyLogo', e.target.value)} placeholder="/career-mentorship.png" /></div>
+                <div><label style={labelStyle}>Company Logo (image path)</label><input style={inputStyle} value={String(form.companyLogo || '')} onChange={e => handleChange('companyLogo', e.target.value)} placeholder="/career-mentorship.webp" /></div>
               </div>
 
               {/* Description */}

@@ -1,5 +1,5 @@
 import 'server-only';
-import { withUser, withUserRead } from '@/server/db';
+import { withUser, withUserRead, type Db } from '@/server/db';
 
 /**
  * The notification inbox.
@@ -84,6 +84,14 @@ export const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
 
 const PAGE_SIZE = 25;
 
+/** The inbox row shape, shared by the paged read and the combined one. */
+const ROW_SELECT = `
+  n.id, n.category, n.type, n.title, n.body, n.link, n.is_read,
+  n.event_count, n.actor_id,
+  m.first_name as actor_first_name, m.last_name as actor_last_name,
+  n.created_at, n.updated_at
+`;
+
 interface Row {
   id: string;
   category: string;
@@ -131,18 +139,27 @@ export async function listNotifications(
   userId: string,
   opts: { category?: string; unreadOnly?: boolean; before?: string; limit?: number } = {}
 ): Promise<NotificationPage> {
+  return withUserRead(userId, (db) => listNotificationsOn(db, userId, opts));
+}
+
+/**
+ * The query bodies without their transaction, so notificationsStart below can
+ * run all three on ONE connection - and inside one Server Action, which is the
+ * round trip the member actually waits for.
+ */
+export async function listNotificationsOn(
+  db: Db,
+  userId: string,
+  opts: { category?: string; unreadOnly?: boolean; before?: string; limit?: number } = {}
+): Promise<NotificationPage> {
   const limit = Math.min(Math.max(opts.limit ?? PAGE_SIZE, 1), 100);
   const category =
     opts.category && (NOTIFICATION_CATEGORIES as readonly string[]).includes(opts.category)
       ? opts.category
       : null;
 
-  return withUserRead(userId, async (db) => {
-    const rows = await db.run<Row>(
-      `select n.id, n.category, n.type, n.title, n.body, n.link, n.is_read,
-              n.event_count, n.actor_id,
-              m.first_name as actor_first_name, m.last_name as actor_last_name,
-              n.created_at, n.updated_at
+  const rows = await db.run<Row>(
+      `select ${ROW_SELECT}
          from public.in_app_notifications n
          left join public.member_names m on m.id = n.actor_id
         where n.user_id = $1
@@ -154,31 +171,32 @@ export async function listNotifications(
       [userId, category, opts.unreadOnly ?? false, opts.before ?? null, limit + 1]
     );
 
-    return {
-      items: rows.slice(0, limit).map(mapRow),
-      hasMore: rows.length > limit,
-    };
-  });
+  return {
+    items: rows.slice(0, limit).map(mapRow),
+    hasMore: rows.length > limit,
+  };
 }
 
 /** Unread totals for the badges. One round trip. */
+export async function notificationCountsOn(db: Db, userId: string): Promise<NotificationCounts> {
+  const rows = await db.run<{ category: string; n: number }>(
+    `select category, count(*)::int as n
+       from public.in_app_notifications
+      where user_id = $1 and not is_read
+      group by category`,
+    [userId]
+  );
+  const byCategory: Record<string, number> = {};
+  let total = 0;
+  for (const r of rows) {
+    byCategory[r.category] = r.n;
+    total += r.n;
+  }
+  return { total, byCategory };
+}
+
 export async function notificationCounts(userId: string): Promise<NotificationCounts> {
-  return withUserRead(userId, async (db) => {
-    const rows = await db.run<{ category: string; n: number }>(
-      `select category, count(*)::int as n
-         from public.in_app_notifications
-        where user_id = $1 and not is_read
-        group by category`,
-      [userId]
-    );
-    const byCategory: Record<string, number> = {};
-    let total = 0;
-    for (const r of rows) {
-      byCategory[r.category] = r.n;
-      total += r.n;
-    }
-    return { total, byCategory };
-  });
+  return withUserRead(userId, (db) => notificationCountsOn(db, userId));
 }
 
 /** Mark one row read. RLS scopes it to the caller's own inbox. */
@@ -211,14 +229,80 @@ export async function markAllNotificationsRead(
   });
 }
 
+export async function notificationPrefsOn(db: Db, userId: string): Promise<NotificationPrefs> {
+  const rows = await db.run<NotificationPrefs>(
+    `select chat, social, referral, matrimony, community, help, event
+       from public.notification_prefs where member_id = $1`,
+    [userId]
+  );
+  return rows[0] ?? DEFAULT_NOTIFICATION_PREFS;
+}
+
 export async function getNotificationPrefs(userId: string): Promise<NotificationPrefs> {
+  return withUserRead(userId, (db) => notificationPrefsOn(db, userId));
+}
+
+/**
+ * The whole inbox screen in ONE statement: the page, the unread counts the
+ * filter pills need, and the preference switches behind the gear.
+ *
+ * One statement, not three sequential ones in a shared transaction — that
+ * distinction is the whole point. The database is remote (~0.5s per round
+ * trip from a distant client), and Next runs a client's Server Action calls
+ * one at a time, so what a page pays is (actions x queries-per-action) round
+ * trips. Collapsing to one statement makes this page cost exactly one.
+ */
+export async function notificationsStart(
+  userId: string,
+  opts: { category?: string } = {}
+): Promise<{ page: NotificationPage; counts: NotificationCounts; prefs: NotificationPrefs }> {
+  const category =
+    opts.category && (NOTIFICATION_CATEGORIES as readonly string[]).includes(opts.category)
+      ? opts.category
+      : null;
+
   return withUserRead(userId, async (db) => {
-    const rows = await db.run<NotificationPrefs>(
-      `select chat, social, referral, matrimony, community, help, event
-         from public.notification_prefs where member_id = $1`,
-      [userId]
+    const rows = await db.run<{
+      items: Row[] | null;
+      counts: { category: string; n: number }[] | null;
+      prefs: NotificationPrefs | null;
+    }>(
+      `select
+         (select coalesce(json_agg(t order by t.updated_at desc), '[]'::json) from (
+            select ${ROW_SELECT}
+              from public.in_app_notifications n
+              left join public.member_names m on m.id = n.actor_id
+             where n.user_id = $1
+               and ($2::text is null or n.category = $2)
+             order by n.updated_at desc
+             limit $3
+         ) t) as items,
+         (select coalesce(json_agg(t), '[]'::json) from (
+            select category, count(*)::int as n
+              from public.in_app_notifications
+             where user_id = $1 and not is_read
+             group by category
+         ) t) as counts,
+         (select to_json(p) from public.notification_prefs p where p.member_id = $1) as prefs`,
+      [userId, category, PAGE_SIZE + 1]
     );
-    return rows[0] ?? DEFAULT_NOTIFICATION_PREFS;
+
+    const row = rows[0] ?? {};
+    const items = row.items ?? [];
+    const byCategory: Record<string, number> = {};
+    let total = 0;
+    for (const c of row.counts ?? []) {
+      byCategory[c.category] = c.n;
+      total += c.n;
+    }
+    return {
+      page: {
+        items: items.slice(0, PAGE_SIZE).map(mapRow),
+        hasMore: items.length > PAGE_SIZE,
+      },
+      counts: { total, byCategory },
+      prefs: row.prefs ?? DEFAULT_NOTIFICATION_PREFS,
+    };
   });
 }
 

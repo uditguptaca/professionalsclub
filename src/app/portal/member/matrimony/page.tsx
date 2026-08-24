@@ -3,9 +3,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link';
 import { useApp } from '@/context/app-context';
 import {
-  getMyMatrimony, listDeck, swipeRight, passProfile, undoPass, addToShortlist,
+  matrimonyStart, listDeck, swipeRight, passProfile, undoPass, addToShortlist,
 } from '@/app/actions/matrimony';
 import type { MatrimonyDeckCard, MatrimonyProfile } from '@/types/matrimony';
+import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
 import MatrimonyTabs from '@/components/portal/MatrimonyTabs';
 import PortalLoading from '@/components/portal/PortalLoading';
 import {
@@ -29,6 +30,18 @@ const TAP_SLOP = 8;     // px below which a pointer-up is a tap, not a drag
 const FLY_MS = 300;     // must match the fly-off transition below
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/**
+ * What this page paints, cached under CACHE_KEYS.matrimony. It is a narrowed
+ * copy of matrimonyStart's payload - the deck plus the two fields of my own
+ * listing the header shows - not the whole profile, so nothing here holds a
+ * member's contact row in browser memory longer than the page needs it.
+ */
+type MatrimonyStart = {
+  mine: MatrimonyProfile | null;
+  myPhoto: string | null;
+  deck: MatrimonyDeckCard[];
+};
 
 const prettify = (v: string) => v.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
 
@@ -103,10 +116,11 @@ const stamp = (tone: 'like' | 'pass'): React.CSSProperties => ({
 export default function MatrimonyDiscoverPage() {
   const { currentUserId } = useApp();
 
-  const [loading, setLoading] = useState(true);
-  const [mine, setMine] = useState<MatrimonyProfile | null>(null);
-  const [myPhoto, setMyPhoto] = useState<string | null>(null);
-  const [deck, setDeck] = useState<MatrimonyDeckCard[]>([]);
+  const cached = readCache<MatrimonyStart>(CACHE_KEYS.matrimony);
+  const [loading, setLoading] = useState(cached === undefined);
+  const [mine, setMine] = useState<MatrimonyProfile | null>(cached?.mine ?? null);
+  const [myPhoto, setMyPhoto] = useState<string | null>(cached?.myPhoto ?? null);
+  const [deck, setDeck] = useState<MatrimonyDeckCard[]>(cached?.deck ?? []);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
 
@@ -124,28 +138,53 @@ export default function MatrimonyDiscoverPage() {
     reduced.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }, []);
 
-  const loadDeck = useCallback(async () => {
-    const d = await listDeck();
-    if (d.ok) setDeck(d.data);
-    else setError(d.error);
+  const patchCache = useCallback((patch: Partial<MatrimonyStart>) => {
+    const cur = readCache<MatrimonyStart>(CACHE_KEYS.matrimony);
+    if (cur) writeCache<MatrimonyStart>(CACHE_KEYS.matrimony, { ...cur, ...patch });
   }, []);
 
+  /** Every deck change writes through, so a revisit never repaints a card
+      the member already swiped away. */
+  const commitDeck = useCallback(
+    (fn: (d: MatrimonyDeckCard[]) => MatrimonyDeckCard[]) =>
+      setDeck((d) => { const next = fn(d); patchCache({ deck: next }); return next; }),
+    [patchCache]
+  );
+
+  const loadDeck = useCallback(async () => {
+    const d = await listDeck();
+    if (d.ok) { setDeck(d.data); patchCache({ deck: d.data }); }
+    else setError(d.error);
+  }, [patchCache]);
+
+  /**
+   * One call. This was `await getMyMatrimony()` and only THEN `await listDeck()`
+   * - a gated waterfall, two round trips to a remote database, the second not
+   * even started until the first came back.
+   */
   useEffect(() => {
-    async function load() {
-      if (!currentUserId) { setLoading(false); return; }
-      const me = await getMyMatrimony();
-      if (!me.ok) { setError(me.error); setLoading(false); return; }
-      if (me.data.profile) {
-        setMine(me.data.profile);
-        const pic = me.data.media.find((m) => m.type === 'photo' && m.is_primary && m.is_approved)
-          ?? me.data.media.find((m) => m.type === 'photo' && m.is_approved);
-        setMyPhoto(pic?.url ?? null);
-        await loadDeck();
-      }
+    if (!currentUserId) { setLoading(false); return; }
+    let alive = true;
+    (async () => {
+      const r = await matrimonyStart();
+      if (!alive) return;
+      if (!r.ok) { setError(r.error); setLoading(false); return; }
+      const { profile, media } = r.data.mine;
+      const pic = media.find((m) => m.type === 'photo' && m.is_primary && m.is_approved)
+        ?? media.find((m) => m.type === 'photo' && m.is_approved);
+      const next: MatrimonyStart = {
+        mine: profile,
+        myPhoto: pic?.url ?? null,
+        deck: r.data.deck,
+      };
+      writeCache<MatrimonyStart>(CACHE_KEYS.matrimony, next);
+      setMine(next.mine);
+      setMyPhoto(next.myPhoto);
+      setDeck(next.deck);
       setLoading(false);
-    }
-    load();
-  }, [currentUserId, loadDeck]);
+    })();
+    return () => { alive = false; };
+  }, [currentUserId]);
 
   useEffect(() => {
     if (!toast) return;
@@ -174,7 +213,7 @@ export default function MatrimonyDiscoverPage() {
     setError('');
 
     if (!reduced.current) { setFlying(dir); await wait(FLY_MS); }
-    setDeck((d) => d.filter((c) => c.id !== card.id));
+    commitDeck((d) => d.filter((c) => c.id !== card.id));
     setFlying(null);
     setDrag({ x: 0, y: 0, active: false });
 
@@ -182,26 +221,26 @@ export default function MatrimonyDiscoverPage() {
       const r = await passProfile(card.id);
       // A failed pass must not silently swallow the profile.
       if (r.ok) setLastPassed(card);
-      else { setError(r.error); setDeck((d) => [card, ...d]); }
+      else { setError(r.error); commitDeck((d) => [card, ...d]); }
     } else {
       const r = await swipeRight(card.id);
-      if (!r.ok) { setError(r.error); setDeck((d) => [card, ...d]); }
+      if (!r.ok) { setError(r.error); commitDeck((d) => [card, ...d]); }
       else if (r.data.matched) setMatch({ card, conversationId: r.data.conversation_id });
       else setToast('Like sent');
     }
 
     setBusy(false);
-  }, [busy, flying]);
+  }, [busy, flying, commitDeck]);
 
   const handleUndo = useCallback(async () => {
     if (!lastPassed || busy) return;
     setBusy(true);
     setError('');
     const r = await undoPass(lastPassed.id);
-    if (r.ok) { setDeck((d) => [lastPassed, ...d]); setLastPassed(null); setToast('Brought back'); }
+    if (r.ok) { commitDeck((d) => [lastPassed, ...d]); setLastPassed(null); setToast('Brought back'); }
     else setError(r.error);
     setBusy(false);
-  }, [lastPassed, busy]);
+  }, [lastPassed, busy, commitDeck]);
 
   const handleShortlist = useCallback(async () => {
     if (!top || busy) return;
@@ -414,7 +453,7 @@ export default function MatrimonyDiscoverPage() {
               >
                 {pic ? (
                   <img
-                    src={pic.url} alt="" aria-hidden="true" draggable={false}
+                    src={pic.url} alt="" aria-hidden="true" draggable={false} loading="lazy" decoding="async"
                     style={{
                       position: 'absolute', inset: 0, width: '100%', height: '100%',
                       objectFit: 'cover', pointerEvents: 'none',
@@ -651,7 +690,7 @@ export default function MatrimonyDiscoverPage() {
                 }}
               >
                 {p.url
-                  ? <img src={p.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ? <img src={p.url} alt="" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   : initialsOf(p.name)}
               </span>
             ))}

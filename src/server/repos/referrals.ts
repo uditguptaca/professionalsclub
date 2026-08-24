@@ -1,7 +1,11 @@
 import 'server-only';
-import { withUser, withUserRead, withAnon, one } from '@/server/db';
+import { withUser, withUserRead, withAnon, one, type Db } from '@/server/db';
 import { toDomainAll, toDomain } from '@/server/case';
 import type { Company, CompanyJob, CompanyInsider } from '@/types';
+// The requests a member SENT live with the chat module (each one opens a chat),
+// but the referrals screen shows them next to the companies - so they are read
+// on the same connection rather than in a second Server Action.
+import { toMyDirectReferrals, type MyDirectReferral } from '@/server/repos/chat';
 
 /**
  * Company referrals.
@@ -199,15 +203,73 @@ export async function listCompanyJobs(userId: string, companyId: string): Promis
 
 /** The caller's own "where I work" rows. Never anybody else's. */
 export async function listMyInsiderRoles(userId: string): Promise<CompanyInsider[]> {
+  return withUserRead(userId, (db) => myInsiderRolesOn(db, userId));
+}
+
+export async function myInsiderRolesOn(db: Db, userId: string): Promise<CompanyInsider[]> {
+  const rows = await db`
+    select i.*, c.name as company_name, c.logo as company_logo, c.slug as company_slug
+      from public.company_insiders i
+      join public.companies c on c.id = i.company_id
+     where i.member_id = ${userId}::uuid
+     order by c.name asc
+  `;
+  return toDomainAll<CompanyInsider>(rows);
+}
+
+/**
+ * The whole member-facing referrals screen: the company directory, my own
+ * "where I work" rows, and the requests I have sent.
+ *
+ * ONE statement. It was two Server Actions awaited in sequence, and Next runs
+ * a client's action calls one at a time - two full round trips to a remote
+ * database. Three statements in a shared transaction would have been just as
+ * slow; a connection runs them in sequence too.
+ */
+export async function referralHome(userId: string): Promise<{
+  companies: Company[];
+  myRoles: CompanyInsider[];
+  requests: MyDirectReferral[];
+}> {
   return withUserRead(userId, async (db) => {
-    const rows = await db`
-      select i.*, c.name as company_name, c.logo as company_logo, c.slug as company_slug
-        from public.company_insiders i
-        join public.companies c on c.id = i.company_id
-       where i.member_id = ${userId}::uuid
-       order by c.name asc
-    `;
-    return toDomainAll<CompanyInsider>(rows);
+    const row = await one<{
+      companies: Record<string, unknown>[] | null;
+      my_roles: Record<string, unknown>[] | null;
+      requests: Record<string, unknown>[] | null;
+    }>(
+      await db`
+        select
+          (select coalesce(json_agg(t), '[]'::json) from (
+             select * from public.company_helper_counts
+              order by helper_count desc, open_jobs_count desc, name asc
+          ) t) as companies,
+          (select coalesce(json_agg(t), '[]'::json) from (
+             select i.*, c.name as company_name, c.logo as company_logo, c.slug as company_slug
+               from public.company_insiders i
+               join public.companies c on c.id = i.company_id
+              where i.member_id = ${userId}::uuid
+              order by c.name asc
+          ) t) as my_roles,
+          (select coalesce(json_agg(t), '[]'::json) from (
+             select r.id, r.insider_id, r.status, r.created_at,
+                    n.first_name, n.last_name, co.name as company_name,
+                    (select c.id from public.member_conversations c
+                      where (c.member_a_id, c.member_b_id)
+                            = (least(r.seeker_id, r.insider_id), greatest(r.seeker_id, r.insider_id))
+                    ) as conversation_id
+               from public.referral_direct_requests r
+               join public.companies co on co.id = r.company_id
+               join public.member_names n on n.id = r.insider_id
+              where r.seeker_id = ${userId}::uuid
+              order by r.created_at desc
+          ) t) as requests
+      `
+    );
+    return {
+      companies: toDomainAll<Company>(row?.companies ?? []),
+      myRoles: toDomainAll<CompanyInsider>(row?.my_roles ?? []),
+      requests: toMyDirectReferrals(row?.requests ?? []),
+    };
   });
 }
 

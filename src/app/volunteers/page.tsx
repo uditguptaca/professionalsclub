@@ -259,9 +259,11 @@ export default function VolunteerDirectoryPage() {
       <section className="volunteers-hero-section" style={{ position: 'relative', paddingTop: 160, paddingBottom: 80, background: 'var(--text-primary)', overflow: 'hidden' }}>
         <div className="cinematic-bg-container">
           <img
-            src="/volunteer-help.png"
+            src="/volunteer-help.webp"
             alt="Volunteers background"
             className="cinematic-bg"
+            fetchPriority="high"
+            decoding="async"
             style={{ opacity: 0.42 }}
           />
           <div className="cinematic-overlay" />

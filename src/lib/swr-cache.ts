@@ -18,12 +18,51 @@ type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 
 const store = new Map<string, unknown>();
 
+/**
+ * Keys shared between a page and the portal shell's idle prefetch.
+ *
+ * Each one holds the payload of that page's ONE combined "start" action,
+ * stored exactly as the action returned it — the shell writes it, the page
+ * reads it, and nothing in between reshapes it. Listing them here is what
+ * stops the prefetcher warming a key no page ever looks at.
+ */
+export const CACHE_KEYS = {
+  dashboard: 'home-feed',
+  community: 'community-start',
+  jobs: 'companies',
+  chats: 'chat-start',
+  notifications: 'notifications-start',
+  matrimony: 'matrimony-start',
+  referrals: 'referrals-start',
+} as const;
+
 export function readCache<T>(key: string): T | undefined {
   return store.get(key) as T | undefined;
 }
 
 export function writeCache<T>(key: string, data: T): void {
   store.set(key, data);
+}
+
+/**
+ * Run `fn` once the browser is idle, or shortly after on browsers with no
+ * requestIdleCallback (Safari). Returns a cancel function.
+ *
+ * Used by anything that wants the network AFTER the page the member is looking
+ * at has finished loading: Next runs a client's Server Action calls one at a
+ * time, so a background fetch started too eagerly delays the foreground one.
+ */
+export function onIdle(fn: () => void, timeout = 2000): () => void {
+  const w = window as typeof window & {
+    requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
+    cancelIdleCallback?: (h: number) => void;
+  };
+  if (typeof w.requestIdleCallback === 'function') {
+    const h = w.requestIdleCallback(fn, { timeout });
+    return () => w.cancelIdleCallback?.(h);
+  }
+  const t = setTimeout(fn, Math.min(timeout, 500));
+  return () => clearTimeout(t);
 }
 
 export function dropCache(prefix: string): void {

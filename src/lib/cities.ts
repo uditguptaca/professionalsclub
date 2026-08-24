@@ -18,24 +18,24 @@ export interface CommunityCity {
 }
 
 export const COMMUNITY_CITIES: CommunityCity[] = [
-  { name: 'Toronto',     province: 'Ontario',          skyline: '/toronto-skyline.png' },
-  { name: 'Vancouver',   province: 'British Columbia', skyline: '/vancouver-skyline.png' },
-  { name: 'Calgary',     province: 'Alberta',          skyline: '/calgary-skyline.png' },
-  { name: 'Montreal',    province: 'Quebec',           skyline: '/montreal-skyline.png' },
-  { name: 'Mississauga', province: 'Ontario',          skyline: '/toronto-skyline.png' },
-  { name: 'Brampton',    province: 'Ontario',          skyline: '/toronto-skyline.png' },
-  { name: 'Ottawa',      province: 'Ontario',          skyline: '/hero-community.png' },
-  { name: 'Edmonton',    province: 'Alberta',          skyline: '/hero-community.png' },
-  { name: 'Winnipeg',    province: 'Manitoba',         skyline: '/hero-community.png' },
-  { name: 'Surrey',      province: 'British Columbia', skyline: '/vancouver-skyline.png' },
-  { name: 'Halifax',     province: 'Nova Scotia',      skyline: '/hero-community.png' },
-  { name: 'Waterloo',    province: 'Ontario',          skyline: '/hero-community.png' },
-  { name: 'Hamilton',    province: 'Ontario',          skyline: '/toronto-skyline.png' },
-  { name: 'Saskatoon',   province: 'Saskatchewan',     skyline: '/hero-community.png' },
-  { name: 'Regina',      province: 'Saskatchewan',     skyline: '/hero-community.png' },
+  { name: 'Toronto',     province: 'Ontario',          skyline: '/toronto-skyline.webp' },
+  { name: 'Vancouver',   province: 'British Columbia', skyline: '/vancouver-skyline.webp' },
+  { name: 'Calgary',     province: 'Alberta',          skyline: '/calgary-skyline.webp' },
+  { name: 'Montreal',    province: 'Quebec',           skyline: '/montreal-skyline.webp' },
+  { name: 'Mississauga', province: 'Ontario',          skyline: '/toronto-skyline.webp' },
+  { name: 'Brampton',    province: 'Ontario',          skyline: '/toronto-skyline.webp' },
+  { name: 'Ottawa',      province: 'Ontario',          skyline: '/hero-community.webp' },
+  { name: 'Edmonton',    province: 'Alberta',          skyline: '/hero-community.webp' },
+  { name: 'Winnipeg',    province: 'Manitoba',         skyline: '/hero-community.webp' },
+  { name: 'Surrey',      province: 'British Columbia', skyline: '/vancouver-skyline.webp' },
+  { name: 'Halifax',     province: 'Nova Scotia',      skyline: '/hero-community.webp' },
+  { name: 'Waterloo',    province: 'Ontario',          skyline: '/hero-community.webp' },
+  { name: 'Hamilton',    province: 'Ontario',          skyline: '/toronto-skyline.webp' },
+  { name: 'Saskatoon',   province: 'Saskatchewan',     skyline: '/hero-community.webp' },
+  { name: 'Regina',      province: 'Saskatchewan',     skyline: '/hero-community.webp' },
 ];
 
-const FALLBACK_SKYLINE = '/hero-community.png';
+const FALLBACK_SKYLINE = '/hero-community.webp';
 
 /** Case-insensitive lookup; unknown cities get the community fallback. */
 export function cityInfo(city: string | null | undefined): { name: string; skyline: string; known: boolean } {

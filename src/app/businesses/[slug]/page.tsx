@@ -61,7 +61,7 @@ export default function BusinessProfilePage() {
       <main id="main">
       {/* Cover */}
       <div className="biz-profile-hero">
-        {biz.coverImage && <img src={biz.coverImage} alt={biz.name} />}
+        {biz.coverImage && <img src={biz.coverImage} alt={biz.name} fetchPriority="high" decoding="async" />}
       </div>
 
       {/* Header */}

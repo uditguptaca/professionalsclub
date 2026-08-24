@@ -3,9 +3,9 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/app-context';
 import { fetchReferralHome, saveWhereIWork, removeWhereIWork } from '@/app/actions/referrals';
-import { myDirectReferrals } from '@/app/actions/chat';
 import type { Company, CompanyInsider } from '@/types';
 import type { MyDirectReferral } from '@/server/repos/chat';
+import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
 import {
   Send, Building2, Check, X, Loader2, ShieldCheck, Mail, MessageCircle,
   ChevronRight, Plus, ArrowRight,
@@ -24,6 +24,12 @@ import PortalLoading from '@/components/portal/PortalLoading';
  * Profile-hub grammar throughout: glanceable rows in rounded cards, no tabs, no
  * page-long form except the two fields that add an employer.
  */
+
+type ReferralHome = {
+  companies: Company[];
+  myRoles: CompanyInsider[];
+  requests: MyDirectReferral[];
+};
 
 const when = (iso: string | null): string => {
   if (!iso) return '';
@@ -66,14 +72,16 @@ export default function ReferralsPage() {
   const { currentUserId } = useApp();
   const confirm = useConfirm();
 
-  const [loading, setLoading] = useState(true);
+  /** Exactly what fetchReferralHome returns; warmed by the portal shell. */
+  const cached = readCache<ReferralHome>(CACHE_KEYS.referrals);
+  const [loading, setLoading] = useState(cached === undefined);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
 
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [myRoles, setMyRoles] = useState<CompanyInsider[]>([]);
-  const [requests, setRequests] = useState<MyDirectReferral[]>([]);
+  const [companies, setCompanies] = useState<Company[]>(cached?.companies ?? []);
+  const [myRoles, setMyRoles] = useState<CompanyInsider[]>(cached?.myRoles ?? []);
+  const [requests, setRequests] = useState<MyDirectReferral[]>(cached?.requests ?? []);
 
   // Where-I-work form
   const [addCompany, setAddCompany] = useState('');
@@ -86,14 +94,18 @@ export default function ReferralsPage() {
   useEffect(() => {
     if (!currentUserId) { setLoading(false); return; }
     (async () => {
-      // Next runs a client's Server Action calls one at a time, so these are
-      // sequential either way.
+      // One call. The requests I sent used to be a second action, and Next
+      // runs a client's action calls one at a time, so it was a second full
+      // round trip before this page could finish drawing.
       const home = await fetchReferralHome();
-      const mine = await myDirectReferrals();
-      if (home.ok) { setCompanies(home.data.companies); setMyRoles(home.data.myRoles); }
-      else setError(home.error);
-      if (mine.ok) setRequests(mine.data);
-      else if (home.ok) setError(mine.error);
+      if (home.ok) {
+        writeCache<ReferralHome>(CACHE_KEYS.referrals, home.data);
+        setCompanies(home.data.companies);
+        setMyRoles(home.data.myRoles);
+        setRequests(home.data.requests);
+      } else {
+        setError(home.error);
+      }
       setLoading(false);
     })();
   }, [currentUserId]);
@@ -113,6 +125,11 @@ export default function ReferralsPage() {
     return () => clearTimeout(t);
   }, [toast]);
 
+  const patchCache = (patch: Partial<ReferralHome>) => {
+    const cur = readCache<ReferralHome>(CACHE_KEYS.referrals);
+    if (cur) writeCache<ReferralHome>(CACHE_KEYS.referrals, { ...cur, ...patch });
+  };
+
   const unlisted = useMemo(
     () => companies.filter((c) => !myRoles.some((r) => r.companyId === c.id)),
     [companies, myRoles]
@@ -129,7 +146,7 @@ export default function ReferralsPage() {
       notifyEmail: addEmail,
     });
     if (r.ok) {
-      setMyRoles(r.data);
+      setMyRoles(r.data); patchCache({ myRoles: r.data });
       setAddCompany(''); setAddTitle('');
       setToast('Employer added');
     } else setError(r.error);
@@ -146,7 +163,7 @@ export default function ReferralsPage() {
       canRefer: patch.canRefer ?? role.canRefer,
       notifyEmail: patch.notifyEmail ?? role.notifyEmail,
     });
-    if (r.ok) setMyRoles(r.data); else setError(r.error);
+    if (r.ok) { setMyRoles(r.data); patchCache({ myRoles: r.data }); } else setError(r.error);
     setBusy(null);
   };
 
@@ -162,7 +179,7 @@ export default function ReferralsPage() {
     setBusy(role.id);
     setError('');
     const r = await removeWhereIWork(role.companyId);
-    if (r.ok) { setMyRoles(r.data); setToast('Employer removed'); } else setError(r.error);
+    if (r.ok) { setMyRoles(r.data); patchCache({ myRoles: r.data }); setToast('Employer removed'); } else setError(r.error);
     setBusy(null);
   };
 

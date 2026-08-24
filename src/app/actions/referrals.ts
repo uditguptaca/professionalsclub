@@ -52,13 +52,11 @@ export async function fetchCompanyJobs(companyId: string): Promise<ActionResult<
 export async function fetchReferralHome(): Promise<ActionResult<{
   companies: Company[];
   myRoles: CompanyInsider[];
+  requests: import('@/server/repos/chat').MyDirectReferral[];
 }>> {
   return run('Loading referrals', async () => {
     const uid = await requireUserId();
-    return {
-      companies: await repo.listCompanies(uid),
-      myRoles: await repo.listMyInsiderRoles(uid),
-    };
+    return repo.referralHome(uid);
   });
 }
 

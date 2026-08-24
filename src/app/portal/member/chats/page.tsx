@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { upload } from '@vercel/blob/client';
 import {
   listPeople, followMember, unfollowMember, acceptFollowRequest, declineFollowRequest,
-  listChats, openChat, pollThread, sendChatMessage, markChatRead, setTyping,
+  chatStart, listChats, openChat, pollThread, sendChatMessage, markChatRead, setTyping,
   respondReferral, publishMemberE2EKey, getMemberE2EKey,
   blockMember, unblockMember, listBlockedMembers, reportMember,
   muteChat, clearChat, getChatSettings, updateChatSettings, reactToMessage,
@@ -15,7 +15,7 @@ import type {
 import {
   e2eeAvailable, ensureLocalKeys, deriveConversationKey, encryptText, decryptText,
 } from '@/lib/e2ee';
-import { readCache, writeCache } from '@/lib/swr-cache';
+import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
 import type { PDFDocumentLoadingTask } from 'pdfjs-dist';
 import { useApp } from '@/context/app-context';
 import { useConfirm } from '@/components/portal/confirm';
@@ -72,9 +72,6 @@ const GROUP_GAP_MS = 5 * 60 * 1000;
 const MUTUAL_ERROR = 'You can only chat while you follow each other.';
 const TYPING_EVERY_MS = 2500;
 const TYPING_FRESH_MS = 6000;
-/** How long a locally-sent message may outrun the poll before we stop
-    re-adding it (it is either echoed by then, or it failed). */
-const JUST_SENT_MS = 20000;
 
 /** .portal-content-area padding, to be negated — same bleed as .pp-hero. */
 const PAD_X = 'clamp(1rem, 2.5vw, 2rem)';
@@ -86,6 +83,18 @@ const DESK_H = 'calc(100dvh - 13rem)';
 type Lane = 'requests' | 'suggestions' | 'following' | 'followers';
 type People = Record<Lane, ChatPerson[]>;
 const NO_PEOPLE: People = { requests: [], suggestions: [], following: [], followers: [] };
+
+/**
+ * Exactly what chatStart() returns. The portal shell warms this under
+ * CACHE_KEYS.chats while the member is on another tab, so opening Chats paints
+ * the list, the people sheet and the settings with no round trip.
+ */
+type ChatStart = {
+  threads: ChatThread[];
+  people: People;
+  blocked: BlockedMember[];
+  settings: ChatSettings;
+};
 const LANES: { id: Lane; label: string }[] = [
   { id: 'requests', label: 'Requests' },
   { id: 'suggestions', label: 'Suggestions' },
@@ -404,7 +413,11 @@ export default function MemberChatsPage() {
    * instantly, and refresh behind it — the database is remote and nobody should
    * meet a skeleton twice. The skeleton is therefore only for a first visit.
    */
-  const [loading, setLoading] = useState(() => readCache<ChatThread[]>('chats') === undefined);
+  // Everything below paints from one cached payload - the same object
+  // chatStart() returns, warmed by the portal shell while the member was on
+  // another tab.
+  const cached = readCache<ChatStart>(CACHE_KEYS.chats);
+  const [loading, setLoading] = useState(cached === undefined);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   /** Full-screen image preview; null = closed. */
@@ -412,7 +425,7 @@ export default function MemberChatsPage() {
   /** Full-screen in-app PDF reader; null = closed. */
   const [pdfView, setPdfView] = useState<{ url: string; name: string } | null>(null);
 
-  const [threads, setThreads] = useState<ChatThread[]>(() => readCache<ChatThread[]>('chats') ?? []);
+  const [threads, setThreads] = useState<ChatThread[]>(cached?.threads ?? []);
 
   const [openId, setOpenId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -459,16 +472,16 @@ export default function MemberChatsPage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsError, setSettingsError] = useState('');
-  const [chatSettings, setChatSettings] = useState<ChatSettings | null>(null);
+  const [chatSettings, setChatSettings] = useState<ChatSettings | null>(cached?.settings ?? null);
   /**
    * Loaded with the first paint, not lazily: the settings sheet then opens with
    * its list already there, and a frozen thread can tell "I blocked them" from
    * "the follow broke" without offering a Follow-again button that would send a
    * request to someone I have blocked.
    */
-  const [blocked, setBlocked] = useState<BlockedMember[]>([]);
+  const [blocked, setBlocked] = useState<BlockedMember[]>(cached?.blocked ?? []);
 
-  const [people, setPeople] = useState<People>(() => readCache<People>('people') ?? NO_PEOPLE);
+  const [people, setPeople] = useState<People>(cached?.people ?? NO_PEOPLE);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [lane, setLane] = useState<Lane>('suggestions');
   const [peopleError, setPeopleError] = useState('');
@@ -498,6 +511,12 @@ export default function MemberChatsPage() {
   const typingAtRef = useRef(0);
   /** The open thread's poll, so a referral answer can refresh without a reload. */
   const pollRef = useRef<(() => Promise<void>) | null>(null);
+  /**
+   * How far the poll has read. Handed straight back to the server, which
+   * returns only what is newer - the 5s poll used to re-send every message
+   * body and cipher in the conversation. Null means "send me everything".
+   */
+  const sinceRef = useRef<string | null>(null);
   /** Long-press bookkeeping: the timer, where the finger landed, whether it fired. */
   const pressRef = useRef<{ timer: number | null; x: number; y: number; fired: boolean }>({
     timer: null, x: 0, y: 0, fired: false,
@@ -512,47 +531,53 @@ export default function MemberChatsPage() {
 
   // Both write through to the session cache: whatever the member last saw is
   // what the next visit paints before the network answers.
+  const patchStart = useCallback((patch: Partial<ChatStart>) => {
+    const cur = readCache<ChatStart>(CACHE_KEYS.chats);
+    if (cur) writeCache<ChatStart>(CACHE_KEYS.chats, { ...cur, ...patch });
+  }, []);
+
   const refreshChats = useCallback(async () => {
     const res = await listChats();
-    if (res.ok) { setThreads(res.data); writeCache('chats', res.data); }
+    if (res.ok) { setThreads(res.data); patchStart({ threads: res.data }); }
     return res.ok;
-  }, []);
+  }, [patchStart]);
 
   const refreshPeople = useCallback(async () => {
     const res = await listPeople();
-    if (res.ok) { setPeople(res.data); writeCache('people', res.data); }
+    if (res.ok) { setPeople(res.data); patchStart({ people: res.data }); }
     else setPeopleError(res.error);
-  }, []);
+  }, [patchStart]);
 
   const refreshBlocked = useCallback(async () => {
     const res = await listBlockedMembers();
-    if (res.ok) setBlocked(res.data);
-  }, []);
+    if (res.ok) { setBlocked(res.data); patchStart({ blocked: res.data }); }
+  }, [patchStart]);
 
   // ---- Load: chats, people, deep link ---------------------------------------
   // People come down with the first load, not lazily on sheet open: the sheet
   // then opens instantly, and a frozen thread can say WHO broke the follow.
+  // It was three actions in a Promise.all, which Next then ran one after
+  // another - three round trips to a remote database before the list appeared.
+  // The chat settings ride along too, so the settings sheet opens with its
+  // switches already set.
   useEffect(() => {
     let alive = true;
     (async () => {
-      const [chats, folk, blocks] = await Promise.all([
-        listChats(), listPeople(), listBlockedMembers(),
-      ]);
+      const res = await chatStart();
       if (!alive) return;
-      if (!chats.ok) { setError(chats.error); setLoading(false); return; }
-      if (folk.ok) {
-        setPeople(folk.data);
-        writeCache('people', folk.data);
-        if (folk.data.requests.length > 0) setLane('requests');
-      }
-      if (blocks.ok) setBlocked(blocks.data);
-      setThreads(chats.data);
-      writeCache('chats', chats.data);
+      if (!res.ok) { setError(res.error); setLoading(false); return; }
+      const data = res.data;
+      writeCache<ChatStart>(CACHE_KEYS.chats, data);
+      setThreads(data.threads);
+      setPeople(data.people);
+      setBlocked(data.blocked);
+      setChatSettings(data.settings);
+      if (data.people.requests.length > 0) setLane('requests');
       setLoading(false);
 
       // ?c={conversationId} deep link, honoured once the list is known.
       const want = new URLSearchParams(window.location.search).get('c');
-      if (want && chats.data.some((t) => t.id === want)) setOpenId(want);
+      if (want && data.threads.some((t) => t.id === want)) setOpenId(want);
     })();
     return () => { alive = false; };
   }, []);
@@ -594,6 +619,11 @@ export default function MemberChatsPage() {
 
   // ---- Thread: one poll for everything, every 5s ----------------------------
   useEffect(() => {
+    // The cursor belongs to this effect, and it is cleared HERE rather than in
+    // the reset effect below: effects run in declaration order, so the first
+    // poll of a new thread would otherwise still be carrying the previous
+    // thread's watermark and come back with only a fragment of the new one.
+    sinceRef.current = null;
     if (!openId) { setMessages([]); pollRef.current = null; return; }
     let alive = true;
     setThreadLoading(true);
@@ -601,29 +631,40 @@ export default function MemberChatsPage() {
     nearBottomRef.current = true;
 
     const load = async () => {
-      const r = await pollThread(openId);
+      const r = await pollThread(openId, sinceRef.current);
       if (!alive) return;
       if (r.ok) {
+        sinceRef.current = r.data.watermark;
         // A peer can publish their key MID-conversation (their first visit to
         // this page). If encrypted messages exist and we hold no key, poke the
         // derivation effect to look the key up again.
         if (!convKeyRef.current && r.data.messages.some((m) => m.body == null && m.cipher)) {
           setKeyProbe((n) => n + 1);
         }
-        // Merge, but ONLY to cover a message this device just sent that the
-        // poll in flight could not have seen yet. Keeping every unmatched row
-        // was wrong twice over: switching threads bled the previous
-        // conversation's messages into the new one, and Clear chat was undone
-        // permanently, because the cleared rows stayed "extra" forever.
+        // The poll is incremental: r.data.messages holds the whole thread only
+        // on the first call after sinceRef was cleared, and just what is new
+        // after that. So merge by id onto what we already have - which is also
+        // what covers a message this device sent that the in-flight poll could
+        // not have seen.
+        //
+        // Nothing stale can survive this: sinceRef is cleared (and messages
+        // emptied) on every thread switch and by Clear chat, so both of the
+        // bugs the old wholesale-replace was written to fix - the previous
+        // conversation bleeding through, and Clear chat undoing itself - are
+        // still covered.
         setMessages((prev) => {
-          const ids = new Set(r.data.messages.map((m) => m.id));
-          const fresh = Date.now() - JUST_SENT_MS;
-          const extra = prev.filter((m) =>
-            !ids.has(m.id)
-            && m.conversationId === openId
-            && new Date(m.createdAt).getTime() > fresh
-          );
-          return extra.length ? [...r.data.messages, ...extra] : r.data.messages;
+          const byId = new Map(prev.filter((m) => m.conversationId === openId).map((m) => [m.id, m]));
+          for (const m of r.data.messages) byId.set(m.id, m);
+          // Receipts are authoritative for the WHOLE thread, so an id missing
+          // from them means unread - which is how turning receipts off clears
+          // the ticks again instead of leaving the last known value frozen.
+          const readAt = new Map(r.data.receipts.map((x) => [x.id, x.readAt]));
+          return [...byId.values()]
+            .map((m) => {
+              const at = readAt.get(m.id) ?? null;
+              return m.readAt === at ? m : { ...m, readAt: at };
+            })
+            .sort((a, b) => (a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0));
         });
         setPollOpen(r.data.open);
         setPeerTypingAt(r.data.peerTypingAt);
@@ -647,7 +688,8 @@ export default function MemberChatsPage() {
 
   // ---- Thread: reset per-thread state when switching threads ----------------
   useEffect(() => {
-    // The previous thread's messages must not survive into this one.
+    // The previous thread's messages must not survive into this one. (The poll
+    // cursor is reset in the poll effect above, which runs first.)
     setMessages([]);
     setPlain({});
     setConvKey(null);
@@ -868,7 +910,10 @@ export default function MemberChatsPage() {
     setMenuBusy(false);
     if (!res.ok) { setMenuError(res.error); return; }
     // The poll stops sending cleared messages, so the local wipe is what the
-    // next poll will agree with. The decrypt cache goes with them.
+    // next poll will agree with. The decrypt cache goes with them, and the
+    // cursor is dropped so the next poll re-reads the (now empty) thread in
+    // full rather than merging onto what was just cleared.
+    sinceRef.current = null;
     setMessages([]);
     setPlain({});
     setThreadMenu(false);
@@ -948,13 +993,17 @@ export default function MemberChatsPage() {
   }, [isWide, openId]);
 
   // ---- Chat settings sheet -------------------------------------------------
+  // Settings and the blocked list both arrived with the first paint, so the
+  // sheet opens filled in. It still refreshes behind - another device may have
+  // changed either - but never on a spinner.
   async function openSettings() {
     setSettingsOpen(true);
     setSettingsError('');
-    setSettingsLoading(true);
-    const [s, b] = await Promise.all([getChatSettings(), listBlockedMembers()]);
-    if (s.ok) setChatSettings(s.data); else setSettingsError(s.error);
-    if (b.ok) setBlocked(b.data);
+    setSettingsLoading(chatSettings === null);
+    const s = await getChatSettings();
+    if (s.ok) { setChatSettings(s.data); patchStart({ settings: s.data }); }
+    else setSettingsError(s.error);
+    void refreshBlocked();
     setSettingsLoading(false);
   }
 
@@ -971,6 +1020,7 @@ export default function MemberChatsPage() {
     );
     if (!res.ok) { setChatSettings(before); setSettingsError(res.error); return; }
     setChatSettings(res.data);
+    patchStart({ settings: res.data });
   }
 
   async function doUnblock(m: BlockedMember) {
@@ -1758,7 +1808,7 @@ export default function MemberChatsPage() {
                   >
                     <img
                       src={m.attachmentUrl}
-                      alt={mine ? 'Photo you sent' : `Photo from ${firstName}`}
+                      alt={mine ? 'Photo you sent' : `Photo from ${firstName}`} loading="lazy" decoding="async"
                       style={{ display: 'block', maxWidth: 240, width: '100%', height: 'auto', borderRadius: 14 }}
                     />
                   </button>
@@ -1820,7 +1870,7 @@ export default function MemberChatsPage() {
                     {thumb && (
                       <img
                         src={thumb}
-                        alt={`First page of ${fileName}`}
+                        alt={`First page of ${fileName}`} loading="lazy" decoding="async"
                         style={{
                           display: 'block', maxWidth: 200, width: '100%', height: 'auto',
                           borderRadius: 10, marginBottom: 7,

@@ -175,9 +175,11 @@ export default function GroupsPage() {
         {/* Background Animation (WhatsApp Communities) */}
         <div className="cinematic-bg-container">
           <img 
-            src="/images/whatsapp_hero.png" 
+            src="/images/whatsapp_hero.webp" 
             alt="WhatsApp Communities background" 
             className="cinematic-bg"
+            fetchPriority="high"
+            decoding="async"
             style={{ opacity: 0.42 }}
           />
           <div className="cinematic-overlay" />
@@ -390,7 +392,7 @@ export default function GroupsPage() {
       {/* ─── REGISTER AS MEMBER CTA ─── */}
       <section style={{ padding: '80px 0', background: 'var(--text-primary)', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/toronto-skyline.png" alt="Toronto" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.1 }} />
+          <Image src="/toronto-skyline.webp" alt="Toronto" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.1 }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 700, textAlign: 'center' }}>
           <div style={{ width: 64, height: 64, borderRadius: 18, background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-200)', margin: '0 auto 16px' }}>

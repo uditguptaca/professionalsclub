@@ -1,6 +1,12 @@
 import 'server-only';
 import { withUser, withUserRead, type Db } from '@/server/db';
 import { toDomain, toDomainAll } from '@/server/case';
+// One repo reaching into another, deliberately: the people rail is the chat
+// module's follow graph, and communityStart's whole point is to read it on the
+// SAME connection instead of paying a second round trip for it.
+import {
+  COMMUNITY_EDGES_CTE, COMMUNITY_PEOPLE_JSON, toChatPeople, type ChatPeople,
+} from '@/server/repos/chat';
 import type {
   CommunityGroup, CommunityPost, CommunityComment, CommunityReport,
   CommunityReportTarget, CommunityReportStatus,
@@ -18,6 +24,9 @@ import type {
  * profiles directly here; members cannot read other profiles and the view is
  * the deliberate, minimal exception.
  */
+
+/** One page of the feed. */
+const FEED_PAGE = 20;
 
 /** First row or a thrown, user-safe error. */
 function first<T>(rows: unknown[], message: string): T {
@@ -62,9 +71,17 @@ export async function listPersonalFeed(
   userId: string,
   opts: { before?: string; limit?: number } = {}
 ): Promise<CommunityPost[]> {
+  return withUserRead(userId, (db) => personalFeedOn(db, userId, opts));
+}
+
+/** The same query without the transaction, so a combined read can share one. */
+export async function personalFeedOn(
+  db: Db,
+  userId: string,
+  opts: { before?: string; limit?: number } = {}
+): Promise<CommunityPost[]> {
   const limit = Math.min(Math.max(opts.limit ?? 20, 1), 50);
-  return withUserRead(userId, async (db) => {
-    const params: unknown[] = [userId];
+  const params: unknown[] = [userId];
     let beforeClause = '';
     if (opts.before) { params.push(opts.before); beforeClause = `and p.created_at < $${params.length}`; }
     params.push(limit);
@@ -113,8 +130,7 @@ export async function listPersonalFeed(
       `,
       params
     );
-    return toDomainAll<CommunityPost>(rows);
-  });
+  return toDomainAll<CommunityPost>(rows);
 }
 
 /**
@@ -123,10 +139,13 @@ export async function listPersonalFeed(
  * shown on the card.
  */
 export async function exploreGroups(userId: string, query = ''): Promise<CommunityGroup[]> {
-  return withUserRead(userId, async (db) => {
-    const q = query.trim().slice(0, 80);
-    const params: unknown[] = [userId, q === '' ? null : `%${q}%`];
-    const rows = await db.run(
+  return withUserRead(userId, (db) => exploreGroupsOn(db, userId, query));
+}
+
+export async function exploreGroupsOn(db: Db, userId: string, query = ''): Promise<CommunityGroup[]> {
+  const q = query.trim().slice(0, 80);
+  const params: unknown[] = [userId, q === '' ? null : `%${q}%`];
+  const rows = await db.run(
       `
       with me as (select city, industry, job_title from public.profiles where id = $1)
       select ${GROUP_SELECT},
@@ -153,14 +172,112 @@ export async function exploreGroups(userId: string, query = ''): Promise<Communi
       `,
       params
     );
-    return toDomainAll<CommunityGroup>(rows);
-  });
+  return toDomainAll<CommunityGroup>(rows);
 }
 
-/** Groups to suggest inside the feed: not joined, best match first. */
-export async function suggestedGroups(userId: string, limit = 6): Promise<CommunityGroup[]> {
-  const all = await exploreGroups(userId);
-  return all.filter((g) => !g.isMember).slice(0, limit);
+/**
+ * Everything the Community page paints on arrival: the personal feed, the
+ * group rail and the people rail (plus incoming follow requests, which the
+ * People tab needs the moment it is opened).
+ *
+ * ONE statement. It was three Server Actions fired from one effect, and Next
+ * runs a client's action calls one at a time, so a Promise.all of three was
+ * three sequential round trips to a remote database - the reason the page
+ * rendered its shell fast and its content two seconds later. Three statements
+ * inside one transaction would have cost the same: a connection runs them in
+ * sequence too. The CTEs are hoisted so all three branches share them.
+ */
+export async function communityStart(userId: string): Promise<{
+  posts: CommunityPost[];
+  groups: CommunityGroup[];
+  people: ChatPeople;
+}> {
+  return withUserRead(userId, async (db) => {
+    const rows = await db.run<{
+      posts: Record<string, unknown>[] | null;
+      groups: Record<string, unknown>[] | null;
+      people: Parameters<typeof toChatPeople>[0];
+    }>(
+      `
+      with me as (select city, industry, job_title from public.profiles where id = $1),
+      followed as (
+        select followee_id as id from public.member_follows
+         where follower_id = $1 and status = 'accepted'
+      ),
+      my_groups as (
+        select group_id as id from public.community_group_members where member_id = $1
+      ),
+      suggested_groups as (
+        select g.id
+          from public.community_groups g
+         where not g.is_archived
+           and g.id not in (select id from my_groups)
+           and (coalesce((select city from me), '') <> ''
+                and (g.name ilike '%' || (select city from me) || '%'
+                     or g.description ilike '%' || (select city from me) || '%'))
+      ),
+      edges as (${COMMUNITY_EDGES_CTE})
+      select
+        (select coalesce(json_agg(t order by t.created_at desc), '[]'::json) from (
+          select ${POST_SELECT},
+                 g.slug as group_slug,
+                 (p.group_id is not null and p.group_id in (select id from my_groups)) as in_group,
+                 case
+                   when p.author_id = $1 then 'mine'
+                   when p.group_id in (select id from my_groups) then 'group'
+                   when p.group_id in (select id from suggested_groups) then 'suggested_group'
+                   else 'followed'
+                 end as source
+            from public.community_posts p
+            join public.member_names n on n.id = p.author_id
+            left join public.community_groups g on g.id = p.group_id
+           where p.status = 'active'
+             and (
+               p.author_id = $1
+               or (p.group_id is null and p.author_id in (select id from followed))
+               or p.group_id in (select id from my_groups)
+               or p.group_id in (select id from suggested_groups)
+             )
+           order by p.created_at desc
+           limit $2
+        ) t) as posts,
+        -- The SAME group list the Groups tab, the feed's inline Join cards and
+        -- the desktop aside all need. One list, three consumers: the aside used
+        -- to fetch its own copy on mount (fetchCommunityHome), which was a whole
+        -- extra round trip whose twenty posts were then thrown away.
+        (select coalesce(json_agg(t), '[]'::json) from (
+          select ${GROUP_SELECT},
+                 case
+                   when exists (select 1 from public.community_group_members m
+                                 where m.group_id = g.id and m.member_id = $1) then null
+                   when coalesce((select city from me), '') <> ''
+                        and (g.name ilike '%' || (select city from me) || '%'
+                             or g.description ilike '%' || (select city from me) || '%')
+                     then 'Popular in ' || (select city from me)
+                   when coalesce((select industry from me), '') <> ''
+                        and (g.name ilike '%' || (select industry from me) || '%'
+                             or g.description ilike '%' || (select industry from me) || '%')
+                     then 'Matches your industry'
+                   else null
+                 end as suggest_reason
+            from public.community_groups g
+           where not g.is_archived
+           order by exists (select 1 from public.community_group_members m
+                             where m.group_id = g.id and m.member_id = $1) desc,
+                    member_count desc
+           limit 60
+        ) t) as groups,
+        ${COMMUNITY_PEOPLE_JSON} as people
+      `,
+      [userId, FEED_PAGE]
+    );
+    const row = rows[0];
+    return {
+      posts: toDomainAll<CommunityPost>(row?.posts ?? []),
+      groups: toDomainAll<CommunityGroup>(row?.groups ?? []),
+      people: toChatPeople(row?.people),
+    };
+  });
 }
 
 // ========== FEED ==========

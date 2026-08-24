@@ -10,11 +10,11 @@ interface MeetupActivity {
 }
 
 const MEETUP_IMAGES: MeetupActivity[] = [
-  { src: '/images/networking_mixer_1.png', title: 'Professional Networking Mixer', desc: 'Diverse professionals greeting and talking' },
-  { src: '/events-meetup.png', title: 'Community Networking Hub', desc: 'Meeting partners, mentors, and local experts' },
-  { src: '/meetup_bg.png', title: 'Interactive Meetup Lounge', desc: 'Greeting and sharing business ideas' },
-  { src: '/career-mentorship.png', title: 'Mentorship & Roundtable Sessions', desc: 'Direct career connection and professional guidance' },
-  { src: '/volunteer-help.png', title: 'Newcomer Collaborative Circles', desc: 'Volunteers and members greeting and planning together' }
+  { src: '/images/networking_mixer_1.webp', title: 'Professional Networking Mixer', desc: 'Diverse professionals greeting and talking' },
+  { src: '/events-meetup.webp', title: 'Community Networking Hub', desc: 'Meeting partners, mentors, and local experts' },
+  { src: '/meetup_bg.webp', title: 'Interactive Meetup Lounge', desc: 'Greeting and sharing business ideas' },
+  { src: '/career-mentorship.webp', title: 'Mentorship & Roundtable Sessions', desc: 'Direct career connection and professional guidance' },
+  { src: '/volunteer-help.webp', title: 'Newcomer Collaborative Circles', desc: 'Volunteers and members greeting and planning together' }
 ];
 
 export default function MeetupEventVideo() {

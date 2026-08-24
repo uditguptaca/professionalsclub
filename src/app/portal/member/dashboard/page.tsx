@@ -7,7 +7,7 @@ import { followMember, unfollowMember } from '@/app/actions/chat';
 import type { HomeFeed } from '@/server/repos/home';
 import { COMMUNITY_CITIES, cityInfo } from '@/lib/cities';
 import NotificationBell from '@/components/portal/NotificationBell';
-import { readCache, writeCache } from '@/lib/swr-cache';
+import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
 import {
   MapPin, ChevronDown, Calendar, Users, ArrowRight, Briefcase, ShieldCheck,
   FileText, Send, Bookmark, Mail, Store, Check, Loader2, UsersRound, X,
@@ -83,13 +83,13 @@ export default function MemberHomePage() {
 
   const load = async () => {
     const r = await fetchHomeFeed();
-    if (r.ok) { setFeed(r.data); writeCache('home-feed', r.data); setError(''); }
+    if (r.ok) { setFeed(r.data); writeCache(CACHE_KEYS.dashboard, r.data); setError(''); }
     else setError(r.error);
   };
   useEffect(() => {
     // Render whatever the member saw last INSTANTLY, then refresh behind it -
     // the database is remote, and nobody should stare at a skeleton twice.
-    const cached = readCache<HomeFeed>('home-feed');
+    const cached = readCache<HomeFeed>(CACHE_KEYS.dashboard);
     if (cached) setFeed(cached);
     void load();
   }, []);
@@ -124,7 +124,7 @@ export default function MemberHomePage() {
     <div className="hf-page">
       {/* ================= City hero ================= */}
       <header className="hf-hero">
-        <img src={city.skyline} alt="" aria-hidden="true" className="hf-hero-img" />
+        <img src={city.skyline} alt="" aria-hidden="true" className="hf-hero-img" fetchPriority="high" decoding="async" />
         <div className="hf-hero-scrim" aria-hidden="true" />
         <div className="hf-hero-top">
           <NotificationBell variant="hero" />
@@ -267,7 +267,7 @@ export default function MemberHomePage() {
                      target={e.rsvpUrl ? '_blank' : undefined} rel={e.rsvpUrl ? 'noopener noreferrer' : undefined}>
                     <span className="hf-event-media">
                       {e.image
-                        ? <img src={e.image} alt="" aria-hidden="true" />
+                        ? <img src={e.image} alt="" aria-hidden="true" loading="lazy" decoding="async" />
                         : <span className="hf-event-fallback" aria-hidden="true"><Calendar size={28} /></span>}
                       {e.inCity && <span className="hf-chip">{city.name}</span>}
                     </span>
@@ -309,13 +309,13 @@ export default function MemberHomePage() {
             <div className="hf-section-head"><h2>Don&rsquo;t forget</h2></div>
             <div className="hf-tiles">
               {[
-                { n: feed.counters.openRequests, label: 'Open requests', href: '/portal/member/my-requests', img: '/img/mentoring-1.jpg', icon: <FileText size={14} /> },
-                { n: feed.counters.pendingReferralAsks, label: 'Referral asks waiting', href: '/portal/member/referrals', img: '/img/resume-review.jpg', icon: <Send size={14} /> },
-                { n: feed.counters.myUpcomingEvents, label: 'Upcoming events', href: '/portal/member/events', img: '/img/event-wide-1.jpg', icon: <Calendar size={14} /> },
-                { n: feed.counters.savedBusinesses, label: 'Saved businesses', href: '/portal/member/businesses', img: '/img/community-hall-1.jpg', icon: <Bookmark size={14} /> },
+                { n: feed.counters.openRequests, label: 'Open requests', href: '/portal/member/my-requests', img: '/img/mentoring-1.webp', icon: <FileText size={14} /> },
+                { n: feed.counters.pendingReferralAsks, label: 'Referral asks waiting', href: '/portal/member/referrals', img: '/img/resume-review.webp', icon: <Send size={14} /> },
+                { n: feed.counters.myUpcomingEvents, label: 'Upcoming events', href: '/portal/member/events', img: '/img/event-wide-1.webp', icon: <Calendar size={14} /> },
+                { n: feed.counters.savedBusinesses, label: 'Saved businesses', href: '/portal/member/businesses', img: '/img/community-hall-1.webp', icon: <Bookmark size={14} /> },
               ].map((t) => (
                 <Link key={t.label} href={t.href} className="hf-tile">
-                  <img src={t.img} alt="" aria-hidden="true" />
+                  <img src={t.img} alt="" aria-hidden="true" loading="lazy" decoding="async" />
                   <span className="hf-tile-scrim" aria-hidden="true" />
                   <span className="hf-tile-icon" aria-hidden="true">{t.icon}</span>
                   <span className="hf-tile-body"><strong>{t.n}</strong>{t.label}</span>

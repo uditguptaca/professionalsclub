@@ -17,7 +17,7 @@ export default function CommunityPage() {
       {/* Hero */}
       <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: 'var(--text-primary)', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/volunteer-help.png" alt="Community support" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.25 }} />
+          <Image src="/volunteer-help.webp" alt="Community support" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.25 }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.95), rgba(232,93,4,0.15))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
@@ -65,7 +65,7 @@ export default function CommunityPage() {
                 page is static, so a hardcoded title would go stale or, worse, name a
                 video that was never published. */}
             <Link href="/youtube" style={{ borderRadius: 20, overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.15)', position: 'relative', aspectRatio: '16/9', background: 'var(--text-primary)', display: 'block' }}>
-              <Image src="/events-meetup.png" alt="Professionals Club workshop recording" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.5 }} />
+              <Image src="/events-meetup.webp" alt="Professionals Club workshop recording" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.5 }} />
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(12,12,14,0.7), transparent)' }} />
               <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 72, height: 72, borderRadius: '50%', background: 'var(--primary-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(232,93,4,0.4)' }}>
                 <PlayCircle size={36} style={{ color: 'white', marginLeft: 3 }} />

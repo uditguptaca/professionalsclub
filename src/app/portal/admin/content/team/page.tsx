@@ -31,7 +31,7 @@ export default function TeamManagementPage() {
       name: String(form.name || 'New Team Member'),
       role: String(form.role || 'Member'),
       bio: String(form.bio || ''),
-      image: String(form.image || '/hero-community.png'),
+      image: String(form.image || '/hero-community.webp'),
       linkedinUrl: String(form.linkedinUrl || '#'),
       order: Number(form.order) || teamMembers.length + 1,
     };
@@ -104,7 +104,7 @@ export default function TeamManagementPage() {
               <div><label style={labelStyle}>Full Name</label><input style={inputStyle} value={String(form.name || '')} onChange={e => handleChange('name', e.target.value)} /></div>
               <div><label style={labelStyle}>Role / Title</label><input style={inputStyle} value={String(form.role || '')} onChange={e => handleChange('role', e.target.value)} /></div>
               <div><label style={labelStyle}>Bio</label><textarea style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }} value={String(form.bio || '')} onChange={e => handleChange('bio', e.target.value)} /></div>
-              <div><label style={labelStyle}>Image Path</label><input style={inputStyle} value={String(form.image || '')} onChange={e => handleChange('image', e.target.value)} placeholder="/hero-community.png" /></div>
+              <div><label style={labelStyle}>Image Path</label><input style={inputStyle} value={String(form.image || '')} onChange={e => handleChange('image', e.target.value)} placeholder="/hero-community.webp" /></div>
               <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div><label style={labelStyle}>LinkedIn URL</label><input style={inputStyle} value={String(form.linkedinUrl || '')} onChange={e => handleChange('linkedinUrl', e.target.value)} /></div>
                 <div><label style={labelStyle}>Display Order</label><input type="number" style={inputStyle} value={String(form.order || '')} onChange={e => handleChange('order', Number(e.target.value))} /></div>

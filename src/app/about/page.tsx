@@ -22,9 +22,11 @@ export default function AboutPage() {
         {/* Background Animation (Toronto Skyline CN Tower) */}
         <div className="cinematic-bg-container">
           <img 
-            src="/images/toronto_skyline_hero.png" 
+            src="/images/toronto_skyline_hero.webp" 
             alt="About Us background" 
             className="cinematic-bg"
+            fetchPriority="high"
+            decoding="async"
             style={{ opacity: 0.45 }}
           />
           <div className="cinematic-overlay" />
@@ -143,7 +145,7 @@ export default function AboutPage() {
             </div>
             
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', boxShadow: 'var(--shadow-lg)', aspectRatio: '16/9' }}>
-              <Image src="/meetup_bg.png" alt="Platform Features" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
+              <Image src="/meetup_bg.webp" alt="Platform Features" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
               <div style={{ position: 'absolute', top: 20, right: 20, background: 'var(--primary-700)', color: 'white', padding: '6px 14px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700 }}>
                 Engagement Hub
               </div>
@@ -198,7 +200,7 @@ export default function AboutPage() {
         <div className="container">
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center' }}>
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', boxShadow: 'var(--shadow-lg)', aspectRatio: '16/9' }}>
-              <Image src="/volunteer-help.png" alt="Community Trust" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
+              <Image src="/volunteer-help.webp" alt="Community Trust" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
               <div style={{ position: 'absolute', top: 20, left: 20, background: 'var(--primary-700)', color: 'white', padding: '6px 14px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700 }}>
                 Safety & Trust
               </div>
@@ -260,7 +262,7 @@ export default function AboutPage() {
             </div>
 
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', aspectRatio: '16/9', boxShadow: 'var(--shadow-lg)' }}>
-              <Image src="/event_bg.png" alt="Trusted local businesses" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
+              <Image src="/event_bg.webp" alt="Trusted local businesses" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
               <div style={{ position: 'absolute', top: 20, left: 20, background: 'var(--primary-700)', color: 'white', padding: '6px 14px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700 }}>
                 Verified Directory
               </div>
@@ -274,7 +276,7 @@ export default function AboutPage() {
         <div className="container">
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center' }}>
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', aspectRatio: '16/9', boxShadow: 'var(--shadow-lg)' }}>
-              <Image src="/events-meetup.png" alt="Community events and networking" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
+              <Image src="/events-meetup.webp" alt="Community events and networking" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
               <div style={{ position: 'absolute', top: 20, right: 20, background: 'var(--primary-700)', color: 'white', padding: '6px 14px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700 }}>
                 Networking & Growth
               </div>
@@ -336,7 +338,7 @@ export default function AboutPage() {
             </div>
             
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', boxShadow: 'var(--shadow-lg)', aspectRatio: '16/9' }}>
-              <Image src="/hero-community.png" alt="Community values" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
+              <Image src="/hero-community.webp" alt="Community values" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '16px', background: 'linear-gradient(transparent, rgba(12,12,14,0.8))' }}>
                 <span style={{ color: 'white', fontWeight: 700, fontSize: '0.9rem' }}>Empowering Canadian Professionals</span>
               </div>

@@ -37,7 +37,7 @@ export default function EventsManagementPage() {
       eventType: (form.eventType as EventType) || 'in_person',
       capacity: Number(form.capacity) || 50,
       attendees: Number(form.attendees) || 0,
-      image: String(form.image || '/meetup_bg.png'),
+      image: String(form.image || '/meetup_bg.webp'),
       isFeatured: Boolean(form.isFeatured),
       platform: String(form.platform || ''),
       rsvpUrl: String(form.rsvpUrl || '#'),
@@ -138,7 +138,7 @@ export default function EventsManagementPage() {
                 <div><label style={labelStyle}>Capacity</label><input type="number" style={inputStyle} value={String(form.capacity || '')} onChange={e => handleChange('capacity', Number(e.target.value))} /></div>
                 <div><label style={labelStyle}>Attendees</label><input type="number" style={inputStyle} value={String(form.attendees || '')} onChange={e => handleChange('attendees', Number(e.target.value))} /></div>
               </div>
-              <div><label style={labelStyle}>Image Path</label><input style={inputStyle} value={String(form.image || '')} onChange={e => handleChange('image', e.target.value)} placeholder="/meetup_bg.png" /></div>
+              <div><label style={labelStyle}>Image Path</label><input style={inputStyle} value={String(form.image || '')} onChange={e => handleChange('image', e.target.value)} placeholder="/meetup_bg.webp" /></div>
               <div><label style={labelStyle}>Platform (for virtual)</label><input style={inputStyle} value={String(form.platform || '')} onChange={e => handleChange('platform', e.target.value)} placeholder="YouTube Live" /></div>
               <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div><label style={labelStyle}>Status</label>

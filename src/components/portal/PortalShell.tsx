@@ -9,6 +9,12 @@ import { NotificationProvider, useNotifications } from '@/context/notification-c
 import NotificationBell from '@/components/portal/NotificationBell';
 import { stopPush, registeredToken, isNativePush } from '@/lib/push';
 import { unregisterPushDeviceAction } from '@/app/actions/push';
+import { readCache, writeCache, onIdle, CACHE_KEYS } from '@/lib/swr-cache';
+import { fetchHomeFeed } from '@/app/actions/portal';
+import { fetchCommunityStart } from '@/app/actions/community';
+import { fetchCompanies } from '@/app/actions/referrals';
+import { chatStart } from '@/app/actions/chat';
+import { notificationsStartAction } from '@/app/actions/notifications';
 import type { UserRole } from '@/types';
 import {
   Home, HelpCircle, HandHeart, FileText, ClipboardList, MessageSquare,
@@ -33,6 +39,116 @@ import {
  */
 
 type NavLink = { label: string; href: string; icon: typeof Home };
+
+/**
+ * Tabs worth warming in the background, and the ONE action each of them needs.
+ *
+ * Every member page now loads from a single combined action, which is what
+ * makes this possible at all: warming a tab is one round trip, and the result
+ * is stored under the exact key that page reads, so a tab switch paints from
+ * memory with no network at all.
+ *
+ * Matrimony and Referrals are deliberately absent. They live behind the More
+ * sheet, and a warm costs the member a request on a phone connection - only
+ * the tab bar's own destinations earn that.
+ */
+const WARM: {
+  href: string;
+  key: string;
+  load: () => Promise<{ ok: true; data: unknown } | { ok: false; error: string }>;
+}[] = [
+  { href: '/portal/member/dashboard', key: CACHE_KEYS.dashboard, load: fetchHomeFeed },
+  { href: '/portal/member/community', key: CACHE_KEYS.community, load: fetchCommunityStart },
+  { href: '/portal/member/chats', key: CACHE_KEYS.chats, load: chatStart },
+  { href: '/portal/member/jobs', key: CACHE_KEYS.jobs, load: fetchCompanies },
+  { href: '/portal/member/notifications', key: CACHE_KEYS.notifications, load: () => notificationsStartAction({}) },
+];
+
+/** Events is a server component, so there is nothing to cache - only its RSC payload. */
+const WARM_ROUTES = [...WARM.map((w) => w.href), '/portal/member/events'];
+
+/** ms between warms. */
+const WARM_GAP_MS = 300;
+/** Longest we wait for the current page to stop loading before warming anyway. */
+const WARM_SETTLE_MAX_MS = 8000;
+
+/**
+ * Resolves once the page the member is looking at has stopped waiting on data.
+ *
+ * `<PortalLoading />` marks its skeleton `aria-busy="true"`, so that attribute
+ * is the portal's own answer to "is this screen still loading". Waiting for it
+ * to clear is what keeps a background warm from queueing IN FRONT of the
+ * current page's own fetch - Next runs a client's Server Action calls strictly
+ * one at a time, so a 300ms stagger alone cannot prevent that. Caps out rather
+ * than waiting forever, in case a screen leaves a skeleton up.
+ */
+function whenSettled(cancelled: () => boolean): Promise<void> {
+  return new Promise((resolve) => {
+    const deadline = Date.now() + WARM_SETTLE_MAX_MS;
+    const tick = () => {
+      if (cancelled()) return resolve();
+      const busy = document.querySelector('[aria-busy="true"]') !== null;
+      if (!busy || Date.now() > deadline) return resolve();
+      setTimeout(tick, 200);
+    };
+    // One beat first: a page that is about to show a skeleton has not
+    // necessarily rendered it yet when the browser first goes idle.
+    setTimeout(tick, 400);
+  });
+}
+
+/**
+ * Warm the other tabs once, after this page has settled.
+ *
+ * Two things keep this from making the app feel WORSE, and both matter:
+ *
+ *   - Next runs a client's Server Action calls strictly one at a time. So a
+ *     warm in flight delays whatever the member does next by one round trip.
+ *     The first touch, key press or navigation therefore cancels every warm
+ *     that has not started - the member's own intent always outranks a guess.
+ *   - Each warm re-checks the cache immediately before firing, so a tab the
+ *     member opened in the meantime is skipped rather than fetched twice.
+ */
+function useWarmOtherTabs(role: UserRole, pathname: string, router: ReturnType<typeof useRouter>) {
+  React.useEffect(() => {
+    if (role !== 'member') return;
+    let cancelled = false;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const stop = () => { cancelled = true; for (const t of timers) clearTimeout(t); };
+    const events = ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const;
+    for (const e of events) window.addEventListener(e, stop, { once: true, passive: true });
+
+    const cancelIdle = onIdle(async () => {
+      if (cancelled) return;
+      // The RSC payload first: it is cheap, it does not go through the action
+      // queue, and it is what makes the tab bar itself feel instant.
+      // staleTimes.dynamic in next.config.ts is what lets the router keep it.
+      for (const href of WARM_ROUTES) if (href !== pathname) router.prefetch(href);
+
+      await whenSettled(() => cancelled);
+      if (cancelled) return;
+
+      let slot = 0;
+      for (const w of WARM) {
+        if (w.href === pathname) continue;   // this page is fetching it already
+        timers.push(setTimeout(async () => {
+          if (cancelled || readCache(w.key) !== undefined) return;
+          const res = await w.load();
+          if (!cancelled && res.ok) writeCache(w.key, res.data);
+        }, slot++ * WARM_GAP_MS));
+      }
+    });
+
+    return () => {
+      stop();
+      cancelIdle();
+      for (const e of events) window.removeEventListener(e, stop);
+    };
+    // Mount only. Each page writes its own key as it loads, so a second pass
+    // after a navigation would find nothing left to warm.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+}
 
 export default function PortalShell(props: {
   role: UserRole;
@@ -60,6 +176,7 @@ function PortalChrome({
   const pathname = usePathname();
   const { counts } = useNotifications();
   const router = useRouter();
+  useWarmOtherTabs(role, pathname, router);
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const [signingOut, setSigningOut] = React.useState(false);
   const sheetRef = React.useRef<HTMLDivElement>(null);

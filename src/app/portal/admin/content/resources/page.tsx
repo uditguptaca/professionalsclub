@@ -35,17 +35,17 @@ export default function ResourcesManagementPage() {
   const saveItem = (type: Exclude<ModalType, null>) => {
     if (type === 'ebook') {
       return editId
-        ? updateEBook(editId, { title: form.title, author: form.author, type: form.type || 'PDF', size: form.size, color: form.color || 'var(--primary-600)', image: form.image || '/finance_bg.png', downloadUrl: form.downloadUrl || '#' })
-        : addEBook({ title: form.title || 'New E-Book', author: form.author || 'Professionals Club', type: form.type || 'PDF', size: form.size || '1.0 MB', color: form.color || 'var(--primary-600)', image: form.image || '/finance_bg.png', downloadUrl: form.downloadUrl || '#' });
+        ? updateEBook(editId, { title: form.title, author: form.author, type: form.type || 'PDF', size: form.size, color: form.color || 'var(--primary-600)', image: form.image || '/finance_bg.webp', downloadUrl: form.downloadUrl || '#' })
+        : addEBook({ title: form.title || 'New E-Book', author: form.author || 'Professionals Club', type: form.type || 'PDF', size: form.size || '1.0 MB', color: form.color || 'var(--primary-600)', image: form.image || '/finance_bg.webp', downloadUrl: form.downloadUrl || '#' });
     }
     if (type === 'workshop') {
       return editId
-        ? updateWorkshop(editId, { title: form.title, duration: form.duration, recordedDate: form.recordedDate, platform: form.platform, thumbnailImage: form.thumbnailImage || '/meetup_bg.png', videoUrl: form.videoUrl || '#' })
-        : addWorkshop({ title: form.title || 'New Workshop', duration: form.duration || '60 mins', recordedDate: form.recordedDate || new Date().toLocaleDateString(), platform: form.platform || 'YouTube', thumbnailImage: form.thumbnailImage || '/meetup_bg.png', videoUrl: form.videoUrl || '#' });
+        ? updateWorkshop(editId, { title: form.title, duration: form.duration, recordedDate: form.recordedDate, platform: form.platform, thumbnailImage: form.thumbnailImage || '/meetup_bg.webp', videoUrl: form.videoUrl || '#' })
+        : addWorkshop({ title: form.title || 'New Workshop', duration: form.duration || '60 mins', recordedDate: form.recordedDate || new Date().toLocaleDateString(), platform: form.platform || 'YouTube', thumbnailImage: form.thumbnailImage || '/meetup_bg.webp', videoUrl: form.videoUrl || '#' });
     }
     return editId
-      ? updateTemplate(editId, { title: form.title, fileType: form.fileType, category: form.category, image: form.image || '/hero-community.png', accessUrl: form.accessUrl || '#' })
-      : addTemplate({ title: form.title || 'New Template', fileType: form.fileType || 'PDF', category: form.category || 'Career', image: form.image || '/hero-community.png', accessUrl: form.accessUrl || '#' });
+      ? updateTemplate(editId, { title: form.title, fileType: form.fileType, category: form.category, image: form.image || '/hero-community.webp', accessUrl: form.accessUrl || '#' })
+      : addTemplate({ title: form.title || 'New Template', fileType: form.fileType || 'PDF', category: form.category || 'Career', image: form.image || '/hero-community.webp', accessUrl: form.accessUrl || '#' });
   };
 
   const handleSave = async () => {
@@ -99,7 +99,7 @@ export default function ResourcesManagementPage() {
                   <div><label style={labelStyle}>File Type</label><input style={inputStyle} value={form.type || ''} onChange={e => handleChange('type', e.target.value)} placeholder="PDF" /></div>
                   <div><label style={labelStyle}>File Size</label><input style={inputStyle} value={form.size || ''} onChange={e => handleChange('size', e.target.value)} placeholder="2.4 MB" /></div>
                 </div>
-                <div><label style={labelStyle}>Image Path</label><input style={inputStyle} value={form.image || ''} onChange={e => handleChange('image', e.target.value)} placeholder="/finance_bg.png" /></div>
+                <div><label style={labelStyle}>Image Path</label><input style={inputStyle} value={form.image || ''} onChange={e => handleChange('image', e.target.value)} placeholder="/finance_bg.webp" /></div>
                 <div><label style={labelStyle}>Color</label><input style={inputStyle} value={form.color || ''} onChange={e => handleChange('color', e.target.value)} placeholder="var(--primary-600)" /></div>
                 {/* Without this the field fell through to '#' on save, which the
                     public Resources page renders as the download link. */}
@@ -113,7 +113,7 @@ export default function ResourcesManagementPage() {
                   <div><label style={labelStyle}>Platform</label><input style={inputStyle} value={form.platform || ''} onChange={e => handleChange('platform', e.target.value)} placeholder="YouTube" /></div>
                 </div>
                 <div><label style={labelStyle}>Recorded Date</label><input style={inputStyle} value={form.recordedDate || ''} onChange={e => handleChange('recordedDate', e.target.value)} placeholder="Jan 12, 2026" /></div>
-                <div><label style={labelStyle}>Thumbnail Image</label><input style={inputStyle} value={form.thumbnailImage || ''} onChange={e => handleChange('thumbnailImage', e.target.value)} placeholder="/meetup_bg.png" /></div>
+                <div><label style={labelStyle}>Thumbnail Image</label><input style={inputStyle} value={form.thumbnailImage || ''} onChange={e => handleChange('thumbnailImage', e.target.value)} placeholder="/meetup_bg.webp" /></div>
                 <div><label style={labelStyle}>Video URL</label><input style={inputStyle} value={form.videoUrl || ''} onChange={e => handleChange('videoUrl', e.target.value)} placeholder="https://youtube.com/..." /></div>
               </>
             )}
@@ -123,7 +123,7 @@ export default function ResourcesManagementPage() {
                   <div><label style={labelStyle}>File Type</label><input style={inputStyle} value={form.fileType || ''} onChange={e => handleChange('fileType', e.target.value)} placeholder="Word Doc" /></div>
                   <div><label style={labelStyle}>Category</label><input style={inputStyle} value={form.category || ''} onChange={e => handleChange('category', e.target.value)} placeholder="Career" /></div>
                 </div>
-                <div><label style={labelStyle}>Image Path</label><input style={inputStyle} value={form.image || ''} onChange={e => handleChange('image', e.target.value)} placeholder="/hero-community.png" /></div>
+                <div><label style={labelStyle}>Image Path</label><input style={inputStyle} value={form.image || ''} onChange={e => handleChange('image', e.target.value)} placeholder="/hero-community.webp" /></div>
                 {/* Same as the e-book download link: this used to default to '#',
                     so every public Access Template link went nowhere. */}
                 <div><label style={labelStyle}>Access URL</label><input style={inputStyle} value={form.accessUrl || ''} onChange={e => handleChange('accessUrl', e.target.value)} placeholder="https://example.com/template.docx" /></div>

@@ -73,12 +73,27 @@ export async function listChats() {
   return run('Loading chats', (uid) => repo.listChats(uid));
 }
 
+/**
+ * The chats page's whole first paint in one call: threads, the people sheet,
+ * the blocked list and the chat settings. It was three actions in a
+ * Promise.all, and Next runs a client's action calls one at a time - so it
+ * cost three sequential round trips to a remote database.
+ */
+export async function chatStart() {
+  return run('Loading chats', (uid) => repo.chatStart(uid));
+}
+
 export async function openChat(partnerId: string) {
   return run('Opening chat', (uid) => repo.openChat(uid, partnerId));
 }
 
-export async function pollThread(conversationId: string) {
-  return run('Loading messages', (uid) => repo.pollThread(uid, conversationId));
+/**
+ * `since` is the previous poll's watermark. Passing it makes the poll
+ * incremental: only messages newer than that come back, instead of the whole
+ * conversation every five seconds.
+ */
+export async function pollThread(conversationId: string, since?: string | null) {
+  return run('Loading messages', (uid) => repo.pollThread(uid, conversationId, since));
 }
 
 export async function sendChatMessage(
@@ -140,8 +155,9 @@ export async function setTyping(conversationId: string) {
 
 // ---- Direct referrals ---------------------------------------------------------
 
-export async function listCompanyInsiders(companyId: string) {
-  return run('Loading people at this company', (uid) => repo.listCompanyInsiders(uid, companyId));
+/** The named directory for one company plus my remaining allowance, together. */
+export async function companyPeople(companyId: string) {
+  return run('Loading people at this company', (uid) => repo.companyPeople(uid, companyId));
 }
 
 export async function requestReferral(input: { insiderId: string; companyId: string; jobIds: string[]; note?: string }) {

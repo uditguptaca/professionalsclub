@@ -8,6 +8,7 @@ import {
 } from '@/app/actions/notifications';
 import { registerPushDeviceAction } from '@/app/actions/push';
 import { startPush, isNativePush } from '@/lib/push';
+import { onIdle } from '@/lib/swr-cache';
 import type { NotificationCounts } from '@/server/repos/notifications';
 
 /**
@@ -32,6 +33,12 @@ interface NotificationContextType {
   /** Unread in one module. */
   count: (category: string) => number;
   refresh: () => Promise<void>;
+  /**
+   * Publish counts a page already has. The inbox reads its list and its counts
+   * in one action, so asking for them again here would be a second round trip
+   * for a number already in hand.
+   */
+  applyCounts: (counts: NotificationCounts) => void;
   markRead: (id: string) => Promise<void>;
   markAllRead: (category?: string) => Promise<void>;
 }
@@ -81,12 +88,21 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   React.useEffect(() => {
     let timer: ReturnType<typeof setInterval> | null = null;
 
+    // The FIRST count fetch waits for idle on purpose. Next runs a client's
+    // Server Action calls one at a time, so firing this the instant the shell
+    // mounts put a badge query in front of whatever the page itself needs -
+    // the member then waited a whole extra round trip to see their own
+    // content. The badge is ambient; it can be a moment late.
+    let cancelIdle: (() => void) | null = null;
     const start = () => {
       if (timer !== null) return;
-      void refresh();
+      cancelIdle?.();
+      cancelIdle = onIdle(() => void refresh());
       timer = setInterval(() => void refresh(), POLL_MS);
     };
     const stop = () => {
+      cancelIdle?.();
+      cancelIdle = null;
       if (timer === null) return;
       clearInterval(timer);
       timer = null;
@@ -102,6 +118,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       stop();
     };
   }, [refresh]);
+
+  const applyCounts = React.useCallback((next: NotificationCounts) => setCounts(next), []);
 
   const markRead = React.useCallback(async (id: string) => {
     const r = await markNotificationReadAction(id);
@@ -119,8 +137,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   );
 
   const value = React.useMemo(
-    () => ({ counts, count, refresh, markRead, markAllRead }),
-    [counts, count, refresh, markRead, markAllRead]
+    () => ({ counts, count, refresh, applyCounts, markRead, markAllRead }),
+    [counts, count, refresh, applyCounts, markRead, markAllRead]
   );
 
   return (
@@ -141,6 +159,7 @@ export function useNotifications(): NotificationContextType {
     counts: EMPTY,
     count: () => 0,
     refresh: async () => {},
+    applyCounts: () => {},
     markRead: async () => {},
     markAllRead: async () => {},
   };

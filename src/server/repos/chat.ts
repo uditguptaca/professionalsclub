@@ -1,5 +1,5 @@
 import 'server-only';
-import { withUser, withUserRead } from '@/server/db';
+import { withUser, withUserRead, type Db } from '@/server/db';
 
 /**
  * Follows + the member chat hub.
@@ -81,7 +81,21 @@ export interface ThreadReferral {
 }
 
 export interface ThreadPoll {
+  /** The whole thread when `since` was null, otherwise only what is newer. */
   messages: ChatMessage[];
+  /**
+   * Read receipts for the WHOLE thread, always. An id that is absent is
+   * unread, so this stays authoritative even when the peer turns receipts off
+   * — and it is two small columns per row rather than the message bodies.
+   */
+  receipts: { id: string; readAt: string }[];
+  /**
+   * Hand this straight back as the next poll's `since`. It trails the newest
+   * message by a few seconds on purpose: a transaction can commit AFTER one
+   * with a later timestamp, and a cursor sitting exactly on the newest row
+   * would step over that message forever.
+   */
+  watermark: string | null;
   open: boolean;
   peerTypingAt: string | null;
   referrals: ThreadReferral[];
@@ -144,57 +158,139 @@ function assertOurUpload(url: string): void {
   if (!fromBlob && !fromDev) throw new Error('That upload was not recognised. Please try again.');
 }
 
+/**
+ * SQL fragments shared between a page's single-statement read and the narrow
+ * reads that still exist on their own.
+ *
+ * They are fragments rather than separate queries because the database is
+ * remote: one round trip costs roughly half a second from a distant client,
+ * and Next runs a client's Server Action calls one at a time. So what a page
+ * waits for is (actions x queries per action) round trips - which is why every
+ * "start" read below is ONE statement, not several sharing a transaction.
+ */
+
+/** Everyone visible to me, with my follow edges both ways. $1 = me. */
+export const COMMUNITY_EDGES_CTE = `
+  select n.id, n.first_name, n.last_name, n.job_title, n.city, n.created_at,
+         (select f.status from public.member_follows f
+           where f.follower_id = $1 and f.followee_id = n.id) as outgoing,
+         (select f.status from public.member_follows f
+           where f.follower_id = n.id and f.followee_id = $1) as incoming
+    from public.member_names n
+   where n.id <> $1
+     and not public.is_blocked_between_members($1, n.id)
+`;
+
+/** The four people lanes, as one json object, over an `edges` CTE. */
+export const COMMUNITY_PEOPLE_JSON = `
+  json_build_object(
+    'requests', (select coalesce(json_agg(t), '[]'::json) from (
+      select * from edges where incoming = 'pending' order by created_at desc
+    ) t),
+    'suggestions', (select coalesce(json_agg(t), '[]'::json) from (
+      select * from edges
+       where outgoing is null and coalesce(incoming, '') <> 'pending'
+       order by (lower(coalesce(city, '')) = lower(coalesce((select city from me), ''))) desc,
+                created_at desc
+       limit 20
+    ) t),
+    'following', (select coalesce(json_agg(t), '[]'::json) from (
+      select * from edges where outgoing is not null order by created_at desc
+    ) t),
+    'followers', (select coalesce(json_agg(t), '[]'::json) from (
+      select * from edges where incoming = 'accepted' order by created_at desc
+    ) t)
+  )
+`;
+
+/** One row per conversation I am in. $1 = me. */
+const THREADS_SELECT = `
+  select c.id,
+         n.id as partner_id, n.first_name, n.last_name, n.job_title,
+         c.last_message_at,
+         public.is_chat_allowed(c.member_a_id, c.member_b_id) as open,
+         coalesce(pf.muted, false) as muted,
+         lm.body as last_body, lm.kind as last_kind,
+         (lm.cipher is not null) as last_cipher,
+         (lm.sender_id = $1) as last_from_me,
+         (select count(*) from public.member_messages u
+           where u.conversation_id = c.id and u.sender_id <> $1 and u.read_at is null
+             and u.created_at > coalesce(pf.cleared_at, 'epoch'::timestamptz))::int as unread,
+         exists (select 1 from public.referral_direct_requests r
+                  where (r.seeker_id, r.insider_id) in ((c.member_a_id, c.member_b_id), (c.member_b_id, c.member_a_id))
+                ) as is_referral,
+         -- Definer helper, not an inline EXISTS: matrimony_profiles is
+         -- self-only under RLS, so the peer's row is invisible here (0025).
+         public.is_matrimony_match(c.member_a_id, c.member_b_id) as is_matrimony
+    from public.member_conversations c
+    join public.member_names n
+      on n.id = case when c.member_a_id = $1 then c.member_b_id else c.member_a_id end
+    left join public.member_chat_prefs pf
+      on pf.conversation_id = c.id and pf.member_id = $1
+    left join lateral (
+      select body, cipher, kind, sender_id from public.member_messages m
+       where m.conversation_id = c.id
+         and m.created_at > coalesce(pf.cleared_at, 'epoch'::timestamptz)
+       order by m.created_at desc limit 1
+    ) lm on true
+   where $1 in (c.member_a_id, c.member_b_id)
+   order by c.last_message_at desc
+`;
+
+/** My blocked list. $1 = me. */
+const BLOCKED_SELECT = `
+  select n.id, n.first_name, n.last_name
+    from public.member_blocks b
+    join public.member_names n on n.id = b.blocked_id
+   where b.blocker_id = $1
+   order by b.created_at desc
+`;
+
+/** My chat settings as json, defaults applied. $1 = me. */
+const SETTINGS_JSON = `
+  json_build_object(
+    'read_receipts', coalesce((select read_receipts from public.member_chat_settings where member_id = $1), true),
+    'typing_indicator', coalesce((select typing_indicator from public.member_chat_settings where member_id = $1), true)
+  )
+`;
+
 // ---- People & follow requests ------------------------------------------------
 
-export async function listPeople(userId: string): Promise<{
+export interface ChatPeople {
   requests: ChatPerson[];
   suggestions: ChatPerson[];
   following: ChatPerson[];
   followers: ChatPerson[];
-}> {
-  return withUserRead(userId, async (db) => {
-    const rows = await db.run<Record<string, unknown>>(
-      `
-      with me as (select city from public.profiles where id = $1),
-      edges as (
-        select n.id, n.first_name, n.last_name, n.job_title, n.city, n.created_at,
-               (select f.status from public.member_follows f
-                 where f.follower_id = $1 and f.followee_id = n.id) as outgoing,
-               (select f.status from public.member_follows f
-                 where f.follower_id = n.id and f.followee_id = $1) as incoming
-          from public.member_names n
-         where n.id <> $1
-           and not public.is_blocked_between_members($1, n.id)
-      )
-      select
-        (select coalesce(json_agg(t), '[]'::json) from (
-          select * from edges where incoming = 'pending' order by created_at desc
-        ) t) as requests,
-        (select coalesce(json_agg(t), '[]'::json) from (
-          select * from edges
-           where outgoing is null and coalesce(incoming, '') <> 'pending'
-           order by (lower(coalesce(city, '')) = lower(coalesce((select city from me), ''))) desc,
-                    created_at desc
-           limit 20
-        ) t) as suggestions,
-        (select coalesce(json_agg(t), '[]'::json) from (
-          select * from edges where outgoing is not null order by created_at desc
-        ) t) as following,
-        (select coalesce(json_agg(t), '[]'::json) from (
-          select * from edges where incoming = 'accepted' order by created_at desc
-        ) t) as followers
-      `,
-      [userId]
-    );
-    const row = rows[0] ?? {};
-    const arr = (v: unknown) => ((v ?? []) as Record<string, unknown>[]).map(toPerson);
-    return {
-      requests: arr(row.requests),
-      suggestions: arr(row.suggestions),
-      following: arr(row.following),
-      followers: arr(row.followers),
-    };
-  });
+}
+
+/**
+ * The `…On(db, …)` helpers below are the query bodies without the transaction.
+ * A page that needs several of them gets them inside ONE withUserRead - and so
+ * inside one Server Action, which is the round trip that actually costs the
+ * member time (Next runs a client's action calls one at a time).
+ */
+export async function peopleOn(db: Db, userId: string): Promise<ChatPeople> {
+  const rows = await db.run<{ people: RawPeople }>(
+    `with me as (select city from public.profiles where id = $1),
+          edges as (${COMMUNITY_EDGES_CTE})
+     select ${COMMUNITY_PEOPLE_JSON} as people`,
+    [userId]
+  );
+  return toChatPeople(rows[0]?.people);
+}
+
+type RawPeople = Record<keyof ChatPeople, Record<string, unknown>[]> | null | undefined;
+
+/** Exported so the community page can read the people rail in its own statement. */
+export const toChatPeople = (raw: RawPeople): ChatPeople => ({
+  requests: (raw?.requests ?? []).map(toPerson),
+  suggestions: (raw?.suggestions ?? []).map(toPerson),
+  following: (raw?.following ?? []).map(toPerson),
+  followers: (raw?.followers ?? []).map(toPerson),
+});
+
+export async function listPeople(userId: string): Promise<ChatPeople> {
+  return withUserRead(userId, (db) => peopleOn(db, userId));
 }
 
 /**
@@ -274,59 +370,74 @@ export async function declineFollow(userId: string, followerId: string): Promise
 
 // ---- Chats -------------------------------------------------------------------
 
+export async function chatsOn(db: Db, userId: string): Promise<ChatThread[]> {
+  return (await db.run<Record<string, unknown>>(THREADS_SELECT, [userId])).map(toThread);
+}
+
+const toThread = (r: Record<string, unknown>): ChatThread => ({
+  id: r.id as string,
+  partnerId: r.partner_id as string,
+  partnerFirstName: r.first_name as string,
+  partnerLastName: r.last_name as string,
+  partnerJobTitle: (r.job_title as string | null) ?? null,
+  lastMessageAt: iso(r.last_message_at) as string,
+  lastBody: (r.last_body as string | null) ?? null,
+  lastKind: (r.last_kind as string | null) ?? null,
+  lastCipher: Boolean(r.last_cipher),
+  lastFromMe: Boolean(r.last_from_me),
+  unread: Number(r.unread ?? 0),
+  open: Boolean(r.open),
+  muted: Boolean(r.muted),
+  context: r.is_referral ? 'referral' : r.is_matrimony ? 'matrimony' : 'follow',
+});
+
 export async function listChats(userId: string): Promise<ChatThread[]> {
+  return withUserRead(userId, (db) => chatsOn(db, userId));
+}
+
+/**
+ * Everything the chats page needs on first paint: the thread list, the people
+ * sheet, the blocked list and the global chat settings.
+ *
+ * ONE statement. It was three actions in a Promise.all, and Next ran them one
+ * after another - three round trips to a remote database before the list
+ * appeared. Four statements sharing a transaction would have been no better:
+ * a connection runs them in sequence too. Only collapsing the SQL removes the
+ * waiting.
+ */
+export async function chatStart(userId: string): Promise<{
+  threads: ChatThread[];
+  people: ChatPeople;
+  blocked: BlockedMember[];
+  settings: ChatSettings;
+}> {
   return withUserRead(userId, async (db) => {
-    const rows = await db.run<Record<string, unknown>>(
-      `
-      select c.id,
-             n.id as partner_id, n.first_name, n.last_name, n.job_title,
-             c.last_message_at,
-             public.is_chat_allowed(c.member_a_id, c.member_b_id) as open,
-             coalesce(pf.muted, false) as muted,
-             lm.body as last_body, lm.kind as last_kind,
-             (lm.cipher is not null) as last_cipher,
-             (lm.sender_id = $1) as last_from_me,
-             (select count(*) from public.member_messages u
-               where u.conversation_id = c.id and u.sender_id <> $1 and u.read_at is null
-                 and u.created_at > coalesce(pf.cleared_at, 'epoch'::timestamptz))::int as unread,
-             exists (select 1 from public.referral_direct_requests r
-                      where (r.seeker_id, r.insider_id) in ((c.member_a_id, c.member_b_id), (c.member_b_id, c.member_a_id))
-                    ) as is_referral,
-             -- Definer helper, not an inline EXISTS: matrimony_profiles is
-             -- self-only under RLS, so the peer's row is invisible here (0025).
-             public.is_matrimony_match(c.member_a_id, c.member_b_id) as is_matrimony
-        from public.member_conversations c
-        join public.member_names n
-          on n.id = case when c.member_a_id = $1 then c.member_b_id else c.member_a_id end
-        left join public.member_chat_prefs pf
-          on pf.conversation_id = c.id and pf.member_id = $1
-        left join lateral (
-          select body, cipher, kind, sender_id from public.member_messages m
-           where m.conversation_id = c.id
-             and m.created_at > coalesce(pf.cleared_at, 'epoch'::timestamptz)
-           order by m.created_at desc limit 1
-        ) lm on true
-       where $1 in (c.member_a_id, c.member_b_id)
-       order by c.last_message_at desc
-      `,
+    const rows = await db.run<{
+      threads: Record<string, unknown>[] | null;
+      people: RawPeople;
+      blocked: Record<string, unknown>[] | null;
+      settings: { read_receipts: boolean; typing_indicator: boolean };
+    }>(
+      `with me as (select city from public.profiles where id = $1),
+            edges as (${COMMUNITY_EDGES_CTE})
+       select
+         (select coalesce(json_agg(t order by t.last_message_at desc), '[]'::json)
+            from (${THREADS_SELECT}) t) as threads,
+         ${COMMUNITY_PEOPLE_JSON} as people,
+         (select coalesce(json_agg(t), '[]'::json) from (${BLOCKED_SELECT}) t) as blocked,
+         ${SETTINGS_JSON} as settings`,
       [userId]
     );
-    return rows.map((r) => ({
-      id: r.id as string,
-      partnerId: r.partner_id as string,
-      partnerFirstName: r.first_name as string,
-      partnerLastName: r.last_name as string,
-      partnerJobTitle: (r.job_title as string | null) ?? null,
-      lastMessageAt: iso(r.last_message_at) as string,
-      lastBody: (r.last_body as string | null) ?? null,
-      lastKind: (r.last_kind as string | null) ?? null,
-      lastCipher: Boolean(r.last_cipher),
-      lastFromMe: Boolean(r.last_from_me),
-      unread: Number(r.unread ?? 0),
-      open: Boolean(r.open),
-      muted: Boolean(r.muted),
-      context: r.is_referral ? 'referral' : r.is_matrimony ? 'matrimony' : 'follow',
-    }));
+    const row = rows[0];
+    return {
+      threads: (row?.threads ?? []).map(toThread),
+      people: toChatPeople(row?.people),
+      blocked: (row?.blocked ?? []).map(toBlocked),
+      settings: {
+        readReceipts: row?.settings?.read_receipts ?? true,
+        typingIndicator: row?.settings?.typing_indicator ?? true,
+      },
+    };
   });
 }
 
@@ -353,8 +464,19 @@ export async function openChat(userId: string, partnerId: string): Promise<strin
  * One poll, everything the open thread needs: messages, whether it is still
  * open, the peer's typing signal, and any referral requests between the two
  * of you (so referral cards always show live status).
+ *
+ * `since` makes it incremental. Without it this re-sent every message body,
+ * cipher and attachment in the conversation every five seconds — the single
+ * heaviest repeating request the app makes. With it, an idle thread costs a
+ * few hundred bytes. The parts that CHANGE without a new row (read receipts,
+ * reactions, referral status, typing) are still sent in full each time, which
+ * is why they are all narrow.
  */
-export async function pollThread(userId: string, conversationId: string): Promise<ThreadPoll> {
+export async function pollThread(
+  userId: string,
+  conversationId: string,
+  since?: string | null
+): Promise<ThreadPoll> {
   return withUserRead(userId, async (db) => {
     const rows = await db.run<Record<string, unknown>>(
       `
@@ -384,7 +506,22 @@ export async function pollThread(userId: string, conversationId: string): Promis
             from public.member_messages m
            where m.conversation_id = $1
              and m.created_at > (select cleared_at from prefs)
+             and ($3::timestamptz is null or m.created_at > $3::timestamptz)
         ) t) as messages,
+        (select coalesce(json_agg(t), '[]'::json) from (
+          select m.id, m.read_at
+            from public.member_messages m
+           where m.conversation_id = $1
+             and m.created_at > (select cleared_at from prefs)
+             and m.read_at is not null
+             -- Same symmetry as above: whether THEY read MY message is only
+             -- visible when both sides leave receipts on.
+             and not (m.sender_id = $2 and not (select receipts from vis))
+        ) t) as receipts,
+        (select max(m.created_at) - interval '5 seconds'
+           from public.member_messages m
+          where m.conversation_id = $1
+            and m.created_at > (select cleared_at from prefs)) as watermark,
         (select public.member_convo_is_open($1)) as open,
         (select case when (select typing from vis) then ty.typing_at end
            from public.member_chat_typing ty
@@ -406,11 +543,16 @@ export async function pollThread(userId: string, conversationId: string): Promis
             join convo c on (r.seeker_id, r.insider_id) in ((c.member_a_id, c.member_b_id), (c.member_b_id, c.member_a_id))
         ) t) as referrals
       `,
-      [conversationId, userId]
+      [conversationId, userId, since ?? null]
     );
     const row = rows[0] ?? {};
     return {
       messages: ((row.messages ?? []) as Record<string, unknown>[]).map(toMessage),
+      receipts: ((row.receipts ?? []) as Record<string, unknown>[]).map((r) => ({
+        id: r.id as string,
+        readAt: iso(r.read_at) as string,
+      })),
+      watermark: iso(row.watermark),
       open: Boolean(row.open),
       peerTypingAt: iso(row.peer_typing_at),
       reactions: ((row.reactions ?? []) as Record<string, unknown>[]).map((r) => ({
@@ -544,28 +686,32 @@ export async function setTyping(userId: string, conversationId: string): Promise
 // ---- Direct referrals ----------------------------------------------------------
 
 /** Who can refer at this company, by name, plus my standing request if any. */
-export async function listCompanyInsiders(userId: string, companyId: string): Promise<CompanyInsiderEntry[]> {
-  return withUserRead(userId, async (db) => {
-    const rows = await db.run<Record<string, unknown>>(
-      `
-      select d.member_id, d.first_name, d.last_name, d.job_title, d.verified_by_admin,
-             (select r.status from public.referral_direct_requests r
-               where r.seeker_id = $1 and r.insider_id = d.member_id and r.company_id = $2) as request_status
-        from public.company_insider_directory d
-       where d.company_id = $2 and d.member_id <> $1
-       order by d.verified_by_admin desc, d.last_name
-      `,
-      [userId, companyId]
-    );
-    return rows.map((r) => ({
-      memberId: r.member_id as string,
-      firstName: r.first_name as string,
-      lastName: r.last_name as string,
-      jobTitle: (r.job_title as string | null) ?? null,
-      verifiedByAdmin: Boolean(r.verified_by_admin),
-      requestStatus: (r.request_status as CompanyInsiderEntry['requestStatus']) ?? null,
-    }));
-  });
+/** The named insider directory for one company. $1 = me, $2 = the company. */
+const INSIDERS_SELECT = `
+  select d.member_id, d.first_name, d.last_name, d.job_title, d.verified_by_admin,
+         (select r.status from public.referral_direct_requests r
+           where r.seeker_id = $1 and r.insider_id = d.member_id and r.company_id = $2) as request_status
+    from public.company_insider_directory d
+   where d.company_id = $2 and d.member_id <> $1
+   order by d.verified_by_admin desc, d.last_name
+`;
+
+const toInsider = (r: Record<string, unknown>): CompanyInsiderEntry => ({
+  memberId: r.member_id as string,
+  firstName: r.first_name as string,
+  lastName: r.last_name as string,
+  jobTitle: (r.job_title as string | null) ?? null,
+  verifiedByAdmin: Boolean(r.verified_by_admin),
+  requestStatus: (r.request_status as CompanyInsiderEntry['requestStatus']) ?? null,
+});
+
+export async function companyInsidersOn(
+  db: Db,
+  userId: string,
+  companyId: string
+): Promise<CompanyInsiderEntry[]> {
+  return (await db.run<Record<string, unknown>>(INSIDERS_SELECT, [userId, companyId]))
+    .map(toInsider);
 }
 
 /**
@@ -666,28 +812,63 @@ export interface ReferralQuota {
 }
 
 /** The rolling 7-day allowance (2 requests, trigger-enforced in 0023). */
+/** A slot frees up seven days after the oldest counted request. */
+const quotaOf = (used: number, oldest: Date | string | null): ReferralQuota => ({
+  used,
+  limit: 2,
+  resetsAt: used > 0 && oldest
+    ? new Date(new Date(oldest).getTime() + 7 * 86400000).toISOString()
+    : null,
+});
+
+export async function referralQuotaOn(db: Db, userId: string): Promise<ReferralQuota> {
+  const rows = await db.run<{ used: string; oldest: Date | null }>(
+    `select count(*) as used, min(created_at) as oldest
+       from public.referral_direct_requests
+      where seeker_id = $1 and created_at > now() - interval '7 days'`,
+    [userId]
+  );
+  return quotaOf(Number(rows[0]?.used ?? 0), rows[0]?.oldest ?? null);
+}
+
 export async function referralQuota(userId: string): Promise<ReferralQuota> {
+  return withUserRead(userId, (db) => referralQuotaOn(db, userId));
+}
+
+/**
+ * The named insider directory for one company plus my remaining allowance -
+ * step 3 of the jobs flow used to ask for them in two actions, which Next ran
+ * back to back.
+ */
+export async function companyPeople(userId: string, companyId: string): Promise<{
+  insiders: CompanyInsiderEntry[];
+  quota: ReferralQuota;
+}> {
   return withUserRead(userId, async (db) => {
-    const rows = await db.run<{ used: string; oldest: Date | null }>(
-      `select count(*) as used, min(created_at) as oldest
-         from public.referral_direct_requests
-        where seeker_id = $1 and created_at > now() - interval '7 days'`,
-      [userId]
+    const rows = await db.run<{
+      insiders: Record<string, unknown>[] | null;
+      used: number;
+      oldest: string | null;
+    }>(
+      `select
+         (select coalesce(json_agg(t), '[]'::json) from (${INSIDERS_SELECT}) t) as insiders,
+         (select count(*)::int from public.referral_direct_requests
+           where seeker_id = $1 and created_at > now() - interval '7 days') as used,
+         (select min(created_at) from public.referral_direct_requests
+           where seeker_id = $1 and created_at > now() - interval '7 days') as oldest`,
+      [userId, companyId]
     );
-    const used = Number(rows[0]?.used ?? 0);
-    const oldest = rows[0]?.oldest;
+    const row = rows[0];
     return {
-      used,
-      limit: 2,
-      resetsAt: used > 0 && oldest ? new Date(new Date(oldest).getTime() + 7 * 86400000).toISOString() : null,
+      insiders: (row?.insiders ?? []).map(toInsider),
+      quota: quotaOf(Number(row?.used ?? 0), row?.oldest ?? null),
     };
   });
 }
 
 /** Requests I sent, for the referrals overview. */
-export async function myDirectReferrals(userId: string): Promise<MyDirectReferral[]> {
-  return withUserRead(userId, async (db) => {
-    const rows = await db.run<Record<string, unknown>>(
+export async function myDirectReferralsOn(db: Db, userId: string): Promise<MyDirectReferral[]> {
+  const rows = await db.run<Record<string, unknown>>(
       `
       select r.id, r.insider_id, r.status, r.created_at,
              n.first_name, n.last_name, co.name as company_name,
@@ -702,17 +883,24 @@ export async function myDirectReferrals(userId: string): Promise<MyDirectReferra
       `,
       [userId]
     );
-    return rows.map((r) => ({
-      id: r.id as string,
-      insiderId: r.insider_id as string,
-      insiderFirstName: r.first_name as string,
-      insiderLastName: r.last_name as string,
-      companyName: r.company_name as string,
-      status: r.status as MyDirectReferral['status'],
-      createdAt: iso(r.created_at) as string,
-      conversationId: (r.conversation_id as string | null) ?? null,
-    }));
-  });
+  return toMyDirectReferrals(rows);
+}
+
+/** Exported so the referrals screen can read these rows in its own statement. */
+export const toMyDirectReferrals = (rows: Record<string, unknown>[]): MyDirectReferral[] =>
+  rows.map((r) => ({
+    id: r.id as string,
+    insiderId: r.insider_id as string,
+    insiderFirstName: r.first_name as string,
+    insiderLastName: r.last_name as string,
+    companyName: r.company_name as string,
+    status: r.status as MyDirectReferral['status'],
+    createdAt: iso(r.created_at) as string,
+    conversationId: (r.conversation_id as string | null) ?? null,
+  }));
+
+export async function myDirectReferrals(userId: string): Promise<MyDirectReferral[]> {
+  return withUserRead(userId, (db) => myDirectReferralsOn(db, userId));
 }
 
 /** One reaction per person per message; null emoji removes it. */
@@ -763,22 +951,18 @@ export async function unblockMember(userId: string, targetId: string): Promise<v
   });
 }
 
+export async function blockedOn(db: Db, userId: string): Promise<BlockedMember[]> {
+  return (await db.run<Record<string, unknown>>(BLOCKED_SELECT, [userId])).map(toBlocked);
+}
+
+const toBlocked = (r: Record<string, unknown>): BlockedMember => ({
+  id: r.id as string,
+  firstName: r.first_name as string,
+  lastName: r.last_name as string,
+});
+
 export async function listBlockedMembers(userId: string): Promise<BlockedMember[]> {
-  return withUserRead(userId, async (db) => {
-    const rows = await db.run<Record<string, unknown>>(
-      `select n.id, n.first_name, n.last_name
-         from public.member_blocks b
-         join public.member_names n on n.id = b.blocked_id
-        where b.blocker_id = $1
-        order by b.created_at desc`,
-      [userId]
-    );
-    return rows.map((r) => ({
-      id: r.id as string,
-      firstName: r.first_name as string,
-      lastName: r.last_name as string,
-    }));
-  });
+  return withUserRead(userId, (db) => blockedOn(db, userId));
 }
 
 export async function reportMember(
@@ -820,17 +1004,19 @@ export async function clearChat(userId: string, conversationId: string): Promise
   });
 }
 
+export async function settingsOn(db: Db, userId: string): Promise<ChatSettings> {
+  const rows = await db.run<{ read_receipts: boolean; typing_indicator: boolean }>(
+    `select read_receipts, typing_indicator from public.member_chat_settings where member_id = $1`,
+    [userId]
+  );
+  return {
+    readReceipts: rows[0]?.read_receipts ?? true,
+    typingIndicator: rows[0]?.typing_indicator ?? true,
+  };
+}
+
 export async function getChatSettings(userId: string): Promise<ChatSettings> {
-  return withUserRead(userId, async (db) => {
-    const rows = await db.run<{ read_receipts: boolean; typing_indicator: boolean }>(
-      `select read_receipts, typing_indicator from public.member_chat_settings where member_id = $1`,
-      [userId]
-    );
-    return {
-      readReceipts: rows[0]?.read_receipts ?? true,
-      typingIndicator: rows[0]?.typing_indicator ?? true,
-    };
-  });
+  return withUserRead(userId, (db) => settingsOn(db, userId));
 }
 
 export async function updateChatSettings(

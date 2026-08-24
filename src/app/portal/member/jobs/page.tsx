@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/app-context';
 import { fetchCompanies, fetchCompanyJobs } from '@/app/actions/referrals';
-import { readCache, writeCache } from '@/lib/swr-cache';
-import { listCompanyInsiders, requestReferral, referralQuota } from '@/app/actions/chat';
+import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
+import { companyPeople, requestReferral, referralQuota } from '@/app/actions/chat';
 import type { Company, CompanyJob } from '@/types';
 import type { CompanyInsiderEntry } from '@/server/repos/chat';
 import {
@@ -179,6 +179,8 @@ function CompanyLogo({ company, size = 44 }: { company: Company; size?: number }
       <img
         src={logo}
         alt=""
+        loading="lazy"
+        decoding="async"
         width={size}
         height={size}
         style={{
@@ -286,10 +288,10 @@ export default function MemberJobsPage() {
 
   useEffect(() => {
     if (!currentUserId) return;
-    const cached = readCache<Company[]>('companies');
+    const cached = readCache<Company[]>(CACHE_KEYS.jobs);
     if (cached) setCompanies(cached);
     fetchCompanies().then((r) => {
-      if (r.ok) { setCompanies(r.data); writeCache('companies', r.data); }
+      if (r.ok) { setCompanies(r.data); writeCache(CACHE_KEYS.jobs, r.data); }
       else setError(r.error);
     });
   }, [currentUserId]);
@@ -392,14 +394,19 @@ export default function MemberJobsPage() {
 
   const loadQuota = () => referralQuota().then((r) => { if (r.ok) setQuota(r.data); });
 
-  /** Step 3 loads the named directory once per company, and the allowance every time. */
+  /**
+   * Step 3 needs the named directory and my remaining allowance. They used to
+   * be two actions, which Next ran back to back; companyPeople brings both in
+   * one round trip. Once the directory is in hand only the allowance can have
+   * changed, so a re-entry asks for just that.
+   */
   const goPeople = async () => {
     setStep('people');
     setSendError('');
-    loadQuota();
-    if (!selected || insiders !== null || insidersError) return;
-    const r = await listCompanyInsiders(selected.id);
-    if (r.ok) setInsiders(r.data); else setInsidersError(r.error);
+    if (!selected || insiders !== null || insidersError) { loadQuota(); return; }
+    const r = await companyPeople(selected.id);
+    if (r.ok) { setInsiders(r.data.insiders); setQuota(r.data.quota); }
+    else setInsidersError(r.error);
   };
 
   /**

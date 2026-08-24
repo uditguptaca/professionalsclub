@@ -45,7 +45,7 @@ export default function SettlementPage() {
       ],
       buttonText: 'Request Housing Help',
       imgSide: 'right',
-      image: '/housing_bg.png',
+      image: '/housing_bg.webp',
       imgOverlayText: 'Newcomer Housing Support'
     },
     {
@@ -62,7 +62,7 @@ export default function SettlementPage() {
       ],
       buttonText: 'Request Financial Help',
       imgSide: 'left',
-      image: '/finance_bg.png',
+      image: '/finance_bg.webp',
       imgOverlayText: 'Newcomer Financial Services'
     },
     {
@@ -79,7 +79,7 @@ export default function SettlementPage() {
       ],
       buttonText: 'Request Healthcare Help',
       imgSide: 'right',
-      image: '/healthcare_bg.png',
+      image: '/healthcare_bg.webp',
       imgOverlayText: 'Newcomer Healthcare Assistance'
     },
     {
@@ -96,7 +96,7 @@ export default function SettlementPage() {
       ],
       buttonText: 'Request Transit Help',
       imgSide: 'left',
-      image: '/toronto-skyline.png',
+      image: '/toronto-skyline.webp',
       imgOverlayText: 'Newcomer Transportation Support'
     },
     {
@@ -113,7 +113,7 @@ export default function SettlementPage() {
       ],
       buttonText: 'Request Legal Document Help',
       imgSide: 'right',
-      image: '/hero-community.png',
+      image: '/hero-community.webp',
       imgOverlayText: 'Newcomer Legal Support'
     }
   ];
@@ -129,9 +129,11 @@ export default function SettlementPage() {
         {/* Background Animation (Toronto Skyline CN Tower) */}
         <div className="cinematic-bg-container">
           <img 
-            src="/images/toronto_skyline_hero.png" 
+            src="/images/toronto_skyline_hero.webp" 
             alt="Settlement background" 
             className="cinematic-bg"
+            fetchPriority="high"
+            decoding="async"
             style={{ opacity: 0.45 }}
           />
           <div className="cinematic-overlay" />

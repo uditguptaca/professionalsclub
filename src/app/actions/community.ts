@@ -88,11 +88,20 @@ export async function fetchGroupsExplore(query = ''): Promise<ActionResult<Commu
   });
 }
 
-/** Groups to weave into the feed as suggestion cards. */
-export async function fetchSuggestedGroups(): Promise<ActionResult<CommunityGroup[]>> {
-  return run('Loading suggestions', async () => {
+/**
+ * Everything the Community page needs on arrival: feed, group rail, people
+ * rail and incoming follow requests. Replaces the three actions the mount
+ * effect used to fire (fetchPersonalFeed + listPeople + fetchSuggestedGroups),
+ * which Next ran one after another.
+ */
+export async function fetchCommunityStart(): Promise<ActionResult<{
+  posts: CommunityPost[];
+  groups: CommunityGroup[];
+  people: import('@/server/repos/chat').ChatPeople;
+}>> {
+  return run('Loading the community', async () => {
     const uid = await requireUserId();
-    return repo.suggestedGroups(uid);
+    return repo.communityStart(uid);
   });
 }
 

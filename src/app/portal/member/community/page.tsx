@@ -3,18 +3,18 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link';
 import type { CommunityGroup, CommunityPost } from '@/types';
 import {
-  fetchPersonalFeed, fetchGroupsExplore, fetchSuggestedGroups,
+  fetchCommunityStart, fetchPersonalFeed, fetchGroupsExplore,
   startGroup, joinCommunityGroup, leaveCommunityGroup,
 } from '@/app/actions/community';
 import {
-  searchPeople, listPeople, followMember, unfollowMember,
+  searchPeople, followMember, unfollowMember,
   acceptFollowRequest, declineFollowRequest,
 } from '@/app/actions/chat';
-import type { ChatPerson } from '@/server/repos/chat';
+import type { ChatPerson, ChatPeople } from '@/server/repos/chat';
 import { PostCard, PostComposer, CommunityAside } from '@/components/portal/community';
 import PortalLoading from '@/components/portal/PortalLoading';
 import { useConfirm } from '@/components/portal/confirm';
-import { readCache, writeCache } from '@/lib/swr-cache';
+import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
 import {
   Newspaper, UsersRound, Search, Plus, Users, Check, ChevronRight, X,
   AlertCircle, UserPlus, MessageCircle, Sparkles,
@@ -45,6 +45,31 @@ const TABS: { id: Tab; label: string; icon: typeof Newspaper }[] = [
 ];
 
 const PAGE = 20;
+
+/**
+ * Exactly what fetchCommunityStart returns. The portal shell warms this under
+ * CACHE_KEYS.community while the member is on another tab, so arriving here
+ * paints a full page with no round trip.
+ */
+type CommunityStart = {
+  posts: CommunityPost[];
+  /** One group list serving the Groups tab, the feed's Join cards and the aside. */
+  groups: CommunityGroup[];
+  people: ChatPeople;
+};
+
+/** How many Join cards the feed weaves in. */
+const RAIL_GROUPS = 6;
+
+/**
+ * Keep the cached first paint in step with an optimistic change. Module scope,
+ * not a closure: it touches only the cache, so every caller shares one stable
+ * reference and the loaders below stay memoised.
+ */
+const patchStart = (patch: Partial<CommunityStart>) => {
+  const cur = readCache<CommunityStart>(CACHE_KEYS.community);
+  if (cur) writeCache<CommunityStart>(CACHE_KEYS.community, { ...cur, ...patch });
+};
 /** A suggestion rail lands after every Nth post. */
 const RAIL_EVERY = 4;
 
@@ -65,16 +90,18 @@ export default function CommunityPage() {
   const [toast, setToast] = useState('');
 
   // ---- Feed ---------------------------------------------------------------
-  const [posts, setPosts] = useState<CommunityPost[] | null>(() => readCache<CommunityPost[]>('community-feed') ?? null);
+  // The feed and both rails come from ONE cached payload now, because one
+  // action fetches them.
+  const cached = readCache<CommunityStart>(CACHE_KEYS.community);
+  const [posts, setPosts] = useState<CommunityPost[] | null>(cached?.posts ?? null);
   const [feedError, setFeedError] = useState('');
   const [feedEnd, setFeedEnd] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [railPeople, setRailPeople] = useState<ChatPerson[]>([]);
-  const [railGroups, setRailGroups] = useState<CommunityGroup[]>([]);
+  const [railPeople, setRailPeople] = useState<ChatPerson[]>(cached?.people.suggestions ?? []);
   const sentinel = useRef<HTMLDivElement | null>(null);
 
   // ---- Groups -------------------------------------------------------------
-  const [groups, setGroups] = useState<CommunityGroup[] | null>(() => readCache<CommunityGroup[]>('community-groups') ?? null);
+  const [groups, setGroups] = useState<CommunityGroup[] | null>(cached?.groups ?? null);
   const [groupQuery, setGroupQuery] = useState('');
   const [groupsError, setGroupsError] = useState('');
   const [creating, setCreating] = useState(false);
@@ -83,8 +110,8 @@ export default function CommunityPage() {
   const [formError, setFormError] = useState('');
 
   // ---- People -------------------------------------------------------------
-  const [people, setPeople] = useState<ChatPerson[] | null>(() => readCache<ChatPerson[]>('community-people') ?? null);
-  const [requests, setRequests] = useState<ChatPerson[]>([]);
+  const [people, setPeople] = useState<ChatPerson[] | null>(cached?.people.suggestions ?? null);
+  const [requests, setRequests] = useState<ChatPerson[]>(cached?.people.requests ?? []);
   const [peopleQuery, setPeopleQuery] = useState('');
   const [peopleError, setPeopleError] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -109,49 +136,54 @@ export default function CommunityPage() {
   }, [toast]);
 
   // ---- Loaders ------------------------------------------------------------
-  const loadFeed = useCallback(async () => {
-    const r = await fetchPersonalFeed({});
+  /**
+   * The feed AND both rails in one round trip. This used to be three actions
+   * fired from one effect - and because Next runs a client's Server Action
+   * calls one at a time, they ran back to back, which is why the page appeared
+   * instantly and its content two seconds later.
+   */
+  const loadStart = useCallback(async () => {
+    const r = await fetchCommunityStart();
     if (r.ok) {
-      setPosts(r.data);
-      writeCache('community-feed', r.data);
-      setFeedEnd(r.data.length < PAGE);
+      writeCache<CommunityStart>(CACHE_KEYS.community, r.data);
+      setPosts(r.data.posts);
+      setGroups(r.data.groups);
+      setRailPeople(r.data.people.suggestions);
+      setRequests(r.data.people.requests);
+      setFeedEnd(r.data.posts.length < PAGE);
       setFeedError('');
     } else {
       setFeedError(r.error);
     }
   }, []);
 
-  const loadRails = useCallback(async () => {
-    const [pRes, gRes] = await Promise.all([listPeople(), fetchSuggestedGroups()]);
-    if (pRes.ok) setRailPeople(pRes.data.suggestions);
-    if (gRes.ok) setRailGroups(gRes.data);
-  }, []);
-
+  // The unfiltered list arrived with loadStart, so opening the tab paints
+  // instantly and this only revalidates behind it.
   const loadGroups = useCallback(async (query: string) => {
     const r = await fetchGroupsExplore(query);
     if (r.ok) {
       setGroups(r.data);
-      if (!query) writeCache('community-groups', r.data);
+      if (!query) patchStart({ groups: r.data });
       setGroupsError('');
     } else {
       setGroupsError(r.error);
     }
   }, []);
 
+  // Incoming follow requests already arrived with loadStart, so this is one
+  // call now rather than searchPeople + listPeople back to back.
   const loadPeople = useCallback(async (query: string) => {
-    const [sRes, lRes] = await Promise.all([searchPeople(query), query ? Promise.resolve(null) : listPeople()]);
+    const sRes = await searchPeople(query);
     if (sRes.ok) {
       setPeople(sRes.data);
-      if (!query) writeCache('community-people', sRes.data);
       setPeopleError('');
     } else {
       setPeopleError(sRes.error);
     }
-    if (lRes && lRes.ok) setRequests(lRes.data.requests);
   }, []);
 
   // First paint: the feed and its rails. The other tabs load when opened.
-  useEffect(() => { void loadFeed(); void loadRails(); }, [loadFeed, loadRails]);
+  useEffect(() => { void loadStart(); }, [loadStart]);
 
   useEffect(() => {
     if (tab !== 'groups') return;
@@ -202,11 +234,11 @@ export default function CommunityPage() {
   // stale, so navigating away and back re-painted a Join button for a group
   // the member had already joined until the background refresh landed.
   const commitPosts = (fn: (prev: CommunityPost[]) => CommunityPost[]) =>
-    setPosts((prev) => { const next = fn(prev ?? []); writeCache('community-feed', next); return next; });
+    setPosts((prev) => { const next = fn(prev ?? []); patchStart({ posts: next }); return next; });
   const commitGroups = (fn: (prev: CommunityGroup[]) => CommunityGroup[]) =>
-    setGroups((prev) => { const next = fn(prev ?? []); writeCache('community-groups', next); return next; });
+    setGroups((prev) => { const next = fn(prev ?? []); patchStart({ groups: next }); return next; });
   const commitPeople = (fn: (prev: ChatPerson[]) => ChatPerson[]) =>
-    setPeople((prev) => { const next = fn(prev ?? []); writeCache('community-people', next); return next; });
+    setPeople((prev) => fn(prev ?? []));
 
   const joinGroupById = async (group: { id: string; name: string }) => {
     setBusyId(group.id);
@@ -215,7 +247,6 @@ export default function CommunityPage() {
       // Every post from that group is now "mine", so the Join CTA disappears
       // from all of them at once, not just the one that was tapped.
       commitPosts((ps) => ps.map((p) => (p.groupId === group.id ? { ...p, source: 'group' as const, inGroup: true } : p)));
-      setRailGroups((gs) => gs.filter((g) => g.id !== group.id));
       commitGroups((gs) => gs.map((g) => (
         g.id === group.id
           ? { ...g, isMember: true, memberCount: g.memberCount + 1, myRole: 'member' as const, suggestReason: null }
@@ -312,6 +343,12 @@ export default function CommunityPage() {
     }
     setBusyId(null);
   };
+
+  /** The feed's inline Join cards: groups I am not in, best match first. */
+  const railGroups = useMemo(
+    () => (groups ?? []).filter((g) => !g.isMember).slice(0, RAIL_GROUPS),
+    [groups]
+  );
 
   // ---- Feed assembly: posts with rails woven in --------------------------
   const feedItems = useMemo<FeedItem[]>(() => {
@@ -826,7 +863,7 @@ export default function CommunityPage() {
         {tab === 'people' && peopleTab}
       </div>
 
-      <CommunityAside />
+      <CommunityAside groups={groups ?? undefined} />
 
       {/* ---- Start a group ---- */}
       {creating && (

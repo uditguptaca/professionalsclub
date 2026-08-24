@@ -164,7 +164,7 @@ export default async function Home() {
               <Stagger className="bento">
                 <StaggerItem className="bento-3 bento-tall" style={{ display: 'contents' }}>
                   <Link href="/portal/signup" className="bento-tile bento-photo bento-3 bento-tall">
-                    <Image src="/img/mentoring-1.jpg" alt="" width={900} height={1200} sizes="(max-width: 1024px) 100vw, 50vw" />
+                    <Image src="/img/mentoring-1.webp" alt="" width={900} height={1200} sizes="(max-width: 1024px) 100vw, 50vw" />
                     <span className="bento-arrow"><ArrowUpRight size={16} /></span>
                     <span className="bento-kicker">01 — Careers</span>
                     <h3>Job referrals and placement</h3>
@@ -219,7 +219,7 @@ export default async function Home() {
 
                 <StaggerItem style={{ display: 'contents' }}>
                   <Link href="/matrimony" className="bento-tile bento-photo bento-6" style={{ minHeight: '14rem' }}>
-                    <Image src="/img/community-hall-2.jpg" alt="" width={1600} height={900} sizes="100vw" />
+                    <Image src="/img/community-hall-2.webp" alt="" width={1600} height={900} sizes="100vw" />
                     <span className="bento-arrow"><ArrowUpRight size={16} /></span>
                     <span className="bento-kicker">07 — Matrimony</span>
                     <h3>Verified matrimony portal</h3>
@@ -236,7 +236,7 @@ export default async function Home() {
               <div className="panel-split">
                 <Reveal>
                   <div className="panel-photo">
-                    <Image src="/career-mentorship.png" alt="Career mentorship session" fill sizes="(max-width: 900px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
+                    <Image src="/career-mentorship.webp" alt="Career mentorship session" fill sizes="(max-width: 900px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
                     <span className="panel-photo-tag glass">Career support &amp; job referrals</span>
                   </div>
                 </Reveal>
@@ -338,7 +338,7 @@ export default async function Home() {
                 </div>
                 <Reveal delay={0.15}>
                   <div className="panel-photo">
-                    <Image src="/settlement-guide.png" alt="Newcomer settlement" fill sizes="(max-width: 900px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
+                    <Image src="/settlement-guide.webp" alt="Newcomer settlement" fill sizes="(max-width: 900px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
                     <span className="panel-photo-tag glass">Newcomer settlement support</span>
                   </div>
                 </Reveal>
@@ -352,7 +352,7 @@ export default async function Home() {
               <div className="panel-split">
                 <Reveal>
                   <div className="panel-photo">
-                    <Image src="/events-meetup.png" alt="Community meetup event" fill sizes="(max-width: 900px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
+                    <Image src="/events-meetup.webp" alt="Community meetup event" fill sizes="(max-width: 900px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
                     <span className="panel-photo-tag glass">Monthly events</span>
                   </div>
                 </Reveal>
@@ -431,14 +431,14 @@ export default async function Home() {
                 <div style={{ display: 'grid', gap: '1rem' }}>
                   <Reveal delay={0.15}>
                     <div className="panel-photo" style={{ aspectRatio: '16 / 10' }}>
-                      <Image src="/volunteer-help.png" alt="Volunteers helping newcomers" fill sizes="(max-width: 900px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
+                      <Image src="/volunteer-help.webp" alt="Volunteers helping newcomers" fill sizes="(max-width: 900px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
                       <span className="panel-photo-tag glass">18 active volunteers &middot; 89 cases resolved</span>
                     </div>
                   </Reveal>
                   <Reveal delay={0.3}>
                     <figure className="glass-dark" style={{ margin: 0, padding: 'clamp(1.5rem, 2.5vw, 2rem)', display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
                       <span style={{ position: 'relative', width: '4.5rem', height: '4.5rem', borderRadius: '30%', overflow: 'hidden', flexShrink: 0 }}>
-                        <Image src="/founder.png" alt="Udit Gupta" fill sizes="72px" style={{ objectFit: 'cover' }} />
+                        <Image src="/founder.webp" alt="Udit Gupta" fill sizes="72px" style={{ objectFit: 'cover' }} />
                       </span>
                       <div>
                         <blockquote style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 'clamp(1.05rem, 1.6vw, 1.3rem)', fontStyle: 'italic', color: '#fff', fontVariationSettings: '"SOFT" 80, "WONK" 1' }}>
@@ -458,7 +458,7 @@ export default async function Home() {
           {/* ─── WHATSAPP COMMUNITIES ─── */}
           <section className="flow-forest">
             <div style={{ position: 'absolute', inset: 0 }}>
-              <Image src="/whatsapp-community-bg.png" alt="" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.12 }} />
+              <Image src="/whatsapp-community-bg.webp" alt="" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.12 }} />
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(15,35,24,0.94) 0%, rgba(22,52,42,0.85) 55%, rgba(232,93,4,0.16) 100%)' }} />
             </div>
 
@@ -529,7 +529,7 @@ export default async function Home() {
                   <StaggerItem key={biz.slug} style={{ display: 'contents' }}>
                     <Link href={`/businesses/${biz.slug}`} className="bento-tile" style={{ padding: 0, minHeight: 0 }}>
                       <span style={{ position: 'relative', display: 'block', height: '10rem', overflow: 'hidden', background: 'var(--bg-secondary)' }}>
-                        {biz.coverImage && <img src={biz.coverImage} alt={biz.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
+                        {biz.coverImage && <img src={biz.coverImage} alt={biz.name} loading="lazy" decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
                         <span style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 6 }}>
                           {biz.verificationStatus === 'verified' && <span className="biz-badge biz-badge-verified"><ShieldCheck size={10} /> Verified</span>}
                           {biz.offerBadge && <span className="biz-badge biz-badge-deal"><Tag size={10} /> {biz.offerBadge}</span>}

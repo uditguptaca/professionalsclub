@@ -137,11 +137,17 @@ export default function MatrimonyLandingPage() {
         alignItems: 'center',
         background: 'var(--text-primary)',
       }}>
-        {/* Background Video */}
+        {/* Background still. Was a 9.6MB autoplaying couple.mp4 at opacity 0.55 under
+            a scrim that reaches 98% opaque: paying 9.6MB for texture nobody can see. */}
         <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
-          <video autoPlay loop muted playsInline style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.55 }}>
-            <source src="/videos/couple.mp4" type="video/mp4" />
-          </video>
+          <img
+            src="/images/matrimony_hero.webp"
+            alt=""
+            aria-hidden="true"
+            fetchPriority="high"
+            decoding="async"
+            style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.55 }}
+          />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(12,12,14,0.4) 0%, rgba(12,12,14,0.72) 40%, rgba(12,12,14,0.98) 100%)' }} />
         </div>
 

@@ -56,9 +56,11 @@ export default function BusinessDirectoryPage() {
         {/* Background Animation (Toronto Skyline CN Tower) */}
         <div className="cinematic-bg-container">
           <img 
-            src="/images/toronto_skyline_hero.png" 
+            src="/images/toronto_skyline_hero.webp" 
             alt="Toronto Skyline with CN Tower" 
             className="cinematic-bg"
+            fetchPriority="high"
+            decoding="async"
             style={{ opacity: 0.5 }}
           />
           <div className="cinematic-overlay" />
@@ -158,7 +160,7 @@ export default function BusinessDirectoryPage() {
               <Link key={biz.id} href={`/businesses/${biz.slug}`} style={{ textDecoration: 'none' }}>
                 <div className="biz-card">
                   <div className="biz-card-image">
-                    {biz.coverImage && <img src={biz.coverImage} alt={biz.name} />}
+                    {biz.coverImage && <img src={biz.coverImage} alt={biz.name} loading="lazy" decoding="async" />}
                     <div className="biz-card-badges">
                       {biz.verificationStatus === 'verified' && <span className="biz-badge biz-badge-verified"><ShieldCheck size={10} /> Verified</span>}
                       {biz.isFeatured && <span className="biz-badge biz-badge-featured"><Star size={10} /> Featured</span>}

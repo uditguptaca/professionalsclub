@@ -52,7 +52,7 @@ export default function CompaniesPage() {
       {/* Hero */}
       <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: 'var(--text-primary)', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/toronto-skyline.png" alt="Toronto skyline" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.2 }} />
+          <Image src="/toronto-skyline.webp" alt="Toronto skyline" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.2 }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.95), rgba(232,93,4,0.15))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
@@ -181,7 +181,7 @@ export default function CompaniesPage() {
       {/* CTA */}
       <section className="section-sm" style={{ position: 'relative', textAlign: 'center', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/event_bg.png" alt="Company Referrals" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
+          <Image src="/event_bg.webp" alt="Company Referrals" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.92), rgba(12,12,14,0.85))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 600 }}>

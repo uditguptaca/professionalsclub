@@ -198,7 +198,7 @@ export function PostComposer({
           {drafts.map((d, i) => (
             <div key={d.media.url} className="community-draft">
               {d.media.type === 'image'
-                ? <img src={d.previewUrl} alt="" />
+                ? <img src={d.previewUrl} alt="" decoding="async" />
                 : <video src={d.previewUrl} muted />}
               <button
                 type="button"
@@ -302,7 +302,7 @@ function Lightbox({
       )}
       <div className="community-lightbox-stage" onClick={(e) => e.stopPropagation()}>
         {item.type === 'image'
-          ? <img src={item.url} alt="" />
+          ? <img src={item.url} alt="" fetchPriority="high" decoding="async" />
           : <video src={item.url} controls autoPlay playsInline />}
       </div>
       {index < media.length - 1 && (
@@ -777,14 +777,22 @@ export function GroupsRail() {
 
 // ============================================================ Desktop aside
 
-export function CommunityAside() {
-  const [groups, setGroups] = useState<CommunityGroup[] | null>(null);
+export function CommunityAside({ groups: provided }: { groups?: CommunityGroup[] } = {}) {
+  const [groups, setGroups] = useState<CommunityGroup[] | null>(provided ?? null);
   const [joinBusy, setJoinBusy] = useState<string | null>(null);
   const [joinError, setJoinError] = useState('');
 
+  /**
+   * The community page loads the group list with its own first paint and hands
+   * it down, so this asks for nothing. Only a caller that has no list of its
+   * own falls back to a request - this used to fire fetchCommunityHome on every
+   * mount, a whole extra serialized round trip whose twenty posts were thrown
+   * away, and whose late arrival reflowed the post column it sits beside.
+   */
   useEffect(() => {
+    if (provided) { setGroups(provided); return; }
     sharedGroups().then(setGroups);
-  }, []);
+  }, [provided]);
 
   const mine = (groups ?? []).filter((g) => g.isMember);
   const discover = (groups ?? []).filter((g) => !g.isMember).slice(0, 3);

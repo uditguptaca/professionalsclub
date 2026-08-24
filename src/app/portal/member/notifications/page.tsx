@@ -9,11 +9,14 @@ import {
 import PortalLoading from '@/components/portal/PortalLoading';
 import { useNotifications } from '@/context/notification-context';
 import {
+  notificationsStartAction,
   listNotificationsAction,
-  getNotificationPrefsAction,
   updateNotificationPrefsAction,
 } from '@/app/actions/notifications';
-import type { AppNotification, NotificationPrefs } from '@/server/repos/notifications';
+import type {
+  AppNotification, NotificationCounts, NotificationPrefs,
+} from '@/server/repos/notifications';
+import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
 
 /**
  * The notification inbox.
@@ -69,40 +72,61 @@ const ago = (iso: string): string => {
 const initials = (first: string | null, last: string | null): string =>
   `${(first ?? '').charAt(0)}${(last ?? '').charAt(0)}`.toUpperCase() || '?';
 
+/**
+ * Exactly what notificationsStartAction returns for the unfiltered inbox. The
+ * portal shell warms this under CACHE_KEYS.notifications, so the list is
+ * already there when the member arrives.
+ */
+type NotificationsStart = {
+  page: { items: AppNotification[]; hasMore: boolean };
+  counts: NotificationCounts;
+  prefs: NotificationPrefs;
+};
+
 export default function NotificationsPage() {
   const router = useRouter();
-  const { counts, refresh, markRead, markAllRead } = useNotifications();
+  const { counts, applyCounts, markRead, markAllRead } = useNotifications();
 
+  const cached = readCache<NotificationsStart>(CACHE_KEYS.notifications);
   const [filter, setFilter] = React.useState<string>('');
-  const [items, setItems] = React.useState<AppNotification[]>([]);
-  const [hasMore, setHasMore] = React.useState(false);
-  const [loading, setLoading] = React.useState(true);
+  const [items, setItems] = React.useState<AppNotification[]>(cached?.page.items ?? []);
+  const [hasMore, setHasMore] = React.useState(cached?.page.hasMore ?? false);
+  const [loading, setLoading] = React.useState(cached === undefined);
   const [paging, setPaging] = React.useState(false);
   const [error, setError] = React.useState('');
 
   const [settingsOpen, setSettingsOpen] = React.useState(false);
-  const [prefs, setPrefs] = React.useState<NotificationPrefs | null>(null);
+  const [prefs, setPrefs] = React.useState<NotificationPrefs | null>(cached?.prefs ?? null);
   const [savingPref, setSavingPref] = React.useState<string>('');
 
+  /**
+   * The list, the counts the pills need, and the preference switches behind
+   * the gear - one round trip. It was the list and the counts as two actions
+   * that Next ran back to back, plus a third when the gear was tapped.
+   */
   const load = React.useCallback(async (category: string) => {
-    setLoading(true);
-    const r = await listNotificationsAction({ category: category || undefined });
+    const r = await notificationsStartAction({ category: category || undefined });
     if (r.ok) {
-      setItems(r.data.items);
-      setHasMore(r.data.hasMore);
+      setItems(r.data.page.items);
+      setHasMore(r.data.page.hasMore);
+      setPrefs(r.data.prefs);
+      applyCounts(r.data.counts);
+      // Only the unfiltered view is worth caching: it is what the shell warms
+      // and what a member coming back to this tab sees first.
+      if (!category) writeCache<NotificationsStart>(CACHE_KEYS.notifications, r.data);
       setError('');
     } else {
       setError(r.error);
     }
     setLoading(false);
-  }, []);
+  }, [applyCounts]);
 
   React.useEffect(() => {
+    // A filter change swaps the whole list, so show the skeleton unless there
+    // is something cached to keep looking at.
+    if (filter) setLoading(true);
     void load(filter);
-    // Counts poll every 45s, so arriving here by client navigation can find
-    // them a little behind the list. Re-read once so the pills agree with it.
-    void refresh();
-  }, [filter, load, refresh]);
+  }, [filter, load]);
 
   const loadMore = async () => {
     const last = items[items.length - 1];
@@ -125,9 +149,23 @@ export default function NotificationsPage() {
    * Open it. Marking read happens optimistically so the row settles before
    * navigation rather than after coming back, and the badge drops immediately.
    */
+  /**
+   * Keep the cached copy in step with an optimistic change. Without this,
+   * coming back to this tab repainted a row as unread until the background
+   * refresh landed.
+   */
+  const patchCache = (patch: Partial<NotificationsStart>) => {
+    const cur = readCache<NotificationsStart>(CACHE_KEYS.notifications);
+    if (cur) writeCache<NotificationsStart>(CACHE_KEYS.notifications, { ...cur, ...patch });
+  };
+
   const open = (n: AppNotification) => {
     if (!n.isRead) {
-      setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, isRead: true } : x)));
+      setItems((prev) => {
+        const next = prev.map((x) => (x.id === n.id ? { ...x, isRead: true } : x));
+        if (!filter) patchCache({ page: { items: next, hasMore } });
+        return next;
+      });
       void markRead(n.id);
     }
     if (n.link) router.push(n.link);
@@ -141,13 +179,8 @@ export default function NotificationsPage() {
     await load(filter);
   };
 
-  const openSettings = async () => {
-    setSettingsOpen(true);
-    if (prefs) return;
-    const r = await getNotificationPrefsAction();
-    if (r.ok) setPrefs(r.data);
-    else setError(r.error);
-  };
+  // Preferences arrived with the list, so the gear opens filled in.
+  const openSettings = () => setSettingsOpen(true);
 
   const togglePref = async (key: keyof NotificationPrefs) => {
     if (!prefs) return;
@@ -155,7 +188,7 @@ export default function NotificationsPage() {
     setPrefs(next);                              // optimistic; the switch must feel instant
     setSavingPref(key);
     const r = await updateNotificationPrefsAction({ [key]: next[key] });
-    if (r.ok) setPrefs(r.data);
+    if (r.ok) { setPrefs(r.data); patchCache({ prefs: r.data }); }
     else {
       setPrefs(prefs);                           // put it back, say why
       setError(r.error);

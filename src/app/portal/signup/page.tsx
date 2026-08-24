@@ -226,7 +226,7 @@ export default function SignupPage() {
     return (
       <div className="onboarding-page">
         <div className="onboarding-container">
-          <div className="onboarding-card" style={{ textAlign: 'center', padding: 48 }}>
+          <div className="onboarding-card" style={{ textAlign: 'center', padding: 'clamp(24px, 7vw, 48px)' }}>
             <Mail size={48} style={{ color: 'var(--text-accent)', marginBottom: 16 }} />
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: 12 }}>Confirm your email</h2>
             <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440, margin: '0 auto 20px' }}>
@@ -253,20 +253,33 @@ export default function SignupPage() {
 
   return (
     <div className="onboarding-page">
+      {/* The header, the progress strip and the step row travel together: on a
+          phone this wrapper is the pinned top bar. On desktop it is
+          `display: contents`, so the three children lay out exactly as before. */}
+      <div className="onboarding-signup-top">
       {/* ─── HEADER BAR ─── */}
       <div className="onboarding-header">
         <Link href="/" className="onboarding-logo">
-          <img src="/professionals-club-logo.png" alt="Professionals Club" style={{ width: 32, height: 32, objectFit: 'contain', mixBlendMode: 'multiply' }} />
+          <img src="/professionals-club-logo.webp" alt="Professionals Club" style={{ objectFit: 'contain', mixBlendMode: 'multiply' }} />
           <span>Professionals <strong>Club</strong></span>
         </Link>
         <Link href="/portal/auth" className="onboarding-login-link">
-          Already have an account? <strong>Log in</strong>
+          <span className="login-link-prefix">Already have an account? </span><strong>Log in</strong>
         </Link>
       </div>
 
       {/* ─── PROGRESS BAR ─── */}
       <div className="onboarding-progress-bar">
         <div className="onboarding-progress-fill" style={{ width: `${progressPercent}%` }} />
+      </div>
+
+      {/* ─── PHONE PROGRESS ─── */}
+      {/* Replaces the seven-icon row under 768px, where it wrapped onto two
+          lines and read as clutter. Exactly one of the two is ever laid out, so
+          a screen reader hears the step position once. */}
+      <div className="onboarding-mobile-progress">
+        <span className="omp-count">Step {step} of 7</span>
+        <span className="omp-name">{STEPS[step - 1].label}</span>
       </div>
 
       {/* ─── STEP INDICATORS ─── */}
@@ -291,6 +304,7 @@ export default function SignupPage() {
             </button>
           );
         })}
+      </div>
       </div>
 
       {/* ─── FORM CONTAINER ─── */}
@@ -747,11 +761,11 @@ export default function SignupPage() {
             </div>
           )}
 
+          {/* Styling moved to `.onboarding-error` in globals.css: on a phone the
+              action bar is pinned, so this has to be pinned above it too or the
+              message lands below the fold and the tap looks ignored. */}
           {submitError && (
-            <div
-              role="alert"
-              style={{ marginTop: 20, color: 'var(--error-600)', fontSize: '0.85rem', fontWeight: 500, padding: '10px 14px', background: 'rgba(240, 73, 35, 0.1)', borderRadius: 8, display: 'flex', alignItems: 'flex-start', gap: 8 }}
-            >
+            <div role="alert" className="onboarding-error">
               <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
               <span>{submitError}</span>
             </div>
@@ -764,7 +778,7 @@ export default function SignupPage() {
                 <ArrowLeft size={16} /> Back
               </button>
             )}
-            <div style={{ flex: 1 }} />
+            <div className="onboarding-actions-spacer" style={{ flex: 1 }} />
             <div className="step-counter">Step {step} of 7</div>
             {step < 7 ? (
               <button type="button" className="btn-next" onClick={next}>

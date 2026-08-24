@@ -38,9 +38,11 @@ export default function ResourcesPage() {
         {/* Background Animation (Resources) */}
         <div className="cinematic-bg-container">
           <img 
-            src="/images/resources_hero.png" 
+            src="/images/resources_hero.webp" 
             alt="Learning resources background" 
             className="cinematic-bg"
+            fetchPriority="high"
+            decoding="async"
             style={{ opacity: 0.42 }}
           />
           <div className="cinematic-overlay" />
@@ -192,7 +194,7 @@ export default function ResourcesPage() {
       {/* Contribute CTA */}
       <section style={{ padding: '80px 0', background: 'var(--text-primary)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/toronto-skyline.png" alt="Toronto" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.1 }} />
+          <Image src="/toronto-skyline.webp" alt="Toronto" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.1 }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 700 }}>
           <GraduationCap size={48} style={{ color: 'var(--text-accent)', margin: '0 auto 24px' }} />

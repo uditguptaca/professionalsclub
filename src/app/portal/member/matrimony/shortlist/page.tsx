@@ -166,7 +166,7 @@ export default function ShortlistPage() {
                 <Link href={href} className="hf-event-media" aria-label={`View ${name}`}>
                   {open || blurred ? (
                     <img
-                      src={photo} alt="" aria-hidden="true"
+                      src={photo} alt="" aria-hidden="true" loading="lazy" decoding="async"
                       style={blurred ? { filter: 'blur(20px)', transform: 'scale(1.12)' } : undefined}
                     />
                   ) : (

@@ -784,7 +784,7 @@ function ProfileCard({ profile }: { profile: MatrimonyProfileCard }) {
       <span className="hf-event-media">
         {open || blurred ? (
           <img
-            src={photo} alt="" aria-hidden="true"
+            src={photo} alt="" aria-hidden="true" loading="lazy" decoding="async"
             style={blurred ? { filter: 'blur(20px)', transform: 'scale(1.12)' } : undefined}
           />
         ) : (

@@ -40,10 +40,10 @@ const JOB_TYPE_COLORS: Record<JobType, { bg: string; color: string }> = {
 // each card is derived from the jobs table. `city` is also the term fed to the
 // location filter when the card is clicked.
 const CITY_CARDS = [
-  { city: 'Toronto', region: 'ON', img: '/toronto-skyline.png' },
-  { city: 'Vancouver', region: 'BC', img: '/vancouver-skyline.png' },
-  { city: 'Calgary', region: 'AB', img: '/calgary-skyline.png' },
-  { city: 'Montreal', region: 'QC', img: '/montreal-skyline.png' },
+  { city: 'Toronto', region: 'ON', img: '/toronto-skyline.webp' },
+  { city: 'Vancouver', region: 'BC', img: '/vancouver-skyline.webp' },
+  { city: 'Calgary', region: 'AB', img: '/calgary-skyline.webp' },
+  { city: 'Montreal', region: 'QC', img: '/montreal-skyline.webp' },
 ];
 
 // Shared by the search box and the city cards so a card can never advertise a
@@ -187,11 +187,17 @@ export default function JobsPage() {
 
       {/* ─── HERO ─── */}
       <section style={{ position: 'relative', padding: '140px 0 100px', display: 'flex', alignItems: 'center', background: 'var(--text-primary)' }}>
-        {/* Background Video */}
+        {/* Background still. Was a 9.9MB autoplaying work.mp4 at opacity 0.55 under
+            a 90%-opaque scrim: the motion was never legible, the download was. */}
         <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
-          <video autoPlay loop muted playsInline style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.55 }}>
-            <source src="/videos/work.mp4" type="video/mp4" />
-          </video>
+          <img
+            src="/images/jobs_hero.webp"
+            alt=""
+            aria-hidden="true"
+            fetchPriority="high"
+            decoding="async"
+            style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.55 }}
+          />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(12, 12, 14, 0.9) 0%, rgba(12, 12, 14, 0.72) 50%, rgba(12, 12, 14, 0.45) 100%)' }} />
         </div>
 
@@ -555,7 +561,7 @@ export default function JobsPage() {
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center' }}>
             {/* Left Box (Image Component) */}
             <div style={{ position: 'relative', borderRadius: 24, overflow: 'hidden', height: 480 }}>
-              <Image src="/volunteer-help.png" alt="Referral" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
+              <Image src="/volunteer-help.webp" alt="Referral" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
               {/* Floating Badge */}
               <div style={{ position: 'absolute', bottom: 24, left: 24, background: 'var(--bg-primary)', padding: '12px 24px', borderRadius: 99, display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 8px 30px rgba(0,0,0,0.1)' }}>
                 <div style={{ background: 'var(--text-primary)', width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-accent)' }}>
@@ -634,7 +640,7 @@ export default function JobsPage() {
           {/* Candidate */}
           <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 20px', textAlign: 'center', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', inset: 0 }}>
-              <Image src="/hero-community.png" alt="Career" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.2 }} />
+              <Image src="/hero-community.webp" alt="Career" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.2 }} />
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.92), rgba(12,12,14,0.85))' }} />
             </div>
             <div style={{ position: 'relative', zIndex: 10 }}>

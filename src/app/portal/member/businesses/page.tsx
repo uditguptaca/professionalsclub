@@ -293,7 +293,7 @@ export default function MemberBusinessDirectory() {
                   <div key={biz.id} className="hf-event card">
                     <span className="hf-event-media">
                       {biz.coverImage
-                        ? <img src={biz.coverImage} alt="" aria-hidden="true" />
+                        ? <img src={biz.coverImage} alt="" aria-hidden="true" loading="lazy" decoding="async" />
                         : <span className="hf-event-fallback" aria-hidden="true"><Building2 size={28} /></span>}
                       <span className="hf-chip">{biz.category}</span>
                       <button

@@ -48,6 +48,18 @@ export async function listNotificationsAction(opts: {
   return run('Loading notifications', (uid) => repo.listNotifications(uid, opts));
 }
 
+/**
+ * The inbox screen in one call: the page, the unread counts the pills need,
+ * and the preference switches behind the gear. The page used to fire the list
+ * and the counts as two actions, which Next ran back to back, and then fetched
+ * prefs on gear-open for a third.
+ */
+export async function notificationsStartAction(opts: { category?: string } = {}): Promise<
+  ActionResult<{ page: NotificationPage; counts: NotificationCounts; prefs: NotificationPrefs }>
+> {
+  return run('Loading notifications', (uid) => repo.notificationsStart(uid, opts));
+}
+
 export async function notificationCountsAction(): Promise<ActionResult<NotificationCounts>> {
   return run('Loading notification counts', (uid) => repo.notificationCounts(uid));
 }
@@ -68,10 +80,6 @@ export async function markAllNotificationsReadAction(
     await repo.markAllNotificationsRead(uid, category);
     return repo.notificationCounts(uid);
   });
-}
-
-export async function getNotificationPrefsAction(): Promise<ActionResult<NotificationPrefs>> {
-  return run('Loading notification settings', (uid) => repo.getNotificationPrefs(uid));
 }
 
 export async function updateNotificationPrefsAction(

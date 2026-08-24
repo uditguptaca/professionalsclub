@@ -225,7 +225,7 @@ export default function MatrimonyLikesPage() {
         >
           {pic ? (
             <img
-              src={pic.url} alt="" aria-hidden="true"
+              src={pic.url} alt="" aria-hidden="true" loading="lazy" decoding="async"
               style={{
                 position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
                 ...(pic.blurred ? { filter: 'blur(18px)', transform: 'scale(1.14)' } : {}),

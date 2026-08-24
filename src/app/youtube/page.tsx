@@ -136,7 +136,7 @@ export default function YouTubePage() {
       {/* Hero */}
       <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: 'var(--text-primary)', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/meetup_bg.png" alt="YouTube Archive" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.25 }} />
+          <Image src="/meetup_bg.webp" alt="YouTube Archive" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.25 }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.95), rgba(232,93,4,0.15))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>
@@ -376,7 +376,7 @@ export default function YouTubePage() {
                             }}>
                               <img 
                                 src={getYoutubeThumbnail(video.video_url)} 
-                                alt={video.title} 
+                                alt={video.title} loading="lazy" decoding="async" 
                                 style={{
                                   position: 'absolute',
                                   top: 0,

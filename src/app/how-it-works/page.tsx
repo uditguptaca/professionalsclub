@@ -15,7 +15,7 @@ export default function HowItWorksPage() {
       {/* Hero */}
       <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: 'var(--text-primary)', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/volunteer-help.png" alt="How it works" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.2 }} />
+          <Image src="/volunteer-help.webp" alt="How it works" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.2 }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.95), rgba(232,93,4,0.15))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>

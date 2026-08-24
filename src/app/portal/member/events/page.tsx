@@ -35,7 +35,7 @@ export default async function MemberEventsPage() {
     >
       <span className="hf-event-media">
         {e.image
-          ? <img src={e.image} alt="" aria-hidden="true" />
+          ? <img src={e.image} alt="" aria-hidden="true" loading="lazy" decoding="async" />
           : <span className="hf-event-fallback" aria-hidden="true"><Calendar size={28} /></span>}
         {e.inCity && city && <span className="hf-chip">{city}</span>}
       </span>

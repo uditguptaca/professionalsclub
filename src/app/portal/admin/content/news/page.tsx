@@ -32,7 +32,7 @@ export default function NewsManagementPage() {
       title: form.title || 'New Article',
       summary: form.summary || '',
       content: form.content || '',
-      image: form.image || '/hero-community.png',
+      image: form.image || '/hero-community.webp',
       author: form.author || 'Admin',
       category: form.category || 'Announcement',
       publishedAt: form.publishedAt || new Date().toISOString(),
@@ -111,7 +111,7 @@ export default function NewsManagementPage() {
                 <div><label style={labelStyle}>Category</label><input style={inputStyle} value={form.category || ''} onChange={e => handleChange('category', e.target.value)} placeholder="Announcement" /></div>
                 <div><label style={labelStyle}>Author</label><input style={inputStyle} value={form.author || ''} onChange={e => handleChange('author', e.target.value)} /></div>
               </div>
-              <div><label style={labelStyle}>Image Path</label><input style={inputStyle} value={form.image || ''} onChange={e => handleChange('image', e.target.value)} placeholder="/hero-community.png" /></div>
+              <div><label style={labelStyle}>Image Path</label><input style={inputStyle} value={form.image || ''} onChange={e => handleChange('image', e.target.value)} placeholder="/hero-community.webp" /></div>
               {formError && <p role="alert" className="community-error">{formError}</p>}
               <button className="btn btn-primary" style={{ marginTop: 8, width: '100%' }} onClick={handleSave} disabled={saving}>
                 {saving ? 'Saving...' : editId ? 'Save Changes' : 'Publish Article'}
