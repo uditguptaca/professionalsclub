@@ -15,7 +15,12 @@ import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-const SERVER_URL = process.env.CAP_SERVER_URL ?? 'http://localhost:3000/portal/auth';
+// --live points the build at the real deployed server; otherwise the local
+// dev server (or whatever CAP_SERVER_URL says).
+const LIVE = process.argv.includes('--live');
+const SERVER_URL = LIVE
+  ? 'https://professionalsclub.vercel.app/portal/auth'
+  : (process.env.CAP_SERVER_URL ?? 'http://localhost:3000/portal/auth');
 
 const adbCandidates = [
   process.env.ANDROID_HOME && join(process.env.ANDROID_HOME, 'platform-tools', 'adb.exe'),
@@ -70,14 +75,15 @@ if (!existsSync(apk)) {
 // session survives and there is no need to log in again after every build.
 sh(adb, ['install', '-r', apk]);
 
-step('Bridging localhost and launching');
+step(LIVE ? 'Launching (live server, no bridge needed)' : 'Bridging localhost and launching');
 // The WebView's "localhost" is the device, not the workstation, so port 3000
-// has to be reversed. This silently drops on every emulator restart, which is
-// the usual cause of the offline screen.
-sh(adb, ['reverse', 'tcp:3000', 'tcp:3000']);
+// has to be reversed for dev builds. This silently drops on every emulator
+// restart, which is the usual cause of the offline screen. A live build talks
+// to the real host and needs no bridge.
+if (!LIVE) sh(adb, ['reverse', 'tcp:3000', 'tcp:3000']);
 sh(adb, ['shell', 'am', 'force-stop', 'ca.professionalsclub.app']);
 // Launch via the LAUNCHER intent rather than naming an activity: the front
 // door is LoginActivity now, and MainActivity is deliberately not exported.
 sh(adb, ['shell', 'monkey', '-p', 'ca.professionalsclub.app', '-c', 'android.intent.category.LAUNCHER', '1']);
 
-console.log('\nRunning against the dev server. `npm run dev` must be up.');
+console.log(LIVE ? '\nRunning against the LIVE server.' : '\nRunning against the dev server (npm run dev must be up).');

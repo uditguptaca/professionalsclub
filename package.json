@@ -10,7 +10,8 @@
     "emu": "node scripts/emu.mjs",
     "app:dev": "node scripts/app-dev.mjs",
     "fcm:key": "node scripts/fcm-key.mjs",
-    "cap:ios": "npx cap sync ios && node scripts/fix-spm-paths.mjs"
+    "cap:ios": "npx cap sync ios && node scripts/fix-spm-paths.mjs",
+    "app:live": "node scripts/app-dev.mjs --live"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",
