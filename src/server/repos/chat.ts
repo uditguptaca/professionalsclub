@@ -4,11 +4,14 @@ import { withUser, withUserRead, type Db } from '@/server/db';
 /**
  * Follows + the member chat hub.
  *
- * The social contract (owner's spec, 2026-08-21): follows are REQUESTS — they
- * sit pending until accepted. A chat exists between two people when RLS's
- * is_chat_allowed() says so: mutual accepted follows, OR a matrimony match,
- * OR a direct referral request between them. Everything here is enforced
- * again by the 0016/0018 policies; checks in this file are conveniences.
+ * The social contract (owner's spec, 2026-08-26, Instagram-style — 0040):
+ * follows are INSTANT, and anyone may message anyone. A thread someone opens
+ * with you sits in your MESSAGE REQUESTS until you accept it, reply (which
+ * accepts), or already follow them — then it is ordinary inbox. Declining
+ * deletes the conversation. A block is the one thing that closes a chat.
+ * Matrimony matches and referral requests still open their chats pre-accepted
+ * (their consent happened elsewhere). All of it is enforced by the 0040
+ * policies; checks in this file are conveniences.
  *
  * People lists come from member_names (names/titles/join dates only). The
  * insider directory (company_insider_directory) is the one place where
@@ -42,8 +45,14 @@ export interface ChatThread {
   lastCipher: boolean;
   lastFromMe: boolean;
   unread: number;
-  /** False once no unlock rule holds any more — the thread is frozen. */
+  /** False only when a block stands between the two of you. */
   open: boolean;
+  /**
+   * True while this thread is a MESSAGE REQUEST for me: someone I don't
+   * follow opened it and I have not accepted yet. Matrimony and referral
+   * threads are never requests — their consent happened elsewhere.
+   */
+  request: boolean;
   muted: boolean;
   /** Why this chat exists; referral and matrimony outrank plain follows. */
   context: 'referral' | 'matrimony' | 'follow';
@@ -209,6 +218,15 @@ const THREADS_SELECT = `
          n.id as partner_id, n.first_name, n.last_name, n.job_title,
          c.last_message_at,
          public.is_chat_allowed(c.member_a_id, c.member_b_id) as open,
+         -- A request FOR ME: they knocked, I haven't accepted, and I don't
+         -- follow them. My own follow edge is visible under RLS, so no
+         -- definer helper is needed here.
+         (c.accepted_at is null
+          and c.initiator_id is not null
+          and c.initiator_id <> $1
+          and not exists (select 1 from public.member_follows f
+                           where f.follower_id = $1 and f.followee_id = c.initiator_id
+                             and f.status = 'accepted')) as is_awaiting_me,
          coalesce(pf.muted, false) as muted,
          lm.body as last_body, lm.kind as last_kind,
          (lm.cipher is not null) as last_cipher,
@@ -327,7 +345,7 @@ export async function searchPeople(userId: string, query: string): Promise<ChatP
   });
 }
 
-/** Send a follow request (idempotent). It stays pending until accepted. */
+/** Follow someone (idempotent). Instant — no request, no acceptance (0040). */
 export async function follow(userId: string, targetId: string): Promise<void> {
   await withUser(userId, async (db) => {
     await db.run(
@@ -387,6 +405,8 @@ const toThread = (r: Record<string, unknown>): ChatThread => ({
   lastFromMe: Boolean(r.last_from_me),
   unread: Number(r.unread ?? 0),
   open: Boolean(r.open),
+  // Preapproved contexts are never requests, whatever accepted_at says.
+  request: Boolean(r.is_awaiting_me) && !r.is_referral && !r.is_matrimony,
   muted: Boolean(r.muted),
   context: r.is_referral ? 'referral' : r.is_matrimony ? 'matrimony' : 'follow',
 });
@@ -441,22 +461,53 @@ export async function chatStart(userId: string): Promise<{
   });
 }
 
-/** Get or create the conversation with someone chat is allowed with. */
+/** Get or create the conversation with someone. Only a block refuses. */
 export async function openChat(userId: string, partnerId: string): Promise<string> {
   return withUser(userId, async (db) => {
     const [a, b] = [userId, partnerId].sort();
-    const inserted = await db.run<{ id: string }>(
-      `insert into public.member_conversations (member_a_id, member_b_id)
-       values ($1, $2) on conflict (member_a_id, member_b_id) do nothing returning id`,
-      [a, b]
-    );
-    if (inserted[0]) return inserted[0].id;
+    try {
+      const inserted = await db.run<{ id: string }>(
+        `insert into public.member_conversations (member_a_id, member_b_id, initiator_id)
+         values ($1, $2, $3) on conflict (member_a_id, member_b_id) do nothing returning id`,
+        [a, b, userId]
+      );
+      if (inserted[0]) return inserted[0].id;
+    } catch (err) {
+      // A block, never announced as one.
+      if ((err as { code?: string }).code === '42501') {
+        throw new Error('This chat is not available.');
+      }
+      throw err;
+    }
     const existing = await db.run<{ id: string }>(
       `select id from public.member_conversations where member_a_id = $1 and member_b_id = $2`,
       [a, b]
     );
-    if (!existing[0]) throw new Error('You can chat once you both follow each other.');
+    if (!existing[0]) throw new Error('This chat is not available.');
     return existing[0].id;
+  });
+}
+
+/** Accept a message request: the thread moves from Requests to the inbox. */
+export async function acceptChatRequest(userId: string, conversationId: string): Promise<void> {
+  await withUser(userId, async (db) => {
+    // RLS: only the non-initiator participant may stamp accepted_at.
+    await db.run(
+      `update public.member_conversations set accepted_at = now()
+        where id = $1 and accepted_at is null`,
+      [conversationId]
+    );
+  });
+}
+
+/** Decline a message request: the conversation and its messages are deleted. */
+export async function declineChatRequest(userId: string, conversationId: string): Promise<void> {
+  await withUser(userId, async (db) => {
+    // RLS: only the recipient of an unaccepted request may delete.
+    await db.run(
+      `delete from public.member_conversations where id = $1`,
+      [conversationId]
+    );
   });
 }
 
@@ -640,7 +691,8 @@ export async function sendChatMessage(
       return toMessage(rows[0]);
     } catch (err) {
       if ((err as { code?: string }).code === '42501') {
-        throw new Error('You can only chat while you follow each other.');
+        // A block, never announced as one.
+        throw new Error('This chat is not available.');
       }
       throw err;
     }
@@ -649,9 +701,22 @@ export async function sendChatMessage(
 
 export async function markChatRead(userId: string, conversationId: string): Promise<void> {
   await withUser(userId, async (db) => {
+    // Never stamp read_at on a request thread: a stranger must not see "seen"
+    // before their request is accepted. The exists() mirrors is_awaiting_me in
+    // THREADS_SELECT — accepted, mine, legacy, or from someone I follow.
     await db.run(
       `update public.member_messages set read_at = now()
-        where conversation_id = $1 and sender_id <> $2 and read_at is null`,
+        where conversation_id = $1 and sender_id <> $2 and read_at is null
+          and exists (
+            select 1 from public.member_conversations c
+             where c.id = $1
+               and (c.accepted_at is not null
+                    or c.initiator_id is null
+                    or c.initiator_id = $2
+                    or exists (select 1 from public.member_follows f
+                                where f.follower_id = $2 and f.followee_id = c.initiator_id
+                                  and f.status = 'accepted'))
+          )`,
       [conversationId, userId]
     );
     // The thread is open and read, so its inbox row has served its purpose.
@@ -758,15 +823,20 @@ export async function requestReferral(
     );
 
     const [a, b] = [userId, input.insiderId].sort();
+    // Pre-accepted: the referral card is the consent (is_preapproved_chat).
+    // DO NOTHING + select, not DO UPDATE: since 0040 the caller's update
+    // grant covers accepted_at only, so a conflicting DO UPDATE would 42501.
     const convo = await db.run<{ id: string }>(
-      `insert into public.member_conversations (member_a_id, member_b_id)
-       values ($1, $2)
-       on conflict (member_a_id, member_b_id)
-         do update set last_message_at = public.member_conversations.last_message_at
+      `insert into public.member_conversations (member_a_id, member_b_id, initiator_id, accepted_at)
+       values ($1, $2, $3, now())
+       on conflict (member_a_id, member_b_id) do nothing
        returning id`,
-      [a, b]
+      [a, b, userId]
     );
-    const conversationId = convo[0].id;
+    const conversationId = convo[0]?.id ?? (await db.run<{ id: string }>(
+      `select id from public.member_conversations where member_a_id = $1 and member_b_id = $2`,
+      [a, b]
+    ))[0].id;
 
     await db.run(
       `insert into public.member_messages (conversation_id, sender_id, kind, meta)

@@ -2,8 +2,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { upload } from '@vercel/blob/client';
 import {
-  listPeople, followMember, unfollowMember, acceptFollowRequest, declineFollowRequest,
-  chatStart, listChats, openChat, pollThread, sendChatMessage, markChatRead, setTyping,
+  listPeople, followMember, unfollowMember,
+  chatStart, listChats, openChat, acceptChatRequest, declineChatRequest,
+  pollThread, sendChatMessage, markChatRead, setTyping,
   respondReferral, publishMemberE2EKey, getMemberE2EKey,
   blockMember, unblockMember, listBlockedMembers, reportMember,
   muteChat, clearChat, getChatSettings, updateChatSettings, reactToMessage,
@@ -35,10 +36,13 @@ import {
  * directly above the app tab bar. Above 768px the same thread lives in the
  * right column of a two-pane shell with no card of its own.
  *
- * Follows are REQUESTS. A chat unlocks on a mutual accepted follow, a matrimony
- * match, or a referral request; `open === false` means whatever unlocked it went
- * away, so the history stays readable and the composer is replaced by the
- * reason. RLS enforces all of that again — nothing here is access control.
+ * Instagram DMs (0040): follows are instant, and anyone can message anyone.
+ * A thread someone opened with you sits under MESSAGE REQUESTS until you
+ * accept it, reply, or already follow them; declining deletes it. Requests
+ * hide the composer behind an accept bar and never stamp read receipts.
+ * `open === false` now means a block (never announced as one): the history
+ * stays readable and the composer is replaced by a generic notice. RLS
+ * enforces all of that again — nothing here is access control.
  *
  * Encryption: the device keypair lives in localStorage, the public half is
  * published once per mount, and a conversation key is derived from the peer's
@@ -55,8 +59,8 @@ import {
  * Safety lives in two sheets: a per-chat menu (mute, clear for me, report,
  * block) off the thread header, and global chat settings (read receipts, typing
  * indicator, the blocked list) off the list header. Mute and clear-for-me are
- * one-sided prefs; a block is never announced, so a blocked thread arrives as
- * `open === false` and gets the SAME generic frozen notice as a broken follow.
+ * one-sided prefs; a block is never announced — the thread just reads as no
+ * longer available, with nothing that names the block.
  *
  * Per-message actions (react, reply, forward, copy) hang off a long-press — or a
  * right-click — on the bubble, in one sheet. Reactions ride the same 5s poll.
@@ -69,7 +73,7 @@ import {
 
 const HAIRLINE = '1px solid rgba(27,67,50,0.08)';
 const GROUP_GAP_MS = 5 * 60 * 1000;
-const MUTUAL_ERROR = 'You can only chat while you follow each other.';
+const CLOSED_ERROR = 'This chat is not available.';
 const TYPING_EVERY_MS = 2500;
 const TYPING_FRESH_MS = 6000;
 
@@ -95,15 +99,17 @@ type ChatStart = {
   blocked: BlockedMember[];
   settings: ChatSettings;
 };
+// Follows are instant since 0040, so there is no Requests lane here any more —
+// message requests live in the chat list instead. The server still returns a
+// (now always empty) requests bucket for compatibility.
 const LANES: { id: Lane; label: string }[] = [
-  { id: 'requests', label: 'Requests' },
   { id: 'suggestions', label: 'Suggestions' },
   { id: 'following', label: 'Following' },
   { id: 'followers', label: 'Followers' },
 ];
 
 const EMPTY_LANE: Record<Lane, string> = {
-  requests: 'No one is waiting on you. Requests to follow you show up here.',
+  requests: '',
   suggestions: 'No one new to suggest right now. Check back once more members join your city.',
   following: 'You are not following anyone yet. Start with Suggestions.',
   followers: 'Nobody follows you yet. Following people is how they find you.',
@@ -321,8 +327,6 @@ const fullName = (first: string, last: string) => `${first} ${last}`.trim() || '
 const initialsOf = (name: string) =>
   name.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || '?';
 
-const isMutual = (p: ChatPerson) => p.outgoing === 'accepted' && p.incoming === 'accepted';
-
 function timeAgo(iso: string): string {
   const s = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
   if (s < 60) return 'now';
@@ -426,6 +430,8 @@ export default function MemberChatsPage() {
   const [pdfView, setPdfView] = useState<{ url: string; name: string } | null>(null);
 
   const [threads, setThreads] = useState<ChatThread[]>(cached?.threads ?? []);
+  /** The list shows the inbox by default; true swaps it for message requests. */
+  const [showRequests, setShowRequests] = useState(false);
 
   const [openId, setOpenId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -572,7 +578,6 @@ export default function MemberChatsPage() {
       setPeople(data.people);
       setBlocked(data.blocked);
       setChatSettings(data.settings);
-      if (data.people.requests.length > 0) setLane('requests');
       setLoading(false);
 
       // ?c={conversationId} deep link, honoured once the list is known.
@@ -616,6 +621,12 @@ export default function MemberChatsPage() {
     }, 10000);
     return () => clearInterval(timer);
   }, [refreshChats]);
+
+  // Handling the last request (accept or delete) lands you back in the inbox
+  // rather than on an empty requests view.
+  useEffect(() => {
+    if (showRequests && !loading && threads.every((t) => !t.request)) setShowRequests(false);
+  }, [showRequests, loading, threads]);
 
   // ---- Thread: one poll for everything, every 5s ----------------------------
   useEffect(() => {
@@ -751,7 +762,10 @@ export default function MemberChatsPage() {
   // zeroes the count, so this settles after one call per batch; markingRef only
   // stops a second poll from firing before that refresh lands.
   useEffect(() => {
-    if (!openId || !openThread || openThread.unread === 0 || markingRef.current) return;
+    // Never on a request thread: the server would skip the read-stamp anyway
+    // (a stranger must not see "seen" before acceptance), and the unread count
+    // staying put would re-fire this forever.
+    if (!openId || !openThread || openThread.request || openThread.unread === 0 || markingRef.current) return;
     markingRef.current = true;
     void markChatRead(openId)
       .then(() => refreshChats())
@@ -824,27 +838,22 @@ export default function MemberChatsPage() {
     return true;
   }
 
-  async function sendRequest(p: ChatPerson) {
-    const ok = await mutate(p.id, () => followMember(p.id), 'Request sent');
-    // Keep them where they were, now reading "Requested".
-    if (ok) setSticky((s) => [{ ...p, outgoing: 'pending' }, ...s.filter((x) => x.id !== p.id)]);
-  }
-
-  async function cancelRequest(p: ChatPerson) {
-    await mutate(p.id, () => unfollowMember(p.id), 'Request withdrawn');
-    setSticky((s) => s.filter((x) => x.id !== p.id));
+  async function sendFollow(p: ChatPerson) {
+    const ok = await mutate(p.id, () => followMember(p.id), `Following ${p.firstName}`);
+    // Keep them where they were, now reading "Following" (follows are instant).
+    if (ok) setSticky((s) => [{ ...p, outgoing: 'accepted' }, ...s.filter((x) => x.id !== p.id)]);
   }
 
   async function stopFollowing(p: ChatPerson) {
-    // Dropping a mutual freezes a live chat, which is worth one question.
     const ok = await confirm({
       title: `Unfollow ${fullName(p.firstName, p.lastName)}?`,
-      message: 'Your chat stays readable but freezes until you follow each other again.',
+      message: 'Their posts leave your feed. Your chat with them is not affected.',
       confirmLabel: 'Unfollow',
       tone: 'danger',
     });
     if (!ok) return;
     await mutate(p.id, () => unfollowMember(p.id), 'Unfollowed');
+    setSticky((s) => s.filter((x) => x.id !== p.id));
   }
 
   async function messagePerson(p: ChatPerson) {
@@ -859,12 +868,29 @@ export default function MemberChatsPage() {
     openConversation(res.data);
   }
 
-  async function followAgain(partnerId: string) {
+  // ---- Message requests ------------------------------------------------------
+  async function acceptRequest(conversationId: string) {
     setSendError('');
-    const res = await followMember(partnerId);
+    const res = await acceptChatRequest(conversationId);
     if (!res.ok) { setSendError(res.error); return; }
-    await Promise.all([refreshChats(), refreshPeople()]);
-    setToast('Request sent');
+    await refreshChats();
+    setToast('Request accepted');
+  }
+
+  async function declineRequest(conversationId: string, name: string) {
+    const ok = await confirm({
+      title: `Delete the request from ${name}?`,
+      message: 'The conversation and its messages are deleted. They are not told.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    setSendError('');
+    const res = await declineChatRequest(conversationId);
+    if (!res.ok) { setSendError(res.error); return; }
+    setOpenId(null);
+    await refreshChats();
+    setToast('Request deleted');
   }
 
   // ---- Referral cards ------------------------------------------------------
@@ -1281,7 +1307,7 @@ export default function MemberChatsPage() {
     } else {
       setSendError(res.error); // keep what they typed
       // The follow broke under us; the list will now show the thread frozen.
-      if (res.error === MUTUAL_ERROR) void refreshChats();
+      if (res.error === CLOSED_ERROR) void refreshChats();
     }
     setSending(false);
   }
@@ -1340,7 +1366,7 @@ export default function MemberChatsPage() {
         void refreshChats();
       } else {
         setSendError(res.error);
-        if (res.error === MUTUAL_ERROR) void refreshChats();
+        if (res.error === CLOSED_ERROR) void refreshChats();
       }
     } catch {
       setSendError(a.failed);
@@ -1352,7 +1378,13 @@ export default function MemberChatsPage() {
   if (loading) return <PortalLoading label="Loading chats" />;
 
   // ---- Chat list -----------------------------------------------------------
-  const listRows = threads.map((t) => {
+  // Instagram split: the inbox, and a requests drawer for threads strangers
+  // opened. The drawer row only exists while there is something in it.
+  const requestThreads = threads.filter((t) => t.request);
+  const inboxThreads = threads.filter((t) => !t.request);
+  const visibleThreads = showRequests ? requestThreads : inboxThreads;
+
+  const listRows = visibleThreads.map((t) => {
     const name = fullName(t.partnerFirstName, t.partnerLastName);
     const active = t.id === openId;
     const preview = t.lastKind === 'image'
@@ -1388,11 +1420,11 @@ export default function MemberChatsPage() {
                 {contextChip}
               </span>
             )}
-            {t.context === 'follow' && !t.open && (
+            {!t.open && (
               <span className="pp-chip" style={{
                 flexShrink: 0, background: 'var(--bg-secondary)', border: HAIRLINE, color: 'var(--text-muted)',
               }}>
-                Follow broke
+                Unavailable
               </span>
             )}
             {t.muted && (
@@ -1429,14 +1461,24 @@ export default function MemberChatsPage() {
     );
   });
 
-  const emptyList = (
+  const emptyList = showRequests ? (
+    <div className="pp-group-card" style={{ textAlign: 'center', padding: '2.5rem 1.25rem' }}>
+      <MessageCircle size={28} aria-hidden="true" style={{ opacity: 0.35 }} />
+      <p style={{ margin: '0.8rem 0 0.35rem', fontSize: '0.95rem', fontWeight: 700 }}>
+        No message requests
+      </p>
+      <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+        When someone you don&rsquo;t follow messages you, it waits here first.
+      </p>
+    </div>
+  ) : (
     <div className="pp-group-card" style={{ textAlign: 'center', padding: '2.5rem 1.25rem' }}>
       <MessageCircle size={28} aria-hidden="true" style={{ opacity: 0.35 }} />
       <p style={{ margin: '0.8rem 0 0.35rem', fontSize: '0.95rem', fontWeight: 700 }}>
         No chats yet
       </p>
       <p style={{ margin: '0 0 1.1rem', fontSize: '0.86rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-        Ask to follow anyone you like. The moment they accept and follow you back, a chat unlocks between you.
+        Find someone and message them directly — no follow needed.
       </p>
       <button type="button" className="btn btn-primary" onClick={() => setSheetOpen(true)}>
         Find people
@@ -1444,21 +1486,57 @@ export default function MemberChatsPage() {
     </div>
   );
 
+  /** The drawer row above the inbox, and the back row above the requests view. */
+  const requestsSwitch = showRequests ? (
+    <button
+      type="button"
+      className="pp-row"
+      onClick={() => setShowRequests(false)}
+      style={{ fontWeight: 700 }}
+    >
+      <ArrowLeft size={18} aria-hidden="true" style={{ flexShrink: 0, color: 'var(--text-secondary)' }} />
+      <span className="pp-row-body"><strong>Message requests</strong></span>
+    </button>
+  ) : requestThreads.length > 0 ? (
+    <button
+      type="button"
+      className="pp-row"
+      onClick={() => setShowRequests(true)}
+    >
+      <span
+        aria-hidden="true"
+        style={{
+          display: 'grid', placeItems: 'center', width: 42, height: 42, flexShrink: 0,
+          borderRadius: '50%', background: 'var(--green-50)', color: 'var(--green-800)',
+        }}
+      >
+        <MessageCircle size={18} />
+      </span>
+      <span className="pp-row-body">
+        <strong>Message requests</strong>
+        <small>From people you don&rsquo;t follow</small>
+      </span>
+      <span
+        aria-label={`${requestThreads.length} waiting`}
+        style={{
+          flexShrink: 0, minWidth: 20, padding: '1px 6px', borderRadius: 99,
+          background: 'var(--primary-700)', color: '#fff',
+          fontSize: '0.7rem', fontWeight: 800, textAlign: 'center',
+        }}
+      >
+        {requestThreads.length}
+      </span>
+    </button>
+  ) : null;
+
   // ---- Thread --------------------------------------------------------------
   let threadPane: React.ReactNode = null;
   if (openThread) {
     const name = partnerName;
-    const partnerId = openThread.partnerId;
     const firstName = partnerFirst;
-    // Frozen: if I am the one who stopped following, asking again fixes it. If
-    // they dropped me, nothing I can press will reopen this, so nothing is
-    // offered — a hopeful button would be a lie. A thread I froze by BLOCKING
-    // them is the same lie in the other direction: following again would send a
-    // request to someone I have blocked, so the notice stays generic and bare.
-    const iBrokeIt = !threadOpen
-      && openThread.context === 'follow'
-      && !people.following.some((p) => p.id === partnerId)
-      && !blocked.some((b) => b.id === partnerId);
+    // A request FOR ME: composer stays hidden behind the accept bar, and
+    // nothing is marked read until I let it in.
+    const isRequest = openThread.request;
     const peerTyping = peerTypingAt != null
       && Date.now() - new Date(peerTypingAt).getTime() < TYPING_FRESH_MS;
 
@@ -1477,14 +1555,16 @@ export default function MemberChatsPage() {
     }
 
     const contextLine = !threadOpen
-      ? <><UserX size={12} aria-hidden="true" /> Frozen — this chat is no longer open</>
-      : openThread.context === 'referral'
-        ? <><Building2 size={12} aria-hidden="true" /> Referral request</>
-        : openThread.context === 'matrimony'
-          ? <><Heart size={12} aria-hidden="true" /> Matrimony match</>
-          : convKey
-            ? <><ShieldCheck size={12} aria-hidden="true" /> End-to-end encrypted</>
-            : <><LockOpen size={12} aria-hidden="true" /> Encrypting once {firstName} opens their chats</>;
+      ? <><UserX size={12} aria-hidden="true" /> This chat is no longer available</>
+      : isRequest
+        ? <><MessageCircle size={12} aria-hidden="true" /> Message request</>
+        : openThread.context === 'referral'
+          ? <><Building2 size={12} aria-hidden="true" /> Referral request</>
+          : openThread.context === 'matrimony'
+            ? <><Heart size={12} aria-hidden="true" /> Matrimony match</>
+            : convKey
+              ? <><ShieldCheck size={12} aria-hidden="true" /> End-to-end encrypted</>
+              : <><LockOpen size={12} aria-hidden="true" /> Encrypting once {firstName} opens their chats</>;
 
     threadPane = (
       <div
@@ -2016,7 +2096,34 @@ export default function MemberChatsPage() {
               <AlertCircle size={15} aria-hidden="true" /> {sendError}
             </div>
           )}
-          {threadOpen ? (
+          {isRequest ? (
+            /* Instagram contract: the recipient reads the request, then either
+               lets it into the inbox or deletes it — no composer until then. */
+            <div style={{ padding: '0.85rem 0.9rem' }}>
+              <p style={{ margin: '0 0 0.7rem', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                {firstName} wants to send you messages. They won&rsquo;t see that
+                you&rsquo;ve read anything until you accept.
+              </p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary"
+                  onClick={() => void acceptRequest(openThread.id)}
+                  style={{ flex: 1, minHeight: 44 }}
+                >
+                  Accept
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-quiet"
+                  onClick={() => void declineRequest(openThread.id, name)}
+                  style={{ flex: 1, minHeight: 44 }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ) : threadOpen ? (
             <>
               {replyTo && (
                 <div style={{
@@ -2183,23 +2290,11 @@ export default function MemberChatsPage() {
               )}
             </>
           ) : (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
-              padding: '0.85rem 0.9rem',
-            }}>
-              <p style={{ margin: 0, flex: 1, minWidth: '12rem', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
-                This chat is frozen. It reopens when you follow each other again.
+            /* A block, from either side — never announced as one. */
+            <div style={{ padding: '0.85rem 0.9rem' }}>
+              <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                This chat is no longer available. The history stays readable.
               </p>
-              {iBrokeIt && (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-primary"
-                  onClick={() => void followAgain(partnerId)}
-                  style={{ flexShrink: 0, minHeight: 44 }}
-                >
-                  Follow {firstName} again
-                </button>
-              )}
             </div>
           )}
         </div>
@@ -2212,17 +2307,19 @@ export default function MemberChatsPage() {
     ? [...sticky.filter((s) => !people.suggestions.some((x) => x.id === s.id)), ...people.suggestions]
     : people[lane];
 
-  const requestedPill = (p: ChatPerson, cancel: boolean) => (
+  /** The Following toggle: instant follows mean the only states are on/off. */
+  const followingToggle = (p: ChatPerson) => (
     <button
       type="button"
-      className="pp-toggle"
-      onClick={cancel ? () => void cancelRequest(p) : undefined}
-      disabled={!cancel || busyId === p.id}
-      aria-label={cancel ? `Withdraw your follow request to ${fullName(p.firstName, p.lastName)}` : undefined}
-      style={{ minHeight: 44, cursor: cancel ? 'pointer' : 'default', opacity: busyId === p.id ? 0.6 : 1 }}
+      className="pp-toggle is-on"
+      onClick={() => void stopFollowing(p)}
+      aria-pressed
+      aria-label={`Unfollow ${fullName(p.firstName, p.lastName)}`}
+      disabled={busyId === p.id}
+      style={{ minHeight: 44, opacity: busyId === p.id ? 0.6 : 1 }}
     >
       <span className="pp-toggle-dot" aria-hidden="true" />
-      Requested
+      Following
     </button>
   );
 
@@ -2236,13 +2333,13 @@ export default function MemberChatsPage() {
           </button>
         </div>
         <p className="hf-sheet-sub">
-          Follows are requests. A chat unlocks once you have both accepted.
+          Message anyone directly. If they don&rsquo;t follow you, your chat waits in
+          their requests until they accept.
         </p>
 
         <div role="tablist" aria-label="People" style={{ display: 'flex', gap: 6, marginBottom: '0.6rem', flexWrap: 'wrap' }}>
           {LANES.map((l) => {
             const on = lane === l.id;
-            const nudge = l.id === 'requests' && people.requests.length > 0 && !on;
             return (
               <button
                 key={l.id}
@@ -2253,9 +2350,9 @@ export default function MemberChatsPage() {
                 className="pp-chip"
                 style={{
                   minHeight: 44, padding: '0 0.9rem',
-                  border: on ? '1px solid transparent' : nudge ? '1px dashed rgba(232,93,4,0.45)' : HAIRLINE,
-                  background: on ? 'var(--green-950)' : nudge ? 'rgba(232,93,4,0.08)' : 'var(--bg-secondary)',
-                  color: on ? '#fff' : nudge ? 'var(--primary-800)' : 'var(--text-secondary)',
+                  border: on ? '1px solid transparent' : HAIRLINE,
+                  background: on ? 'var(--green-950)' : 'var(--bg-secondary)',
+                  color: on ? '#fff' : 'var(--text-secondary)',
                   font: 'inherit', fontSize: '0.78rem', fontWeight: 750, cursor: 'pointer',
                 }}
               >
@@ -2281,7 +2378,7 @@ export default function MemberChatsPage() {
               const pname = fullName(p.firstName, p.lastName);
               const busy = busyId === p.id;
               const meta = [p.jobTitle, p.city].filter(Boolean).join(' · ');
-              const mutual = isMutual(p);
+              const iFollow = p.outgoing === 'accepted';
 
               return (
                 <div key={p.id} className="pp-row pp-row-static">
@@ -2293,86 +2390,46 @@ export default function MemberChatsPage() {
                     </small>
                   </span>
 
-                  {mutual && (
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-primary"
-                      onClick={() => void messagePerson(p)}
-                      disabled={busy}
-                      style={{ flexShrink: 0, minHeight: 44 }}
-                    >
-                      Message
-                    </button>
-                  )}
+                  {/* Everyone can be messaged; the follow only decides whose
+                      inbox the chat starts in. */}
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-primary"
+                    onClick={() => void messagePerson(p)}
+                    disabled={busy}
+                    style={{ flexShrink: 0, minHeight: 44 }}
+                  >
+                    Message
+                  </button>
 
-                  {lane === 'requests' && (
-                    <>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-primary"
-                        onClick={() => void mutate(p.id, () => acceptFollowRequest(p.id), 'Request accepted')}
-                        disabled={busy}
-                        style={{ flexShrink: 0, minHeight: 44 }}
-                      >
-                        Accept
-                      </button>
+                  {lane === 'suggestions' && (
+                    iFollow ? followingToggle(p) : (
                       <button
                         type="button"
                         className="btn btn-sm btn-quiet"
-                        onClick={() => void mutate(p.id, () => declineFollowRequest(p.id), 'Request declined')}
+                        onClick={() => void sendFollow(p)}
                         disabled={busy}
-                        style={{ flexShrink: 0, minHeight: 44, paddingLeft: 8, paddingRight: 8 }}
+                        style={{ flexShrink: 0, minHeight: 44 }}
                       >
-                        Decline
-                      </button>
-                    </>
-                  )}
-
-                  {lane === 'suggestions' && (
-                    p.outgoing === 'pending'
-                      ? requestedPill(p, false)
-                      : (
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-primary"
-                          onClick={() => void sendRequest(p)}
-                          disabled={busy}
-                          style={{ flexShrink: 0, minHeight: 44 }}
-                        >
-                          Follow
-                        </button>
-                      )
-                  )}
-
-                  {lane === 'following' && (
-                    p.outgoing === 'pending' ? requestedPill(p, true) : (
-                      <button
-                        type="button"
-                        className="pp-toggle is-on"
-                        onClick={() => void stopFollowing(p)}
-                        aria-pressed
-                        aria-label={`Unfollow ${pname}`}
-                        disabled={busy}
-                        style={{ minHeight: 44, opacity: busy ? 0.6 : 1 }}
-                      >
-                        <span className="pp-toggle-dot" aria-hidden="true" />
-                        Following
+                        Follow
                       </button>
                     )
                   )}
 
+                  {lane === 'following' && followingToggle(p)}
+
                   {lane === 'followers' && (
-                    p.outgoing === 'none' ? (
+                    iFollow ? followingToggle(p) : (
                       <button
                         type="button"
-                        className="btn btn-sm btn-primary"
-                        onClick={() => void mutate(p.id, () => followMember(p.id), 'Request sent')}
+                        className="btn btn-sm btn-quiet"
+                        onClick={() => void sendFollow(p)}
                         disabled={busy}
                         style={{ flexShrink: 0, minHeight: 44 }}
                       >
                         Follow back
                       </button>
-                    ) : p.outgoing === 'pending' ? requestedPill(p, true) : null
+                    )
                   )}
                 </div>
               );
@@ -2639,8 +2696,9 @@ export default function MemberChatsPage() {
   );
 
   // ---- Forward picker ------------------------------------------------------
-  // Only chats that can still take a message: not this one, and not frozen.
-  const forwardTargets = threads.filter((t) => t.id !== openId && t.open);
+  // Only chats that can still take a message: not this one, not blocked, and
+  // not a request waiting on me (forwarding into one would silently accept it).
+  const forwardTargets = threads.filter((t) => t.id !== openId && t.open && !t.request);
 
   const forwardSheet = forwardOf && (
     <div
@@ -2953,14 +3011,14 @@ export default function MemberChatsPage() {
           </h1>
           <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
             {e2eeOk
-              ? 'Chat with people who follow you back — messages are end-to-end encrypted once both devices have keys.'
-              : 'Chat with people who follow you back.'}
+              ? 'Message anyone — end-to-end encrypted once both devices have keys.'
+              : 'Message anyone in the community.'}
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <button
             type="button"
-            onClick={() => { setSheetOpen(true); setPeopleError(''); if (people.requests.length > 0) setLane('requests'); }}
+            onClick={() => { setSheetOpen(true); setPeopleError(''); }}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
               minHeight: 44, padding: '0 1.05rem', border: 0, borderRadius: 99,
@@ -2969,15 +3027,6 @@ export default function MemberChatsPage() {
             }}
           >
             <Plus size={16} aria-hidden="true" /> People
-            {people.requests.length > 0 && (
-              <span style={{
-                minWidth: 18, padding: '0 5px', borderRadius: 99,
-                background: '#fff', color: 'var(--primary-800)',
-                fontSize: '0.7rem', fontWeight: 800,
-              }}>
-                {people.requests.length}
-              </span>
-            )}
           </button>
           <button
             type="button"
@@ -3015,14 +3064,14 @@ export default function MemberChatsPage() {
                 <div style={{ padding: '2rem 1.1rem', textAlign: 'center' }}>
                   <MessageCircle size={24} aria-hidden="true" style={{ opacity: 0.35 }} />
                   <p style={{ margin: '0.7rem 0 1rem', fontSize: '0.86rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    No chats yet. A chat unlocks once you and someone else have accepted each other.
+                    No chats yet. Find someone and message them directly.
                   </p>
                   <button type="button" className="btn btn-sm btn-primary" onClick={() => setSheetOpen(true)} style={{ minHeight: 44 }}>
                     Find people
                   </button>
                 </div>
               )
-              : listRows}
+              : <>{requestsSwitch}{listRows}</>}
           </div>
           {threadPane ?? (
             <div style={{ display: 'grid', placeItems: 'center', padding: '2rem', textAlign: 'center', background: 'var(--bg-secondary)' }}>
@@ -3036,7 +3085,14 @@ export default function MemberChatsPage() {
           )}
         </div>
       ) : (
-        threads.length === 0 ? emptyList : <div className="pp-group-card">{listRows}</div>
+        threads.length === 0
+          ? emptyList
+          : (
+            <div className="pp-group-card">
+              {requestsSwitch}
+              {visibleThreads.length === 0 ? emptyList : listRows}
+            </div>
+          )
       )}
 
       {sheet}

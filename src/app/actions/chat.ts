@@ -6,8 +6,8 @@ import * as repo from '@/server/repos/chat';
 /**
  * Server Actions for follows and member chat. Every export is a public
  * endpoint: the caller is always resolved from the session, never from a
- * parameter, and every rule (mutual-follow gating above all) is enforced
- * again by RLS in 0016.
+ * parameter, and every rule (the 0040 message-request contract above all)
+ * is enforced again by RLS.
  */
 
 export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -18,13 +18,12 @@ function fail(context: string, error: unknown): { ok: false; error: string } {
   const safe =
     detail.startsWith('Not signed in') ||
     detail.startsWith('This account is not active') ||
-    detail.startsWith('You can chat once') ||
+    detail.startsWith('This chat is not available') ||
     detail.startsWith('You already asked') ||
     detail.startsWith('That person is not taking') ||
     detail.startsWith('You have used both referral') ||
     detail.startsWith('This request was already') ||
     detail.startsWith('That upload was not recognised') ||
-    detail.startsWith('You can only chat') ||
     detail.startsWith('Message cannot be empty') ||
     detail.startsWith('Message too long') ||
     detail.startsWith('Pick a reason') ||
@@ -85,6 +84,14 @@ export async function chatStart() {
 
 export async function openChat(partnerId: string) {
   return run('Opening chat', (uid) => repo.openChat(uid, partnerId));
+}
+
+export async function acceptChatRequest(conversationId: string) {
+  return run('Accepting request', (uid) => repo.acceptChatRequest(uid, conversationId));
+}
+
+export async function declineChatRequest(conversationId: string) {
+  return run('Declining request', (uid) => repo.declineChatRequest(uid, conversationId));
 }
 
 /**

@@ -555,14 +555,21 @@ export async function respondToInterest(
       `;
       const pair = [users[0]?.a, users[0]?.b].filter((v): v is string => Boolean(v)).sort();
       if (pair.length === 2) {
+        // Pre-accepted: the accepted interest is the consent (0040's
+        // is_preapproved_chat). DO NOTHING + select, not DO UPDATE — the
+        // caller's update grant covers accepted_at only since 0040.
         const convo = await db<{ id: string }>`
-          insert into public.member_conversations (member_a_id, member_b_id)
-          values (${pair[0]}::uuid, ${pair[1]}::uuid)
-          on conflict (member_a_id, member_b_id)
-            do update set last_message_at = public.member_conversations.last_message_at
+          insert into public.member_conversations (member_a_id, member_b_id, initiator_id, accepted_at)
+          values (${pair[0]}::uuid, ${pair[1]}::uuid, ${userId}::uuid, now())
+          on conflict (member_a_id, member_b_id) do nothing
           returning id
         `;
-        return convo[0]?.id ?? null;
+        if (convo[0]?.id) return convo[0].id;
+        const existing = await db<{ id: string }>`
+          select id from public.member_conversations
+           where member_a_id = ${pair[0]}::uuid and member_b_id = ${pair[1]}::uuid
+        `;
+        return existing[0]?.id ?? null;
       }
     }
     return null;
@@ -788,14 +795,19 @@ export async function swipeRight(userId: string, targetProfileId: string): Promi
       `;
       const pair = [users[0]?.a, users[0]?.b].filter((v): v is string => Boolean(v)).sort();
       if (pair.length < 2) return { matched: true, conversation_id: null };
+      // Pre-accepted match chat; DO NOTHING + select for the 0040 grants —
+      // same shape as respondToInterest above.
       const convo = await db<{ id: string }>`
-        insert into public.member_conversations (member_a_id, member_b_id)
-        values (${pair[0]}::uuid, ${pair[1]}::uuid)
-        on conflict (member_a_id, member_b_id)
-          do update set last_message_at = public.member_conversations.last_message_at
+        insert into public.member_conversations (member_a_id, member_b_id, initiator_id, accepted_at)
+        values (${pair[0]}::uuid, ${pair[1]}::uuid, ${userId}::uuid, now())
+        on conflict (member_a_id, member_b_id) do nothing
         returning id
       `;
-      return { matched: true, conversation_id: convo[0]?.id ?? null };
+      const convoId = convo[0]?.id ?? (await db<{ id: string }>`
+        select id from public.member_conversations
+         where member_a_id = ${pair[0]}::uuid and member_b_id = ${pair[1]}::uuid
+      `)[0]?.id ?? null;
+      return { matched: true, conversation_id: convoId };
     }
 
     try {

@@ -6,10 +6,8 @@ import {
   fetchCommunityStart, fetchPersonalFeed, fetchGroupsExplore,
   startGroup, joinCommunityGroup, leaveCommunityGroup,
 } from '@/app/actions/community';
-import {
-  searchPeople, followMember, unfollowMember,
-  acceptFollowRequest, declineFollowRequest,
-} from '@/app/actions/chat';
+import { useRouter } from 'next/navigation';
+import { searchPeople, followMember, unfollowMember, openChat } from '@/app/actions/chat';
 import type { ChatPerson, ChatPeople } from '@/server/repos/chat';
 import { PostCard, PostComposer, CommunityAside } from '@/components/portal/community';
 import PortalLoading from '@/components/portal/PortalLoading';
@@ -30,8 +28,9 @@ import {
  *           surfacing people and groups.
  *   Groups  searchable directory: mine, suggested (with the reason said out
  *           loud), then everything else.
- *   People  searchable member directory with follow state on every row, and
- *           incoming follow requests first.
+ *   People  searchable member directory with follow state and a Message
+ *           button on every row (0040: anyone can be messaged; the follow
+ *           only decides whose inbox the chat starts in).
  *
  * The server decides relevance (listPersonalFeed / exploreGroups /
  * searchPeople); this file only decides how it reads.
@@ -86,6 +85,7 @@ type FeedItem =
 
 export default function CommunityPage() {
   const confirm = useConfirm();
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>('feed');
   const [toast, setToast] = useState('');
 
@@ -111,7 +111,6 @@ export default function CommunityPage() {
 
   // ---- People -------------------------------------------------------------
   const [people, setPeople] = useState<ChatPerson[] | null>(cached?.people.suggestions ?? null);
-  const [requests, setRequests] = useState<ChatPerson[]>(cached?.people.requests ?? []);
   const [peopleQuery, setPeopleQuery] = useState('');
   const [peopleError, setPeopleError] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -149,7 +148,6 @@ export default function CommunityPage() {
       setPosts(r.data.posts);
       setGroups(r.data.groups);
       setRailPeople(r.data.people.suggestions);
-      setRequests(r.data.people.requests);
       setFeedEnd(r.data.posts.length < PAGE);
       setFeedError('');
     } else {
@@ -307,10 +305,11 @@ export default function CommunityPage() {
 
   const follow = async (person: ChatPerson) => {
     setBusyId(person.id);
-    setFollowState(person.id, 'pending');
+    // Instant since 0040 - no request, no acceptance.
+    setFollowState(person.id, 'accepted');
     const r = await followMember(person.id);
     if (!r.ok) { setFollowState(person.id, 'none'); setPeopleError(r.error); }
-    else setToast(`Follow request sent to ${person.firstName}`);
+    else setToast(`Following ${person.firstName}`);
     setBusyId(null);
   };
 
@@ -318,7 +317,7 @@ export default function CommunityPage() {
     if (person.outgoing === 'accepted') {
       const ok = await confirm({
         title: `Unfollow ${fullName(person)}?`,
-        message: 'Their posts leave your feed, and your chat with them freezes unless something else keeps it open.',
+        message: 'Their posts leave your feed. Your chat with them is not affected.',
         confirmLabel: 'Unfollow',
         tone: 'danger',
       });
@@ -331,17 +330,13 @@ export default function CommunityPage() {
     setBusyId(null);
   };
 
-  const answerRequest = async (person: ChatPerson, accept: boolean) => {
+  /** Open (or create) the DM and land in it. Works for anyone - if they don't
+      follow you, the thread waits in their requests, and the chat page says so. */
+  const message = async (person: ChatPerson) => {
     setBusyId(person.id);
-    const r = accept ? await acceptFollowRequest(person.id) : await declineFollowRequest(person.id);
-    if (r.ok) {
-      setRequests((rs) => rs.filter((p) => p.id !== person.id));
-      setToast(accept ? `${person.firstName} can see your posts now` : 'Request declined');
-      if (accept) void loadPeople(peopleQuery.trim());
-    } else {
-      setPeopleError(r.error);
-    }
-    setBusyId(null);
+    const r = await openChat(person.id);
+    if (!r.ok) { setPeopleError(r.error); setBusyId(null); return; }
+    router.push(`/portal/member/chats?c=${r.data}`);
   };
 
   /** The feed's inline Join cards: groups I am not in, best match first. */
@@ -432,20 +427,20 @@ export default function CommunityPage() {
     </span>
   );
 
+  // Instant follows (0040): the only states left are on and off.
   const followButton = (person: ChatPerson) => {
-    const state = person.outgoing;
-    const label = state === 'accepted' ? 'Following' : state === 'pending' ? 'Requested' : 'Follow';
+    const on = person.outgoing === 'accepted';
     return (
       <button
         type="button"
-        className={`pp-toggle ${state === 'accepted' ? 'is-on' : ''}`}
-        style={{ padding: '0.35rem 0.8rem', minHeight: 40, opacity: state === 'pending' ? 0.75 : 1 }}
-        aria-pressed={state !== 'none'}
+        className={`pp-toggle ${on ? 'is-on' : ''}`}
+        style={{ padding: '0.35rem 0.8rem', minHeight: 40 }}
+        aria-pressed={on}
         disabled={busyId === person.id}
-        onClick={() => (state === 'none' ? follow(person) : unfollow(person))}
+        onClick={() => (on ? unfollow(person) : follow(person))}
       >
-        {state === 'accepted' ? <Check size={13} aria-hidden="true" /> : <UserPlus size={13} aria-hidden="true" />}
-        {label}
+        {on ? <Check size={13} aria-hidden="true" /> : <UserPlus size={13} aria-hidden="true" />}
+        {on ? 'Following' : 'Follow'}
       </button>
     );
   };
@@ -729,7 +724,6 @@ export default function CommunityPage() {
 
   // ---- Tab: PEOPLE --------------------------------------------------------
   const personRow = (p: ChatPerson) => {
-    const mutual = p.outgoing === 'accepted' && p.incoming === 'accepted';
     return (
       <div key={p.id} className="pp-row" style={{ cursor: 'default' }}>
         <span className="hf-member-avatar" aria-hidden="true">{initials(p.firstName, p.lastName)}</span>
@@ -740,18 +734,21 @@ export default function CommunityPage() {
             <span className="pp-chip" style={{ marginTop: 4, fontSize: '0.68rem' }}>Follows you</span>
           )}
         </div>
-        {mutual && (
-          <Link
-            href="/portal/member/chats"
-            aria-label={`Message ${p.firstName}`}
-            style={{
-              display: 'grid', placeItems: 'center', width: 40, height: 40, borderRadius: '50%',
-              background: 'var(--green-50)', color: 'var(--green-800)', flexShrink: 0,
-            }}
-          >
-            <MessageCircle size={16} aria-hidden="true" />
-          </Link>
-        )}
+        {/* Anyone can be messaged; the chat lands in their requests if they
+            don't follow you. The button opens the actual conversation. */}
+        <button
+          type="button"
+          aria-label={`Message ${p.firstName}`}
+          disabled={busyId === p.id}
+          onClick={() => void message(p)}
+          style={{
+            display: 'grid', placeItems: 'center', width: 40, height: 40, borderRadius: '50%',
+            border: 0, cursor: 'pointer', opacity: busyId === p.id ? 0.6 : 1,
+            background: 'var(--green-50)', color: 'var(--green-800)', flexShrink: 0,
+          }}
+        >
+          <MessageCircle size={16} aria-hidden="true" />
+        </button>
         {followButton(p)}
       </div>
     );
@@ -784,42 +781,6 @@ export default function CommunityPage() {
       )}
 
       <div className="pp-groups">
-        {requests.length > 0 && !peopleQuery && (
-          <section className="pp-group">
-            <h2>Follow requests</h2>
-            <p className="pp-group-sub">They asked to follow you. Accepting also unlocks a chat once you follow back.</p>
-            <div className="pp-group-card">
-              {requests.map((p) => (
-                <div key={p.id} className="pp-row" style={{ cursor: 'default' }}>
-                  <span className="hf-member-avatar" aria-hidden="true">{initials(p.firstName, p.lastName)}</span>
-                  <div className="pp-row-body">
-                    <strong>{fullName(p)}</strong>
-                    <small>{[p.jobTitle, p.city].filter(Boolean).join(' · ') || 'Member'}</small>
-                  </div>
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    style={{ minHeight: 40, padding: '0 0.85rem', fontSize: '0.8rem' }}
-                    disabled={busyId === p.id}
-                    onClick={() => answerRequest(p, true)}
-                  >
-                    Accept
-                  </button>
-                  <button
-                    type="button"
-                    className="pp-toggle"
-                    style={{ padding: '0.35rem 0.7rem', minHeight: 40 }}
-                    disabled={busyId === p.id}
-                    onClick={() => answerRequest(p, false)}
-                  >
-                    Decline
-                  </button>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
         {people === null ? (
           <PortalLoading label="Loading members" />
         ) : people.length === 0 ? (

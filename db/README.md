@@ -34,6 +34,8 @@ Roughly what the files cover:
 | `0000`-`0004` | `app` schema and least-privilege roles, core tables, matrimony, RLS for every table, admin bootstrap |
 | `0005`-`0014` | Community feed and groups, public submissions, saved businesses, matrimony moderation, company referrals, city home feed |
 | `0015`-`0029` | Swipe deck and E2E keys, follows and the member chat hub, the direct-referral model (with the old anonymous fan-out dropped), chat settings, reactions, referral caps, and the RLS hardening that followed the 2026-08 audit |
+| `0030`-`0039` | Referral notifications, the in-app notification core and its trigger producers, push devices, business self-service (RSVPs, offers, owner events) |
+| `0040` | Instagram-style DMs: follows are instant, anyone can message anyone, unaccepted threads are message requests for the recipient (accept / reply / decline), matrimony and referral chats open pre-accepted, a block is the only chat gate left |
 
 After the first run, check that RLS is on everywhere:
 
