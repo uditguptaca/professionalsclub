@@ -1,5 +1,5 @@
 import 'server-only';
-import { withUserRead, one } from '@/server/db';
+import { withUser, withUserRead, one } from '@/server/db';
 
 /**
  * The member home feed: everything the dashboard shows, scoped to the
@@ -196,9 +196,46 @@ export interface MemberEvent {
   id: string; title: string; date: string | null; time: string | null;
   location: string | null; eventType: string; attendees: number;
   image: string | null; rsvpUrl: string | null; inCity: boolean;
+  /** Live RSVP count (event_attendance view); display total = attendees + going. */
+  going: number;
+  /** Whether THIS member has RSVP'd. */
+  myRsvp: boolean;
+  /** Set when a verified business posted the event. */
+  businessName: string | null;
 }
 
 /** Every upcoming event for the portal Events tab, the member's city first. */
+/**
+ * RSVP toggle. One row per member per event, enforced by the primary key and
+ * by RLS (a member can only ever write their own row, and only for published
+ * upcoming events). Returns the new live count so the UI settles immediately.
+ */
+export async function setEventRsvp(
+  userId: string,
+  eventId: string,
+  going: boolean
+): Promise<{ going: number; myRsvp: boolean }> {
+  return withUser(userId, async (db) => {
+    if (going) {
+      await db.run(
+        `insert into public.event_rsvps (event_id, member_id)
+         values ($1, $2) on conflict do nothing`,
+        [eventId, userId]
+      );
+    } else {
+      await db.run(
+        `delete from public.event_rsvps where event_id = $1 and member_id = $2`,
+        [eventId, userId]
+      );
+    }
+    const rows = await db.run<{ going: number }>(
+      `select coalesce((select going from public.event_attendance where event_id = $1), 0)::int as going`,
+      [eventId]
+    );
+    return { going: rows[0]?.going ?? 0, myRsvp: going };
+  });
+}
+
 export async function listMemberEvents(userId: string): Promise<{ city: string | null; events: MemberEvent[] }> {
   return withUserRead(userId, async (db) => {
     const rows = await db.run(
@@ -208,8 +245,14 @@ export async function listMemberEvents(userId: string): Promise<{ city: string |
              e.location, e.event_type, e.attendees, e.image, e.rsvp_url,
              (coalesce((select city from me), '') <> '' and
               e.location ilike '%' || (select city from me) || '%') as in_city,
-             (select city from me) as my_city
+             (select city from me) as my_city,
+             coalesce(a.going, 0) as going,
+             exists (select 1 from public.event_rsvps r
+                      where r.event_id = e.id and r.member_id = $1) as my_rsvp,
+             b.name as business_name
         from public.events e
+        left join public.event_attendance a on a.event_id = e.id
+        left join public.businesses b on b.id = e.business_id
        where e.status = 'upcoming' and e.is_published
        order by in_city desc, e.event_date asc nulls last
       `,
@@ -224,6 +267,9 @@ export async function listMemberEvents(userId: string): Promise<{ city: string |
         eventType: e.event_type as string, attendees: Number(e.attendees ?? 0),
         image: (e.image as string | null) ?? null, rsvpUrl: (e.rsvp_url as string | null) ?? null,
         inCity: Boolean(e.in_city),
+        going: Number(e.going ?? 0),
+        myRsvp: Boolean(e.my_rsvp),
+        businessName: (e.business_name as string | null) ?? null,
       })),
     };
   });

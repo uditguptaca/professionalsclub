@@ -250,6 +250,7 @@ function PortalChrome({
     { label: 'My Volunteer Status', href: '/portal/member/my-volunteer', icon: ClipboardList },
     { label: 'Admin Messages', href: '/portal/member/messages', icon: MessageSquare },
     { label: 'Business Directory', href: '/portal/member/businesses', icon: Building2 },
+    { label: 'My Business', href: '/portal/member/business', icon: Building2 },
   ];
 
   const adminLinks: NavLink[] = [
@@ -302,7 +303,7 @@ function PortalChrome({
         ]
       : [
           { title: 'Activity', links: pick(memberLinks, ['/notifications']) },
-          { title: 'Career & connections', links: pick(memberLinks, ['/referrals', '/businesses', '/matrimony']) },
+          { title: 'Career & connections', links: pick(memberLinks, ['/referrals', '/businesses', '/business', '/matrimony']) },
           { title: 'Help desk', links: pick(memberLinks, ['/request-help', '/my-requests', '/messages']) },
           { title: 'Volunteering', links: pick(memberLinks, ['/volunteer', '/my-volunteer']) },
         ];

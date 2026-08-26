@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Calendar, Users, MapPin } from 'lucide-react';
 import { requireProfile } from '@/server/auth';
+import RsvpButton from '@/components/portal/RsvpButton';
 import { listMemberEvents } from '@/server/repos/home';
 
 export const dynamic = 'force-dynamic';
@@ -41,8 +42,15 @@ export default async function MemberEventsPage() {
       </span>
       <span className="hf-event-body">
         <strong>{e.title}</strong>
+        {e.businessName && <small className="hf-event-host">Hosted by {e.businessName}</small>}
         <small><Calendar size={12} aria-hidden="true" /> {monthDay(e.date)}{e.time ? ` · ${e.time}` : ''}</small>
-        <small><Users size={12} aria-hidden="true" /> {e.attendees} attending{e.location ? ` · ${e.location}` : ''}</small>
+        <small><Users size={12} aria-hidden="true" /> {e.attendees + e.going} attending{e.location ? ` · ${e.location}` : ''}</small>
+        <RsvpButton
+          eventId={e.id}
+          initialGoing={e.going}
+          initialMyRsvp={e.myRsvp}
+          baseAttendees={e.attendees}
+        />
       </span>
     </a>
   );

@@ -4320,3 +4320,79 @@ a.portal-sheet-user:active { background: var(--green-900, #14532d); }
 @media (max-width: 1023px) {
   .nt-sheet { padding-bottom: calc(5.4rem + var(--sab)); }
 }
+
+
+/* ===== RSVP + MY BUSINESS (bz-) ============================================ */
+.rsvp-wrap { display: flex; flex-direction: column; gap: 0.3rem; margin-top: 0.45rem; }
+.rsvp-btn {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  align-self: flex-start;
+  padding: 0.4rem 0.8rem; min-height: 2.1rem;
+  border: 1px solid var(--border-color); border-radius: 99px;
+  background: var(--bg-primary); color: var(--text-primary);
+  font: inherit; font-size: 0.8rem; font-weight: 750; cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.rsvp-btn:hover { background: var(--bg-secondary); }
+.rsvp-btn.is-going {
+  background: var(--green-950); border-color: var(--green-950); color: #fff;
+}
+.rsvp-btn:disabled { opacity: 0.65; cursor: progress; }
+.rsvp-count {
+  min-width: 1.2rem; padding: 0 0.3rem; border-radius: 99px; text-align: center;
+  background: rgba(232, 93, 4, 0.14); color: var(--text-accent);
+  font-size: 0.7rem; line-height: 1.2rem;
+}
+.rsvp-btn.is-going .rsvp-count { background: rgba(255,255,255,0.22); color: #fff; }
+.hf-event-host { color: var(--text-accent); font-weight: 700; }
+
+/* The business owner screen reuses the home-feed grammar; these are only the
+   bits it does not already have. */
+.bz-tabs { display: flex; gap: 0.4rem; margin: 0.4rem 0 1rem; overflow-x: auto; scrollbar-width: none; }
+.bz-tabs::-webkit-scrollbar { display: none; }
+.bz-tab {
+  padding: 0.45rem 0.9rem; min-height: 2.2rem; flex: none;
+  border: 1px solid var(--border-color); border-radius: 99px;
+  background: var(--bg-primary); color: var(--text-secondary);
+  font: inherit; font-size: 0.84rem; font-weight: 700; cursor: pointer;
+}
+.bz-tab.is-on { background: var(--green-950); border-color: var(--green-950); color: #fff; }
+.bz-field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.9rem; }
+.bz-field label { font-size: 0.82rem; font-weight: 750; color: var(--text-primary); }
+.bz-field input, .bz-field select, .bz-field textarea {
+  width: 100%; min-height: 48px; padding: 0.65rem 0.9rem;
+  border: 1px solid var(--border-color); border-radius: 12px;
+  background: var(--bg-primary); color: var(--text-primary);
+  font: inherit; font-size: 1rem;
+}
+.bz-field textarea { min-height: 96px; resize: vertical; }
+.bz-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+@media (max-width: 560px) { .bz-row { grid-template-columns: 1fr; } }
+.bz-card {
+  background: var(--bg-primary); border: 1px solid var(--border-color);
+  border-radius: 1rem; padding: 1rem 1.1rem; margin-bottom: 0.75rem;
+}
+.bz-card-head { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+.bz-card-head strong { font-size: 0.95rem; color: var(--text-primary); }
+.bz-actions { display: flex; gap: 0.45rem; flex-wrap: wrap; }
+.bz-status {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.25rem 0.7rem; border-radius: 99px;
+  font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em;
+}
+.bz-status.pending { background: rgba(217, 119, 6, 0.14); color: var(--accent-700, #b45309); }
+.bz-status.verified { background: rgba(22, 101, 52, 0.12); color: var(--success-600, #16a34a); }
+.bz-muted { font-size: 0.84rem; color: var(--text-secondary); }
+.bz-cover {
+  width: 100%; height: 140px; object-fit: cover; border-radius: 0.8rem;
+  background: var(--bg-secondary);
+}
+.bz-logo { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; background: var(--bg-secondary); }
+.bz-upload {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.45rem 0.85rem; min-height: 2.3rem;
+  border: 1px dashed var(--border-color); border-radius: 10px;
+  background: var(--bg-primary); color: var(--text-secondary);
+  font: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+}
+.bz-upload:hover { background: var(--bg-secondary); }

@@ -96,3 +96,7 @@ export async function submitBusinessListing(
 export async function getPublicVolunteers() {
   return repo.listPublicVolunteers();
 }
+
+export async function getBusinessPageExtras(businessId: string) {
+  return repo.getBusinessPageExtras(businessId);
+}

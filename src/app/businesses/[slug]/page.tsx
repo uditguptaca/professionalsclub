@@ -8,7 +8,7 @@ import {
   ShieldCheck, Star, Tag, MapPin, Phone, Mail, Globe, Clock, Briefcase,
   ArrowLeft, CheckCircle, ExternalLink, User, Calendar, Target,
 } from 'lucide-react';
-import { getBusinessBySlug } from '@/app/actions/public';
+import { getBusinessBySlug, getBusinessPageExtras } from '@/app/actions/public';
 import type { Business } from '@/types';
 
 export default function BusinessProfilePage() {
@@ -16,13 +16,19 @@ export default function BusinessProfilePage() {
   const slug = params?.slug as string;
 
   const [biz, setBiz] = useState<Business | null>(null);
+  const [extras, setExtras] = useState<{
+    offers: { id: string; title: string; description: string; validUntil: string | null }[];
+    events: { id: string; title: string; date: string | null; time: string | null; location: string | null; going: number }[];
+  }>({ offers: [], events: [] });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       // An unverified or missing slug is a normal "not found": RLS simply does
       // not return the row to an anonymous reader.
-      setBiz(await getBusinessBySlug(slug));
+      const b = await getBusinessBySlug(slug);
+      setBiz(b);
+      if (b) setExtras(await getBusinessPageExtras(b.id));
       setLoading(false);
     }
     if (slug) void load();
@@ -115,6 +121,46 @@ export default function BusinessProfilePage() {
             <div className="biz-profile-section">
               <h3><Tag size={16} /> Pricing</h3>
               <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>{biz.pricingSummary}</p>
+            </div>
+          )}
+
+          {/* Offers the business manages itself */}
+          {extras.offers.length > 0 && (
+            <div className="biz-profile-section">
+              <h3><Tag size={16} /> Current Offers for Members</h3>
+              {extras.offers.map(o => (
+                <div key={o.id} style={{ padding: '0.75rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                  <strong style={{ fontSize: '0.92rem' }}>{o.title}</strong>
+                  {o.description && (
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0' }}>{o.description}</p>
+                  )}
+                  {o.validUntil && (
+                    <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '0.25rem 0 0' }}>
+                      Valid until {new Date(o.validUntil).toLocaleDateString('en-CA', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Events the business hosts */}
+          {extras.events.length > 0 && (
+            <div className="biz-profile-section">
+              <h3><Calendar size={16} /> Upcoming Events</h3>
+              {extras.events.map(ev => (
+                <div key={ev.id} style={{ padding: '0.75rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                  <strong style={{ fontSize: '0.92rem' }}>{ev.title}</strong>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0' }}>
+                    {ev.date ? new Date(ev.date).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }) : 'Date TBA'}
+                    {ev.time ? ` · ${ev.time}` : ''}{ev.location ? ` · ${ev.location}` : ''}
+                    {ev.going > 0 ? ` · ${ev.going} going` : ''}
+                  </p>
+                  <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '0.2rem 0 0' }}>
+                    RSVP in the members portal
+                  </p>
+                </div>
+              ))}
             </div>
           )}
         </div>

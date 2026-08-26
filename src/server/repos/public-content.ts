@@ -29,6 +29,63 @@ export async function getBusinessBySlug(slug: string): Promise<Business | null> 
   });
 }
 
+export interface BusinessPageOffer {
+  id: string;
+  title: string;
+  description: string;
+  validUntil: string | null;
+}
+
+export interface BusinessPageEvent {
+  id: string;
+  title: string;
+  date: string | null;
+  time: string | null;
+  location: string | null;
+  going: number;
+}
+
+/**
+ * The self-managed halves of a business page: active offers and upcoming
+ * published events, with live RSVP counts. RLS already scopes both to verified
+ * businesses for this role, so an unverified slug simply returns empty lists.
+ */
+export async function getBusinessPageExtras(
+  businessId: string
+): Promise<{ offers: BusinessPageOffer[]; events: BusinessPageEvent[] }> {
+  return withAnon(async (db) => {
+    const rows = await db`
+      select json_build_object(
+        'offers', coalesce((
+          select json_agg(json_build_object(
+            'id', o.id, 'title', o.title, 'description', o.description,
+            'validUntil', o.valid_until
+          ) order by o.created_at desc)
+            from public.business_offers o
+           where o.business_id = ${businessId} and o.is_active
+             and (o.valid_until is null or o.valid_until >= current_date)
+        ), '[]'::json),
+        'events', coalesce((
+          select json_agg(json_build_object(
+            'id', e.id, 'title', e.title, 'date', e.event_date, 'time', e.event_time,
+            'location', e.location, 'going', coalesce(a.going, 0)
+          ) order by e.event_date asc nulls last)
+            from public.events e
+            left join public.event_attendance a on a.event_id = e.id
+           where e.business_id = ${businessId}
+             and e.is_published and e.status = 'upcoming'
+        ), '[]'::json)
+      ) as payload
+    `;
+    const payload = (rows[0] as { payload?: { offers: BusinessPageOffer[]; events: BusinessPageEvent[] } })?.payload
+      ?? { offers: [], events: [] };
+    const iso = (v: unknown) => (v instanceof Date ? v.toISOString() : ((v as string | null) ?? null));
+    for (const o of payload.offers) o.validUntil = iso(o.validUntil);
+    for (const e of payload.events) e.date = iso(e.date);
+    return payload;
+  });
+}
+
 export interface PublicEvent {
   id: string;
   title: string;

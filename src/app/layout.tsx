@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import RegisterSW from '@/components/RegisterSW';
 import { Fraunces, Manrope, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 // Loaded after globals.css on purpose: the editorial layer redefines the shared
@@ -79,6 +80,16 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://professionalsclub.
  */
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  // PWA: iOS has no manifest support worth the name, so the apple-* fields
+  // carry the install identity there; Android/desktop read /manifest.webmanifest.
+  appleWebApp: {
+    capable: true,
+    title: 'Pro Club',
+    statusBarStyle: 'default',
+  },
+  icons: {
+    apple: '/apple-touch-icon.png',
+  },
   title: {
     default: "Professionals Club — Careers, settlement and community for newcomers in Canada",
     template: "%s · Professionals Club",
@@ -153,6 +164,7 @@ export default async function RootLayout({
         {/* No-op on the web; wires the native shell when inside the app. */}
         <CapacitorBridge />
 
+        <RegisterSW />
         <AppProvider initialProfile={profile}>
           <PublicContentProvider>
             <PortalProvider>
