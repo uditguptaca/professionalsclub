@@ -5,11 +5,11 @@
   "crons": [
     {
       "path": "/api/jobs/refresh",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 6 * * *"
     },
     {
       "path": "/api/jobs/push",
-      "schedule": "0 * * * *"
+      "schedule": "30 6 * * *"
     }
   ]
 }
