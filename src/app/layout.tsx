@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import RegisterSW from '@/components/RegisterSW';
+import InstallPrompt from '@/components/InstallPrompt';
 import { Fraunces, Manrope, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 // Loaded after globals.css on purpose: the editorial layer redefines the shared
@@ -165,6 +166,7 @@ export default async function RootLayout({
         <CapacitorBridge />
 
         <RegisterSW />
+        <InstallPrompt />
         <AppProvider initialProfile={profile}>
           <PublicContentProvider>
             <PortalProvider>

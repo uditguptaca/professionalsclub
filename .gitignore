@@ -84,3 +84,6 @@ service-account*.json
 # Apple push auth keys.
 *.p8
 AuthKey_*.p8
+
+# Credentials sheet generated from TEST-ACCOUNTS.md - never commit
+TEST-ACCOUNTS.pdf
