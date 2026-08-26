@@ -229,8 +229,12 @@ export function PostComposer({
             ref={videoInput} type="file" accept="video/mp4,video/webm,video/quicktime"
             hidden onChange={(e) => { attach(e.target.files, 'video'); e.target.value = ''; }}
           />
+          {/* preventDefault on pointerdown: a tap here must not blur the
+              textarea - the blur collapses the composer and this button is
+              display:none before its click ever fires (dead tap on phones). */}
           <button
             type="button" className="community-tool" title="Add photos"
+            onPointerDown={(e) => e.preventDefault()}
             onClick={() => imageInput.current?.click()}
             disabled={hasVideo || drafts.length >= 4}
           >
@@ -238,6 +242,7 @@ export function PostComposer({
           </button>
           <button
             type="button" className="community-tool" title="Add a video"
+            onPointerDown={(e) => e.preventDefault()}
             onClick={() => videoInput.current?.click()}
             disabled={drafts.length > 0}
           >

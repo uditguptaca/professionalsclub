@@ -2394,12 +2394,16 @@ export default function MemberChatsPage() {
                       inbox the chat starts in. */}
                   <button
                     type="button"
-                    className="btn btn-sm btn-primary"
+                    aria-label={`Message ${pname}`}
                     onClick={() => void messagePerson(p)}
                     disabled={busy}
-                    style={{ flexShrink: 0, minHeight: 44 }}
+                    style={{
+                      display: 'grid', placeItems: 'center', width: 40, height: 40, flexShrink: 0,
+                      border: 0, borderRadius: '50%', cursor: 'pointer', opacity: busy ? 0.6 : 1,
+                      background: 'var(--green-50)', color: 'var(--green-800)',
+                    }}
                   >
-                    Message
+                    <MessageCircle size={17} aria-hidden="true" />
                   </button>
 
                   {lane === 'suggestions' && (
