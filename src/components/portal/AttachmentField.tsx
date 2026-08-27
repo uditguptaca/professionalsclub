@@ -79,6 +79,11 @@ export function AttachmentField({
       setError(`You can attach up to ${maxFiles} files.`);
       return;
     }
+    // Size is checked before the upload so "under 8 MB" is only said when true.
+    if (chosen.some(f => f.size > 8 * 1024 * 1024)) {
+      setError('Files can be up to 8 MB each.');
+      return;
+    }
     setPending(n => n + chosen.length);
     await Promise.all(
       chosen.map(async file => {
@@ -86,7 +91,7 @@ export function AttachmentField({
           const url = await uploadAttachment(file);
           setFiles(f => [...f, { url, name: file.name }]);
         } catch {
-          setError('Upload failed. Use a PDF, Word file, JPG, PNG or WebP under 8 MB.');
+          setError('Upload failed. Please check your connection and try again.');
         } finally {
           setPending(n => n - 1);
         }

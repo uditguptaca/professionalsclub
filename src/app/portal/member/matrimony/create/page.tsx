@@ -402,6 +402,11 @@ export default function MatrimonyCreatePage() {
       setPhotoError(`You can add up to ${MAX_PHOTOS} photos.`);
       return;
     }
+    // Size is checked before the upload so "under 8 MB" is only said when true.
+    if (chosen.some((f) => f.size > 8 * 1024 * 1024)) {
+      setPhotoError('Photos can be up to 8 MB each.');
+      return;
+    }
 
     // A photo row needs a profile to reference. On a first visit there is none
     // yet, so the listing is saved as a draft before the first upload.
@@ -425,7 +430,7 @@ export default function MatrimonyCreatePage() {
         if (saved.ok) setPhotos(p => [...p, saved.data]);
         else setPhotoError(saved.error);
       } catch {
-        setPhotoError('Upload failed. Use a JPG, PNG or WebP under 8 MB.');
+        setPhotoError('Upload failed. Please check your connection and try again.');
       } finally {
         setUploading(n => n - 1);
       }

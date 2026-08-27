@@ -141,6 +141,13 @@ export function PostComposer({
       setError('A post can carry up to four photos or one video.');
       return;
     }
+    // Size is checked HERE, before the upload - so "too big" is only ever
+    // said when it is true, and a network/server failure says what it is.
+    const maxBytes = (kind === 'video' ? 120 : 8) * 1024 * 1024;
+    if (chosen.some((f) => f.size > maxBytes)) {
+      setError(kind === 'video' ? 'Videos can be up to 120 MB.' : 'Photos can be up to 8 MB each.');
+      return;
+    }
     setUploading((n) => n + chosen.length);
     await Promise.all(
       chosen.map(async (file) => {
@@ -148,7 +155,7 @@ export function PostComposer({
           const url = await uploadMedia(file, kind);
           setDrafts((d) => [...d, { media: { url, type: kind }, previewUrl: URL.createObjectURL(file) }]);
         } catch {
-          setError('Upload failed — check the file size (8 MB photos, 120 MB video).');
+          setError('Upload failed. Please check your connection and try again.');
         } finally {
           setUploading((n) => n - 1);
         }
