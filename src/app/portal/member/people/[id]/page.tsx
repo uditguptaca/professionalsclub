@@ -220,23 +220,9 @@ export default function MemberProfilePage() {
 
   return (
     <div>
-      {/* Hero: the same forest band the member's own profile uses. */}
+      {/* Hero: the same forest band the member's own profile uses. The back
+          control lives in the portal shell now, so there is none here. */}
       <div className="pp-hero">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          aria-label="Back"
-          style={{
-            position: 'absolute', left: 'clamp(0.5rem, 2vw, 1rem)',
-            top: 'calc(0.6rem + var(--sat))',
-            display: 'grid', placeItems: 'center', width: 44, height: 44,
-            border: 0, borderRadius: '50%', background: 'rgba(255,255,255,0.12)',
-            color: '#fff', cursor: 'pointer',
-          }}
-        >
-          <ArrowLeft size={18} aria-hidden="true" />
-        </button>
-
         <span
           aria-hidden="true"
           style={{

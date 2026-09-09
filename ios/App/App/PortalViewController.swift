@@ -45,6 +45,12 @@ final class PortalViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
 
+        // Swipe from the left edge to go back, as every iOS app does. Off by
+        // default in WKWebView, and iOS has no hardware back button, so without
+        // this the only way back was the tab bar. The portal shell also draws a
+        // Back control; this is the gesture people reach for first.
+        webView?.allowsBackForwardNavigationGestures = true
+
         // Hand over any push tapped before a bridge existed. Capacitor's
         // NotificationRouter only becomes the UNUserNotificationCenter delegate
         // inside CapacitorBridge.init (CapacitorBridge.swift:210-211), and

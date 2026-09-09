@@ -314,6 +314,51 @@ function PortalChrome({
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
+  // ---- Back navigation -----------------------------------------------------
+  // iOS has no hardware back button and this is a WebView, so a page reached by
+  // tapping something had no way out except the tab bar - which throws away
+  // where you were. Handled once here rather than in fifty pages.
+  //
+  // The tab bar's own destinations are roots: they are always one tap away, so
+  // a back control on them would only offer to leave the app.
+  const atRoot = tabHrefs.has(pathname);
+
+  // Whether anything has been navigated to inside this shell. A cold deep link
+  // (a push notification, a shared URL, the app's start URL) has no in-app
+  // history, and history.back() there would leave the app entirely - so those
+  // walk up to the parent section instead.
+  const navigated = React.useRef(false);
+  const startPath = React.useRef(pathname);
+  React.useEffect(() => {
+    if (pathname !== startPath.current) navigated.current = true;
+  }, [pathname]);
+
+  /** The nearest ancestor route that actually exists, else the dashboard. */
+  const parentOf = (path: string): string => {
+    const known = new Set<string>([
+      ...navLinks.map((l) => l.href),
+      ...(role === 'admin' ? adminContentLinks.map((l) => l.href) : []),
+    ]);
+    const parts = path.split('/').filter(Boolean);
+    while (parts.length > 2) {
+      parts.pop();
+      const candidate = '/' + parts.join('/');
+      if (known.has(candidate)) return candidate;
+    }
+    return tabs[0].href;
+  };
+
+  const goBack = () => {
+    // Only our own in-app navigation counts. window.history.length looks like
+    // the better signal and is a trap: a tab that opened straight onto a deep
+    // link already has length 2 (the blank page it started from), so trusting
+    // it sent Back out of the app to a blank screen. A member who reloaded a
+    // page therefore lands on the parent section rather than their previous
+    // page - a smaller cost than Back appearing to break the app.
+    if (navigated.current) router.back();
+    else router.push(parentOf(pathname));
+  };
+
   const renderSidebarLink = (link: NavLink) => {
     const Icon = link.icon;
     return (
@@ -388,7 +433,19 @@ function PortalChrome({
           </div>
         </header>
 
-        <div className="portal-content-area">
+        {/* Phone back bar. A sibling ABOVE the content area, not inside it:
+            pages with a full-bleed hero cancel the content padding with a
+            negative margin, and a row inside would be covered by it. */}
+        {!atRoot && (
+          <div className="portal-back">
+            <button type="button" onClick={goBack} aria-label="Go back">
+              <ChevronRight size={18} aria-hidden="true" style={{ transform: 'rotate(180deg)' }} />
+              <span>Back</span>
+            </button>
+          </div>
+        )}
+
+        <div className={`portal-content-area${!atRoot ? ' has-back' : ''}`}>
           {children}
         </div>
       </main>
