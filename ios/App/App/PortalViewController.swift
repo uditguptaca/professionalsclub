@@ -15,12 +15,16 @@ import Capacitor
  never trigger this, because the proxy 307s /portal/auth to the dashboard and
  the WebView only commits the final URL of a redirect chain.
 
- Committed is the operative word. Capacitor does post
- `.capacitorDecidePolicyForNavigationAction` for any listener
- (WebViewDelegationHandler.swift:69), but that fires for PROPOSED navigations,
- so it would see /portal/auth on every signed-in launch too - the app start URL
- IS /portal/auth. KVO on `webView.url` fires on commit, which is the behaviour
- MainActivity gets from onPageFinished.
+ Settled is the operative word, and getting there takes two observers.
+ `webView.url` is WebKit's ACTIVE url: PageLoadState::activeURL returns the
+ pending API request url first, then the provisional one, and only then the
+ committed one - so a KVO on it fires the instant `load()` is asked for a page,
+ long before the server has answered. Observing only that (as this file first
+ did) bounced on every single launch, because the callback arrived carrying the
+ url we had just requested. So the bounce now waits for `isLoading` to settle,
+ which is iOS's equivalent of onPageFinished, and the url observer is kept for
+ the same reason MainActivity keeps doUpdateVisitedHistory: Next.js signs out
+ with a client-side pushState that never starts a document load.
  */
 final class PortalViewController: CAPBridgeViewController {
 
@@ -29,6 +33,7 @@ final class PortalViewController: CAPBridgeViewController {
     var startPath: String?
 
     private var urlObservation: NSKeyValueObservation?
+    private var loadingObservation: NSKeyValueObservation?
     private var bounced = false
 
     /**
@@ -50,14 +55,20 @@ final class PortalViewController: CAPBridgeViewController {
             PendingPush.shared.replay(into: router)
         }
 
+        // Two hooks, the same split MainActivity uses: a finished load is
+        // onPageFinished (hard navigation), a url change while nothing is
+        // loading is doUpdateVisitedHistory (Next.js's client-side sign-out).
         urlObservation = webView?.observe(\.url, options: [.new]) { [weak self] _, _ in
+            self?.maybeBounce()
+        }
+        loadingObservation = webView?.observe(\.isLoading, options: [.new]) { [weak self] _, _ in
             self?.maybeBounce()
         }
     }
 
     override func viewDidLoad() {
         // super loads config.appStartServerURL (CAPBridgeViewController.swift:167-180),
-        // which is server.url verbatim - /portal/auth.
+        // which is server.url verbatim - the member dashboard.
         super.viewDidLoad()
 
         if let startPath, let url = URL(string: startPath, relativeTo: LoginViewController.origin) {
@@ -66,8 +77,13 @@ final class PortalViewController: CAPBridgeViewController {
     }
 
     private func maybeBounce() {
+        // !isLoading is the gate: while a load is in flight `url` is the page we
+        // ASKED for, not the one the server gave us, so judging a session by it
+        // would convict on the request rather than the answer.
         guard !bounced,
-              let url = webView?.url,
+              let webView,
+              !webView.isLoading,
+              let url = webView.url,
               url.host == LoginViewController.origin.host
         else { return }
 
@@ -78,7 +94,7 @@ final class PortalViewController: CAPBridgeViewController {
             // target commits, the escort ends and the bounce rule resumes.
             if url.path.hasPrefix("/portal/auth"),
                let target = URL(string: pending, relativeTo: LoginViewController.origin) {
-                webView?.load(URLRequest(url: target))
+                webView.load(URLRequest(url: target))
                 return
             }
             if url.path.hasPrefix(pending) {
@@ -94,6 +110,7 @@ final class PortalViewController: CAPBridgeViewController {
         // login page itself bounces, and the path check above is what limits it.
         bounced = true
         urlObservation = nil
+        loadingObservation = nil
 
         let error = URLComponents(url: url, resolvingAgainstBaseURL: false)?
             .queryItems?.first { $0.name == "error" }?.value

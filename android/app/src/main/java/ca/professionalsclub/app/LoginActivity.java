@@ -101,13 +101,18 @@ public class LoginActivity extends Activity {
             return;
         }
 
-        if (bounced) {
-            // The site signed this member out (logout, expired session, or a
-            // suspension). Whatever cookies remain are stale; clear them so the
-            // session check cannot loop back into the WebView.
-            CookieManager.getInstance().removeAllCookies(null);
-            CookieManager.getInstance().flush();
-        }
+        // A bounce deliberately does NOT clear cookies any more. It used to,
+        // and that made the wipe the only durable cookie write in the app: a
+        // bounce is a HEURISTIC ("the WebView is showing /portal/auth"), and it
+        // fires for a transient failure too - src/proxy.ts cannot tell "no
+        // session" from "could not reach the auth service", so one flaky
+        // request at launch erased a perfectly valid seven-day session and made
+        // the member type their password again. Nothing needs clearing: a real
+        // sign-out or expiry already drops the cookie server-side, and the
+        // `bounced` flag (not the wipe) is what stops the check at line 99 from
+        // looping back into the WebView. Leaving the cookie alone costs one
+        // extra WebView load on the next launch if the session really is dead,
+        // and saves the session outright when the bounce was a false alarm.
 
         setContentView(R.layout.activity_login);
         emailField = findViewById(R.id.login_email);
@@ -208,6 +213,13 @@ public class LoginActivity extends Activity {
 
     private void handleAuthResult(int status, String body) {
         if (status == 200) {
+            // The Set-Cookie has only reached the IN-MEMORY jar. Chromium
+            // commits it on a ~30 second timer, so a process death inside that
+            // window (swiping the app away, Android reclaiming memory, or
+            // app-dev.mjs's own force-stop) would lose the session and ask for
+            // the password again. Force the write now, before leaving this
+            // screen - the same thing Capacitor's own cookie manager does.
+            CookieManager.getInstance().flush();
             if (hasSession()) {
                 launchMain(null, null);
             } else {

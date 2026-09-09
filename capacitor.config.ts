@@ -21,16 +21,21 @@ import type { CapacitorConfig } from '@capacitor/cli';
  * and the emulator then looked like it was ignoring code changes.
  */
 const SERVER_URL =
-  process.env.CAP_SERVER_URL ?? 'https://professionalsclub.vercel.app/portal/auth';
+  process.env.CAP_SERVER_URL ?? 'https://professionalsclub.vercel.app/portal/member/dashboard';
 
 const config: CapacitorConfig = {
   appId: 'ca.professionalsclub.app',
   appName: 'Professionals Club',
   webDir: 'mobile/www',
   server: {
-    // The app starts INSIDE the portal, not on the marketing homepage: the
-    // /portal/auth entry point shows sign-in to a signed-out user and bounces
-    // a signed-in one straight to their dashboard (the proxy handles that).
+    // The app starts on the DASHBOARD, not /portal/auth. The native login is
+    // the front door on both shells, so the WebView never needs the web
+    // sign-in page - and pointing the start URL at it was actively harmful:
+    // both shells read "the WebView is on /portal/auth" as "this member signed
+    // out", so the very first navigation of every launch was the same URL that
+    // means sign-out, and only the proxy's 307 kept it from being read that
+    // way. Starting at the dashboard makes /portal/auth reachable only by the
+    // proxy actually redirecting there, which is exactly what it should mean.
     url: SERVER_URL,
     errorPath: 'error.html',
     androidScheme: 'https',

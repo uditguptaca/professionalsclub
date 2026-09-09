@@ -19,8 +19,8 @@ import { join } from 'node:path';
 // dev server (or whatever CAP_SERVER_URL says).
 const LIVE = process.argv.includes('--live');
 const SERVER_URL = LIVE
-  ? 'https://professionalsclub.vercel.app/portal/auth'
-  : (process.env.CAP_SERVER_URL ?? 'http://localhost:3000/portal/auth');
+  ? 'https://professionalsclub.vercel.app/portal/member/dashboard'
+  : (process.env.CAP_SERVER_URL ?? 'http://localhost:3000/portal/member/dashboard');
 
 const adbCandidates = [
   process.env.ANDROID_HOME && join(process.env.ANDROID_HOME, 'platform-tools', 'adb.exe'),

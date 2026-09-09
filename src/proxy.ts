@@ -36,12 +36,20 @@ export async function proxy(request: NextRequest) {
   // here removes a full auth round trip from every action call.
   if (request.method === 'POST') return NextResponse.next();
 
-  // Runs on every page request, not just /portal. getSession() re-mints the
-  // session-data cache cookie when it has gone stale (5 min TTL), and the
-  // proxy is the only layer on a page request allowed to write cookies. The
-  // root layout calls getSession() during render on every route; if the cache
-  // were stale there, the SDK's refresh would try to write a cookie mid-render
-  // and Next throws. Keeping the cache fresh here means render never writes.
+  // Runs on every page request, not just /portal. The proxy is the only
+  // page-request layer Next lets write cookies, which matters because the SDK
+  // relays a Set-Cookie whenever the auth service re-issues the session token;
+  // doing that mid-render throws. This call is otherwise a plain read - it does
+  // NOT warm the session-data cache on its own (the mint is gated on an
+  // upstream Set-Cookie), which is why that cache is given a real TTL in
+  // src/lib/auth/server.ts instead.
+  //
+  // Note what this cannot distinguish: `signedIn` is false both for a member
+  // with no session AND for a member whose session could not be checked because
+  // the auth service was unreachable. The redirect below therefore fires on a
+  // transient failure too. That is survivable on the web (a reload fixes it)
+  // and used to be destructive in the native shells, which read a /portal/auth
+  // landing as a sign-out - so they no longer erase the cookie jar over it.
   const { data: session } = await auth.getSession();
   const signedIn = Boolean(session?.user?.id);
 

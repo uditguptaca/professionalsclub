@@ -35,11 +35,13 @@ export const getSession = cache(async (): Promise<Session | null> => {
       name: data.user.name ?? null,
     };
   } catch {
-    // A stale session-data cache makes the SDK refresh it, which writes a
-    // cookie — forbidden during RSC render, so it throws. The proxy keeps the
-    // cache fresh on every page request, so this path should never run; if it
-    // does, degrade to signed-out instead of crashing the whole page. Portal
-    // routes are still protected by the proxy redirect and by RLS.
+    // Reachable, despite what this used to claim. The SDK relays a Set-Cookie
+    // whenever the auth service re-issues the session token, and writing a
+    // cookie during an RSC render is forbidden, so that relay throws here.
+    // Degrade to signed-out rather than crashing the page: portal routes are
+    // still protected by the proxy redirect, by requireProfile() in the server
+    // layouts, and by RLS underneath. The session-data TTL in
+    // src/lib/auth/server.ts is what keeps this rare.
     return null;
   }
 });

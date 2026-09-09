@@ -127,10 +127,14 @@ final class LoginViewController: UIViewController {
         UNUserNotificationCenter.current().delegate = PendingPush.shared
 
         if bouncedOut {
-            // The site signed this member out (logout, expired session, or a
-            // suspension). Whatever cookies remain are stale; clear them so the
-            // session check cannot loop straight back into the WebView.
-            clearSession { [weak self] in self?.reveal() }
+            // Deliberately does NOT clear cookies - see the matching note in
+            // LoginActivity.onCreate. A bounce is a heuristic that also fires
+            // when the auth service simply could not be reached, and erasing
+            // the jar over it threw away valid sessions and made members type
+            // their password again. `bouncedOut` alone is what stops the
+            // session check below from looping back into the WebView; a real
+            // sign-out or expiry has already dropped the cookie server-side.
+            reveal()
             return
         }
 
@@ -153,18 +157,6 @@ final class LoginViewController: UIViewController {
             showError("This account is suspended. Contact an administrator for help.")
         }
         emailField.becomeFirstResponder()
-    }
-
-    private func clearSession(_ completion: @escaping () -> Void) {
-        let store = WKWebsiteDataStore.default().httpCookieStore
-        store.getAllCookies { cookies in
-            let group = DispatchGroup()
-            for cookie in cookies where Self.isSessionCookie(cookie) {
-                group.enter()
-                store.delete(cookie) { group.leave() }
-            }
-            group.notify(queue: .main, execute: completion)
-        }
     }
 
     // MARK: - Sign in
