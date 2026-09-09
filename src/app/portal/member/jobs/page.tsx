@@ -3,11 +3,16 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/app-context';
-import { fetchCompanies, fetchCompanyJobs } from '@/app/actions/referrals';
+import { fetchJobsHome, fetchCompanyJobs } from '@/app/actions/referrals';
 import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
 import { companyPeople, requestReferral, referralQuota } from '@/app/actions/chat';
-import type { Company, CompanyJob } from '@/types';
+import type { Company } from '@/types';
 import type { CompanyInsiderEntry } from '@/server/repos/chat';
+import type { SuggestedRole, ScoredJob } from '@/server/repos/referrals';
+import {
+  facetsOf, SENIORITY_LABELS, EMPLOYMENT_LABELS, ARRANGEMENT_LABELS,
+  familyLabel, languageLabel, type JobFacets,
+} from '@/lib/job-taxonomy';
 import {
   Search, Building2, Users, Briefcase, ArrowLeft, ArrowRight, ExternalLink,
   Check, Loader2, ShieldCheck, Send, AlertCircle, BadgeCheck, UserPlus, X,
@@ -56,6 +61,9 @@ const HAIRLINE_SOFT = '1px solid rgba(27, 67, 50, 0.06)';
 
 /** Roles render 20 at a time; a bank's feed is 200 rows long. */
 const PAGE = 20;
+
+/** Exactly what fetchJobsHome returns, and what this tab caches. */
+type JobsHome = { companies: Company[]; suggestions: SuggestedRole[] };
 
 /**
  * Where the in-page sticky header parks. The portal topbar is sticky at the
@@ -257,6 +265,46 @@ const CardShimmer = ({ cards }: { cards: number }) => (
   </div>
 );
 
+/**
+ * One row of filter pills, with counts.
+ *
+ * Renders NOTHING unless there are at least two values to choose between:
+ * every role at a company being "Permanent" makes a Type filter a control that
+ * cannot change anything.
+ */
+function FacetRow({ label, options, value, onChange, labelOf, allLabel }: {
+  label: string;
+  options: [string, number][];
+  value: string;
+  onChange: (v: string) => void;
+  labelOf: (key: string) => string;
+  allLabel: string;
+}) {
+  if (options.length < 2) return null;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+      <span style={{
+        flexShrink: 0, width: '4.4rem', fontSize: '0.72rem', fontWeight: 800,
+        letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)',
+      }}>
+        {label}
+      </span>
+      <div style={{ ...SEG_WRAP, minWidth: 0 }} role="group" aria-label={`Filter roles by ${label.toLowerCase()}`}>
+        <button type="button" style={seg(value === 'all')} aria-pressed={value === 'all'}
+          onClick={() => onChange('all')}>
+          {allLabel}
+        </button>
+        {options.map(([key, count]) => (
+          <button key={key} type="button" style={seg(value === key)} aria-pressed={value === key}
+            onClick={() => onChange(key)}>
+            {labelOf(key)} ({count})
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function MemberJobsPage() {
   const { currentUserId } = useApp();
   const router = useRouter();
@@ -270,12 +318,26 @@ export default function MemberJobsPage() {
 
   const [selected, setSelected] = useState<Company | null>(null);
   const [step, setStep] = useState<'roles' | 'people'>('roles');
-  const [jobs, setJobs] = useState<CompanyJob[] | null>(null);
+  const [jobs, setJobs] = useState<ScoredJob[] | null>(null);
   const [jobsError, setJobsError] = useState('');
   const [jobSearch, setJobSearch] = useState('');
   const [jobLoc, setJobLoc] = useState('all');
   const [shown, setShown] = useState(PAGE);
   const [picked, setPicked] = useState<Set<string>>(new Set());
+
+  /**
+   * Role facets, all derived from the title (see src/lib/job-taxonomy.ts - the
+   * feed leaves employment_type, province and description entirely empty, so
+   * there is nothing else to filter on).
+   */
+  const [seniority, setSeniority] = useState('all');
+  const [family, setFamily] = useState('all');
+  const [employment, setEmployment] = useState('all');
+  const [arrangement, setArrangement] = useState('all');
+  const [language, setLanguage] = useState('all');
+  const [sort, setSort] = useState<'match' | 'newest' | 'title'>('match');
+
+  const [suggestions, setSuggestions] = useState<SuggestedRole[]>([]);
 
   const [insiders, setInsiders] = useState<CompanyInsiderEntry[] | null>(null);
   const [insidersError, setInsidersError] = useState('');
@@ -288,11 +350,14 @@ export default function MemberJobsPage() {
 
   useEffect(() => {
     if (!currentUserId) return;
-    const cached = readCache<Company[]>(CACHE_KEYS.jobs);
-    if (cached) setCompanies(cached);
-    fetchCompanies().then((r) => {
-      if (r.ok) { setCompanies(r.data); writeCache(CACHE_KEYS.jobs, r.data); }
-      else setError(r.error);
+    const cached = readCache<JobsHome>(CACHE_KEYS.jobs);
+    if (cached) { setCompanies(cached.companies); setSuggestions(cached.suggestions); }
+    fetchJobsHome().then((r) => {
+      if (r.ok) {
+        setCompanies(r.data.companies);
+        setSuggestions(r.data.suggestions);
+        writeCache<JobsHome>(CACHE_KEYS.jobs, r.data);
+      } else setError(r.error);
     });
   }, [currentUserId]);
 
@@ -323,15 +388,21 @@ export default function MemberJobsPage() {
   const filtersOn = Boolean(search.trim()) || industry !== 'all' || city !== 'all' || referOnly;
   const clearFilters = () => { setSearch(''); setIndustry('all'); setCity('all'); setReferOnly(false); };
 
-  const openCompany = async (company: Company) => {
+  const openCompany = async (company: Company, preselectJobId?: string) => {
     setSelected(company);
     setStep('roles');
     setJobs(null);
     setJobsError('');
     setJobSearch('');
     setJobLoc('all');
+    setSeniority('all');
+    setFamily('all');
+    setEmployment('all');
+    setArrangement('all');
+    setLanguage('all');
+    setSort('match');
     setShown(PAGE);
-    setPicked(new Set());
+    setPicked(preselectJobId ? new Set([preselectJobId]) : new Set());
     setInsiders(null);
     setInsidersError('');
     setPeople(new Set());
@@ -341,6 +412,22 @@ export default function MemberJobsPage() {
     const r = await fetchCompanyJobs(company.id);
     if (r.ok) setJobs(r.data);
     else setJobsError(r.error);
+  };
+
+  /**
+   * Open a suggested role at its employer with that role already ticked.
+   *
+   * The suggestion carries the company id but not the full Company row the
+   * grid works with, so it falls back to a minimal stand-in when the directory
+   * has not arrived yet - the roles screen only reads the name and logo.
+   */
+  const openSuggestion = (s: SuggestedRole) => {
+    const company = (companies ?? []).find((c) => c.id === s.companyId)
+      ?? ({
+        id: s.companyId, name: s.companyName, slug: s.companySlug,
+        logo: s.companyLogo, helperCount: s.helperCount,
+      } as unknown as Company);
+    void openCompany(company, s.jobId);
   };
 
   const jobLocations = useMemo(
@@ -353,14 +440,75 @@ export default function MemberJobsPage() {
     [jobs]
   );
 
+  /** Facets per role, computed once from the title rather than per filter. */
+  const facets = useMemo(() => {
+    const map = new Map<string, JobFacets>();
+    for (const j of jobs ?? []) map.set(j.id, facetsOf(j.title, j.location ?? null));
+    return map;
+  }, [jobs]);
+
+  /**
+   * Only offer a filter value that actually exists in THIS employer's roles,
+   * with its count. A dropdown listing "Hybrid (0)" is worse than no dropdown:
+   * the feed's coverage varies wildly by company, and an empty option reads as
+   * a broken filter rather than an honest absence.
+   */
+  const facetOptions = useMemo(() => {
+    const tally = (pick: (f: JobFacets) => string[]) => {
+      const counts = new Map<string, number>();
+      for (const j of jobs ?? []) {
+        const f = facets.get(j.id);
+        if (!f) continue;
+        for (const v of pick(f)) counts.set(v, (counts.get(v) ?? 0) + 1);
+      }
+      return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    };
+    return {
+      seniority: tally((f) => [f.seniority]),
+      family: tally((f) => f.families),
+      employment: tally((f) => [f.employment]),
+      arrangement: tally((f) => [f.arrangement]),
+      language: tally((f) => f.languages),
+    };
+  }, [jobs, facets]);
+
+  const matchedCount = useMemo(
+    () => (jobs ?? []).filter((j) => j.matchScore > 0).length,
+    [jobs]
+  );
+
   const visibleJobs = useMemo(() => {
     const q = jobSearch.trim().toLowerCase();
-    return (jobs ?? []).filter((j) => {
+    const rows = (jobs ?? []).filter((j) => {
+      const f = facets.get(j.id);
       const matchQ = !q || j.title.toLowerCase().includes(q) || (j.location ?? '').toLowerCase().includes(q);
       const matchL = jobLoc === 'all' || j.location?.trim() === jobLoc;
-      return matchQ && matchL;
+      const matchS = seniority === 'all' || f?.seniority === seniority;
+      const matchF = family === 'all' || Boolean(f?.families.includes(family as never));
+      const matchE = employment === 'all' || f?.employment === employment;
+      const matchA = arrangement === 'all' || f?.arrangement === arrangement;
+      const matchLang = language === 'all' || Boolean(f?.languages.includes(language));
+      return matchQ && matchL && matchS && matchF && matchE && matchA && matchLang;
     });
-  }, [jobs, jobSearch, jobLoc]);
+    const byTitle = (a: ScoredJob, b: ScoredJob) => a.title.localeCompare(b.title);
+    if (sort === 'title') return [...rows].sort(byTitle);
+    if (sort === 'newest') {
+      return [...rows].sort((a, b) =>
+        (b.postedAt ? Date.parse(b.postedAt) : 0) - (a.postedAt ? Date.parse(a.postedAt) : 0)
+        || byTitle(a, b));
+    }
+    // Best match: scored roles first, everything else in the feed's own order
+    // underneath, so the list never LOSES roles just because nothing matched.
+    return [...rows].sort((a, b) => b.matchScore - a.matchScore || byTitle(a, b));
+  }, [jobs, facets, jobSearch, jobLoc, seniority, family, employment, arrangement, language, sort]);
+
+  const roleFiltersOn = seniority !== 'all' || family !== 'all' || employment !== 'all'
+    || arrangement !== 'all' || language !== 'all' || jobLoc !== 'all' || Boolean(jobSearch.trim());
+
+  const clearRoleFilters = () => {
+    setSeniority('all'); setFamily('all'); setEmployment('all');
+    setArrangement('all'); setLanguage('all'); setJobLoc('all'); setJobSearch('');
+  };
 
   /** Only `shown` rows render; the rest are one tap away. */
   const pagedJobs = useMemo(() => visibleJobs.slice(0, shown), [visibleJobs, shown]);
@@ -475,6 +623,69 @@ export default function MemberJobsPage() {
             My referral requests <ArrowRight size={14} aria-hidden="true" />
           </Link>
         </header>
+
+        {/* Suggested roles come BEFORE the employer grid: a member who does not
+            know which of 40 banks to open should not have to guess. Each card
+            says why it is here and jumps into that employer with the role
+            already picked, so the next tap is choosing who to ask. */}
+        {suggestions.length > 0 && (
+          <section style={{ marginBottom: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+              <h2 style={{ ...TITLE, fontSize: '1.05rem', margin: 0 }}>Suggested for you</h2>
+              <span style={{ fontSize: '0.75rem', fontWeight: 650, color: 'var(--text-muted)' }}>
+                from your profile
+              </span>
+            </div>
+            <ul className="pp-group-card" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              {suggestions.slice(0, 6).map((s, i) => (
+                <li
+                  key={s.jobId}
+                  style={{
+                    display: 'flex', alignItems: 'stretch',
+                    borderBottom: i === Math.min(suggestions.length, 6) - 1 ? 0 : HAIRLINE_SOFT,
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="pp-row"
+                    style={{ flex: 1, minWidth: 0, borderBottom: 0 }}
+                    onClick={() => openSuggestion(s)}
+                  >
+                    <span className="pp-row-icon" aria-hidden="true">
+                      <Briefcase size={17} />
+                    </span>
+                    <span className="pp-row-body">
+                      <strong>{s.title}</strong>
+                      <small style={ELLIPSIS}>
+                        {[s.companyName, s.location].filter(Boolean).join(' · ')}
+                      </small>
+                      <small style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                        marginTop: 3, color: 'var(--success-600)', fontWeight: 750,
+                      }}>
+                        <BadgeCheck size={12} aria-hidden="true" />
+                        {s.reasons[0]}
+                      </small>
+                    </span>
+                    <ArrowRight size={15} aria-hidden="true" style={{ flexShrink: 0, color: 'var(--text-muted)' }} />
+                  </button>
+                  <a
+                    href={s.applyUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Open the ${s.title} posting at ${s.companyName}`}
+                    style={{
+                      display: 'grid', placeItems: 'center', flexShrink: 0,
+                      width: 48, color: 'var(--text-muted)', borderLeft: HAIRLINE_SOFT,
+                    }}
+                  >
+                    <ExternalLink size={15} aria-hidden="true" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <div style={SEARCH_WRAP}>
           <Search size={16} aria-hidden="true" style={SEARCH_ICON} />
@@ -915,9 +1126,89 @@ export default function MemberJobsPage() {
               </div>
             )}
 
+            {/* Role facets. Each row appears only when this employer's roles
+                actually offer a choice, and every option carries its count -
+                see facetOptions for why an empty option is worse than none. */}
+            <FacetRow
+              label="Level"
+              options={facetOptions.seniority}
+              value={seniority}
+              onChange={(v) => { setSeniority(v); setShown(PAGE); }}
+              labelOf={(k) => SENIORITY_LABELS[k as keyof typeof SENIORITY_LABELS] ?? k}
+              allLabel="Any level"
+            />
+            <FacetRow
+              label="Function"
+              options={facetOptions.family}
+              value={family}
+              onChange={(v) => { setFamily(v); setShown(PAGE); }}
+              labelOf={familyLabel}
+              allLabel="All functions"
+            />
+            <FacetRow
+              label="Type"
+              options={facetOptions.employment}
+              value={employment}
+              onChange={(v) => { setEmployment(v); setShown(PAGE); }}
+              labelOf={(k) => EMPLOYMENT_LABELS[k as keyof typeof EMPLOYMENT_LABELS] ?? k}
+              allLabel="Any type"
+            />
+            <FacetRow
+              label="Setting"
+              options={facetOptions.arrangement}
+              value={arrangement}
+              onChange={(v) => { setArrangement(v); setShown(PAGE); }}
+              labelOf={(k) => ARRANGEMENT_LABELS[k as keyof typeof ARRANGEMENT_LABELS] ?? k}
+              allLabel="Anywhere"
+            />
+            <FacetRow
+              label="Language"
+              options={facetOptions.language}
+              value={language}
+              onChange={(v) => { setLanguage(v); setShown(PAGE); }}
+              labelOf={languageLabel}
+              allLabel="Any language"
+            />
+
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+              margin: '8px 0 0 2px',
+            }}>
+              <div style={SEG_WRAP} role="group" aria-label="Sort roles">
+                {([
+                  ['match', matchedCount > 0 ? `Best match (${matchedCount})` : 'Best match'],
+                  ['newest', 'Newest'],
+                  ['title', 'A–Z'],
+                ] as const).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    style={seg(sort === key)}
+                    aria-pressed={sort === key}
+                    onClick={() => { setSort(key); setShown(PAGE); }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {roleFiltersOn && (
+                <button
+                  type="button"
+                  onClick={() => { clearRoleFilters(); setShown(PAGE); }}
+                  style={{
+                    minHeight: 44, padding: '0 12px', border: 0, background: 'none',
+                    color: 'var(--text-accent)', font: 'inherit', fontSize: '0.82rem',
+                    fontWeight: 700, cursor: 'pointer',
+                  }}
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
+
             <p
               aria-live="polite"
-              style={{ margin: '0 0 0 2px', fontSize: '0.75rem', fontWeight: 650, color: 'var(--text-muted)' }}
+              style={{ margin: '6px 0 0 2px', fontSize: '0.75rem', fontWeight: 650, color: 'var(--text-muted)' }}
             >
               Showing {pagedJobs.length} of {visibleJobs.length} roles
               {visibleJobs.length !== jobs.length ? ` (filtered from ${jobs.length})` : ''}
@@ -1053,6 +1344,18 @@ export default function MemberJobsPage() {
                         <span className="pp-row-body">
                           <strong>{j.title}</strong>
                           {meta && <small style={ELLIPSIS}>{meta}</small>}
+                          {/* Why this role is flagged, in the member's own
+                              terms. A bare "recommended" badge is unfalsifiable
+                              and reads as advertising. */}
+                          {j.matchReasons.length > 0 && (
+                            <small style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 4,
+                              marginTop: 3, color: 'var(--success-600)', fontWeight: 750,
+                            }}>
+                              <BadgeCheck size={12} aria-hidden="true" />
+                              {j.matchReasons[0]}
+                            </small>
+                          )}
                         </span>
                       </button>
                       <a

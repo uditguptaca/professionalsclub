@@ -39,7 +39,12 @@ export async function fetchCompanies(): Promise<ActionResult<Company[]>> {
   return run('Loading companies', async () => repo.listCompanies(await requireUserId()));
 }
 
-export async function fetchCompanyJobs(companyId: string): Promise<ActionResult<CompanyJob[]>> {
+/** The jobs screen's first paint: employers plus this member's suggested roles. */
+export async function fetchJobsHome() {
+  return run('Loading jobs', async () => repo.jobsHome(await requireUserId()));
+}
+
+export async function fetchCompanyJobs(companyId: string) {
   return run('Loading roles', async () =>
     repo.listCompanyJobs(await requireUserId(), companyId));
 }

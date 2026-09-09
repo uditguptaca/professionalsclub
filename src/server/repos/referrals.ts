@@ -6,6 +6,10 @@ import type { Company, CompanyJob, CompanyInsider } from '@/types';
 // but the referrals screen shows them next to the companies - so they are read
 // on the same connection rather than in a second Server Action.
 import { toMyDirectReferrals, type MyDirectReferral } from '@/server/repos/chat';
+// The role taxonomy lives in one place and is shared with the browser, so the
+// suggestion ranking and the filter pills can never disagree about what
+// "Senior" or "Finance & banking" means.
+import { scoreJob, isSuggestable, canMatch, type MatchProfile } from '@/lib/job-taxonomy';
 
 /**
  * Company referrals.
@@ -186,16 +190,218 @@ export async function setJobOpen(adminId: string, jobId: string, isOpen: boolean
 
 // ============================================================ Open roles
 
-/** Open roles at one company. These are public postings, so anyone may read them. */
-export async function listCompanyJobs(userId: string, companyId: string): Promise<CompanyJob[]> {
+/** A role plus how well it fits the member who asked. */
+export type ScoredJob = CompanyJob & { matchScore: number; matchReasons: string[] };
+
+/**
+ * Open roles at one company, each scored against the caller's profile.
+ *
+ * The scoring happens HERE rather than in the browser so the member's own
+ * profile fields never have to be shipped to the client just to sort a list.
+ * The browser still derives the FILTER facets from titles with the same shared
+ * taxonomy - those need no profile at all.
+ */
+export async function listCompanyJobs(userId: string, companyId: string): Promise<ScoredJob[]> {
   return withUserRead(userId, async (db) => {
     const rows = await db`
-      select * from public.company_jobs
-       where company_id = ${companyId}::uuid and is_open
-       order by posted_at desc nulls last, title asc
+      with me as (
+        select job_title, previous_job_title, professional_category, industry,
+               field_of_study, skills, experience_range, city
+          from public.profiles where id = ${userId}::uuid
+      )
+      select j.*,
+             (select row_to_json(me) from me) as match_profile,
+             (select count(*) from public.company_insiders i
+               where i.company_id = j.company_id and i.can_refer)::int as helper_count
+        from public.company_jobs j
+       where j.company_id = ${companyId}::uuid and j.is_open
+       order by j.posted_at desc nulls last, j.title asc
        limit 300
     `;
-    return toDomainAll<CompanyJob>(rows);
+    if (rows.length === 0) return [];
+
+    const raw = (rows[0].match_profile ?? null) as Record<string, unknown> | null;
+    const profile: MatchProfile = {
+      jobTitle: (raw?.job_title as string | null) ?? null,
+      previousJobTitle: (raw?.previous_job_title as string | null) ?? null,
+      professionalCategory: (raw?.professional_category as string | null) ?? null,
+      industry: (raw?.industry as string | null) ?? null,
+      fieldOfStudy: (raw?.field_of_study as string | null) ?? null,
+      skills: (raw?.skills as string | null) ?? null,
+      experienceRange: (raw?.experience_range as string | null) ?? null,
+      city: (raw?.city as string | null) ?? null,
+    };
+    const matchable = canMatch(profile);
+
+    // The profile blob and helper count are joined onto every row for the
+    // scoring above; neither belongs in what the client receives.
+    return rows.map((r) => {
+      const { match_profile: _p, helper_count: helpers, ...job } = r as Record<string, unknown>;
+      const scored = toDomain<CompanyJob>(job);
+      if (!matchable) return { ...scored, matchScore: 0, matchReasons: [] };
+      const m = scoreJob(
+        {
+          title: scored.title,
+          location: scored.location ?? null,
+          postedAt: scored.postedAt ?? null,
+          helperCount: Number(helpers ?? 0),
+        },
+        profile
+      );
+      // Only a suggestion-grade match earns a badge: a shared city and a
+      // plausible level are not a reason to tell someone a role suits them.
+      const qualifies = isSuggestable(m);
+      return {
+        ...scored,
+        matchScore: qualifies ? m.score : 0,
+        matchReasons: qualifies ? m.reasons : [],
+      };
+    });
+  });
+}
+
+// ============================================================ Suggested roles
+
+/** One open role, scored against the member who asked for it. */
+export interface SuggestedRole {
+  jobId: string;
+  title: string;
+  location: string | null;
+  applyUrl: string;
+  postedAt: string | null;
+  companyId: string;
+  companyName: string;
+  companyLogo: string | null;
+  companySlug: string;
+  helperCount: number;
+  score: number;
+  reasons: string[];
+}
+
+/**
+ * How many open roles the matcher will look at. Scoring happens in JS so the
+ * taxonomy has ONE definition shared with the browser (see
+ * src/lib/job-taxonomy.ts) rather than a second copy in SQL that could drift
+ * from the filter pills.
+ *
+ * ponytail: 215 roles are synced today, so this reads the lot. The ceiling is
+ * the row count, not the scoring - if the feed ever reaches tens of thousands,
+ * pre-filter in SQL (a trigram or full-text match on the member's title tokens)
+ * before scoring, and keep this module as the ranker.
+ */
+const MATCH_SCAN_LIMIT = 4000;
+
+/**
+ * Open roles that suit this member, best first.
+ *
+ * Returns an empty list rather than filler: a Registered Nurse looking at a
+ * feed of banking roles should be told nothing matches, not shown "Financial
+ * Advisor" because they share a city. isSuggestable() enforces that.
+ */
+export async function suggestedRoles(userId: string, limit = 12): Promise<SuggestedRole[]> {
+  return withUserRead(userId, (db) => suggestedRolesOn(db, userId, limit));
+}
+
+export async function suggestedRolesOn(
+  db: Db,
+  userId: string,
+  limit = 12
+): Promise<SuggestedRole[]> {
+  // One statement: the caller's own profile fields (own row, no extra grant
+  // needed) alongside the open roles and each employer's referrer count.
+  const rows = await db<Record<string, unknown>>`
+    with me as (
+      select job_title, previous_job_title, professional_category, industry,
+             field_of_study, skills, experience_range, city
+        from public.profiles where id = ${userId}::uuid
+    )
+    select
+      (select row_to_json(me) from me) as profile,
+      (select coalesce(json_agg(t), '[]'::json) from (
+        select j.id as job_id, j.title, j.location, j.apply_url, j.posted_at,
+               c.id as company_id, c.name as company_name, c.logo as company_logo,
+               c.slug as company_slug,
+               (select count(*) from public.company_insiders i
+                 where i.company_id = c.id and i.can_refer)::int as helper_count
+          from public.company_jobs j
+          join public.companies c on c.id = j.company_id
+         where j.is_open and c.is_active
+         order by j.posted_at desc nulls last
+         limit ${MATCH_SCAN_LIMIT}
+      ) t) as jobs
+  `;
+
+  const row = rows[0];
+  if (!row) return [];
+
+  const raw = (row.profile ?? null) as Record<string, unknown> | null;
+  if (!raw) return [];
+
+  const profile: MatchProfile = {
+    jobTitle: (raw.job_title as string | null) ?? null,
+    previousJobTitle: (raw.previous_job_title as string | null) ?? null,
+    professionalCategory: (raw.professional_category as string | null) ?? null,
+    industry: (raw.industry as string | null) ?? null,
+    fieldOfStudy: (raw.field_of_study as string | null) ?? null,
+    skills: (raw.skills as string | null) ?? null,
+    experienceRange: (raw.experience_range as string | null) ?? null,
+    city: (raw.city as string | null) ?? null,
+  };
+  if (!canMatch(profile)) return [];
+
+  const jobs = (row.jobs ?? []) as Record<string, unknown>[];
+  const scored: SuggestedRole[] = [];
+  for (const j of jobs) {
+    const postedAt = j.posted_at instanceof Date
+      ? j.posted_at.toISOString()
+      : ((j.posted_at as string | null) ?? null);
+    const match = scoreJob(
+      {
+        title: j.title as string,
+        location: (j.location as string | null) ?? null,
+        postedAt,
+        helperCount: Number(j.helper_count ?? 0),
+      },
+      profile
+    );
+    if (!isSuggestable(match)) continue;
+    scored.push({
+      jobId: j.job_id as string,
+      title: j.title as string,
+      location: (j.location as string | null) ?? null,
+      applyUrl: j.apply_url as string,
+      postedAt,
+      companyId: j.company_id as string,
+      companyName: j.company_name as string,
+      companyLogo: (j.company_logo as string | null) ?? null,
+      companySlug: j.company_slug as string,
+      helperCount: Number(j.helper_count ?? 0),
+      score: match.score,
+      reasons: match.reasons,
+    });
+  }
+
+  scored.sort((a, b) => b.score - a.score || a.title.localeCompare(b.title));
+  return scored.slice(0, limit);
+}
+
+/**
+ * The jobs screen's whole first paint: the employer directory and the roles
+ * suggested for this member, in ONE Server Action. Next runs a client's action
+ * calls one at a time, so asking separately cost two sequential round trips to
+ * a remote database before anything appeared.
+ */
+export async function jobsHome(userId: string): Promise<{
+  companies: Company[];
+  suggestions: SuggestedRole[];
+}> {
+  return withUserRead(userId, async (db) => {
+    const companies = await db`
+      select * from public.company_helper_counts
+       order by helper_count desc, open_jobs_count desc, name asc
+    `;
+    const suggestions = await suggestedRolesOn(db, userId);
+    return { companies: toDomainAll<Company>(companies), suggestions };
   });
 }
 

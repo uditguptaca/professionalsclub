@@ -12,7 +12,7 @@ import { unregisterPushDeviceAction } from '@/app/actions/push';
 import { readCache, writeCache, onIdle, CACHE_KEYS } from '@/lib/swr-cache';
 import { fetchHomeFeed } from '@/app/actions/portal';
 import { fetchCommunityStart } from '@/app/actions/community';
-import { fetchCompanies } from '@/app/actions/referrals';
+import { fetchJobsHome } from '@/app/actions/referrals';
 import { chatStart } from '@/app/actions/chat';
 import { notificationsStartAction } from '@/app/actions/notifications';
 import type { UserRole } from '@/types';
@@ -60,7 +60,10 @@ const WARM: {
   { href: '/portal/member/dashboard', key: CACHE_KEYS.dashboard, load: fetchHomeFeed },
   { href: '/portal/member/community', key: CACHE_KEYS.community, load: fetchCommunityStart },
   { href: '/portal/member/chats', key: CACHE_KEYS.chats, load: chatStart },
-  { href: '/portal/member/jobs', key: CACHE_KEYS.jobs, load: fetchCompanies },
+  // fetchJobsHome, not fetchCompanies: the jobs tab reads this key as
+  // { companies, suggestions }, and warming it with a bare array would paint
+  // an empty screen from a cache hit.
+  { href: '/portal/member/jobs', key: CACHE_KEYS.jobs, load: fetchJobsHome },
   { href: '/portal/member/notifications', key: CACHE_KEYS.notifications, load: () => notificationsStartAction({}) },
 ];
 
