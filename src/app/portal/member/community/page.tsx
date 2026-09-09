@@ -726,9 +726,22 @@ export default function CommunityPage() {
   const personRow = (p: ChatPerson) => {
     return (
       <div key={p.id} className="pp-row" style={{ cursor: 'default' }}>
-        <span className="hf-member-avatar" aria-hidden="true">{initials(p.firstName, p.lastName)}</span>
+        {/* Name and avatar open the member's profile. */}
+        <Link
+          href={`/portal/member/people/${p.id}`}
+          className="hf-member-avatar"
+          aria-label={`${fullName(p)}'s profile`}
+          style={{ textDecoration: 'none', flexShrink: 0 }}
+        >
+          {initials(p.firstName, p.lastName)}
+        </Link>
         <div className="pp-row-body">
-          <strong>{fullName(p)}</strong>
+          <Link
+            href={`/portal/member/people/${p.id}`}
+            style={{ textDecoration: 'none', color: 'inherit' }}
+          >
+            <strong>{fullName(p)}</strong>
+          </Link>
           <small>{[p.jobTitle, p.city].filter(Boolean).join(' · ') || 'Member'}</small>
           {p.incoming === 'accepted' && p.outgoing !== 'accepted' && (
             <span className="pp-chip" style={{ marginTop: 4, fontSize: '0.68rem' }}>Follows you</span>

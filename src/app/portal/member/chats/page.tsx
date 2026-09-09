@@ -1,5 +1,6 @@
 'use client';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { upload } from '@vercel/blob/client';
 import {
   listPeople, followMember, unfollowMember,
@@ -1608,8 +1609,20 @@ export default function MemberChatsPage() {
               <ArrowLeft size={20} aria-hidden="true" />
             </button>
           )}
-          <Avatar name={name} size={38} />
-          <span className="pp-row-body">
+          {/* The header identity opens their profile, the way every messenger
+              behaves - it is also the only route to a profile from a thread. */}
+          <Link
+            href={`/portal/member/people/${openThread.partnerId}`}
+            aria-label={`${name}'s profile`}
+            style={{ textDecoration: 'none', flexShrink: 0 }}
+          >
+            <Avatar name={name} size={38} />
+          </Link>
+          <Link
+            href={`/portal/member/people/${openThread.partnerId}`}
+            className="pp-row-body"
+            style={{ textDecoration: 'none', color: 'inherit', minWidth: 0 }}
+          >
             <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</strong>
             <small style={{
               display: 'flex', alignItems: 'center', gap: 4, fontWeight: 750,
@@ -1620,7 +1633,7 @@ export default function MemberChatsPage() {
             }}>
               {contextLine}
             </small>
-          </span>
+          </Link>
           {openThread.partnerJobTitle && isWide && (
             <small style={{
               flexShrink: 0, maxWidth: '12rem', fontSize: '0.76rem', color: 'var(--text-muted)',
@@ -2382,13 +2395,27 @@ export default function MemberChatsPage() {
 
               return (
                 <div key={p.id} className="pp-row pp-row-static">
-                  <Avatar name={pname} size={40} />
-                  <span className="pp-row-body">
+                  {/* Tapping the person opens their profile; the buttons on the
+                      right stay the fast path for Message and Follow. */}
+                  <Link
+                    href={`/portal/member/people/${p.id}`}
+                    onClick={closeSheet}
+                    aria-label={`${pname}'s profile`}
+                    style={{ textDecoration: 'none', flexShrink: 0 }}
+                  >
+                    <Avatar name={pname} size={40} />
+                  </Link>
+                  <Link
+                    href={`/portal/member/people/${p.id}`}
+                    onClick={closeSheet}
+                    className="pp-row-body"
+                    style={{ textDecoration: 'none', color: 'inherit', minWidth: 0 }}
+                  >
                     <strong>{pname}</strong>
                     <small style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {meta || 'Member'}
                     </small>
-                  </span>
+                  </Link>
 
                   {/* Everyone can be messaged; the follow only decides whose
                       inbox the chat starts in. */}

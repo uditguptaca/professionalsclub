@@ -451,9 +451,32 @@ on a project that already has users.
 | `matrimony_messages` | — | own conversations | — | all |
 | `matrimony_blocks` | — | ones I created | full | all |
 | `in_app_notifications` | — | own | read/mark read | all |
+| `member_profiles` (0041) | — | professional fields of any active member | own row via `profiles` | all |
+| `member_event_participation` (0041) | — | any member's RSVPs to PUBLISHED events | own | all |
 
 Nothing writes to `audit_log` or `in_app_notifications` directly; both are
 `SECURITY DEFINER` only.
+
+### The 0041 profile disclosure
+
+Member profiles are the one place where the "members learn almost nothing about
+each other" rule was deliberately relaxed. `member_profiles` publishes the
+PROFESSIONAL half of a profile - job title, company, industry, experience,
+education, skills, certifications, summary, LinkedIn, city, volunteer flag,
+verification flag, join date - to any signed-in active member. Members filled
+those fields in precisely so the club could match them with work and referrals,
+so publishing them is the feature rather than a leak.
+
+What did NOT change: no contact column is reachable (`email`, `phone`,
+`postal_code`), and nothing about why a member came to the club
+(`help_type`, `help_description`, `joining_for`, `purposes`) is exposed.
+Adding a column to that view publishes it to every member - the same warning
+`member_names` carries, and the reason both views are `security_barrier` with
+an `is_active_member()` predicate.
+
+`member_social_counts()` is `SECURITY DEFINER` on purpose: `member_follows`
+only exposes edges the caller is on, and a profile needs the follower TOTAL
+without opening the identities behind it.
 
 ---
 

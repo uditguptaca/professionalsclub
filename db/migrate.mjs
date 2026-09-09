@@ -27,7 +27,12 @@ function readEnv(key) {
   try {
     for (const line of readFileSync(join(here, '..', '.env.local'), 'utf8').split('\n')) {
       const at = line.indexOf('=');
-      if (at > 0 && line.slice(0, at).trim() === key) return line.slice(at + 1).trim();
+      if (at > 0 && line.slice(0, at).trim() === key) {
+        // `vercel env pull` rewrites this file with every value double-quoted,
+        // and a connection string carrying its own quotes fails as "Invalid
+        // URL" with nothing pointing at the quotes. Strip one matched pair.
+        return line.slice(at + 1).trim().replace(/^(['"])(.*)\1$/, '$2');
+      }
     }
   } catch {
     /* no .env.local */

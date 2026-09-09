@@ -635,11 +635,23 @@ export function PostCard({
   return (
     <article className="community-panel community-post" id={`post-${post.id}`}>
       <header className="community-post-head">
-        <span className={`community-avatar ${toneFor(post.authorId)}`} aria-hidden="true">
+        {/* The author's name and avatar open their profile. Your own posts
+            link to your own profile screen, which is the editable one. */}
+        <Link
+          href={mine ? '/portal/member/profile' : `/portal/member/people/${post.authorId}`}
+          className={`community-avatar ${toneFor(post.authorId)}`}
+          aria-label={`${post.authorFirstName} ${post.authorLastName}'s profile`}
+          style={{ textDecoration: 'none', flexShrink: 0 }}
+        >
           {initials(post.authorFirstName, post.authorLastName)}
-        </span>
+        </Link>
         <div className="community-post-meta">
-          <strong>{post.authorFirstName} {post.authorLastName}</strong>
+          <Link
+            href={mine ? '/portal/member/profile' : `/portal/member/people/${post.authorId}`}
+            style={{ textDecoration: 'none', color: 'inherit' }}
+          >
+            <strong>{post.authorFirstName} {post.authorLastName}</strong>
+          </Link>
           <small>
             {post.authorCity ? `${post.authorCity} · ` : ''}{timeAgo(post.createdAt)}
             {post.groupName ? <> · <em>{post.groupName}</em></> : null}
