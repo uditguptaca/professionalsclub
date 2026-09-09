@@ -1,28 +1,37 @@
 /**
- * End-to-end encryption for matrimony chat, built on the Web Crypto API.
+ * End-to-end encryption for member chat, built on the Web Crypto API.
  *
- * Design:
- *  - Each matrimony profile has an ECDH P-256 keypair. The PRIVATE key lives
- *    only in this device's localStorage; the PUBLIC key is published to the
- *    server (matrimony_e2e_keys) so the other side can encrypt.
- *  - A conversation key is derived per peer: ECDH(myPrivate, theirPublic)
- *    -> HKDF-SHA256 -> AES-256-GCM. Both sides derive the same key without it
- *    ever existing anywhere but on their devices.
- *  - Messages are stored as { cipher, iv } (base64). The server can never
- *    read them — and neither can admins, which is the point and the price.
+ * MULTI-DEVICE (0042). The earlier design gave each MEMBER one keypair, which
+ * was really a per-DEVICE keypair in a per-member slot: opening chat in a
+ * second browser overwrote the first one's public key and both devices went
+ * blind. Keys now belong to devices, and a message is sealed once per device:
  *
- * Honest limitations, stated in the UI too:
- *  - Keys are per device+browser. A new phone (or cleared storage) means a
- *    fresh keypair: old ciphertext becomes unreadable and is shown as such.
- *  - If the peer has never opened an E2E-capable chat, they have no public
- *    key yet; messages fall back to plaintext with the lock shown open.
+ *   1. A random 256-bit CONTENT KEY (CK) per message encrypts the body once
+ *      (AES-GCM) -> { cipher, iv }.
+ *   2. CK is WRAPPED once for every device that should read it - the
+ *      recipient's devices and the sender's own other devices - using
+ *      HKDF(ECDH(sender device private, target device public)) as the wrapping
+ *      key. Each wrap travels as its own row.
+ *   3. A reader rebuilds the same wrapping key from
+ *      HKDF(ECDH(its own private, SENDER DEVICE public)), unwraps CK, and
+ *      decrypts the body.
  *
- * crypto.subtle exists only in secure contexts (https / localhost). All
- * callers must survive `available() === false` by falling back to plaintext.
+ * The server holds ciphertext and wraps it has no private key for. Admins
+ * cannot read chat - that is the point and the price.
+ *
+ * Honest limitations, said in the UI too:
+ *  - A device cannot read messages sent BEFORE it registered: no wrap exists
+ *    for a device that did not exist. Signal behaves the same way.
+ *  - If the other person has never opened chat they have no device key yet, so
+ *    the message goes out as plaintext and the header says so.
+ *
+ * crypto.subtle exists only in secure contexts (https / localhost), so every
+ * caller must survive `e2eeAvailable() === false` by falling back to plaintext.
  */
 
-const STORAGE_PREFIX = 'pc-e2e-v1-';
-const HKDF_INFO = 'pc-matrimony-e2e-v1';
+const DEVICE_ID_KEY = 'pc-device-id-v1';
+const DEVICE_KEYS_KEY = 'pc-device-keys-v1';
+const HKDF_INFO = 'pc-member-e2e-v2-wrap';
 
 export function e2eeAvailable(): boolean {
   return typeof crypto !== 'undefined' && !!crypto.subtle && typeof localStorage !== 'undefined';
@@ -31,6 +40,18 @@ export function e2eeAvailable(): boolean {
 interface StoredPair {
   pub: JsonWebKey;
   priv: JsonWebKey;
+}
+
+export interface DeviceKey {
+  deviceId: string;
+  publicKeyJwk: string;
+}
+
+export interface SealedMessage {
+  cipher: string;
+  iv: string;
+  /** One wrap per device that can read this message. */
+  keys: { deviceId: string; memberId: string; wrappedKey: string; wrapIv: string }[];
 }
 
 const b64 = (buf: ArrayBuffer): string => {
@@ -48,39 +69,56 @@ const unb64 = (s: string): ArrayBuffer => {
 };
 
 /**
- * The device keypair for this matrimony profile, generating (and persisting)
- * one on first use. Returns the public JWK as a JSON string ready to publish.
- *
- * Serialized per profile: on a first visit, the publish effect and the
- * thread-open derivation both call this before either has stored anything.
- * Without the in-flight cache each call generated its OWN pair, the last
- * write won, and the published public key did not match the private key the
- * other call had already encrypted with — ciphertext nobody could read.
+ * This browser's device id: random, stable, and meaningless to anyone else.
+ * It is not derived from anything about the device - it only has to be unique
+ * per key, so there is nothing here to fingerprint.
  */
-const inflight = new Map<string, Promise<{ publicJwk: string } | null>>();
-
-export function ensureLocalKeys(profileId: string): Promise<{ publicJwk: string } | null> {
-  let p = inflight.get(profileId);
-  if (!p) {
-    p = ensureLocalKeysUncached(profileId);
-    inflight.set(profileId, p);
-    // A failed attempt must not poison the session; retry next call.
-    p.then((r) => { if (r === null) inflight.delete(profileId); },
-           () => inflight.delete(profileId));
+export function deviceId(): string | null {
+  if (!e2eeAvailable()) return null;
+  let id = localStorage.getItem(DEVICE_ID_KEY);
+  if (!id) {
+    id = crypto.randomUUID().replace(/-/g, '');
+    localStorage.setItem(DEVICE_ID_KEY, id);
   }
-  return p;
+  return id;
 }
 
-async function ensureLocalKeysUncached(profileId: string): Promise<{ publicJwk: string } | null> {
+/**
+ * This device's ECDH keypair, generated once and kept in localStorage.
+ *
+ * Serialized through an in-flight promise: on a first visit the registration
+ * effect and the first decrypt both call this before either has stored
+ * anything, and without the cache each generated its OWN pair. The last write
+ * won, the published key stopped matching the private key the other call had
+ * already sealed with, and the result was ciphertext nobody could open. That
+ * exact bug is why this is here.
+ */
+let inflight: Promise<DeviceKey | null> | null = null;
+
+export function ensureDeviceKeys(): Promise<DeviceKey | null> {
+  if (!inflight) {
+    inflight = ensureDeviceKeysUncached();
+    inflight.then(
+      (r) => { if (r === null) inflight = null; },
+      () => { inflight = null; },
+    );
+  }
+  return inflight;
+}
+
+async function ensureDeviceKeysUncached(): Promise<DeviceKey | null> {
   if (!e2eeAvailable()) return null;
-  const key = STORAGE_PREFIX + profileId;
-  const raw = localStorage.getItem(key);
+  const id = deviceId();
+  if (!id) return null;
+
+  const raw = localStorage.getItem(DEVICE_KEYS_KEY);
   if (raw) {
     try {
       const pair = JSON.parse(raw) as StoredPair;
-      if (pair.pub && pair.priv) return { publicJwk: JSON.stringify(pair.pub) };
+      if (pair.pub && pair.priv) return { deviceId: id, publicKeyJwk: JSON.stringify(pair.pub) };
     } catch { /* corrupted: regenerate below */ }
   }
+
   const generated = await crypto.subtle.generateKey(
     { name: 'ECDH', namedCurve: 'P-256' },
     true,
@@ -88,38 +126,45 @@ async function ensureLocalKeysUncached(profileId: string): Promise<{ publicJwk: 
   );
   const pub = await crypto.subtle.exportKey('jwk', generated.publicKey);
   const priv = await crypto.subtle.exportKey('jwk', generated.privateKey);
-  localStorage.setItem(key, JSON.stringify({ pub, priv } satisfies StoredPair));
-  return { publicJwk: JSON.stringify(pub) };
+  localStorage.setItem(DEVICE_KEYS_KEY, JSON.stringify({ pub, priv } satisfies StoredPair));
+  return { deviceId: id, publicKeyJwk: JSON.stringify(pub) };
 }
 
-/**
- * The shared AES-GCM key for one conversation. Deterministic on both devices:
- * ECDH agreement then HKDF, salted with the sorted profile-id pair so two
- * different conversations never share a key even between the same people.
- */
-export async function deriveConversationKey(
-  myProfileId: string,
-  peerProfileId: string,
-  peerPublicJwk: string,
-): Promise<CryptoKey | null> {
-  if (!e2eeAvailable()) return null;
-  const raw = localStorage.getItem(STORAGE_PREFIX + myProfileId);
+async function myPrivateKey(): Promise<CryptoKey | null> {
+  const raw = localStorage.getItem(DEVICE_KEYS_KEY);
   if (!raw) return null;
   try {
     const pair = JSON.parse(raw) as StoredPair;
-    const myPriv = await crypto.subtle.importKey(
+    return await crypto.subtle.importKey(
       'jwk', pair.priv, { name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveBits'],
     );
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The AES-GCM key that wraps a content key between two devices. Both sides
+ * compute the same bytes: ECDH is symmetric, and the HKDF salt is the sorted
+ * device-id pair so no two device pairings ever share a wrapping key.
+ */
+async function wrappingKey(
+  myPriv: CryptoKey,
+  theirPublicJwk: string,
+  deviceA: string,
+  deviceB: string,
+): Promise<CryptoKey | null> {
+  try {
     const theirPub = await crypto.subtle.importKey(
-      'jwk', JSON.parse(peerPublicJwk) as JsonWebKey,
+      'jwk', JSON.parse(theirPublicJwk) as JsonWebKey,
       { name: 'ECDH', namedCurve: 'P-256' }, false, [],
     );
     const bits = await crypto.subtle.deriveBits({ name: 'ECDH', public: theirPub }, myPriv, 256);
-    const hkdfKey = await crypto.subtle.importKey('raw', bits, 'HKDF', false, ['deriveKey']);
-    const salt = new TextEncoder().encode([myProfileId, peerProfileId].sort().join(':'));
+    const hkdf = await crypto.subtle.importKey('raw', bits, 'HKDF', false, ['deriveKey']);
+    const salt = new TextEncoder().encode([deviceA, deviceB].sort().join(':'));
     return await crypto.subtle.deriveKey(
       { name: 'HKDF', hash: 'SHA-256', salt, info: new TextEncoder().encode(HKDF_INFO) },
-      hkdfKey,
+      hkdf,
       { name: 'AES-GCM', length: 256 },
       false,
       ['encrypt', 'decrypt'],
@@ -129,32 +174,92 @@ export async function deriveConversationKey(
   }
 }
 
-export async function encryptText(
-  key: CryptoKey,
+/**
+ * Encrypt `text` once, then wrap its content key for every device in
+ * `targets`. Returns null when this device has no keys or nothing could be
+ * wrapped - the caller then sends plaintext, which is the documented fallback
+ * for a peer who has never opened chat.
+ */
+export async function sealMessage(
   text: string,
-): Promise<{ cipher: string; iv: string } | null> {
+  targets: (DeviceKey & { memberId: string })[],
+): Promise<SealedMessage | null> {
+  if (!e2eeAvailable() || targets.length === 0) return null;
+  const mine = await ensureDeviceKeys();
+  const myPriv = await myPrivateKey();
+  if (!mine || !myPriv) return null;
+
   try {
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const ct = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv },
-      key,
-      new TextEncoder().encode(text),
+    // One content key, one body encryption, however many readers.
+    const contentKey = await crypto.subtle.generateKey(
+      { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'],
     );
-    return { cipher: b64(ct), iv: b64(iv.buffer) };
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const cipher = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv }, contentKey, new TextEncoder().encode(text),
+    );
+    const rawContentKey = await crypto.subtle.exportKey('raw', contentKey);
+
+    const keys: SealedMessage['keys'] = [];
+    for (const target of targets) {
+      const wrapKey = await wrappingKey(myPriv, target.publicKeyJwk, mine.deviceId, target.deviceId);
+      if (!wrapKey) continue; // a malformed key must not sink the whole message
+      const wrapIv = crypto.getRandomValues(new Uint8Array(12));
+      const wrapped = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: wrapIv }, wrapKey, rawContentKey,
+      );
+      keys.push({
+        deviceId: target.deviceId,
+        memberId: target.memberId,
+        wrappedKey: b64(wrapped),
+        wrapIv: b64(wrapIv.buffer),
+      });
+    }
+
+    if (keys.length === 0) return null;
+    return { cipher: b64(cipher), iv: b64(iv.buffer), keys };
   } catch {
     return null;
   }
 }
 
-/** Null means "not decryptable on this device" — render a placeholder. */
-export async function decryptText(key: CryptoKey, cipher: string, iv: string): Promise<string | null> {
+/**
+ * Unwrap this device's copy of the content key and decrypt the body.
+ * Null means "not readable on this device" - render the placeholder rather
+ * than pretending the message is empty.
+ */
+export async function openMessage(input: {
+  cipher: string;
+  iv: string;
+  wrappedKey: string;
+  wrapIv: string;
+  senderDeviceId: string;
+  senderPublicKeyJwk: string;
+}): Promise<string | null> {
+  if (!e2eeAvailable()) return null;
+  const mine = await ensureDeviceKeys();
+  const myPriv = await myPrivateKey();
+  if (!mine || !myPriv) return null;
+
   try {
-    const pt = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: new Uint8Array(unb64(iv)) },
-      key,
-      unb64(cipher),
+    const wrapKey = await wrappingKey(
+      myPriv, input.senderPublicKeyJwk, input.senderDeviceId, mine.deviceId,
     );
-    return new TextDecoder().decode(pt);
+    if (!wrapKey) return null;
+    const rawContentKey = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: new Uint8Array(unb64(input.wrapIv)) },
+      wrapKey,
+      unb64(input.wrappedKey),
+    );
+    const contentKey = await crypto.subtle.importKey(
+      'raw', rawContentKey, { name: 'AES-GCM', length: 256 }, false, ['decrypt'],
+    );
+    const plain = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: new Uint8Array(unb64(input.iv)) },
+      contentKey,
+      unb64(input.cipher),
+    );
+    return new TextDecoder().decode(plain);
   } catch {
     return null;
   }

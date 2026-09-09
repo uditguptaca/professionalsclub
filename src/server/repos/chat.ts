@@ -71,6 +71,18 @@ export interface ChatMessage {
   replyTo: string | null;
   readAt: string | null;
   createdAt: string;
+  /** Which of the sender's devices sealed this; needed to unwrap (0042). */
+  senderDeviceId: string | null;
+  /** THIS device's wrap of the content key, when one exists for it. */
+  wrappedKey: string | null;
+  wrapIv: string | null;
+}
+
+/** One device's public key. Public by design - see 0042. */
+export interface ChatDevice {
+  memberId: string;
+  deviceId: string;
+  publicKeyJwk: string;
 }
 
 export interface MessageReaction {
@@ -109,6 +121,15 @@ export interface ThreadPoll {
   peerTypingAt: string | null;
   referrals: ThreadReferral[];
   reactions: MessageReaction[];
+  /**
+   * Every device belonging to either participant, so the composer can seal a
+   * message for all of them without a second round trip.
+   *
+   * ponytail: re-sent on every 5s poll. Capped at 10 devices per member (0042),
+   * so worst case ~20 keys of ~120 bytes - about 3 KB, next to nothing beside
+   * one photo. If it ever matters, send a hash and only re-send on change.
+   */
+  devices: ChatDevice[];
 }
 
 export interface CompanyInsiderEntry {
@@ -147,6 +168,9 @@ const toMessage = (r: Record<string, unknown>): ChatMessage => ({
   replyTo: (r.reply_to as string | null) ?? null,
   readAt: iso(r.read_at),
   createdAt: iso(r.created_at) as string,
+  senderDeviceId: (r.sender_device_id as string | null) ?? null,
+  wrappedKey: (r.wrapped_key as string | null) ?? null,
+  wrapIv: (r.wrap_iv as string | null) ?? null,
 });
 
 const toPerson = (r: Record<string, unknown>): ChatPerson => ({
@@ -526,7 +550,13 @@ export async function declineChatRequest(userId: string, conversationId: string)
 export async function pollThread(
   userId: string,
   conversationId: string,
-  since?: string | null
+  since?: string | null,
+  /**
+   * The calling device, so each message can carry the wrap addressed to THIS
+   * device rather than all of them. Omitted (no crypto support) simply means
+   * no wraps come back and encrypted bodies render as unreadable.
+   */
+  deviceId?: string | null
 ): Promise<ThreadPoll> {
   return withUserRead(userId, async (db) => {
     const rows = await db.run<Record<string, unknown>>(
@@ -551,10 +581,16 @@ export async function pollThread(
       select
         (select coalesce(json_agg(t order by t.created_at), '[]'::json) from (
           select m.id, m.conversation_id, m.sender_id, m.kind, m.body, m.cipher, m.iv,
-                 m.attachment_url, m.meta, m.reply_to, m.created_at,
+                 m.attachment_url, m.meta, m.reply_to, m.created_at, m.sender_device_id,
+                 -- My device's wrap of the content key. RLS on
+                 -- member_message_keys already restricts this to my own
+                 -- devices; the device_id filter picks the one asking.
+                 k.wrapped_key, k.wrap_iv,
                  case when m.sender_id = $2 and not (select receipts from vis)
                       then null else m.read_at end as read_at
             from public.member_messages m
+            left join public.member_message_keys k
+              on k.message_id = m.id and k.device_id = $4::text
            where m.conversation_id = $1
              and m.created_at > (select cleared_at from prefs)
              and ($3::timestamptz is null or m.created_at > $3::timestamptz)
@@ -584,6 +620,12 @@ export async function pollThread(
             join public.member_messages mm on mm.id = x.message_id
            where mm.conversation_id = $1
         ) t) as reactions,
+        -- Both participants' device keys, for sealing the next message.
+        (select coalesce(json_agg(t), '[]'::json) from (
+          select d.member_id, d.device_id, d.public_key_jwk
+            from public.member_devices d
+            join convo c on d.member_id in (c.member_a_id, c.member_b_id)
+        ) t) as devices,
         (select coalesce(json_agg(t), '[]'::json) from (
           select r.id, r.seeker_id, r.insider_id, r.note, r.status,
                  co.name as company_name,
@@ -594,7 +636,7 @@ export async function pollThread(
             join convo c on (r.seeker_id, r.insider_id) in ((c.member_a_id, c.member_b_id), (c.member_b_id, c.member_a_id))
         ) t) as referrals
       `,
-      [conversationId, userId, since ?? null]
+      [conversationId, userId, since ?? null, deviceId ?? null]
     );
     const row = rows[0] ?? {};
     return {
@@ -610,6 +652,11 @@ export async function pollThread(
         messageId: r.message_id as string,
         memberId: r.member_id as string,
         emoji: r.emoji as string,
+      })),
+      devices: ((row.devices ?? []) as Record<string, unknown>[]).map((d) => ({
+        memberId: d.member_id as string,
+        deviceId: d.device_id as string,
+        publicKeyJwk: d.public_key_jwk as string,
       })),
       referrals: ((row.referrals ?? []) as Record<string, unknown>[]).map((r) => ({
         id: r.id as string,
@@ -639,6 +686,10 @@ export async function sendChatMessage(
     forwarded?: boolean;
     /** File-preview thumbnail (first PDF page), uploaded like any image. */
     thumbUrl?: string;
+    /** The device that sealed this, and one wrap of the content key per
+        device that may read it (0042). Absent for plaintext. */
+    senderDeviceId?: string;
+    keys?: { deviceId: string; memberId: string; wrappedKey: string; wrapIv: string }[];
   }
 ): Promise<ChatMessage> {
   return withUser(userId, async (db) => {
@@ -676,8 +727,8 @@ export async function sendChatMessage(
 
     try {
       const rows = await db.run<Record<string, unknown>>(
-        `insert into public.member_messages (conversation_id, sender_id, kind, body, cipher, iv, attachment_url, meta, reply_to)
-         values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9) returning *`,
+        `insert into public.member_messages (conversation_id, sender_id, kind, body, cipher, iv, attachment_url, meta, reply_to, sender_device_id)
+         values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10) returning *`,
         [
           conversationId, userId, kind,
           encrypted ? null : (content.body?.trim() || null),
@@ -686,9 +737,52 @@ export async function sendChatMessage(
           content.attachmentUrl ?? null,
           meta,
           replyTo,
+          encrypted ? (content.senderDeviceId ?? null) : null,
         ]
       );
-      return toMessage(rows[0]);
+      const message = toMessage(rows[0]);
+
+      // The wraps go in the SAME transaction as the message. A message that
+      // committed without them would be permanently unreadable by everyone,
+      // including its own sender.
+      const wraps = (content.keys ?? []).slice(0, 40);
+      if (encrypted && wraps.length > 0) {
+        // jsonb_to_recordset matches on the field names declared below, so the
+        // payload is renamed to snake_case here. Sending it camelCase made
+        // every column NULL, which failed NOT NULL and rolled back the message
+        // itself - the whole send vanished with it.
+        //
+        // Deduped here rather than with ON CONFLICT DO NOTHING, which cannot be
+        // used on this table: the conflict check makes Postgres apply the
+        // SELECT policy, and that policy deliberately hides wraps addressed to
+        // the OTHER member's devices - so every send failed with a
+        // row-level-security violation. The message id is brand new anyway, so
+        // the only possible collision is a repeated device in one payload.
+        const seen = new Set<string>();
+        const rows = wraps
+          .filter((k) => !seen.has(k.deviceId) && seen.add(k.deviceId))
+          .map((k) => ({
+            device_id: k.deviceId,
+            member_id: k.memberId,
+            wrapped_key: k.wrappedKey,
+            wrap_iv: k.wrapIv,
+          }));
+        await db.run(
+          `insert into public.member_message_keys (message_id, device_id, member_id, wrapped_key, wrap_iv)
+           select $1, k.device_id, k.member_id::uuid, k.wrapped_key, k.wrap_iv
+             from jsonb_to_recordset($2::jsonb)
+                  as k(device_id text, member_id text, wrapped_key text, wrap_iv text)`,
+          [message.id, JSON.stringify(rows)]
+        );
+        // Hand the sender back its own wrap so the message it just sent is
+        // readable in place, without waiting for the next poll.
+        const own = wraps.find((k) => k.deviceId === content.senderDeviceId);
+        if (own) {
+          message.wrappedKey = own.wrappedKey;
+          message.wrapIv = own.wrapIv;
+        }
+      }
+      return message;
     } catch (err) {
       if ((err as { code?: string }).code === '42501') {
         // A block, never announced as one.
@@ -1108,27 +1202,60 @@ export async function updateChatSettings(
   });
 }
 
-// ---- E2E keys (member-scoped; same device-key model as matrimony) ----------
+// ---- Device keys (0042: one per device, not one per member) ----------------
 
-export async function publishMemberE2EKey(userId: string, publicKeyJwk: string): Promise<void> {
-  await withUser(userId, async (db) => {
-    if (publicKeyJwk.length > 2000) throw new Error('Invalid key.');
-    await db.run(
-      `insert into public.member_e2e_keys (member_id, public_key_jwk)
-       values ($1, $2)
-       on conflict (member_id)
-         do update set public_key_jwk = excluded.public_key_jwk, updated_at = now()`,
-      [userId, publicKeyJwk]
+/**
+ * Both participants' device keys for one conversation.
+ *
+ * The open thread gets these free with every poll; this exists for FORWARDING,
+ * where the target is a conversation the member is not currently reading and
+ * whose devices are therefore unknown.
+ */
+export async function conversationDevices(
+  userId: string,
+  conversationId: string
+): Promise<ChatDevice[]> {
+  return withUserRead(userId, async (db) => {
+    const rows = await db.run<Record<string, unknown>>(
+      `select d.member_id, d.device_id, d.public_key_jwk
+         from public.member_devices d
+         join public.member_conversations c on c.id = $1
+        where d.member_id in (c.member_a_id, c.member_b_id)
+          and $2 in (c.member_a_id, c.member_b_id)`,
+      [conversationId, userId]
     );
+    return rows.map((d) => ({
+      memberId: d.member_id as string,
+      deviceId: d.device_id as string,
+      publicKeyJwk: d.public_key_jwk as string,
+    }));
   });
 }
 
-export async function getMemberE2EKey(userId: string, memberId: string): Promise<string | null> {
-  return withUserRead(userId, async (db) => {
-    const rows = await db.run<{ public_key_jwk: string }>(
-      `select public_key_jwk from public.member_e2e_keys where member_id = $1`,
-      [memberId]
+/**
+ * Register (or refresh) this device's public key.
+ *
+ * Idempotent and safe to call on every chat visit: the upsert keeps
+ * last_seen_at current, which is what the ten-device cap evicts by. Only the
+ * PUBLIC half ever arrives here.
+ */
+export async function registerDevice(
+  userId: string,
+  deviceId: string,
+  publicKeyJwk: string,
+  label?: string | null
+): Promise<void> {
+  await withUser(userId, async (db) => {
+    if (deviceId.length < 8 || deviceId.length > 64) throw new Error('Invalid device.');
+    if (publicKeyJwk.length > 2000) throw new Error('Invalid key.');
+    await db.run(
+      `insert into public.member_devices (member_id, device_id, public_key_jwk, label)
+       values ($1, $2, $3, $4)
+       on conflict (member_id, device_id) do update
+         set public_key_jwk = excluded.public_key_jwk,
+             label = coalesce(excluded.label, public.member_devices.label),
+             last_seen_at = now()`,
+      [userId, deviceId, publicKeyJwk, label?.slice(0, 60) ?? null]
     );
-    return rows[0]?.public_key_jwk ?? null;
   });
 }

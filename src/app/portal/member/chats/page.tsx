@@ -6,16 +6,16 @@ import {
   listPeople, followMember, unfollowMember,
   chatStart, listChats, openChat, acceptChatRequest, declineChatRequest,
   pollThread, sendChatMessage, markChatRead, setTyping,
-  respondReferral, publishMemberE2EKey, getMemberE2EKey,
+  respondReferral, registerChatDevice, fetchConversationDevices,
   blockMember, unblockMember, listBlockedMembers, reportMember,
   muteChat, clearChat, getChatSettings, updateChatSettings, reactToMessage,
 } from '@/app/actions/chat';
 import type {
   ChatPerson, ChatThread, ChatMessage, ThreadReferral, BlockedMember, ChatSettings,
-  MessageReaction,
+  MessageReaction, ChatDevice,
 } from '@/server/repos/chat';
 import {
-  e2eeAvailable, ensureLocalKeys, deriveConversationKey, encryptText, decryptText,
+  e2eeAvailable, ensureDeviceKeys, sealMessage, openMessage,
 } from '@/lib/e2ee';
 import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
 import type { PDFDocumentLoadingTask } from 'pdfjs-dist';
@@ -328,6 +328,24 @@ const fullName = (first: string, last: string) => `${first} ${last}`.trim() || '
 const initialsOf = (name: string) =>
   name.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || '?';
 
+/**
+ * A human label for this device, so a member can tell their own devices apart
+ * if a manage-devices screen ever lists them. Coarse on purpose: the platform
+ * family and nothing else, never a full user-agent string.
+ */
+function deviceLabel(): string {
+  if (typeof navigator === 'undefined') return 'Device';
+  const ua = navigator.userAgent;
+  const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+  const app = cap?.isNativePlatform?.() ? 'app' : 'browser';
+  const os = /iPhone|iPad|iPod/.test(ua) ? 'iOS'
+    : /Android/.test(ua) ? 'Android'
+      : /Macintosh/.test(ua) ? 'Mac'
+        : /Windows/.test(ua) ? 'Windows'
+          : 'Device';
+  return `${os} ${app}`;
+}
+
 function timeAgo(iso: string): string {
   const s = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
   if (s < 60) return 'now';
@@ -453,9 +471,14 @@ export default function MemberChatsPage() {
   /** The message a tapped quote just jumped to, flashed for a beat. */
   const [flashId, setFlashId] = useState<string | null>(null);
 
-  const [convKey, setConvKey] = useState<CryptoKey | null>(null);
-  const convKeyRef = useRef<CryptoKey | null>(null);
-  const [keyProbe, setKeyProbe] = useState(0);
+  /**
+   * Every device belonging to either side of the open thread, straight off the
+   * poll (0042). Sealing a message needs all of them; opening one needs the
+   * sender device's key from this same list.
+   */
+  const [devices, setDevices] = useState<ChatDevice[]>([]);
+  /** This device's own id, once its keypair exists and is registered. */
+  const [myDeviceId, setMyDeviceId] = useState<string | null>(null);
   const [plain, setPlain] = useState<Record<string, string | null>>({});
   const [noteOpen, setNoteOpen] = useState(true);
 
@@ -588,13 +611,21 @@ export default function MemberChatsPage() {
     return () => { alive = false; };
   }, []);
 
-  // ---- Publish this device's public key, once -------------------------------
+  // ---- Register this device's public key, once ------------------------------
+  // Registration is what makes future messages readable HERE: peers seal to
+  // every device a member has registered, so a device that never registers
+  // stays blind no matter how long it is signed in.
   useEffect(() => {
     if (!currentUserId || publishedRef.current) return;
     publishedRef.current = true;
     (async () => {
-      const keys = await ensureLocalKeys(currentUserId);
-      if (keys) void publishMemberE2EKey(keys.publicJwk); // fire and forget
+      const keys = await ensureDeviceKeys();
+      if (!keys) return;
+      setMyDeviceId(keys.deviceId);
+      const res = await registerChatDevice(keys.deviceId, keys.publicKeyJwk, deviceLabel());
+      // A failed registration must not stick: without it this device receives
+      // no wraps, so retry on the next visit rather than never again.
+      if (!res.ok) publishedRef.current = false;
     })();
   }, [currentUserId]);
 
@@ -643,16 +674,13 @@ export default function MemberChatsPage() {
     nearBottomRef.current = true;
 
     const load = async () => {
-      const r = await pollThread(openId, sinceRef.current);
+      const r = await pollThread(openId, sinceRef.current, myDeviceId);
       if (!alive) return;
       if (r.ok) {
         sinceRef.current = r.data.watermark;
-        // A peer can publish their key MID-conversation (their first visit to
-        // this page). If encrypted messages exist and we hold no key, poke the
-        // derivation effect to look the key up again.
-        if (!convKeyRef.current && r.data.messages.some((m) => m.body == null && m.cipher)) {
-          setKeyProbe((n) => n + 1);
-        }
+        // The device list can grow mid-conversation (the peer opens the app on
+        // a new phone), and every seal from here on must include it.
+        setDevices(r.data.devices);
         // The poll is incremental: r.data.messages holds the whole thread only
         // on the first call after sinceRef was cleared, and just what is new
         // after that. So merge by id onto what we already have - which is also
@@ -696,7 +724,13 @@ export default function MemberChatsPage() {
       if (document.visibilityState === 'visible') void load();
     }, 5000);
     return () => { alive = false; clearInterval(timer); };
-  }, [openId]);
+    // myDeviceId belongs here, not just for lint's sake: it is null on the
+    // first render and arrives once the keypair is registered. Without it in
+    // the deps the thread would keep polling with no device id, no wraps would
+    // come back, and every encrypted message would sit unreadable until the
+    // member switched threads. Re-running clears sinceRef, so the refetch
+    // brings the whole thread back WITH this device's wraps.
+  }, [openId, myDeviceId]);
 
   // ---- Thread: reset per-thread state when switching threads ----------------
   useEffect(() => {
@@ -704,8 +738,7 @@ export default function MemberChatsPage() {
     // cursor is reset in the poll effect above, which runs first.)
     setMessages([]);
     setPlain({});
-    setConvKey(null);
-    convKeyRef.current = null;
+    setDevices([]);
     setNoteOpen(true);
     setPollOpen(null);
     setPeerTypingAt(null);
@@ -723,39 +756,39 @@ export default function MemberChatsPage() {
     typingAtRef.current = 0;
   }, [openId]);
 
-  // ---- Thread: derive the conversation key ----------------------------------
-  // keyProbe re-fires this when encrypted messages arrive while we hold no
-  // key — the peer may have published theirs after this thread was opened.
-  useEffect(() => {
-    if (!openId || !peerId || !currentUserId || !e2eeAvailable()) return;
-    if (convKeyRef.current) return;
-
-    let alive = true;
-    (async () => {
-      const mine = await ensureLocalKeys(currentUserId);
-      if (!mine || !alive) return;
-      const theirs = await getMemberE2EKey(peerId);
-      if (!alive || !theirs.ok || !theirs.data) return; // peer has no key yet
-      const key = await deriveConversationKey(currentUserId, peerId, theirs.data);
-      if (alive && key) { convKeyRef.current = key; setConvKey(key); }
-    })();
-    return () => { alive = false; };
-  }, [openId, peerId, currentUserId, keyProbe]);
-
   // ---- Decrypt what is new, cached by message id ----------------------------
+  // Each message carries THIS device's wrap of its content key (0042), so
+  // opening one needs no conversation-wide key and no ordering: unwrap with
+  // the sender device's public key, then decrypt the body. A message with no
+  // wrap for this device is simply not readable here, and says so.
   useEffect(() => {
-    if (!convKey) return;
-    const todo = messages.filter((m) => m.body == null && m.cipher && m.iv && !(m.id in plain));
-    if (todo.length === 0) return;
+    const todo = messages.filter(
+      (m) => m.body == null && m.cipher && m.iv && !(m.id in plain)
+    );
+    if (todo.length === 0 || !e2eeAvailable()) return;
 
     let alive = true;
     (async () => {
       const out: Record<string, string | null> = {};
-      for (const m of todo) out[m.id] = await decryptText(convKey, m.cipher!, m.iv!);
+      for (const m of todo) {
+        const senderKey = m.senderDeviceId
+          ? devices.find((d) => d.deviceId === m.senderDeviceId)?.publicKeyJwk
+          : undefined;
+        out[m.id] = (m.wrappedKey && m.wrapIv && m.senderDeviceId && senderKey)
+          ? await openMessage({
+            cipher: m.cipher!,
+            iv: m.iv!,
+            wrappedKey: m.wrappedKey,
+            wrapIv: m.wrapIv,
+            senderDeviceId: m.senderDeviceId,
+            senderPublicKeyJwk: senderKey,
+          })
+          : null;
+      }
       if (alive) setPlain((p) => ({ ...p, ...out }));
     })();
     return () => { alive = false; };
-  }, [messages, convKey, plain]);
+  }, [messages, devices, plain]);
 
   // ---- Clear their unread while the thread is open --------------------------
   // Not "once per thread": messages that land WHILE you are reading are read
@@ -1149,14 +1182,11 @@ export default function MemberChatsPage() {
         setFwdBusy(null);
         return;
       }
-      let sealed: { cipher: string; iv: string } | null = null;
-      if (currentUserId && e2eeAvailable()) {
-        const theirs = await getMemberE2EKey(target.partnerId);
-        if (theirs.ok && theirs.data) {
-          const key = await deriveConversationKey(currentUserId, target.partnerId, theirs.data);
-          if (key) sealed = await encryptText(key, text);
-        }
-      }
+      // The target conversation has its own devices, so ciphertext from THIS
+      // thread is worthless there. Re-seal from the plaintext this device
+      // already holds, for that conversation's devices.
+      const theirDevices = await fetchConversationDevices(target.id);
+      const sealed = theirDevices.ok ? await sealText(text, theirDevices.data) : null;
       payload = { ...(sealed ?? { body: text }), forwarded: true };
     } else if (m.attachmentUrl && (m.kind === 'image' || m.kind === 'video' || m.kind === 'file')) {
       const meta = (m.meta ?? {}) as { name?: string; size?: number; mime?: string; thumb?: string };
@@ -1271,34 +1301,51 @@ export default function MemberChatsPage() {
     void setTyping(openId);
   }
 
+  /**
+   * Seal `text` for every device in `list` - both people's, mine included, so
+   * this message stays readable on my other devices too. Null means "send it
+   * as plaintext", which is the documented fallback when the other person has
+   * never opened chat and so has no device key to seal for.
+   */
+  async function sealText(text: string, list: ChatDevice[]) {
+    if (!e2eeAvailable() || list.length === 0) return null;
+    const mine = await ensureDeviceKeys();
+    if (!mine) return null;
+    const sealed = await sealMessage(text, list);
+    if (!sealed) return null;
+    return {
+      cipher: sealed.cipher,
+      iv: sealed.iv,
+      senderDeviceId: mine.deviceId,
+      keys: sealed.keys,
+    };
+  }
+
   async function send() {
     const text = draft.trim();
     if (!text || !openId || sending) return;
     setSending(true);
     setSendError('');
 
-    let payload: { body: string } | { cipher: string; iv: string };
-    if (convKey) {
-      const enc = await encryptText(convKey, text);
-      if (!enc) {
-        // Never silently downgrade to plaintext after promising a locked thread.
-        setSendError('This device could not encrypt the message, so nothing was sent. Reload and try again.');
-        setSending(false);
-        return;
-      }
-      payload = enc;
-    } else {
-      payload = { body: text };
+    const sealed = await sealText(text, devices);
+    // Only refuse to send when sealing was EXPECTED to work: devices exist for
+    // this thread but this device could not use them. With no devices at all
+    // there is nothing to seal for, and plaintext is the honest fallback the
+    // header already advertises.
+    if (!sealed && devices.length > 0 && e2eeAvailable()) {
+      setSendError('This device could not encrypt the message, so nothing was sent. Reload and try again.');
+      setSending(false);
+      return;
     }
 
     const res = await sendChatMessage(openId, {
-      ...payload,
+      ...(sealed ?? { body: text }),
       ...(replyTo ? { replyTo: replyTo.id } : {}),
     });
     if (res.ok) {
-      // Seed the cache with what we just typed: no decrypt round trip, no flash
+      // Seed the cache with what we just typed: no unwrap round trip, no flash
       // of the placeholder on our own bubble.
-      if (convKey) setPlain((p) => ({ ...p, [res.data.id]: text }));
+      if (sealed) setPlain((p) => ({ ...p, [res.data.id]: text }));
       setReplyTo(null);
       setDraft('');
       if (taRef.current) taRef.current.style.height = 'auto';
@@ -1538,6 +1585,12 @@ export default function MemberChatsPage() {
     // A request FOR ME: composer stays hidden behind the accept bar, and
     // nothing is marked read until I let it in.
     const isRequest = openThread.request;
+    /**
+     * Encryption is on for this thread when the OTHER side has at least one
+     * registered device to seal for. My own devices are not enough - a message
+     * only I can read is not an encrypted conversation.
+     */
+    const encryptionOn = e2eeOk && devices.some((d) => d.memberId === openThread.partnerId);
     const peerTyping = peerTypingAt != null
       && Date.now() - new Date(peerTypingAt).getTime() < TYPING_FRESH_MS;
 
@@ -1563,7 +1616,7 @@ export default function MemberChatsPage() {
           ? <><Building2 size={12} aria-hidden="true" /> Referral request</>
           : openThread.context === 'matrimony'
             ? <><Heart size={12} aria-hidden="true" /> Matrimony match</>
-            : convKey
+            : encryptionOn
               ? <><ShieldCheck size={12} aria-hidden="true" /> End-to-end encrypted</>
               : <><LockOpen size={12} aria-hidden="true" /> Encrypting once {firstName} opens their chats</>;
 
@@ -1626,7 +1679,7 @@ export default function MemberChatsPage() {
             <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</strong>
             <small style={{
               display: 'flex', alignItems: 'center', gap: 4, fontWeight: 750,
-              color: threadOpen && convKey && openThread.context === 'follow'
+              color: threadOpen && encryptionOn && openThread.context === 'follow'
                 ? 'var(--success-600)'
                 : 'var(--text-muted)',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -1675,7 +1728,7 @@ export default function MemberChatsPage() {
             padding: '0.9rem 0.8rem', display: 'flex', flexDirection: 'column',
           }}
         >
-          {convKey && noteOpen && (
+          {encryptionOn && noteOpen && (
             <div style={{
               display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: '0.7rem',
               padding: '0.6rem 0.7rem', borderRadius: '0.85rem',
@@ -1723,7 +1776,11 @@ export default function MemberChatsPage() {
 
             const encrypted = m.kind === 'text' && m.body == null;
             const decrypted = encrypted ? plain[m.id] : m.body;
-            const pending = encrypted && convKey != null && !(m.id in plain);
+            // "Decrypting…" only while an unwrap is genuinely outstanding: a
+            // message with no wrap for this device is never going to resolve,
+            // and spinning forever on it would be a lie.
+            const pending = encrypted && !(m.id in plain)
+              && Boolean(m.wrappedKey && m.wrapIv && m.senderDeviceId);
             const readable = typeof decrypted === 'string';
             const pills = reactionGroups.get(m.id) ?? [];
 
@@ -2015,7 +2072,9 @@ export default function MemberChatsPage() {
                       color: mine ? 'rgba(255,255,255,0.75)' : 'var(--text-muted)',
                     }}>
                       <Lock size={11} aria-hidden="true" style={{ opacity: 0.6, flexShrink: 0 }} />
-                      {pending ? 'Decrypting…' : 'Encrypted message — sent before this device joined'}
+                      {pending
+                        ? 'Decrypting…'
+                        : 'Encrypted before this device was set up — newer messages open normally'}
                     </span>
                   )}
                   {metaLine}
@@ -2256,7 +2315,7 @@ export default function MemberChatsPage() {
                   ref={taRef}
                   rows={1}
                   value={draft}
-                  placeholder={convKey ? 'Write an encrypted message' : 'Write a message'}
+                  placeholder={encryptionOn ? 'Write an encrypted message' : 'Write a message'}
                   onChange={(e) => {
                     setDraft(e.target.value);
                     if (e.target.value.trim()) pingTyping();

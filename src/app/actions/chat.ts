@@ -99,8 +99,12 @@ export async function declineChatRequest(conversationId: string) {
  * incremental: only messages newer than that come back, instead of the whole
  * conversation every five seconds.
  */
-export async function pollThread(conversationId: string, since?: string | null) {
-  return run('Loading messages', (uid) => repo.pollThread(uid, conversationId, since));
+export async function pollThread(
+  conversationId: string,
+  since?: string | null,
+  deviceId?: string | null
+) {
+  return run('Loading messages', (uid) => repo.pollThread(uid, conversationId, since, deviceId));
 }
 
 export async function sendChatMessage(
@@ -113,6 +117,8 @@ export async function sendChatMessage(
     replyTo?: string;
     forwarded?: boolean;
     thumbUrl?: string;
+    senderDeviceId?: string;
+    keys?: { deviceId: string; memberId: string; wrappedKey: string; wrapIv: string }[];
   }
 ) {
   return run('Sending message', (uid) => repo.sendChatMessage(uid, conversationId, content));
@@ -189,10 +195,17 @@ export async function markChatRead(conversationId: string) {
 
 // ---- E2E keys ---------------------------------------------------------------
 
-export async function publishMemberE2EKey(publicKeyJwk: string) {
-  return run('Publishing your key', (uid) => repo.publishMemberE2EKey(uid, publicKeyJwk));
+/** Both sides' device keys for a conversation, for sealing a forward. */
+export async function fetchConversationDevices(conversationId: string) {
+  return run('Loading device keys', (uid) => repo.conversationDevices(uid, conversationId));
 }
 
-export async function getMemberE2EKey(memberId: string) {
-  return run('Fetching key', (uid) => repo.getMemberE2EKey(uid, memberId));
+/** Publish THIS device's public key so peers can seal messages for it (0042). */
+export async function registerChatDevice(
+  deviceId: string,
+  publicKeyJwk: string,
+  label?: string | null
+) {
+  return run('Registering this device', (uid) =>
+    repo.registerDevice(uid, deviceId, publicKeyJwk, label));
 }
