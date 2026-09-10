@@ -235,8 +235,22 @@ export default function JobFilters({
           className="hf-sheet-scrim"
           onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
         >
-          <div className="hf-sheet" role="dialog" aria-modal="true" aria-label="Filter roles">
-            <div className="hf-sheet-head">
+          {/* Three bands: a fixed head, a body that scrolls, and a footer
+              pinned to the bottom. .hf-sheet on its own scrolls as ONE block,
+              which put Clear and Show at the end of a long list of chips - so
+              on a phone the sheet looked cut off and its primary action was
+              unreachable without scrolling past six groups. */}
+          <div
+            className="hf-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Filter roles"
+            style={{
+              display: 'flex', flexDirection: 'column',
+              maxHeight: '85dvh', overflow: 'hidden', padding: 0,
+            }}
+          >
+            <div className="hf-sheet-head" style={{ flexShrink: 0, padding: '1.1rem 1.1rem 0.5rem' }}>
               <h2>Filters</h2>
               <button
                 type="button"
@@ -248,13 +262,18 @@ export default function JobFilters({
               </button>
             </div>
 
+            <div style={{
+              flex: 1, minHeight: 0, overflowY: 'auto',
+              WebkitOverflowScrolling: 'touch', padding: '0 1.1rem 0.4rem',
+            }}>
+
             {groups.length === 0 ? (
               <p className="hf-sheet-sub">
                 These roles are too similar to filter usefully. Search by title instead.
               </p>
             ) : (
               groups.map((g) => (
-                <section key={g.key} style={{ marginTop: '0.9rem' }}>
+                <section key={g.key} style={{ marginTop: '0.85rem' }}>
                   <h3 style={{
                     margin: '0 0 0.45rem', fontSize: '0.72rem', fontWeight: 800,
                     letterSpacing: '0.06em', textTransform: 'uppercase',
@@ -279,7 +298,14 @@ export default function JobFilters({
               ))
             )}
 
-            <div style={{ display: 'flex', gap: 10, marginTop: '1.2rem' }}>
+            </div>
+
+            <div style={{
+              flexShrink: 0, display: 'flex', gap: 10,
+              padding: '0.8rem 1.1rem calc(0.8rem + var(--sab))',
+              borderTop: '1px solid rgba(27,67,50,0.1)',
+              background: 'var(--bg-primary)',
+            }}>
               <button
                 type="button"
                 className="btn btn-outline"
