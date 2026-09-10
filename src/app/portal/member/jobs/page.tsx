@@ -1,14 +1,16 @@
 'use client';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '@/context/app-context';
-import { fetchJobsHome, fetchCompanyJobs } from '@/app/actions/referrals';
+import { fetchJobsBoard, fetchCompanyJobs } from '@/app/actions/referrals';
+import JobBoard from '@/components/portal/JobBoard';
 import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
 import { companyPeople, requestReferral, referralQuota } from '@/app/actions/chat';
 import type { Company } from '@/types';
 import type { CompanyInsiderEntry } from '@/server/repos/chat';
-import type { SuggestedRole, ScoredJob } from '@/server/repos/referrals';
+import type { ScoredJob } from '@/server/repos/referrals';
+import type { BoardRole } from '@/server/repos/job-board';
 import {
   facetsOf, SENIORITY_LABELS, EMPLOYMENT_LABELS, ARRANGEMENT_LABELS,
   familyLabel, languageLabel, type JobFacets,
@@ -62,8 +64,8 @@ const HAIRLINE_SOFT = '1px solid rgba(27, 67, 50, 0.06)';
 /** Roles render 20 at a time; a bank's feed is 200 rows long. */
 const PAGE = 20;
 
-/** Exactly what fetchJobsHome returns, and what this tab caches. */
-type JobsHome = { companies: Company[]; suggestions: SuggestedRole[] };
+/** Exactly what fetchJobsBoard returns, and what this tab caches. */
+type JobsBoardData = { roles: BoardRole[]; companies: Company[] };
 
 /**
  * Where the in-page sticky header parks. The portal topbar is sticky at the
@@ -337,7 +339,14 @@ export default function MemberJobsPage() {
   const [language, setLanguage] = useState('all');
   const [sort, setSort] = useState<'match' | 'newest' | 'title'>('match');
 
-  const [suggestions, setSuggestions] = useState<SuggestedRole[]>([]);
+  /** Every open role, for the role-first board. */
+  const [roles, setRoles] = useState<BoardRole[]>([]);
+  /**
+   * The board is the default. Employer browsing is the secondary view, for a
+   * member who already has a company in mind - it used to be the only way in,
+   * which forced everyone to guess an employer before seeing a single job.
+   */
+  const [view, setView] = useState<'roles' | 'employers'>('roles');
 
   const [insiders, setInsiders] = useState<CompanyInsiderEntry[] | null>(null);
   const [insidersError, setInsidersError] = useState('');
@@ -350,16 +359,47 @@ export default function MemberJobsPage() {
 
   useEffect(() => {
     if (!currentUserId) return;
-    const cached = readCache<JobsHome>(CACHE_KEYS.jobs);
-    if (cached) { setCompanies(cached.companies); setSuggestions(cached.suggestions); }
-    fetchJobsHome().then((r) => {
+    const cached = readCache<JobsBoardData>(CACHE_KEYS.jobs);
+    if (cached) { setCompanies(cached.companies); setRoles(cached.roles); }
+    fetchJobsBoard().then((r) => {
       if (r.ok) {
         setCompanies(r.data.companies);
-        setSuggestions(r.data.suggestions);
-        writeCache<JobsHome>(CACHE_KEYS.jobs, r.data);
+        setRoles(r.data.roles);
+        writeCache<JobsBoardData>(CACHE_KEYS.jobs, r.data);
       } else setError(r.error);
     });
   }, [currentUserId]);
+
+  /**
+   * Deep link from the single-role screen: ?company=X&role=Y&ask=1.
+   *
+   * "Ask for a referral" on a role hands back to THIS flow rather than
+   * reimplementing it - the weekly allowance, the named directory and
+   * request-opens-a-chat all live here already. company.id is used directly
+   * rather than the `selected` state because that state has not landed yet in
+   * the same tick, and goPeople() would read a stale value.
+   */
+  const searchParams = useSearchParams();
+  const deepLinked = useRef(false);
+  useEffect(() => {
+    if (deepLinked.current || !companies || companies.length === 0) return;
+    const companyId = searchParams.get('company');
+    if (!companyId) return;
+    const company = companies.find((c) => c.id === companyId);
+    if (!company) return;
+    deepLinked.current = true;
+    const roleId = searchParams.get('role');
+    const ask = searchParams.get('ask') === '1';
+    void (async () => {
+      await openCompany(company, roleId ?? undefined);
+      if (!ask) return;
+      setStep('people');
+      const r = await companyPeople(company.id);
+      if (r.ok) { setInsiders(r.data.insiders); setQuota(r.data.quota); }
+      else setInsidersError(r.error);
+    })();
+    // The ref is what makes this run once, not the dependency list.
+  }, [companies, searchParams]);
 
   const industries = useMemo(
     () => ['all', ...[...new Set((companies ?? []).map((c) => c.industry).filter(Boolean))].sort()] as string[],
@@ -421,15 +461,6 @@ export default function MemberJobsPage() {
    * grid works with, so it falls back to a minimal stand-in when the directory
    * has not arrived yet - the roles screen only reads the name and logo.
    */
-  const openSuggestion = (s: SuggestedRole) => {
-    const company = (companies ?? []).find((c) => c.id === s.companyId)
-      ?? ({
-        id: s.companyId, name: s.companyName, slug: s.companySlug,
-        logo: s.companyLogo, helperCount: s.helperCount,
-      } as unknown as Company);
-    void openCompany(company, s.jobId);
-  };
-
   const jobLocations = useMemo(
     () =>
       [...new Set((jobs ?? []).map((j) => j.location?.trim()).filter(Boolean))]
@@ -613,80 +644,48 @@ export default function MemberJobsPage() {
   if (!selected) {
     return (
       <div className="pp2">
-        <header style={{ marginBottom: 14 }}>
-          <h1 style={TITLE}>Jobs by company</h1>
+        <header style={{ marginBottom: 12 }}>
+          <h1 style={TITLE}>Jobs</h1>
           <p style={SUB}>
-            Pick an employer to see their open roles, then ask someone who works there to refer
-            you. Members who offer to refer are listed by name, so you choose who you ask.
+            Every open role our employers are advertising. Open one to apply
+            yourself, or to ask a member who works there to refer you.
           </p>
           <Link href="/portal/member/referrals" style={QUIET_LINK}>
             My referral requests <ArrowRight size={14} aria-hidden="true" />
           </Link>
         </header>
 
-        {/* Suggested roles come BEFORE the employer grid: a member who does not
-            know which of 40 banks to open should not have to guess. Each card
-            says why it is here and jumps into that employer with the role
-            already picked, so the next tap is choosing who to ask. */}
-        {suggestions.length > 0 && (
-          <section style={{ marginBottom: 18 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
-              <h2 style={{ ...TITLE, fontSize: '1.05rem', margin: 0 }}>Suggested for you</h2>
-              <span style={{ fontSize: '0.75rem', fontWeight: 650, color: 'var(--text-muted)' }}>
-                from your profile
-              </span>
-            </div>
-            <ul className="pp-group-card" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-              {suggestions.slice(0, 6).map((s, i) => (
-                <li
-                  key={s.jobId}
-                  style={{
-                    display: 'flex', alignItems: 'stretch',
-                    borderBottom: i === Math.min(suggestions.length, 6) - 1 ? 0 : HAIRLINE_SOFT,
-                  }}
-                >
-                  <button
-                    type="button"
-                    className="pp-row"
-                    style={{ flex: 1, minWidth: 0, borderBottom: 0 }}
-                    onClick={() => openSuggestion(s)}
-                  >
-                    <span className="pp-row-icon" aria-hidden="true">
-                      <Briefcase size={17} />
-                    </span>
-                    <span className="pp-row-body">
-                      <strong>{s.title}</strong>
-                      <small style={ELLIPSIS}>
-                        {[s.companyName, s.location].filter(Boolean).join(' · ')}
-                      </small>
-                      <small style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 4,
-                        marginTop: 3, color: 'var(--success-600)', fontWeight: 750,
-                      }}>
-                        <BadgeCheck size={12} aria-hidden="true" />
-                        {s.reasons[0]}
-                      </small>
-                    </span>
-                    <ArrowRight size={15} aria-hidden="true" style={{ flexShrink: 0, color: 'var(--text-muted)' }} />
-                  </button>
-                  <a
-                    href={s.applyUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`Open the ${s.title} posting at ${s.companyName}`}
-                    style={{
-                      display: 'grid', placeItems: 'center', flexShrink: 0,
-                      width: 48, color: 'var(--text-muted)', borderLeft: HAIRLINE_SOFT,
-                    }}
-                  >
-                    <ExternalLink size={15} aria-hidden="true" />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </section>
+        {/* Roles first. Browsing by employer used to be the only way in, which
+            made everyone guess a company before seeing a single job. */}
+        <div style={{ ...SEG_WRAP, marginBottom: 10 }} role="group" aria-label="Jobs view">
+          <button
+            type="button"
+            style={seg(view === 'roles')}
+            aria-pressed={view === 'roles'}
+            onClick={() => setView('roles')}
+          >
+            All roles{roles.length > 0 ? ` (${roles.length})` : ''}
+          </button>
+          <button
+            type="button"
+            style={seg(view === 'employers')}
+            aria-pressed={view === 'employers'}
+            onClick={() => setView('employers')}
+          >
+            By employer{companies?.length ? ` (${companies.length})` : ''}
+          </button>
+        </div>
+
+        {error && (
+          <div role="alert" className="community-error" style={{ marginBottom: 12 }}>
+            <AlertCircle size={15} aria-hidden="true" /> {error}
+          </div>
         )}
 
+        {view === 'roles' ? (
+          roles.length === 0 && !error ? <CardShimmer cards={4} /> : <JobBoard roles={roles} />
+        ) : (
+          <>
         <div style={SEARCH_WRAP}>
           <Search size={16} aria-hidden="true" style={SEARCH_ICON} />
           <input
@@ -752,12 +751,6 @@ export default function MemberJobsPage() {
           )}
         </div>
 
-        {error && (
-          <div role="alert" className="community-error" style={{ marginBottom: 12 }}>
-            <AlertCircle size={15} aria-hidden="true" /> {error}
-          </div>
-        )}
-
         {companies === null && !error && <CardShimmer cards={6} />}
 
         {companies?.length === 0 && (
@@ -818,6 +811,8 @@ export default function MemberJobsPage() {
               </button>
             )}
           </div>
+        )}
+          </>
         )}
       </div>
     );

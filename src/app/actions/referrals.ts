@@ -2,6 +2,7 @@
 
 import { requireUserId, requireAdminId } from '@/server/auth';
 import * as repo from '@/server/repos/referrals';
+import * as board from '@/server/repos/job-board';
 import { drainOutbox } from '@/server/email';
 import { syncCompany } from '@/server/jobs/sync';
 import { detectSource, type SourceKind } from '@/server/jobs/sources';
@@ -42,6 +43,30 @@ export async function fetchCompanies(): Promise<ActionResult<Company[]>> {
 /** The jobs screen's first paint: employers plus this member's suggested roles. */
 export async function fetchJobsHome() {
   return run('Loading jobs', async () => repo.jobsHome(await requireUserId()));
+}
+
+/**
+ * The job board: every open role plus the employer directory, in one call.
+ * Next runs a client Server Action calls one at a time, so splitting these
+ * would cost the member a second sequential round trip before anything paints.
+ */
+export async function fetchJobsBoard() {
+  return run('Loading jobs', async () => board.jobsBoard(await requireUserId()));
+}
+
+/** One role, for the single-job screen. Closed roles come back too. */
+export async function fetchJobDetail(jobId: string) {
+  return run('Loading this role', async () => {
+    const userId = await requireUserId();
+    if (typeof jobId !== 'string' || jobId.length !== 36) return null;
+    return board.jobDetail(userId, jobId);
+  });
+}
+
+/** Mark (or unmark) that the member applied to a role on their own. */
+export async function setJobApplied(jobId: string, applied: boolean) {
+  return run('Saving that', async () =>
+    board.setJobApplied(await requireUserId(), jobId, Boolean(applied)));
 }
 
 export async function fetchCompanyJobs(companyId: string) {

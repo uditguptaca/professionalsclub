@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { syncAllCompanies } from '@/server/jobs/sync';
+import { checkJobLiveness } from '@/server/jobs/liveness';
 import { drainOutbox } from '@/server/email';
 
 /**
@@ -30,7 +31,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   const started = Date.now();
+
+  // ?only=liveness runs just the link check. The daily cron passes nothing and
+  // does everything; this exists so an operator (and a test) can exercise the
+  // link check on its own without pulling every feed and draining the mail
+  // queue as a side effect.
+  const only = request.nextUrl.searchParams.get('only');
+  if (only === 'liveness') {
+    const liveness = await checkJobLiveness();
+    return NextResponse.json({ ok: true, ms: Date.now() - started, liveness });
+  }
+
   const companies = await syncAllCompanies();
+  // After the feeds, not before: sync reopens anything an employer re-listed,
+  // so checking links afterwards never fights a fresher signal.
+  const liveness = await checkJobLiveness();
   const email = await drainOutbox(200);
 
   const failures = companies.filter((c) => c.error);
@@ -41,6 +56,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     added: companies.reduce((n, c) => n + c.added, 0),
     updated: companies.reduce((n, c) => n + c.updated, 0),
     closed: companies.reduce((n, c) => n + c.closed, 0),
+    liveness,
     email,
     // Named rather than counted: a feed that has been broken for a week is
     // something an operator needs to see.
