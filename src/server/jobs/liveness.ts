@@ -56,6 +56,23 @@ const RECHECK_AFTER_HOURS = 72;
  */
 const RECHECK_SUSPECT_HOURS = 12;
 
+/**
+ * Reserved placeholder domains (RFC 2606 / RFC 6761). Demo and seed rows point
+ * at these, and they answer 404 for every path - so without this guard the
+ * check would confidently retire all 15 seeded demo roles inside two days and
+ * look exactly like a bug. A 404 from example.com says nothing about whether a
+ * real job exists, so these are skipped rather than judged.
+ */
+const PLACEHOLDER_HOSTS = /(^|\.)(example\.(com|org|net)|test|invalid|localhost)$/i;
+
+function isPlaceholder(url: string): boolean {
+  try {
+    return PLACEHOLDER_HOSTS.test(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
 const UA =
   'ProfessionalsClubLinkCheck/1.0 (+https://professionalsclub.vercel.app; community job board link check)';
 
@@ -143,6 +160,11 @@ export async function checkJobLiveness(limit = BATCH): Promise<LivenessResult> {
   const toClose: string[] = [];
 
   for (const job of jobs) {
+    if (isPlaceholder(job.apply_url)) {
+      result.skipped += 1;
+      unknown.push(job.id);
+      continue;
+    }
     const verdict = await probe(job.apply_url);
     result.checked += 1;
     if (verdict === 'gone') {
