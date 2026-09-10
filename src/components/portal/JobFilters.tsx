@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { facetsOf, SENIORITY_LABELS, EMPLOYMENT_LABELS, ARRANGEMENT_LABELS, familyLabel, languageLabel } from '@/lib/job-taxonomy';
 import { SlidersHorizontal, X } from 'lucide-react';
 
@@ -18,6 +19,23 @@ import { SlidersHorizontal, X } from 'lucide-react';
  * A member who wants none of this now sees a search box and jobs.
  *
  * Shared by the board and by one employer's role list so the two cannot drift.
+ *
+ * The sheet is rendered through a PORTAL to document.body, and that is
+ * load-bearing rather than tidiness. On the employer screen this control sits
+ * inside a sticky header, and a `position: sticky` element carrying a z-index
+ * creates a stacking context - so the sheet's own z-index of 390 was trapped
+ * at the header's level of 4 and painted UNDERNEATH the referral action bar
+ * and the tab bar. Its position was right and only the paint order was wrong,
+ * which is exactly the bug that looks like a mystery. A portal escapes every
+ * ancestor stacking context, so the sheet cannot be buried by wherever the
+ * trigger happens to live.
+ *
+ * The portal target is .portal-layout, NOT document.body. The portal shell
+ * renders at zoom 0.8, so a sheet attached to the body would escape that scale
+ * and appear a quarter larger than every other sheet in the app. Attaching it
+ * to the layout root escapes the sticky header's stacking context while staying
+ * inside the zoom, and puts it alongside the tab bar (z-index 200) where its
+ * own 390 wins.
  */
 
 export interface JobFilterState {
@@ -139,6 +157,16 @@ export default function JobFilters({
     return out;
   }, [jobs]);
 
+  /**
+   * Where the sheet mounts. Resolved on open rather than at module scope
+   * because this component renders on the server too, where there is no DOM.
+   */
+  const [host, setHost] = useState<Element | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    setHost(document.querySelector('.portal-layout') ?? document.body);
+  }, [open]);
+
   const active = activeFilterCount(value);
   const set = (key: GroupKey, v: string) =>
     onChange({ ...value, [key]: value[key] === v ? 'all' : v });
@@ -202,7 +230,7 @@ export default function JobFilters({
         </div>
       )}
 
-      {open && (
+      {open && host && createPortal(
         <div
           className="hf-sheet-scrim"
           onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
@@ -271,7 +299,8 @@ export default function JobFilters({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        host
       )}
     </>
   );
