@@ -6,8 +6,7 @@ import { fetchJobDetail, setJobApplied } from '@/app/actions/referrals';
 import type { JobDetail } from '@/server/repos/job-board';
 import PortalLoading from '@/components/portal/PortalLoading';
 import {
-  facetsOf, SENIORITY_LABELS, EMPLOYMENT_LABELS, ARRANGEMENT_LABELS,
-  familyLabel, languageLabel,
+  facetsOf, SENIORITY_LABELS, EMPLOYMENT_LABELS, ARRANGEMENT_LABELS, languageLabel,
 } from '@/lib/job-taxonomy';
 import {
   AlertCircle, BadgeCheck, Building2, CalendarDays, Check, ExternalLink,
@@ -136,25 +135,25 @@ export default function JobDetailPage() {
         </div>
       </div>
 
-      {/* Facts. Every chip is derived from what the posting actually says. */}
+      {/* A few facts, not every derivable one. The first version printed six
+          chips - two overlapping function labels, the department AND the
+          posted date - and the screen read as a wall of tags. Only the
+          notable ones earn a chip: an unusual contract, remote work, a
+          language that is an advantage. */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
         {job.location && (
           <span style={CHIP}><MapPin size={12} aria-hidden="true" /> {job.location}</span>
         )}
         <span style={CHIP}>{SENIORITY_LABELS[facets.seniority]}</span>
-        {facets.families.slice(0, 2).map((f) => (
-          <span key={f} style={CHIP}>{familyLabel(f)}</span>
-        ))}
         {facets.employment !== 'permanent' && (
           <span style={CHIP}>{EMPLOYMENT_LABELS[facets.employment]}</span>
         )}
         {facets.arrangement !== 'onsite' && (
           <span style={CHIP}>{ARRANGEMENT_LABELS[facets.arrangement]}</span>
         )}
-        {facets.languages.map((l) => (
+        {facets.languages.slice(0, 1).map((l) => (
           <span key={l} style={CHIP}>{languageLabel(l)}</span>
         ))}
-        {job.department && <span style={CHIP}><Building2 size={12} aria-hidden="true" /> {job.department}</span>}
         {posted && (
           <span style={CHIP}><CalendarDays size={12} aria-hidden="true" /> Posted {posted}</span>
         )}
@@ -235,23 +234,15 @@ export default function JobDetailPage() {
             </button>
           </div>
 
-          {/* One line under each, so the choice needs no thinking. */}
-          <div style={{
-            display: 'grid', gap: 8, marginBottom: 16, padding: '0.85rem',
-            border: HAIRLINE, borderRadius: 'var(--radius-lg)', background: 'var(--bg-primary)',
-          }}>
-            <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              <strong style={{ color: 'var(--text-primary)' }}>Apply on your own</strong> opens
-              the posting on {job.companyName}&rsquo;s own site and marks it here so you can
-              tell what you have already done.
+          {job.helperCount === 0 && (
+            <p style={{
+              margin: '0 0 14px', fontSize: '0.8rem', lineHeight: 1.5,
+              color: 'var(--text-secondary)',
+            }}>
+              Nobody at {job.companyName} has offered to refer yet, so applying
+              yourself is the faster route today.
             </p>
-            <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              <strong style={{ color: 'var(--text-primary)' }}>Ask for a referral</strong>{' '}
-              {job.helperCount > 0
-                ? `shows you the ${job.helperCount} member${job.helperCount === 1 ? '' : 's'} who work at ${job.companyName} and have offered to refer. You pick who to ask, and it opens a chat with them.`
-                : `is open to you, but nobody at ${job.companyName} has offered to refer yet. Applying yourself is the faster route today.`}
-            </p>
-          </div>
+          )}
 
           {job.applied && (
             <div style={{

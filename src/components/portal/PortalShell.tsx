@@ -12,7 +12,7 @@ import { unregisterPushDeviceAction } from '@/app/actions/push';
 import { readCache, writeCache, onIdle, CACHE_KEYS } from '@/lib/swr-cache';
 import { fetchHomeFeed } from '@/app/actions/portal';
 import { fetchCommunityStart } from '@/app/actions/community';
-import { fetchJobsHome } from '@/app/actions/referrals';
+import { fetchJobsBoard } from '@/app/actions/referrals';
 import { chatStart } from '@/app/actions/chat';
 import { notificationsStartAction } from '@/app/actions/notifications';
 import type { UserRole } from '@/types';
@@ -60,10 +60,10 @@ const WARM: {
   { href: '/portal/member/dashboard', key: CACHE_KEYS.dashboard, load: fetchHomeFeed },
   { href: '/portal/member/community', key: CACHE_KEYS.community, load: fetchCommunityStart },
   { href: '/portal/member/chats', key: CACHE_KEYS.chats, load: chatStart },
-  // fetchJobsHome, not fetchCompanies: the jobs tab reads this key as
-  // { companies, suggestions }, and warming it with a bare array would paint
-  // an empty screen from a cache hit.
-  { href: '/portal/member/jobs', key: CACHE_KEYS.jobs, load: fetchJobsHome },
+  // Must be the SAME action the jobs tab reads this key with. It has now been
+  // wrong twice: the tab paints from the cache first, so a warm that writes a
+  // different shape shows an empty board rather than a slow one.
+  { href: '/portal/member/jobs', key: CACHE_KEYS.jobs, load: fetchJobsBoard },
   { href: '/portal/member/notifications', key: CACHE_KEYS.notifications, load: () => notificationsStartAction({}) },
 ];
 
@@ -330,11 +330,24 @@ function PortalChrome({
   // (a push notification, a shared URL, the app's start URL) has no in-app
   // history, and history.back() there would leave the app entirely - so those
   // walk up to the parent section instead.
-  const navigated = React.useRef(false);
+  //
+  // State, not a ref: it also decides whether the control is SHOWN on a tab
+  // root, so the shell has to re-render when it flips.
+  const [hasHistory, setHasHistory] = React.useState(false);
   const startPath = React.useRef(pathname);
   React.useEffect(() => {
-    if (pathname !== startPath.current) navigated.current = true;
+    if (pathname !== startPath.current) setHasHistory(true);
   }, [pathname]);
+
+  /**
+   * Show Back whenever Back can actually do something.
+   *
+   * Deep pages always qualify. A tab root qualifies once the member has
+   * navigated within the app, because then it returns to the tab they came
+   * from - which is what they expect and what a browser back button would do.
+   * On a cold-loaded root there is nowhere to go, so no dead control appears.
+   */
+  const showBack = !atRoot || hasHistory;
 
   /** The nearest ancestor route that actually exists, else the dashboard. */
   const parentOf = (path: string): string => {
@@ -358,7 +371,7 @@ function PortalChrome({
     // it sent Back out of the app to a blank screen. A member who reloaded a
     // page therefore lands on the parent section rather than their previous
     // page - a smaller cost than Back appearing to break the app.
-    if (navigated.current) router.back();
+    if (hasHistory) router.back();
     else router.push(parentOf(pathname));
   };
 
@@ -439,7 +452,7 @@ function PortalChrome({
         {/* Phone back bar. A sibling ABOVE the content area, not inside it:
             pages with a full-bleed hero cancel the content padding with a
             negative margin, and a row inside would be covered by it. */}
-        {!atRoot && (
+        {showBack && (
           <div className="portal-back">
             <button type="button" onClick={goBack} aria-label="Go back">
               <ChevronRight size={18} aria-hidden="true" style={{ transform: 'rotate(180deg)' }} />
@@ -448,7 +461,7 @@ function PortalChrome({
           </div>
         )}
 
-        <div className={`portal-content-area${!atRoot ? ' has-back' : ''}`}>
+        <div className={`portal-content-area${showBack ? ' has-back' : ''}`}>
           {children}
         </div>
       </main>

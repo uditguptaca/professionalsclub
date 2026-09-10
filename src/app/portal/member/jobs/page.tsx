@@ -5,16 +5,15 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '@/context/app-context';
 import { fetchJobsBoard, fetchCompanyJobs } from '@/app/actions/referrals';
 import JobBoard from '@/components/portal/JobBoard';
+import JobFilters, {
+  NO_FILTERS, matchesJobFilters, activeFilterCount, type JobFilterState,
+} from '@/components/portal/JobFilters';
 import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
 import { companyPeople, requestReferral, referralQuota } from '@/app/actions/chat';
 import type { Company } from '@/types';
 import type { CompanyInsiderEntry } from '@/server/repos/chat';
 import type { ScoredJob } from '@/server/repos/referrals';
 import type { BoardRole } from '@/server/repos/job-board';
-import {
-  facetsOf, SENIORITY_LABELS, EMPLOYMENT_LABELS, ARRANGEMENT_LABELS,
-  familyLabel, languageLabel, type JobFacets,
-} from '@/lib/job-taxonomy';
 import {
   Search, Building2, Users, Briefcase, ArrowLeft, ArrowRight, ExternalLink,
   Check, Loader2, ShieldCheck, Send, AlertCircle, BadgeCheck, UserPlus, X,
@@ -267,46 +266,6 @@ const CardShimmer = ({ cards }: { cards: number }) => (
   </div>
 );
 
-/**
- * One row of filter pills, with counts.
- *
- * Renders NOTHING unless there are at least two values to choose between:
- * every role at a company being "Permanent" makes a Type filter a control that
- * cannot change anything.
- */
-function FacetRow({ label, options, value, onChange, labelOf, allLabel }: {
-  label: string;
-  options: [string, number][];
-  value: string;
-  onChange: (v: string) => void;
-  labelOf: (key: string) => string;
-  allLabel: string;
-}) {
-  if (options.length < 2) return null;
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-      <span style={{
-        flexShrink: 0, width: '4.4rem', fontSize: '0.72rem', fontWeight: 800,
-        letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)',
-      }}>
-        {label}
-      </span>
-      <div style={{ ...SEG_WRAP, minWidth: 0 }} role="group" aria-label={`Filter roles by ${label.toLowerCase()}`}>
-        <button type="button" style={seg(value === 'all')} aria-pressed={value === 'all'}
-          onClick={() => onChange('all')}>
-          {allLabel}
-        </button>
-        {options.map(([key, count]) => (
-          <button key={key} type="button" style={seg(value === key)} aria-pressed={value === key}
-            onClick={() => onChange(key)}>
-            {labelOf(key)} ({count})
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function MemberJobsPage() {
   const { currentUserId } = useApp();
   const router = useRouter();
@@ -323,7 +282,6 @@ export default function MemberJobsPage() {
   const [jobs, setJobs] = useState<ScoredJob[] | null>(null);
   const [jobsError, setJobsError] = useState('');
   const [jobSearch, setJobSearch] = useState('');
-  const [jobLoc, setJobLoc] = useState('all');
   const [shown, setShown] = useState(PAGE);
   const [picked, setPicked] = useState<Set<string>>(new Set());
 
@@ -332,11 +290,7 @@ export default function MemberJobsPage() {
    * feed leaves employment_type, province and description entirely empty, so
    * there is nothing else to filter on).
    */
-  const [seniority, setSeniority] = useState('all');
-  const [family, setFamily] = useState('all');
-  const [employment, setEmployment] = useState('all');
-  const [arrangement, setArrangement] = useState('all');
-  const [language, setLanguage] = useState('all');
+  const [roleFilters, setRoleFilters] = useState<JobFilterState>({ ...NO_FILTERS });
   const [sort, setSort] = useState<'match' | 'newest' | 'title'>('match');
 
   /** Every open role, for the role-first board. */
@@ -434,12 +388,7 @@ export default function MemberJobsPage() {
     setJobs(null);
     setJobsError('');
     setJobSearch('');
-    setJobLoc('all');
-    setSeniority('all');
-    setFamily('all');
-    setEmployment('all');
-    setArrangement('all');
-    setLanguage('all');
+    setRoleFilters({ ...NO_FILTERS });
     setSort('match');
     setShown(PAGE);
     setPicked(preselectJobId ? new Set([preselectJobId]) : new Set());
@@ -461,47 +410,6 @@ export default function MemberJobsPage() {
    * grid works with, so it falls back to a minimal stand-in when the directory
    * has not arrived yet - the roles screen only reads the name and logo.
    */
-  const jobLocations = useMemo(
-    () =>
-      [...new Set((jobs ?? []).map((j) => j.location?.trim()).filter(Boolean))]
-        // Workday multi-site postings ship the literal string "2 Locations" -
-        // useless as a filter, and the digits sorted them to the front.
-        .filter((l) => !/^\d+\s+locations?$/i.test(l as string))
-        .sort() as string[],
-    [jobs]
-  );
-
-  /** Facets per role, computed once from the title rather than per filter. */
-  const facets = useMemo(() => {
-    const map = new Map<string, JobFacets>();
-    for (const j of jobs ?? []) map.set(j.id, facetsOf(j.title, j.location ?? null));
-    return map;
-  }, [jobs]);
-
-  /**
-   * Only offer a filter value that actually exists in THIS employer's roles,
-   * with its count. A dropdown listing "Hybrid (0)" is worse than no dropdown:
-   * the feed's coverage varies wildly by company, and an empty option reads as
-   * a broken filter rather than an honest absence.
-   */
-  const facetOptions = useMemo(() => {
-    const tally = (pick: (f: JobFacets) => string[]) => {
-      const counts = new Map<string, number>();
-      for (const j of jobs ?? []) {
-        const f = facets.get(j.id);
-        if (!f) continue;
-        for (const v of pick(f)) counts.set(v, (counts.get(v) ?? 0) + 1);
-      }
-      return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-    };
-    return {
-      seniority: tally((f) => [f.seniority]),
-      family: tally((f) => f.families),
-      employment: tally((f) => [f.employment]),
-      arrangement: tally((f) => [f.arrangement]),
-      language: tally((f) => f.languages),
-    };
-  }, [jobs, facets]);
 
   const matchedCount = useMemo(
     () => (jobs ?? []).filter((j) => j.matchScore > 0).length,
@@ -511,15 +419,8 @@ export default function MemberJobsPage() {
   const visibleJobs = useMemo(() => {
     const q = jobSearch.trim().toLowerCase();
     const rows = (jobs ?? []).filter((j) => {
-      const f = facets.get(j.id);
       const matchQ = !q || j.title.toLowerCase().includes(q) || (j.location ?? '').toLowerCase().includes(q);
-      const matchL = jobLoc === 'all' || j.location?.trim() === jobLoc;
-      const matchS = seniority === 'all' || f?.seniority === seniority;
-      const matchF = family === 'all' || Boolean(f?.families.includes(family as never));
-      const matchE = employment === 'all' || f?.employment === employment;
-      const matchA = arrangement === 'all' || f?.arrangement === arrangement;
-      const matchLang = language === 'all' || Boolean(f?.languages.includes(language));
-      return matchQ && matchL && matchS && matchF && matchE && matchA && matchLang;
+      return matchQ && matchesJobFilters(j, roleFilters);
     });
     const byTitle = (a: ScoredJob, b: ScoredJob) => a.title.localeCompare(b.title);
     if (sort === 'title') return [...rows].sort(byTitle);
@@ -531,14 +432,13 @@ export default function MemberJobsPage() {
     // Best match: scored roles first, everything else in the feed's own order
     // underneath, so the list never LOSES roles just because nothing matched.
     return [...rows].sort((a, b) => b.matchScore - a.matchScore || byTitle(a, b));
-  }, [jobs, facets, jobSearch, jobLoc, seniority, family, employment, arrangement, language, sort]);
+  }, [jobs, jobSearch, roleFilters, sort]);
 
-  const roleFiltersOn = seniority !== 'all' || family !== 'all' || employment !== 'all'
-    || arrangement !== 'all' || language !== 'all' || jobLoc !== 'all' || Boolean(jobSearch.trim());
+  const roleFiltersOn = activeFilterCount(roleFilters) > 0 || Boolean(jobSearch.trim());
 
   const clearRoleFilters = () => {
-    setSeniority('all'); setFamily('all'); setEmployment('all');
-    setArrangement('all'); setLanguage('all'); setJobLoc('all'); setJobSearch('');
+    setRoleFilters({ ...NO_FILTERS });
+    setJobSearch('');
   };
 
   /** Only `shown` rows render; the rest are one tap away. */
@@ -1085,7 +985,7 @@ export default function MemberJobsPage() {
 
         {jobs !== null && jobs.length > 0 && (
           <>
-            <div style={{ ...SEARCH_WRAP, marginBottom: jobLocations.length > 1 ? 8 : 6 }}>
+            <div style={{ ...SEARCH_WRAP, marginBottom: 8 }}>
               <Search size={16} aria-hidden="true" style={SEARCH_ICON} />
               <input
                 id="jb-role-search"
@@ -1097,106 +997,43 @@ export default function MemberJobsPage() {
               />
             </div>
 
-            {jobLocations.length > 1 && (
-              <div style={{ ...SEG_WRAP, marginBottom: 6 }} role="group" aria-label="Filter roles by location">
-                <button
-                  type="button"
-                  style={seg(jobLoc === 'all')}
-                  aria-pressed={jobLoc === 'all'}
-                  onClick={() => { setJobLoc('all'); setShown(PAGE); }}
-                >
-                  All locations
-                </button>
-                {jobLocations.map((l) => (
-                  <button
-                    key={l}
-                    type="button"
-                    style={seg(jobLoc === l)}
-                    aria-pressed={jobLoc === l}
-                    onClick={() => { setJobLoc(l); setShown(PAGE); }}
-                  >
-                    {l}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Role facets. Each row appears only when this employer's roles
-                actually offer a choice, and every option carries its count -
-                see facetOptions for why an empty option is worse than none. */}
-            <FacetRow
-              label="Level"
-              options={facetOptions.seniority}
-              value={seniority}
-              onChange={(v) => { setSeniority(v); setShown(PAGE); }}
-              labelOf={(k) => SENIORITY_LABELS[k as keyof typeof SENIORITY_LABELS] ?? k}
-              allLabel="Any level"
-            />
-            <FacetRow
-              label="Function"
-              options={facetOptions.family}
-              value={family}
-              onChange={(v) => { setFamily(v); setShown(PAGE); }}
-              labelOf={familyLabel}
-              allLabel="All functions"
-            />
-            <FacetRow
-              label="Type"
-              options={facetOptions.employment}
-              value={employment}
-              onChange={(v) => { setEmployment(v); setShown(PAGE); }}
-              labelOf={(k) => EMPLOYMENT_LABELS[k as keyof typeof EMPLOYMENT_LABELS] ?? k}
-              allLabel="Any type"
-            />
-            <FacetRow
-              label="Setting"
-              options={facetOptions.arrangement}
-              value={arrangement}
-              onChange={(v) => { setArrangement(v); setShown(PAGE); }}
-              labelOf={(k) => ARRANGEMENT_LABELS[k as keyof typeof ARRANGEMENT_LABELS] ?? k}
-              allLabel="Anywhere"
-            />
-            <FacetRow
-              label="Language"
-              options={facetOptions.language}
-              value={language}
-              onChange={(v) => { setLanguage(v); setShown(PAGE); }}
-              labelOf={languageLabel}
-              allLabel="Any language"
-            />
-
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
-              margin: '8px 0 0 2px',
-            }}>
-              <div style={SEG_WRAP} role="group" aria-label="Sort roles">
-                {([
-                  ['match', matchedCount > 0 ? `Best match (${matchedCount})` : 'Best match'],
-                  ['newest', 'Newest'],
-                  ['title', 'A–Z'],
-                ] as const).map(([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    style={seg(sort === key)}
-                    aria-pressed={sort === key}
-                    onClick={() => { setSort(key); setShown(PAGE); }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
+            {/* One Filters button, same component as the board. This used to be
+                a location pill rail plus five stacked facet rows plus a sort
+                row - six control rows above the first role. */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <JobFilters
+                jobs={jobs}
+                value={roleFilters}
+                onChange={(next) => { setRoleFilters(next); setShown(PAGE); }}
+                resultCount={visibleJobs.length}
+              />
+              <label className="sr-only" htmlFor="jb-role-sort">Sort roles</label>
+              <select
+                id="jb-role-sort"
+                value={sort}
+                onChange={(e) => { setSort(e.target.value as 'match' | 'newest' | 'title'); setShown(PAGE); }}
+                style={{
+                  minHeight: 44, padding: '0 0.7rem', borderRadius: 999,
+                  border: '1px solid rgba(27,67,50,0.14)', background: 'var(--bg-primary)',
+                  color: 'var(--text-secondary)', font: 'inherit', fontSize: '0.86rem',
+                  fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                <option value="match">Best match</option>
+                <option value="newest">Newest</option>
+                <option value="title">A to Z</option>
+              </select>
               {roleFiltersOn && (
                 <button
                   type="button"
                   onClick={() => { clearRoleFilters(); setShown(PAGE); }}
                   style={{
-                    minHeight: 44, padding: '0 12px', border: 0, background: 'none',
+                    minHeight: 44, padding: '0 10px', border: 0, background: 'none',
                     color: 'var(--text-accent)', font: 'inherit', fontSize: '0.82rem',
                     fontWeight: 700, cursor: 'pointer',
                   }}
                 >
-                  Clear filters
+                  Clear
                 </button>
               )}
             </div>
@@ -1299,7 +1136,7 @@ export default function MemberJobsPage() {
                 type="button"
                 className="btn btn-outline"
                 style={{ marginTop: 14 }}
-                onClick={() => { setJobSearch(''); setJobLoc('all'); setShown(PAGE); }}
+                onClick={() => { clearRoleFilters(); setShown(PAGE); }}
               >
                 Clear filters
               </button>

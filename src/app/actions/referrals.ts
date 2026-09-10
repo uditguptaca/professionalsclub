@@ -40,11 +40,6 @@ export async function fetchCompanies(): Promise<ActionResult<Company[]>> {
   return run('Loading companies', async () => repo.listCompanies(await requireUserId()));
 }
 
-/** The jobs screen's first paint: employers plus this member's suggested roles. */
-export async function fetchJobsHome() {
-  return run('Loading jobs', async () => repo.jobsHome(await requireUserId()));
-}
-
 /**
  * The job board: every open role plus the employer directory, in one call.
  * Next runs a client Server Action calls one at a time, so splitting these

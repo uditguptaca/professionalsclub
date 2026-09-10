@@ -385,25 +385,6 @@ export async function suggestedRolesOn(
   return scored.slice(0, limit);
 }
 
-/**
- * The jobs screen's whole first paint: the employer directory and the roles
- * suggested for this member, in ONE Server Action. Next runs a client's action
- * calls one at a time, so asking separately cost two sequential round trips to
- * a remote database before anything appeared.
- */
-export async function jobsHome(userId: string): Promise<{
-  companies: Company[];
-  suggestions: SuggestedRole[];
-}> {
-  return withUserRead(userId, async (db) => {
-    const companies = await db`
-      select * from public.company_helper_counts
-       order by helper_count desc, open_jobs_count desc, name asc
-    `;
-    const suggestions = await suggestedRolesOn(db, userId);
-    return { companies: toDomainAll<Company>(companies), suggestions };
-  });
-}
 
 // ============================================================ Insider opt-in
 

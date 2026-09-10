@@ -2287,12 +2287,18 @@ a.portal-sheet-user:active { background: var(--green-900, #14532d); }
    tapping something could only be escaped through the tab bar, losing the
    member's place. Above 1024px the sidebar already answers "where am I", so it
    only appears on the phone layout. */
-.portal-back { display: none; }
+/* Shown at EVERY width. It was phone-only on the theory that a sidebar answers
+   "where am I" on a desktop - but a sidebar is not a back button, and on a
+   laptop the control simply appeared to be missing. */
+.portal-back {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem clamp(0.5rem, 2vw, 1rem) 0.15rem;
+  background: transparent;
+}
 @media (max-width: 1023px) {
   .portal-back {
-    display: flex;
-    align-items: center;
-    padding: calc(0.4rem + var(--sat)) clamp(0.5rem, 2vw, 1rem) 0.15rem;
+    padding-top: calc(0.4rem + var(--sat));
     background: var(--bg-secondary);
   }
   .portal-back button {
