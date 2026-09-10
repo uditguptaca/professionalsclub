@@ -122,10 +122,12 @@ export async function syncCompany(companyId: string): Promise<SyncResult> {
 
     // Anything the feed stopped mentioning is closed rather than deleted: a
     // referral request may still point at it, and a member should see that the
-    // role went away rather than find a broken page.
+    // role went away rather than find a broken page. close_reason records that
+    // the FEED retired it, so an operator can tell that apart from the link
+    // check having found a dead page (0043).
     const closedRows = await db`
       update public.company_jobs
-         set is_open = false
+         set is_open = false, close_reason = 'feed'
        where company_id = ${companyId}::uuid
          and is_open
          and last_seen_at < now() - interval '1 minute'
