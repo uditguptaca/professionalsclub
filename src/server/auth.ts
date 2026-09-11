@@ -176,5 +176,24 @@ export async function requireAdminId(): Promise<string> {
   return profile.id;
 }
 
+/**
+ * An admin, or an approved volunteer: the people who may add employers and
+ * roles to the job board (0044).
+ *
+ * This mirrors public.can_curate_jobs() rather than replacing it. The database
+ * policy is what actually decides - a volunteer's insert is stamped and pinned
+ * by a guard trigger on the same connection - and this exists so a member who
+ * finds the URL gets a sentence instead of a policy violation.
+ */
+export async function requireCuratorId(): Promise<string> {
+  const profile = await getCurrentProfile();
+  if (!profile) throw new Error('Not signed in.');
+  if (profile.accountStatus !== 'active') throw new Error('This account is not active.');
+  if (profile.role !== 'admin' && !profile.isVolunteer) {
+    throw new Error('Only admins and volunteers can add jobs.');
+  }
+  return profile.id;
+}
+
 export const displayName = (profile: Pick<Member, 'firstName' | 'lastName' | 'email'>) =>
   `${profile.firstName} ${profile.lastName}`.trim() || profile.email;

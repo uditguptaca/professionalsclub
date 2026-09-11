@@ -16,7 +16,7 @@ import type { ScoredJob } from '@/server/repos/referrals';
 import type { BoardRole } from '@/server/repos/job-board';
 import {
   Search, Building2, Users, Briefcase, ArrowLeft, ArrowRight, ExternalLink,
-  Check, Loader2, ShieldCheck, Send, AlertCircle, BadgeCheck, UserPlus, X,
+  Check, Loader2, ShieldCheck, Send, AlertCircle, BadgeCheck, UserPlus, X, Plus,
 } from 'lucide-react';
 
 /**
@@ -267,7 +267,10 @@ const CardShimmer = ({ cards }: { cards: number }) => (
 );
 
 export default function MemberJobsPage() {
-  const { currentUserId } = useApp();
+  const { currentUserId, profile } = useApp();
+  /** Admins and volunteers curate the board (0044). The database decides; this
+      only decides whether the entry point is worth showing. */
+  const canCurate = profile?.role === 'admin' || Boolean(profile?.isVolunteer);
   const router = useRouter();
 
   const [companies, setCompanies] = useState<Company[] | null>(null);
@@ -550,9 +553,16 @@ export default function MemberJobsPage() {
             Every open role our employers are advertising. Open one to apply
             yourself, or to ask a member who works there to refer you.
           </p>
-          <Link href="/portal/member/referrals" style={QUIET_LINK}>
-            My referral requests <ArrowRight size={14} aria-hidden="true" />
-          </Link>
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+            <Link href="/portal/member/referrals" style={QUIET_LINK}>
+              My referral requests <ArrowRight size={14} aria-hidden="true" />
+            </Link>
+            {canCurate && (
+              <Link href="/portal/member/jobs/add" style={QUIET_LINK}>
+                <Plus size={14} aria-hidden="true" /> Add a job
+              </Link>
+            )}
+          </div>
         </header>
 
         {/* Roles first. Browsing by employer used to be the only way in, which

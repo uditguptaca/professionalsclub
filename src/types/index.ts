@@ -589,6 +589,8 @@ export interface CompanyJob {
   lastSeenAt: string;
   isOpen: boolean;
   sourceKind: JobSourceKind | null;
+  /** Promoted by an admin or volunteer (0044). */
+  isFeatured?: boolean;
 }
 
 export interface CompanyInsider {

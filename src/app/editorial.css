@@ -116,13 +116,14 @@
   letter-spacing: -0.02em;
 }
 
-/* The whole portal renders 20% smaller (owner's call, 2026-08-27). zoom, not
-   a root font-size: the pages size heavily in inline px, which rem never
-   reaches. Standardized zoom leaves viewport units alone, so 100dvh surfaces
-   and the fixed tab bar still meet the screen edges.
-   ponytail: 16px inputs now paint at 12.8px - if iOS Safari ever auto-zooms
-   them on focus, bump those two composers to calc(16px / 0.8). */
-.portal-layout { zoom: 0.8; }
+/* The whole portal renders smaller than life size (owner's call, 2026-08-27,
+   raised from 0.8 to 0.88 on 2026-09-11 - 20% down read as tiny on a phone).
+   zoom, not a root font-size: the pages size heavily in inline px, which rem
+   never reaches. Standardized zoom leaves viewport units alone, so 100dvh
+   surfaces and the fixed tab bar still meet the screen edges.
+   ponytail: 16px inputs now paint at 14.1px - if iOS Safari ever auto-zooms
+   them on focus, bump those two composers to calc(16px / 0.88). */
+.portal-layout { zoom: 0.88; }
 
 /* The portal keeps a sans for headings. A soft serif is lovely over a hero
    photograph and actively unhelpful above a twelve-column data table. */

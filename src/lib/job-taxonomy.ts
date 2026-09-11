@@ -239,6 +239,8 @@ export interface JobLike {
   postedAt?: string | null;
   /** Whether anyone at that employer has offered to refer. */
   helperCount?: number;
+  /** An admin or volunteer promoted this role (0044). */
+  isFeatured?: boolean;
 }
 
 export interface MatchResult {
@@ -338,6 +340,13 @@ export function scoreJob(job: JobLike, profile: MatchProfile): MatchResult {
     score += 0.08;
     reasons.push('Someone here can refer you');
   }
+
+  // A featured role is one the club picked out by hand, so it outranks an
+  // equally good feed row. It is a BOOST and nothing more: it cannot carry a
+  // role over the suggestion threshold on its own (isSuggestable still wants a
+  // title word, the member's field or their skills), because featuring a
+  // warehouse job must never put it in front of a nurse.
+  if (job.isFeatured) score += 0.15;
 
   return {
     score: Math.round(score * 100) / 100,

@@ -1,6 +1,6 @@
 'use server';
 
-import { requireUserId, requireAdminId } from '@/server/auth';
+import { requireUserId, requireAdminId, requireCuratorId } from '@/server/auth';
 import * as repo from '@/server/repos/referrals';
 import * as board from '@/server/repos/job-board';
 import { drainOutbox } from '@/server/email';
@@ -117,6 +117,41 @@ export async function removeWhereIWork(companyId: string): Promise<ActionResult<
 
 // requestReferral / withdrawReferral / respondToReferralRequest retired in the
 // 0018 overhaul - direct referrals live in src/app/actions/chat.ts.
+
+// ========================================================== Curation (0044)
+
+/**
+ * Adding employers and roles is open to admins AND approved volunteers, who do
+ * the legwork of finding local employers. requireCuratorId() is the message
+ * layer; 0044's policies and guard triggers are the enforcement, and they pin a
+ * volunteer's row to their own id, a link-only employer and a manual role.
+ */
+
+export async function curatorAddEmployer(input: board.NewEmployer) {
+  return run('Adding the employer', async () =>
+    board.addEmployer(await requireCuratorId(), input));
+}
+
+export async function curatorAddRole(input: board.NewRole) {
+  return run('Adding the role', async () =>
+    board.addRole(await requireCuratorId(), input));
+}
+
+/** Promote a role so it is suggested to the members it suits, or take it down. */
+export async function curatorUpdateRole(
+  jobId: string,
+  patch: { isFeatured?: boolean; isOpen?: boolean }
+) {
+  return run('Updating the role', async () => {
+    const uid = await requireCuratorId();
+    if (typeof jobId !== 'string' || jobId.length !== 36) throw new Error('Unknown role.');
+    await board.updateRole(uid, jobId, {
+      isFeatured: typeof patch?.isFeatured === 'boolean' ? patch.isFeatured : undefined,
+      isOpen: typeof patch?.isOpen === 'boolean' ? patch.isOpen : undefined,
+    });
+    return null;
+  });
+}
 
 // ========================================================== Admin
 

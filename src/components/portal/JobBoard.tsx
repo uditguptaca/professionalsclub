@@ -5,7 +5,7 @@ import type { BoardRole } from '@/server/repos/job-board';
 import JobFilters, {
   NO_FILTERS, matchesJobFilters, activeFilterCount, type JobFilterState,
 } from '@/components/portal/JobFilters';
-import { BadgeCheck, Briefcase, Check, ChevronRight } from 'lucide-react';
+import { BadgeCheck, Briefcase, Check, ChevronRight, Star } from 'lucide-react';
 
 /**
  * Every open role, in one searchable list.
@@ -18,9 +18,10 @@ import { BadgeCheck, Briefcase, Check, ChevronRight } from 'lucide-react';
  * cluttered:
  *  - No stacked rows of filter pills. Everything lives behind one Filters
  *    button, so the screen is a search box and then jobs.
- *  - No separate "Suggested for you" list. The default sort already puts the
- *    member's matches on top and each one carries a green line saying why, so a
- *    second list of the same roles was duplication that cost a whole section.
+ *  - No second copy of the matched roles. "Suggested for you" is a HEADING over
+ *    the top of the one list, not a separate carousel: the same rows, said out
+ *    loud. An earlier version listed them twice and cost a whole section.
+ *  - No running count line. The two headings carry the counts now.
  *
  * Everything filters in the browser: the board is handed the whole open list on
  * purpose, so search and filters are instant instead of a round trip per
@@ -44,6 +45,27 @@ const SORTS = [
 
 type Sort = typeof SORTS[number][0];
 
+/** The heading that says, in as many words, why these roles are on top. */
+const SUGGESTED_HEAD: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap',
+  margin: '4px 0 8px', padding: '0.55rem 0.85rem', borderRadius: '0.9rem',
+  background: 'var(--green-50)', color: 'var(--green-800)',
+  fontSize: '0.88rem', fontWeight: 800, lineHeight: 1.35,
+};
+
+const PLAIN_HEAD: React.CSSProperties = {
+  margin: '14px 0 8px 2px', fontSize: '0.78rem', fontWeight: 800,
+  letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)',
+};
+
+const FLAG_ROW: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 2,
+};
+
+const flag = (color: string): React.CSSProperties => ({
+  display: 'inline-flex', alignItems: 'center', gap: 4, color, fontWeight: 750,
+});
+
 export default function JobBoard({ roles }: { roles: BoardRole[] }) {
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<JobFilterState>({ ...NO_FILTERS });
@@ -51,7 +73,6 @@ export default function JobBoard({ roles }: { roles: BoardRole[] }) {
   const [hideApplied, setHideApplied] = useState(false);
   const [shown, setShown] = useState(PAGE);
 
-  const matchedCount = useMemo(() => roles.filter((r) => r.matchScore > 0).length, [roles]);
   const appliedCount = useMemo(() => roles.filter((r) => r.applied).length, [roles]);
 
   const visible = useMemo(() => {
@@ -73,14 +94,35 @@ export default function JobBoard({ roles }: { roles: BoardRole[] }) {
         (b.postedAt ? Date.parse(b.postedAt) : 0) - (a.postedAt ? Date.parse(a.postedAt) : 0)
         || byTitle(a, b));
     }
-    // Best match first, then the feed's own order underneath, so the list never
-    // LOSES roles just because nothing matched this member.
-    return [...rows].sort((a, b) => b.matchScore - a.matchScore || byTitle(a, b));
+    // Best match first, then the club's own picks, then the feed's order - so
+    // the list never LOSES roles just because nothing matched this member.
+    return [...rows].sort((a, b) =>
+      b.matchScore - a.matchScore
+      || Number(b.isFeatured) - Number(a.isFeatured)
+      || byTitle(a, b));
   }, [roles, search, filters, hideApplied, sort]);
 
   const paged = visible.slice(0, shown);
   const moreLeft = visible.length - paged.length;
   const narrowed = Boolean(search.trim()) || activeFilterCount(filters) > 0 || hideApplied;
+
+  /**
+   * Two headings over one list, not two lists. Suggestions are already sorted
+   * to the front, so the split is just "where does the matched run end" - which
+   * keeps paging, filtering and the row markup identical for both halves.
+   */
+  const suggestedTotal = useMemo(
+    () => (sort === 'match' && !narrowed ? visible.filter((r) => r.matchScore > 0).length : 0),
+    [visible, sort, narrowed]
+  );
+
+  const groups = useMemo(() => {
+    if (suggestedTotal === 0) return [{ key: 'all', suggested: false, rows: paged }];
+    return [
+      { key: 'suggested', suggested: true, rows: paged.slice(0, suggestedTotal) },
+      { key: 'all', suggested: false, rows: paged.slice(suggestedTotal) },
+    ].filter((g) => g.rows.length > 0);
+  }, [paged, suggestedTotal]);
 
   const clearAll = () => {
     setSearch(''); setFilters({ ...NO_FILTERS }); setHideApplied(false); setShown(PAGE);
@@ -148,18 +190,17 @@ export default function JobBoard({ roles }: { roles: BoardRole[] }) {
         )}
       </div>
 
-      <p aria-live="polite" style={{
-        margin: '10px 0 8px 2px', fontSize: '0.78rem', fontWeight: 650, color: 'var(--text-muted)',
-      }}>
-        {narrowed
-          ? `${visible.length} of ${roles.length} roles`
-          : sort === 'match' && matchedCount > 0
-            ? `${roles.length} roles, your ${matchedCount} best matches first`
-            : `${roles.length} roles`}
-      </p>
+      {/* Only spoken when it changes - the headings below carry the counts. */}
+      {narrowed && (
+        <p aria-live="polite" style={{
+          margin: '10px 0 8px 2px', fontSize: '0.78rem', fontWeight: 650, color: 'var(--text-muted)',
+        }}>
+          {visible.length} of {roles.length} roles
+        </p>
+      )}
 
       {visible.length === 0 ? (
-        <div className="pp-group-card" style={{ textAlign: 'center', padding: '2.5rem 1.25rem' }}>
+        <div className="pp-group-card" style={{ textAlign: 'center', padding: '2.5rem 1.25rem', marginTop: 10 }}>
           <Briefcase size={26} aria-hidden="true" style={{ opacity: 0.35 }} />
           <p style={{
             margin: '0.8rem auto 0', maxWidth: '22rem', fontSize: '0.9rem',
@@ -177,41 +218,68 @@ export default function JobBoard({ roles }: { roles: BoardRole[] }) {
         </div>
       ) : (
         <>
-          <ul className="pp-group-card" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-            {paged.map((r, i) => (
-              <li key={r.id} style={{ borderBottom: i === paged.length - 1 ? 0 : HAIRLINE_SOFT }}>
-                {/* The whole row opens the role. The external-link shortcut that
-                    used to sit on the right is gone: two tap targets per row
-                    made a dense list feel busy, and the role screen is one tap
-                    away with a proper Apply button on it. */}
-                <Link
-                  href={`/portal/member/jobs/${r.id}`}
-                  className="pp-row"
-                  style={{ borderBottom: 0, textDecoration: 'none' }}
-                >
-                  <span className="pp-row-icon" aria-hidden="true"><Briefcase size={17} /></span>
-                  <span className="pp-row-body">
-                    <strong>{r.title}</strong>
-                    <small style={ELLIPSIS}>
-                      {[r.companyName, r.location].filter(Boolean).join(' · ')}
-                    </small>
-                    {(r.matchReasons.length > 0 || r.applied) && (
-                      <small style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 2,
-                        color: r.applied ? 'var(--text-muted)' : 'var(--success-600)',
-                        fontWeight: 750,
-                      }}>
-                        {r.applied
-                          ? <><Check size={12} aria-hidden="true" /> Applied</>
-                          : <><BadgeCheck size={12} aria-hidden="true" /> {r.matchReasons[0]}</>}
-                      </small>
-                    )}
+          {groups.map((g) => (
+            <section key={g.key}>
+              {g.suggested ? (
+                <h2 style={SUGGESTED_HEAD}>
+                  <BadgeCheck size={16} aria-hidden="true" style={{ flexShrink: 0 }} />
+                  Suggested for you
+                  <span style={{
+                    flexBasis: '100%', marginLeft: 23,
+                    fontSize: '0.8rem', fontWeight: 650, opacity: 0.85,
+                  }}>
+                    Matched to your job title, field and experience
                   </span>
-                  <ChevronRight size={16} aria-hidden="true" style={{ flexShrink: 0, color: 'var(--text-muted)' }} />
-                </Link>
-              </li>
-            ))}
-          </ul>
+                </h2>
+              ) : suggestedTotal > 0 ? (
+                <h2 style={PLAIN_HEAD}>Everything else ({visible.length - suggestedTotal})</h2>
+              ) : null}
+
+              <ul className="pp-group-card" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                {g.rows.map((r, i) => (
+                  <li key={r.id} style={{ borderBottom: i === g.rows.length - 1 ? 0 : HAIRLINE_SOFT }}>
+                    {/* The whole row opens the role. The external-link shortcut
+                        that used to sit on the right is gone: two tap targets
+                        per row made a dense list feel busy, and the role screen
+                        is one tap away with a proper Apply button on it. */}
+                    <Link
+                      href={`/portal/member/jobs/${r.id}`}
+                      className="pp-row"
+                      style={{ borderBottom: 0, textDecoration: 'none' }}
+                    >
+                      <span className="pp-row-icon" aria-hidden="true"><Briefcase size={17} /></span>
+                      <span className="pp-row-body">
+                        <strong>{r.title}</strong>
+                        <small style={ELLIPSIS}>
+                          {[r.companyName, r.location].filter(Boolean).join(' · ')}
+                        </small>
+                        {(r.isFeatured || r.matchReasons.length > 0 || r.applied) && (
+                          <small style={FLAG_ROW}>
+                            {r.isFeatured && (
+                              <span style={flag('var(--text-accent)')}>
+                                <Star size={12} aria-hidden="true" fill="currentColor" /> Featured
+                              </span>
+                            )}
+                            {r.applied ? (
+                              <span style={flag('var(--text-muted)')}>
+                                <Check size={12} aria-hidden="true" /> Applied
+                              </span>
+                            ) : r.matchReasons.length > 0 && (
+                              <span style={flag('var(--success-600)')}>
+                                <BadgeCheck size={12} aria-hidden="true" /> {r.matchReasons[0]}
+                              </span>
+                            )}
+                          </small>
+                        )}
+                      </span>
+                      <ChevronRight size={16} aria-hidden="true" style={{ flexShrink: 0, color: 'var(--text-muted)' }} />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+
           {moreLeft > 0 && (
             <button
               type="button"

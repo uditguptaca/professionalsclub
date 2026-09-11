@@ -1,7 +1,7 @@
 import 'server-only';
-import { withUser, withUserRead } from '@/server/db';
-import { toDomainAll } from '@/server/case';
-import type { Company } from '@/types';
+import { withUser, withUserRead, one } from '@/server/db';
+import { toDomain, toDomainAll } from '@/server/case';
+import type { Company, CompanyJob } from '@/types';
 import {
   scoreJob, isSuggestable, canMatch, type MatchProfile,
 } from '@/lib/job-taxonomy';
@@ -49,6 +49,8 @@ export interface BoardRole {
   matchReasons: string[];
   /** This member marked that they applied on their own. */
   applied: boolean;
+  /** Picked out by an admin or a volunteer (0044). */
+  isFeatured: boolean;
 }
 
 /**
@@ -70,6 +72,7 @@ function rank(role: BoardRole, profile: MatchProfile, matchable: boolean): Board
       location: role.location,
       postedAt: role.postedAt,
       helperCount: role.helperCount,
+      isFeatured: role.isFeatured,
     },
     profile
   );
@@ -97,6 +100,7 @@ export async function jobsBoard(userId: string): Promise<{
         ) t) as companies,
         (select coalesce(json_agg(t), '[]'::json) from (
           select j.id, j.title, j.location, j.department, j.posted_at, j.apply_url,
+                 j.is_featured,
                  co.id as company_id, co.name as company_name, co.logo as company_logo,
                  (select count(*) from public.company_insiders i
                    where i.company_id = co.id and i.can_refer)::int as helper_count,
@@ -105,7 +109,9 @@ export async function jobsBoard(userId: string): Promise<{
             from public.company_jobs j
             join public.companies co on co.id = j.company_id
            where j.is_open and co.is_active
-           order by j.posted_at desc nulls last, j.title asc
+           -- Featured first so a hand-picked role can never fall off the end of
+           -- BOARD_LIMIT, which is what would happen on the date order alone.
+           order by j.is_featured desc, j.posted_at desc nulls last, j.title asc
            limit ${BOARD_LIMIT}
         ) t) as roles
     `;
@@ -128,6 +134,7 @@ export async function jobsBoard(userId: string): Promise<{
       matchScore: 0,
       matchReasons: [],
       applied: Boolean(j.applied),
+      isFeatured: Boolean(j.is_featured),
     }, profile, matchable));
 
     return {
@@ -167,6 +174,7 @@ export async function jobDetail(userId: string, jobId: string): Promise<JobDetai
       )
       select j.id, j.title, j.location, j.department, j.posted_at, j.apply_url,
              j.description_snippet, j.employment_type, j.is_open, j.closed_at,
+             j.is_featured,
              co.id as company_id, co.name as company_name, co.logo as company_logo,
              co.slug as company_slug, co.industry as company_industry,
              co.city as company_city, co.careers_url,
@@ -197,6 +205,7 @@ export async function jobDetail(userId: string, jobId: string): Promise<JobDetai
       matchScore: 0,
       matchReasons: [],
       applied: Boolean(j.applied),
+      isFeatured: Boolean(j.is_featured),
     };
     const ranked = rank(base, profile, canMatch(profile));
 
@@ -237,6 +246,137 @@ export async function setJobApplied(
         delete from public.job_applications
          where job_id = ${jobId}::uuid and member_id = ${userId}::uuid
       `;
+    }
+  });
+}
+
+// ============================================================ Curation (0044)
+
+/**
+ * Adding employers and roles, by an admin OR an approved volunteer.
+ *
+ * Nothing here decides who is allowed: 0044's policies and guard triggers do,
+ * on the same connection as the write. A volunteer's INSERT is stamped with
+ * their id and pinned to a link-only employer / a manual role no matter what
+ * this code sends, and an UPDATE they are not entitled to simply matches no
+ * row. So the checks in the Server Action above are for the error MESSAGE,
+ * and the database is what actually holds the line.
+ */
+
+const slugify = (name: string): string =>
+  name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+
+const UNIQUE_VIOLATION = '23505';
+
+export interface NewEmployer {
+  name: string;
+  city?: string;
+  industry?: string;
+  website?: string;
+  careersUrl?: string;
+}
+
+export async function addEmployer(userId: string, input: NewEmployer): Promise<Company> {
+  const name = String(input.name ?? '').trim();
+  if (name.length < 2) throw new Error('Enter the employer name.');
+
+  const url = (v: string | undefined, label: string): string | null => {
+    const s = String(v ?? '').trim();
+    if (!s) return null;
+    if (!/^https?:\/\//i.test(s)) throw new Error(`Enter the full ${label}, starting with https://`);
+    return s;
+  };
+  const website = url(input.website, 'website address');
+  const careersUrl = url(input.careersUrl, 'careers page address');
+
+  const insert = (slug: string) => withUser(userId, async (db) => {
+    const row = await one(await db`
+      insert into public.companies (name, slug, industry, city, website, careers_url)
+      values (
+        ${name}, ${slug}, ${input.industry?.trim() || null}, ${input.city?.trim() || null},
+        ${website}, ${careersUrl}
+      )
+      returning *
+    `);
+    if (!row) throw new Error('Could not add the employer.');
+    return toDomain<Company>(row);
+  });
+
+  const slug = slugify(name) || 'employer';
+  try {
+    return await insert(slug);
+  } catch (e) {
+    // Two employers really can share a name ("Metro"), and an inactive one the
+    // caller cannot even read still holds its slug - so the retry is the only
+    // way to tell "already listed" from "name collision".
+    if ((e as { code?: string })?.code !== UNIQUE_VIOLATION) throw e;
+    return insert(`${slug}-${Math.random().toString(36).slice(2, 6)}`);
+  }
+}
+
+export interface NewRole {
+  companyId: string;
+  title: string;
+  location?: string;
+  applyUrl: string;
+  isFeatured?: boolean;
+}
+
+export async function addRole(userId: string, input: NewRole): Promise<CompanyJob> {
+  const title = String(input.title ?? '').trim();
+  const applyUrl = String(input.applyUrl ?? '').trim();
+  if (title.length < 2) throw new Error('Enter the role title.');
+  if (!/^https?:\/\//i.test(applyUrl)) throw new Error('Enter the full apply link, starting with https://');
+  if (typeof input.companyId !== 'string' || input.companyId.length !== 36) {
+    throw new Error('Pick the employer this role is with.');
+  }
+
+  return withUser(userId, async (db) => {
+    const row = await one(await db`
+      insert into public.company_jobs (
+        company_id, external_id, title, location, apply_url, source_kind,
+        is_featured, posted_at
+      ) values (
+        ${input.companyId}::uuid,
+        ${'manual-' + Math.random().toString(36).slice(2, 10)},
+        ${title}, ${input.location?.trim() || null}, ${applyUrl}, 'manual',
+        ${Boolean(input.isFeatured)}, now()
+      )
+      returning *
+    `);
+    if (!row) throw new Error('Could not add the role.');
+    return toDomain<CompanyJob>(row);
+  });
+}
+
+/**
+ * Promote a role, or take it down.
+ *
+ * An admin may do either to any role; a volunteer only to one they added, which
+ * the UPDATE policy enforces by matching no row - so an empty result is a
+ * refusal, not a no-op, and says so. closed_at is left to the 0043 trigger.
+ */
+export async function updateRole(
+  userId: string,
+  jobId: string,
+  patch: { isFeatured?: boolean; isOpen?: boolean }
+): Promise<void> {
+  const featured = patch.isFeatured ?? null;
+  const open = patch.isOpen ?? null;
+  if (featured === null && open === null) return;
+
+  await withUser(userId, async (db) => {
+    const rows = await db`
+      update public.company_jobs
+         set is_featured  = coalesce(${featured}::boolean, is_featured),
+             is_open      = coalesce(${open}::boolean, is_open),
+             close_reason = case when ${open}::boolean is false then 'admin'
+                                 else close_reason end
+       where id = ${jobId}::uuid
+      returning id
+    `;
+    if (rows.length === 0) {
+      throw new Error('You can only change roles you added yourself.');
     }
   });
 }
