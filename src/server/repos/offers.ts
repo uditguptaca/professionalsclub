@@ -322,7 +322,16 @@ export async function memberBusinessPage(
             ) order by r.created_at desc)
               from public.coupon_redemptions r
               join public.business_coupons c on c.id = r.coupon_id
-             where r.business_id = b.id and r.member_id = $1 and r.status = 'reserved'
+             where r.business_id = b.id and r.member_id = $1
+               -- A held in-store code, OR an online claim: claiming an online
+               -- coupon marks it redeemed on the spot (there is no till to
+               -- confirm it), and the promo code it unlocked is the thing the
+               -- member came here to see. Bounded by the coupon's own end date.
+               and (
+                 r.status = 'reserved'
+                 or (r.status = 'redeemed' and c.redeem_mode = 'online'
+                     and (c.ends_at is null or c.ends_at > now()))
+               )
           ), '[]'::json)
         ) from biz b
       ) end as payload

@@ -87,8 +87,16 @@ export default function MemberOffersPage() {
 
   if (loading) return <PortalLoading label="Loading member offers" />;
 
-  const live = (data?.myCodes ?? []).filter((c) => c.status === 'reserved');
-  const used = (data?.myCodes ?? []).filter((c) => c.status === 'redeemed');
+  // "Live" is anything the member can still act on: a held in-store code, or
+  // an online claim whose promo code still works. Online claims are marked
+  // redeemed the moment they are made (no till confirms them), so filtering on
+  // status alone filed the promo code under "already used" - the one place a
+  // member about to type it into a checkout would never look.
+  const usable = (c: { status: string; redeemMode: string; expiresAt: string | null }) =>
+    c.status === 'reserved'
+    || (c.redeemMode === 'online' && (!c.expiresAt || Date.parse(c.expiresAt) > Date.now()));
+  const live = (data?.myCodes ?? []).filter(usable);
+  const used = (data?.myCodes ?? []).filter((c) => c.status === 'redeemed' && !usable(c));
   const coupons = data?.coupons ?? [];
 
   return (
