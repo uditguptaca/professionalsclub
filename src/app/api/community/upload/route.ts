@@ -1,6 +1,6 @@
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 import { NextResponse, type NextRequest } from 'next/server';
-import { requireUserId } from '@/server/auth';
+import { requireUserId, getBusinessUser } from '@/server/auth';
 
 /**
  * Token exchange for Vercel Blob client uploads.
@@ -8,7 +8,10 @@ import { requireUserId } from '@/server/auth';
  * The browser uploads media straight to Blob storage (so videos are not
  * squeezed through a serverless function's body limit); this route only
  * decides WHO may upload WHAT:
- *   - a signed-in, active member (requireUserId throws otherwise),
+ *   - a signed-in, active member, or an invited business owner (0046) posting
+ *     their own logo, event photos and coupon artwork - they are authenticated
+ *     but have no member profile, so requireUserId() alone would lock them out
+ *     of their own console,
  *   - images, mp4/webm video, or a PDF/Word document,
  *   - capped at 8 MB per image or document and 120 MB per video.
  *
@@ -40,7 +43,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     userId = await requireUserId();
   } catch {
-    return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
+    const business = await getBusinessUser();
+    if (!business) return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
+    userId = business.userId;
   }
 
   const body = (await request.json()) as HandleUploadBody;

@@ -57,6 +57,14 @@ export const getSession = cache(async (): Promise<Session | null> => {
  * user.
  */
 async function ensureProfile(session: Session): Promise<void> {
+  // A business account (0046) is an authenticated user with deliberately NO
+  // profile row - that absence is what keeps it out of the member directory,
+  // the chat and the matrimony pool. Back-filling one here would hand every
+  // invited business owner a member account on their first login. The database
+  // refuses it too (profiles_reject_business_account); this just avoids
+  // throwing on a perfectly normal sign-in.
+  if (await getBusinessUser()) return;
+
   const [firstName = '', ...rest] = (session.name ?? '').trim().split(/\s+/);
 
   await withElevated(async (db) => {
@@ -68,6 +76,69 @@ async function ensureProfile(session: Session): Promise<void> {
       )
     `;
   });
+}
+
+/** A signed-in business owner: which business, and are they still enabled. */
+export interface BusinessUser {
+  userId: string;
+  businessId: string;
+  businessName: string;
+  businessSlug: string;
+  verificationStatus: string;
+  email: string;
+  fullName: string;
+}
+
+/**
+ * The business account for this session, if that is what this session is.
+ *
+ * Elevated for one reason: it is called on sessions that have no profile, and
+ * the point of the lookup is to find out whether that is because they are a
+ * business. It reads one row, keyed by the caller's own session id, and can
+ * return nothing else.
+ */
+export const getBusinessUser = cache(async (): Promise<BusinessUser | null> => {
+  const session = await getSession();
+  if (!session) return null;
+
+  const row = await withElevated(async (db) =>
+    one<Record<string, unknown>>(await db`
+      select u.user_id, u.business_id, u.email, u.full_name,
+             b.name as business_name, b.slug as business_slug,
+             b.verification_status
+        from public.business_users u
+        join public.businesses b on b.id = u.business_id
+       where u.user_id = ${session.userId}::uuid and u.status = 'active'
+    `)
+  );
+  if (!row) return null;
+
+  return {
+    userId: row.user_id as string,
+    businessId: row.business_id as string,
+    businessName: row.business_name as string,
+    businessSlug: row.business_slug as string,
+    verificationStatus: row.verification_status as string,
+    email: row.email as string,
+    fullName: (row.full_name as string) ?? '',
+  };
+});
+
+/** Requires a business owner session. Members are sent back to their own side. */
+export async function requireBusinessUser(): Promise<BusinessUser> {
+  const business = await getBusinessUser();
+  if (business) return business;
+
+  const profile = await getCurrentProfile();
+  if (profile) redirect('/portal/member/dashboard');
+  redirect('/portal/auth');
+}
+
+/** The business-owner equivalent of requireUserId(), for Server Actions. */
+export async function requireBusinessUserId(): Promise<string> {
+  const business = await getBusinessUser();
+  if (!business) throw new Error('This is a business owner action.');
+  return business.userId;
 }
 
 /**
@@ -120,7 +191,13 @@ export const getCurrentProfile = cache(async (): Promise<Member | null> => {
 export async function requireProfile(): Promise<Member> {
   const profile = await getCurrentProfile();
 
-  if (!profile) redirect('/portal/auth');
+  if (!profile) {
+    // A business owner is signed in perfectly well, just not as a member.
+    // Sending them to the login screen they just came through reads as a
+    // broken loop; send them to their own console instead.
+    if (await getBusinessUser()) redirect('/portal/business');
+    redirect('/portal/auth');
+  }
   if (profile.accountStatus !== 'active') redirect('/portal/auth?error=account_inactive');
 
   return profile;

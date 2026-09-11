@@ -1,18 +1,20 @@
 import Link from 'next/link';
-import { Calendar, Users, MapPin } from 'lucide-react';
+import { Calendar, Users, MapPin, Ticket, Plus, ChevronRight } from 'lucide-react';
 import { requireProfile } from '@/server/auth';
-import RsvpButton from '@/components/portal/RsvpButton';
 import { listMemberEvents } from '@/server/repos/home';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * The portal Events tab: every upcoming event, the member's city first, in the
- * same card language as the home feed. A server component — the list is
- * read-only and the member layout has already authenticated the request.
+ * The portal Events tab: every upcoming event, the member's city first.
  *
- * Each group is its own .hf-section so the feed's own section gap does the
- * spacing; nesting them in one section put city and elsewhere 0.7rem apart.
+ * A card is now a door rather than a leaflet - it opens the event's own page,
+ * where the pictures, the price, the venue and the RSVP live. The RSVP button
+ * that used to sit on the card is gone with it: two tap targets per card made
+ * the list feel busy, and the decision belongs next to the detail it depends on.
+ *
+ * A server component. The list is read-only and the member layout has already
+ * authenticated the request.
  */
 
 const monthDay = (iso: string | null): string => {
@@ -20,20 +22,19 @@ const monthDay = (iso: string | null): string => {
   return new Date(iso).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
 };
 
+const money = (cents: number, currency: string) =>
+  new Intl.NumberFormat('en-CA', { style: 'currency', currency, minimumFractionDigits: 0 })
+    .format(cents / 100);
+
 export default async function MemberEventsPage() {
   const profile = await requireProfile();
   const { city, events } = await listMemberEvents(profile.id);
   const inCity = events.filter((e) => e.inCity);
   const elsewhere = events.filter((e) => !e.inCity);
+  const canCurate = profile.role === 'admin' || profile.isVolunteer;
 
   const card = (e: (typeof events)[number]) => (
-    <a
-      key={e.id}
-      href={e.rsvpUrl ?? undefined}
-      className="hf-event card"
-      target={e.rsvpUrl ? '_blank' : undefined}
-      rel={e.rsvpUrl ? 'noopener noreferrer' : undefined}
-    >
+    <Link key={e.id} href={`/portal/member/events/${e.id}`} className="hf-event card">
       <span className="hf-event-media">
         {e.image
           ? <img src={e.image} alt="" aria-hidden="true" loading="lazy" decoding="async" />
@@ -44,15 +45,20 @@ export default async function MemberEventsPage() {
         <strong>{e.title}</strong>
         {e.businessName && <small className="hf-event-host">Hosted by {e.businessName}</small>}
         <small><Calendar size={12} aria-hidden="true" /> {monthDay(e.date)}{e.time ? ` · ${e.time}` : ''}</small>
-        <small><Users size={12} aria-hidden="true" /> {e.attendees + e.going} attending{e.location ? ` · ${e.location}` : ''}</small>
-        <RsvpButton
-          eventId={e.id}
-          initialGoing={e.going}
-          initialMyRsvp={e.myRsvp}
-          baseAttendees={e.attendees}
-        />
+        <small>
+          <Users size={12} aria-hidden="true" /> {e.attendees + e.going} going
+          {e.venueName || e.location ? ` · ${e.venueName ?? e.location}` : ''}
+        </small>
+        <small style={{
+          display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 2, fontWeight: 750,
+          color: e.admission === 'paid' ? 'var(--text-accent)' : 'var(--success-600)',
+        }}>
+          <Ticket size={12} aria-hidden="true" />
+          {e.admission === 'paid' ? money(e.priceCents, e.currency) : 'Free'}
+          {e.eventType === 'virtual' ? ' · Online' : e.eventType === 'hybrid' ? ' · Online or in person' : ''}
+        </small>
       </span>
-    </a>
+    </Link>
   );
 
   return (
@@ -70,6 +76,17 @@ export default async function MemberEventsPage() {
           <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
             {city ? `Everything coming up, ${city} first.` : 'Everything coming up across the club.'}
           </p>
+          {canCurate && (
+            <Link
+              href="/portal/member/events/manage"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5, minHeight: 44,
+                fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-accent)', textDecoration: 'none',
+              }}
+            >
+              <Plus size={14} aria-hidden="true" /> Post an event
+            </Link>
+          )}
         </section>
 
         {events.length === 0 && (
@@ -99,7 +116,7 @@ export default async function MemberEventsPage() {
           <section className="hf-section">
             <div className="hf-section-head">
               <h2>{inCity.length > 0 ? 'Everywhere else' : 'Upcoming events'}</h2>
-              {!city && <Link href="/portal/member/dashboard">Set your city</Link>}
+              {!city && <Link href="/portal/member/profile">Set your city <ChevronRight size={13} aria-hidden="true" /></Link>}
             </div>
             <div className="hf-events">{elsewhere.map(card)}</div>
           </section>

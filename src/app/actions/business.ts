@@ -1,39 +1,69 @@
 'use server';
 
-import { requireUserId } from '@/server/auth';
+import { requireUserId, requireAdminId, getBusinessUser } from '@/server/auth';
 import * as repo from '@/server/repos/business';
+import * as invites from '@/server/repos/business-invites';
 import { setEventRsvp } from '@/server/repos/home';
 
 /**
  * Server Actions for the business owner module, plus the member RSVP toggle.
  *
  * Every export is a public HTTP endpoint: the caller is resolved from the
- * session, never a parameter, and everything is enforced again by the 0039
- * policies and guard triggers - an owner cannot verify, feature, or inflate
- * anything from here no matter what the payload says.
+ * session, never a parameter, and everything is enforced again by the 0039,
+ * 0046 and 0047 policies - an owner cannot verify, feature, or inflate anything
+ * from here no matter what the payload says.
+ *
+ * TWO KINDS OF OWNER reach this file. A member who registered a business before
+ * invites existed signs in as a member; an invited business account (0046) has
+ * no member profile at all, so requireUserId() would throw for them. ownerId()
+ * accepts either and resolves both from the session.
  */
 
 export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
+/**
+ * What the caller is allowed to see about a failure.
+ *
+ * Anything our own code threw is written for the person reading it and goes
+ * through. Anything Postgres threw is masked, because those messages name
+ * tables, policies and constraints - with one exception: P0002 is the code the
+ * coupon functions raise deliberately ("you have already claimed this offer"),
+ * and swallowing it would replace a clear answer with a shrug.
+ */
 function fail(context: string, error: unknown): { ok: false; error: string } {
   const detail = error instanceof Error ? error.message : String(error);
-  console.error(`[business] ${context}:`, detail);
-  const safe =
-    detail.startsWith('Not signed in') ||
-    detail.startsWith('This account is not active') ||
-    detail.startsWith('Business name is required') ||
-    detail.startsWith('Pick a category') ||
-    detail.startsWith('Pick a city') ||
-    detail.startsWith('You already have a business') ||
-    detail.startsWith('Offer title is required') ||
-    detail.startsWith('Event title is required') ||
-    detail.startsWith('Location is required');
-  return { ok: false, error: safe ? detail : `${context} failed. Please try again.` };
+  const code = (error as { code?: string } | null)?.code;
+  console.error(`[business] ${context}:`, code ?? '', detail);
+  const speakable = !code || code === 'P0002';
+  return { ok: false, error: speakable ? detail : `${context} failed. Please try again.` };
+}
+
+/** The signed-in owner: an invited business account, or a member who owns one. */
+async function ownerId(): Promise<string> {
+  const business = await getBusinessUser();
+  if (business) return business.userId;
+  return requireUserId();
 }
 
 async function run<T>(context: string, fn: (userId: string) => Promise<T>): Promise<ActionResult<T>> {
   try {
+    return { ok: true, data: await fn(await ownerId()) };
+  } catch (error) {
+    return fail(context, error);
+  }
+}
+
+async function runMember<T>(context: string, fn: (userId: string) => Promise<T>): Promise<ActionResult<T>> {
+  try {
     return { ok: true, data: await fn(await requireUserId()) };
+  } catch (error) {
+    return fail(context, error);
+  }
+}
+
+async function runAdmin<T>(context: string, fn: (adminId: string) => Promise<T>): Promise<ActionResult<T>> {
+  try {
+    return { ok: true, data: await fn(await requireAdminId()) };
   } catch (error) {
     return fail(context, error);
   }
@@ -43,13 +73,6 @@ async function run<T>(context: string, fn: (userId: string) => Promise<T>): Prom
 
 export async function fetchBusinessHomeAction(): Promise<ActionResult<repo.BusinessHome>> {
   return run('Loading your business', (uid) => repo.fetchBusinessHome(uid));
-}
-
-export async function registerBusinessAction(data: {
-  name: string; category: string; city: string; province: string;
-  descriptionShort?: string; phone?: string; email?: string; website?: string;
-}): Promise<ActionResult<{ id: string; slug: string }>> {
-  return run('Registering your business', (uid) => repo.registerBusiness(uid, data));
 }
 
 export async function updateMyBusinessAction(
@@ -91,6 +114,44 @@ export async function deleteOfferAction(offerId: string): Promise<ActionResult<r
   });
 }
 
+// ---- Coupons -------------------------------------------------------------------
+
+export async function createCouponAction(
+  businessId: string,
+  data: Record<string, unknown>
+): Promise<ActionResult<repo.BusinessHome>> {
+  return run('Creating the coupon', async (uid) => {
+    await repo.createCoupon(uid, businessId, data);
+    return repo.fetchBusinessHome(uid);
+  });
+}
+
+export async function updateCouponAction(
+  couponId: string,
+  data: Record<string, unknown>
+): Promise<ActionResult<repo.BusinessHome>> {
+  return run('Saving the coupon', async (uid) => {
+    await repo.updateCoupon(uid, couponId, data);
+    return repo.fetchBusinessHome(uid);
+  });
+}
+
+export async function deleteCouponAction(couponId: string): Promise<ActionResult<repo.BusinessHome>> {
+  return run('Removing the coupon', async (uid) => {
+    await repo.deleteCoupon(uid, couponId);
+    return repo.fetchBusinessHome(uid);
+  });
+}
+
+export async function couponActivityAction(): Promise<ActionResult<repo.CouponActivity[]>> {
+  return run('Loading coupon activity', (uid) => repo.couponActivity(uid));
+}
+
+/** The till: a member shows a code, the business types it in. */
+export async function redeemCodeAction(code: string): Promise<ActionResult<repo.RedeemOutcome>> {
+  return run('Checking the code', (uid) => repo.redeemCode(uid, code));
+}
+
 // ---- Business events ------------------------------------------------------------
 
 export async function createBusinessEventAction(
@@ -126,5 +187,66 @@ export async function rsvpEventAction(
   eventId: string,
   going: boolean
 ): Promise<ActionResult<{ going: number; myRsvp: boolean }>> {
-  return run('Updating your RSVP', (uid) => setEventRsvp(uid, eventId, going));
+  return runMember('Updating your RSVP', (uid) => setEventRsvp(uid, eventId, going));
+}
+
+// ---- Admin: who may log in as a business ----------------------------------------
+
+export async function adminListInvitesAction(): Promise<ActionResult<{
+  invites: invites.BusinessInvite[]; logins: invites.BusinessLogin[];
+}>> {
+  return runAdmin('Loading business logins', async (adminId) => ({
+    invites: await invites.listInvites(adminId),
+    logins: await invites.listBusinessLogins(adminId),
+  }));
+}
+
+/**
+ * Invite one address to run one business, and send them the link.
+ *
+ * The token comes back to the admin screen as well as going out by email: the
+ * club runs on WhatsApp as much as on mail, and an admin who can see the link
+ * can hand it over directly rather than debugging deliverability.
+ */
+export async function adminInviteBusinessAction(
+  businessId: string,
+  email: string
+): Promise<ActionResult<{ link: string; invites: invites.BusinessInvite[] }>> {
+  return runAdmin('Sending the invitation', async (adminId) => {
+    const { headers } = await import('next/headers');
+    const h = await headers();
+    const host = h.get('x-forwarded-host') ?? h.get('host') ?? 'localhost:3000';
+    const proto = h.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https');
+    const origin = `${proto}://${host}`;
+
+    const { token } = await invites.createInvite(
+      adminId, businessId, email, (t) => `${origin}/business/invite/${t}`
+    );
+
+    // Sending is queued inside that transaction; the drain runs after this
+    // request the same way every other outbound mail does.
+    const { drainOutbox } = await import('@/server/email');
+    void drainOutbox(10).catch(() => {});
+
+    return { link: `${origin}/business/invite/${token}`, invites: await invites.listInvites(adminId) };
+  });
+}
+
+export async function adminRevokeInviteAction(
+  inviteId: string
+): Promise<ActionResult<invites.BusinessInvite[]>> {
+  return runAdmin('Revoking the invitation', async (adminId) => {
+    await invites.revokeInvite(adminId, inviteId);
+    return invites.listInvites(adminId);
+  });
+}
+
+export async function adminSetBusinessLoginStatusAction(
+  userId: string,
+  status: 'active' | 'disabled'
+): Promise<ActionResult<invites.BusinessLogin[]>> {
+  return runAdmin('Updating the login', async (adminId) => {
+    await invites.setBusinessUserStatus(adminId, userId, status);
+    return invites.listBusinessLogins(adminId);
+  });
 }

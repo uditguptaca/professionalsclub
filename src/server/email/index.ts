@@ -148,6 +148,31 @@ const TEMPLATES: Record<string, (payload: Payload) => Omit<Message, 'to'>> = {
         `Carry on in the chat you already share.\n\n${link}\n`,
     };
   },
+
+  business_invite: (d) => {
+    const business = esc(d.business);
+    const link = String(d.link ?? '');
+    return {
+      subject: `Your Professionals Club listing for ${business} is ready`,
+      html: shell(
+        `${business} is verified`,
+        p(`The club has verified <strong>${business}</strong>, and this link sets up the login that manages it.`) +
+        p('From there you can keep your page up to date, publish member offers and coupons, and post your events. Events are checked by the club before members see them.') +
+        p('The link works once and expires in fourteen days. If it has gone stale, ask us for a new one.'),
+        { href: link, label: 'Set up your login' }
+      ),
+      text:
+        `The club has verified ${business}.
+
+` +
+        `Set up the login that manages your listing, offers, coupons and events:
+${link}
+
+` +
+        `The link works once and expires in fourteen days.
+`,
+    };
+  },
 };
 
 export function renderTemplate(template: string, payload: Payload): Omit<Message, 'to'> | null {

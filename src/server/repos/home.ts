@@ -202,6 +202,10 @@ export interface MemberEvent {
   myRsvp: boolean;
   /** Set when a verified business posted the event. */
   businessName: string | null;
+  admission: string;
+  priceCents: number;
+  currency: string;
+  venueName: string | null;
 }
 
 /** Every upcoming event for the portal Events tab, the member's city first. */
@@ -243,8 +247,14 @@ export async function listMemberEvents(userId: string): Promise<{ city: string |
       with me as (select city from public.profiles where id = $1)
       select e.id, e.title, e.event_date as date, e.event_time as time,
              e.location, e.event_type, e.attendees, e.image, e.rsvp_url,
-             (coalesce((select city from me), '') <> '' and
-              e.location ilike '%' || (select city from me) || '%') as in_city,
+             e.admission, e.price_cents, e.currency, e.venue_name,
+             -- The city column (0045) is the answer; the LIKE against the free
+             -- text address is the fallback for everything posted before it
+             -- existed, which is most of the table.
+             (coalesce((select city from me), '') <> '' and (
+                e.city = (select city from me)
+                or (e.city is null and e.location ilike '%' || (select city from me) || '%')
+             )) as in_city,
              (select city from me) as my_city,
              coalesce(a.going, 0) as going,
              exists (select 1 from public.event_rsvps r
@@ -254,6 +264,7 @@ export async function listMemberEvents(userId: string): Promise<{ city: string |
         left join public.event_attendance a on a.event_id = e.id
         left join public.businesses b on b.id = e.business_id
        where e.status = 'upcoming' and e.is_published
+         and e.moderation_status = 'approved'
        order by in_city desc, e.event_date asc nulls last
       `,
       [userId]
@@ -270,6 +281,10 @@ export async function listMemberEvents(userId: string): Promise<{ city: string |
         going: Number(e.going ?? 0),
         myRsvp: Boolean(e.my_rsvp),
         businessName: (e.business_name as string | null) ?? null,
+        admission: (e.admission as string) ?? 'free',
+        priceCents: Number(e.price_cents ?? 0),
+        currency: (e.currency as string) ?? 'CAD',
+        venueName: (e.venue_name as string | null) ?? null,
       })),
     };
   });

@@ -21,7 +21,7 @@ import {
   LogOut, BarChart3, Users, FolderKanban, Shield, ScrollText,
   UserCircle, Building2, Inbox, BookOpen, Calendar,
   UsersRound, Newspaper, Heart, Briefcase, X, LayoutGrid, ChevronRight, Megaphone, Mail, Send, MessageCircle,
-  Bell,
+  Bell, Ticket, KeyRound, CalendarCheck,
 } from 'lucide-react';
 
 /**
@@ -253,6 +253,7 @@ function PortalChrome({
     { label: 'My Volunteer Status', href: '/portal/member/my-volunteer', icon: ClipboardList },
     { label: 'Admin Messages', href: '/portal/member/messages', icon: MessageSquare },
     { label: 'Business Directory', href: '/portal/member/businesses', icon: Building2 },
+    { label: 'Member Offers', href: '/portal/member/offers', icon: Ticket },
     { label: 'My Business', href: '/portal/member/business', icon: Building2 },
   ];
 
@@ -271,6 +272,8 @@ function PortalChrome({
     { label: 'Audit Logs', href: '/portal/admin/audit', icon: ScrollText },
     { label: 'Businesses', href: '/portal/admin/businesses', icon: Building2 },
     { label: 'Biz Requests', href: '/portal/admin/business-requests', icon: Inbox },
+    { label: 'Business Logins', href: '/portal/admin/business-logins', icon: KeyRound },
+    { label: 'Event Review', href: '/portal/admin/event-review', icon: CalendarCheck },
     { label: 'Notifications', href: '/portal/member/notifications', icon: Bell },
   ];
 
