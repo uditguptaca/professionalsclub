@@ -10,6 +10,7 @@ import EventEditor from '@/components/portal/EventEditor';
 import CouponScanner from '@/components/portal/CouponScanner';
 import { useConfirm } from '@/components/portal/confirm';
 import { COMMUNITY_CITIES } from '@/lib/cities';
+import { parseDateOnly } from '@/lib/dates';
 import { readCache, writeCache } from '@/lib/swr-cache';
 import {
   fetchBusinessHomeAction, updateMyBusinessAction,
@@ -57,8 +58,10 @@ const daysLabel = (days: number[]): string | null => {
   return set.map((d) => DAY_NAMES[d]).join(', ') + ' only';
 };
 
-const monthDay = (iso: string | null): string =>
-  iso ? new Date(iso).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Date TBA';
+const monthDay = (iso: string | null): string => {
+  const d = parseDateOnly(iso);
+  return d ? d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Date TBA';
+};
 
 const money = (cents: number, currency = 'CAD') =>
   new Intl.NumberFormat('en-CA', { style: 'currency', currency, minimumFractionDigits: 0 })

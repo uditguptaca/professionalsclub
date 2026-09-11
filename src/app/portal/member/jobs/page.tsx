@@ -60,8 +60,8 @@ const onDay = (iso: string | null): string => {
 const HAIRLINE = '1px solid rgba(27, 67, 50, 0.08)';
 const HAIRLINE_SOFT = '1px solid rgba(27, 67, 50, 0.06)';
 
-/** Roles render 20 at a time; a bank's feed is 200 rows long. */
-const PAGE = 20;
+/** Roles render 15 at a time (owner's call); a bank's feed is 200 rows long. */
+const PAGE = 15;
 
 /** Exactly what fetchJobsBoard returns, and what this tab caches. */
 type JobsBoardData = { roles: BoardRole[]; companies: Company[] };

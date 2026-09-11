@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { upload } from '@vercel/blob/client';
 import { useApp } from '@/context/app-context';
 import type { CommunityPost, CommunityComment, CommunityGroup, CommunityMedia } from '@/types';
+import { COMMUNITY_TOPICS, type CommunityTopic } from '@/types';
 import {
   fetchFeed, publishPost, removeOwnPost, likePost,
   fetchComments, publishComment, removeOwnComment,
@@ -110,6 +111,10 @@ function invalidateHome(): void {
 
 // ============================================================ Composer
 
+/** "immigration" -> "Immigration", for the club badge. */
+const topicLabel = (key: string): string =>
+  COMMUNITY_TOPICS.find((t) => t.key === key)?.label ?? key;
+
 export function PostComposer({
   groupId,
   placeholder,
@@ -122,6 +127,12 @@ export function PostComposer({
   const { profile } = useApp();
   const [body, setBody] = useState('');
   const [focused, setFocused] = useState(false);
+  // Admins can post as the club: one post, every member, every group (0049).
+  // The database pins these to a normal post for anyone else, so the toggle is
+  // a convenience for admins, not the thing keeping members from using it.
+  const isAdmin = profile?.role === 'admin';
+  const [asClub, setAsClub] = useState(false);
+  const [topic, setTopic] = useState<CommunityTopic>('news');
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [uploading, setUploading] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -167,7 +178,11 @@ export function PostComposer({
     if (busy || uploading > 0 || (!body.trim() && drafts.length === 0)) return;
     setBusy(true);
     setError('');
-    const result = await publishPost({ body, groupId, media: drafts.map((d) => d.media) });
+    const result = await publishPost({
+      body, groupId, media: drafts.map((d) => d.media),
+      audience: isAdmin && asClub ? 'club' : 'normal',
+      topic: isAdmin && asClub ? topic : null,
+    });
     if (result.ok) {
       setBody('');
       drafts.forEach((d) => URL.revokeObjectURL(d.previewUrl));
@@ -225,6 +240,40 @@ export function PostComposer({
       )}
 
       {error && <p role="alert" className="community-error">{error}</p>}
+
+      {isAdmin && expanded && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', margin: '6px 0 4px' }}>
+          <button
+            type="button"
+            className={`pp-toggle ${asClub ? 'is-on' : ''}`}
+            aria-pressed={asClub}
+            onPointerDown={(e) => e.preventDefault()}
+            onClick={() => setAsClub((v) => !v)}
+            style={{ minHeight: 40, paddingRight: '0.8rem' }}
+          >
+            <span className="pp-toggle-dot" aria-hidden="true" />
+            Post as the club, to everyone
+          </button>
+          {asClub && (
+            <>
+              <label className="sr-only" htmlFor="club-topic">Topic</label>
+              <select
+                id="club-topic"
+                value={topic}
+                onChange={(e) => setTopic(e.target.value as CommunityTopic)}
+                onPointerDown={(e) => e.stopPropagation()}
+                style={{
+                  minHeight: 40, padding: '0 0.7rem', borderRadius: 999,
+                  border: '1px solid rgba(27,67,50,0.14)', background: 'var(--bg-primary)',
+                  color: 'var(--text-secondary)', font: 'inherit', fontSize: '0.82rem', fontWeight: 700,
+                }}
+              >
+                {COMMUNITY_TOPICS.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+              </select>
+            </>
+          )}
+        </div>
+      )}
 
       <div className="community-composer-foot">
         <div className="community-attach">
@@ -652,8 +701,25 @@ export function PostCard({
           >
             <strong>{post.authorFirstName} {post.authorLastName}</strong>
           </Link>
+          {/* Who they are, in the order people ask it: role, employer, city. */}
+          {(post.authorJobTitle || post.authorCompany || post.authorCity) && (
+            <small style={{ display: 'block', color: 'var(--text-secondary)', fontWeight: 600 }}>
+              {[post.authorJobTitle, post.authorCompany, post.authorCity].filter(Boolean).join(' | ')}
+            </small>
+          )}
           <small>
-            {post.authorCity ? `${post.authorCity} · ` : ''}{timeAgo(post.createdAt)}
+            {post.audience === 'club' && (
+              <span
+                className="pp-chip"
+                style={{
+                  marginRight: 6, fontSize: '0.66rem', verticalAlign: 'middle',
+                  background: 'var(--green-950)', color: '#fff',
+                }}
+              >
+                Club update{post.topic ? ` · ${topicLabel(post.topic)}` : ''}
+              </span>
+            )}
+            {post.audience === 'club' ? ' ' : ''}{timeAgo(post.createdAt)}
             {post.groupName ? <> · <em>{post.groupName}</em></> : null}
           </small>
         </div>

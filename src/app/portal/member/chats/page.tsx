@@ -2449,7 +2449,7 @@ export default function MemberChatsPage() {
             {laneRows.map((p) => {
               const pname = fullName(p.firstName, p.lastName);
               const busy = busyId === p.id;
-              const meta = [p.jobTitle, p.city].filter(Boolean).join(' · ');
+              const meta = [p.jobTitle, p.company, p.city].filter(Boolean).join(' | ');
               const iFollow = p.outgoing === 'accepted';
 
               return (

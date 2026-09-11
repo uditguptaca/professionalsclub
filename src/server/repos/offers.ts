@@ -304,7 +304,7 @@ export async function memberBusinessPage(
           ), '[]'::json),
           'events', coalesce((
             select json_agg(json_build_object(
-              'id', e.id, 'title', e.title, 'date', e.event_date, 'time', e.event_time,
+              'id', e.id, 'title', e.title, 'date', to_char(e.event_date, 'YYYY-MM-DD'), 'time', e.event_time,
               'location', coalesce(e.venue_name, e.location), 'image', e.image,
               'admission', e.admission, 'priceCents', e.price_cents, 'currency', e.currency
             ) order by e.event_date asc nulls last)

@@ -3,6 +3,7 @@ import { syncAllCompanies } from '@/server/jobs/sync';
 import { checkJobLiveness } from '@/server/jobs/liveness';
 import { drainOutbox } from '@/server/email';
 import { expireCouponHolds } from '@/server/repos/offers';
+import { drainSms } from '@/server/sms';
 
 /**
  * Scheduled refresh: pull every company's job feed, then send whatever mail is
@@ -53,6 +54,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   // so checking links afterwards never fights a fresher signal.
   const liveness = await checkJobLiveness();
   const email = await drainOutbox(200);
+  // Texts queued by RSVPs (0049). Same contract as mail: sent from the request
+  // that queued them when a provider is configured, swept here as the backstop.
+  const sms = await drainSms(200);
 
   const failures = companies.filter((c) => c.error);
   return NextResponse.json({
@@ -64,6 +68,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     closed: companies.reduce((n, c) => n + c.closed, 0),
     liveness,
     email,
+    sms,
     couponHolds,
     // Named rather than counted: a feed that has been broken for a week is
     // something an operator needs to see.

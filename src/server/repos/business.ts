@@ -201,7 +201,7 @@ export async function fetchBusinessHome(userId: string): Promise<BusinessHome> {
         'events', coalesce((
           select json_agg(json_build_object(
             'id', e.id, 'title', e.title, 'description', e.description,
-            'date', e.event_date, 'time', e.event_time, 'location', e.location,
+            'date', to_char(e.event_date, 'YYYY-MM-DD'), 'time', e.event_time, 'location', e.location,
             'venueName', e.venue_name, 'city', e.city,
             'eventType', e.event_type, 'capacity', e.capacity, 'image', e.image,
             'gallery', e.gallery, 'organiser', e.organiser, 'onlineUrl', e.online_url,

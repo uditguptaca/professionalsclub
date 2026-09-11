@@ -26,6 +26,8 @@ export interface ChatPerson {
   firstName: string;
   lastName: string;
   jobTitle: string | null;
+  /** With jobTitle and city, the line under every name: "Engineer | TCS | Toronto". */
+  company: string | null;
   city: string | null;
   /** My edge toward them. 'pending' renders as "Requested". */
   outgoing: FollowState;
@@ -178,6 +180,7 @@ const toPerson = (r: Record<string, unknown>): ChatPerson => ({
   firstName: r.first_name as string,
   lastName: r.last_name as string,
   jobTitle: (r.job_title as string | null) ?? null,
+  company: (r.company as string | null) ?? null,
   city: (r.city as string | null) ?? null,
   outgoing: ((r.outgoing as string | null) ?? 'none') as FollowState,
   incoming: ((r.incoming as string | null) ?? 'none') as FollowState,
@@ -204,7 +207,7 @@ function assertOurUpload(url: string): void {
 
 /** Everyone visible to me, with my follow edges both ways. $1 = me. */
 export const COMMUNITY_EDGES_CTE = `
-  select n.id, n.first_name, n.last_name, n.job_title, n.city, n.created_at,
+  select n.id, n.first_name, n.last_name, n.job_title, n.company, n.city, n.created_at,
          (select f.status from public.member_follows f
            where f.follower_id = $1 and f.followee_id = n.id) as outgoing,
          (select f.status from public.member_follows f
@@ -347,7 +350,7 @@ export async function searchPeople(userId: string, query: string): Promise<ChatP
     const rows = await db.run<Record<string, unknown>>(
       `
       with me as (select city from public.profiles where id = $1)
-      select n.id, n.first_name, n.last_name, n.job_title, n.city,
+      select n.id, n.first_name, n.last_name, n.job_title, n.company, n.city,
              (select f.status from public.member_follows f
                where f.follower_id = $1 and f.followee_id = n.id) as outgoing,
              (select f.status from public.member_follows f

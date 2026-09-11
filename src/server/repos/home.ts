@@ -245,7 +245,7 @@ export async function listMemberEvents(userId: string): Promise<{ city: string |
     const rows = await db.run(
       `
       with me as (select city from public.profiles where id = $1)
-      select e.id, e.title, e.event_date as date, e.event_time as time,
+      select e.id, e.title, to_char(e.event_date, 'YYYY-MM-DD') as date, e.event_time as time,
              e.location, e.event_type, e.attendees, e.image, e.rsvp_url,
              e.admission, e.price_cents, e.currency, e.venue_name,
              -- The city column (0045) is the answer; the LIKE against the free

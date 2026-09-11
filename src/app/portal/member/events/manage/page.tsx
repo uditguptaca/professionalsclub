@@ -12,6 +12,7 @@ import {
   fetchMyEventsAction, createClubEventAction, updateClubEventAction, deleteClubEventAction,
 } from '@/app/actions/events';
 import type { EventDetail } from '@/server/repos/events';
+import { parseDateOnly } from '@/lib/dates';
 
 /**
  * Club events, posted by the people who run them: admins and approved
@@ -24,8 +25,10 @@ import type { EventDetail } from '@/server/repos/events';
  * apart.
  */
 
-const monthDay = (iso: string | null): string =>
-  iso ? new Date(iso).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Date TBA';
+const monthDay = (iso: string | null): string => {
+  const d = parseDateOnly(iso);
+  return d ? d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Date TBA';
+};
 
 const money = (cents: number, currency: string) =>
   new Intl.NumberFormat('en-CA', { style: 'currency', currency, minimumFractionDigits: 0 })

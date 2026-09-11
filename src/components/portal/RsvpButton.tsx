@@ -14,6 +14,7 @@ export default function RsvpButton({
   initialGoing,
   initialMyRsvp,
   baseAttendees,
+  onChanged,
 }: {
   eventId: string;
   /** Live RSVP count at render time. */
@@ -21,6 +22,13 @@ export default function RsvpButton({
   initialMyRsvp: boolean;
   /** The admin-maintained offline count; display total = base + going. */
   baseAttendees: number;
+  /**
+   * Fired once the server has confirmed the change. The event page uses it to
+   * refetch: the "you are on the list" card, the calendar links and the online
+   * join link all hang off the event's own myRsvp, which this button's
+   * optimistic state cannot reach - without this they only appeared on reload.
+   */
+  onChanged?: (myRsvp: boolean, going: number) => void;
 }) {
   const [going, setGoing] = React.useState(initialGoing);
   const [mine, setMine] = React.useState(initialMyRsvp);
@@ -43,6 +51,7 @@ export default function RsvpButton({
     if (r.ok) {
       setGoing(r.data.going);
       setMine(r.data.myRsvp);
+      onChanged?.(r.data.myRsvp, r.data.going);
     } else {
       setMine(!next);
       setGoing((g) => Math.max(0, g + (next ? -1 : 1)));

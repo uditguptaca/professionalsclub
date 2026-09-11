@@ -84,6 +84,10 @@ export default function CommunityGroupPage() {
             {group.description && <p>{group.description}</p>}
 
             <div className="pp-hero-chips">
+              {/* Location, activity or interest (0049): what kind of group this is. */}
+              <span className="pp-chip pp-chip-light">
+                {group.kind === 'location' ? 'Location' : group.kind === 'activity' ? 'Activity' : 'Interest'} group
+              </span>
               <span className="pp-chip pp-chip-light">
                 <Users size={12} aria-hidden="true" /> {group.memberCount} member{group.memberCount === 1 ? '' : 's'}
               </span>

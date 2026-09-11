@@ -10,6 +10,7 @@ import PortalLoading from '@/components/portal/PortalLoading';
 import CouponCode from '@/components/portal/CouponCode';
 import { fetchBusinessPageAction, claimCouponAction } from '@/app/actions/events';
 import type { MemberBusinessPage, MemberCoupon } from '@/server/repos/offers';
+import { parseDateOnly } from '@/lib/dates';
 
 /**
  * A business, for a member standing in front of it.
@@ -44,8 +45,10 @@ const value = (c: MemberCoupon): string => {
   return 'Free item';
 };
 
-const monthDay = (iso: string | null): string =>
-  iso ? new Date(iso).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }) : 'Date TBA';
+const monthDay = (iso: string | null): string => {
+  const d = parseDateOnly(iso);
+  return d ? d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }) : 'Date TBA';
+};
 
 const isImage = (logo: string | null) => Boolean(logo && /^(https?:\/\/|\/)/.test(logo));
 

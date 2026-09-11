@@ -469,11 +469,34 @@ export type CommunityContentStatus = 'active' | 'removed';
 export type CommunityReportStatus = 'open' | 'actioned' | 'dismissed';
 export type CommunityReportTarget = 'post' | 'comment';
 
+export type CommunityGroupKind = 'location' | 'activity' | 'interest';
+
+export const COMMUNITY_GROUP_KINDS: { key: CommunityGroupKind; label: string; blurb: string }[] = [
+  { key: 'location', label: 'Location', blurb: 'People in the same city or area' },
+  { key: 'activity', label: 'Activity', blurb: 'Things members do together' },
+  { key: 'interest', label: 'Interest', blurb: 'A topic, a profession, a cause' },
+];
+
+export type CommunityTopic =
+  | 'news' | 'immigration' | 'jobs' | 'housing' | 'money' | 'health' | 'events' | 'other';
+
+export const COMMUNITY_TOPICS: { key: CommunityTopic; label: string }[] = [
+  { key: 'news', label: 'News' },
+  { key: 'immigration', label: 'Immigration' },
+  { key: 'jobs', label: 'Jobs' },
+  { key: 'housing', label: 'Housing' },
+  { key: 'money', label: 'Money & tax' },
+  { key: 'health', label: 'Health' },
+  { key: 'events', label: 'Events' },
+  { key: 'other', label: 'Other' },
+];
+
 export interface CommunityGroup {
   id: string;
   slug: string;
   name: string;
   description: string;
+  kind: CommunityGroupKind;
   createdBy: string | null;
   isArchived: boolean;
   createdAt: string;
@@ -500,12 +523,18 @@ export interface CommunityPost {
   authorFirstName: string;
   authorLastName: string;
   authorCity: string | null;
+  /** The line under the name: "Engineer | TCS | Toronto" (0049). */
+  authorJobTitle: string | null;
+  authorCompany: string | null;
   groupName: string | null;
   likeCount: number;
   commentCount: number;
   likedByMe: boolean;
+  /** 'club' = posted by the club for every member; only admins can set it (0049). */
+  audience: 'normal' | 'club';
+  topic: CommunityTopic | null;
   /** Why this post is in MY feed. 'suggested_group' posts carry a join CTA. */
-  source?: 'mine' | 'followed' | 'group' | 'suggested_group';
+  source?: 'mine' | 'followed' | 'group' | 'suggested_group' | 'club';
   /** For group posts: whether I am already in that group. */
   inGroup?: boolean;
   groupSlug?: string | null;

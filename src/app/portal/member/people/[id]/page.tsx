@@ -236,9 +236,11 @@ export default function MemberProfilePage() {
         </span>
 
         <h1>{name}</h1>
-        {(profile.jobTitle || profile.company) && (
+        {/* Role | employer | city - the same line that sits under the name
+            everywhere else in the club (0049). */}
+        {(profile.jobTitle || profile.company || profile.city) && (
           <p>
-            {[profile.jobTitle, profile.company].filter(Boolean).join(' at ')}
+            {[profile.jobTitle, profile.company, profile.city].filter(Boolean).join(' | ')}
           </p>
         )}
 

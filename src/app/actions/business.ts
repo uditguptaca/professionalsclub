@@ -187,7 +187,21 @@ export async function rsvpEventAction(
   eventId: string,
   going: boolean
 ): Promise<ActionResult<{ going: number; myRsvp: boolean }>> {
-  return runMember('Updating your RSVP', (uid) => setEventRsvp(uid, eventId, going));
+  return runMember('Updating your RSVP', async (uid) => {
+    const result = await setEventRsvp(uid, eventId, going);
+    if (going) {
+      // The 0049 trigger has just queued the confirmation email and text.
+      // Send them from this request rather than waiting for the daily cron:
+      // a confirmation that arrives tomorrow is not one. Fire-and-forget,
+      // like every other post-write drain here; the cron is the backstop.
+      const [{ drainOutbox }, { drainSms }] = await Promise.all([
+        import('@/server/email'), import('@/server/sms'),
+      ]);
+      void drainOutbox(10).catch(() => {});
+      void drainSms(10).catch(() => {});
+    }
+    return result;
+  });
 }
 
 // ---- Admin: who may log in as a business ----------------------------------------

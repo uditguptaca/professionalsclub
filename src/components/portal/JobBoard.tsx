@@ -34,8 +34,8 @@ const ELLIPSIS: React.CSSProperties = {
   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
 };
 
-/** Roles render 20 at a time; the feed is hundreds of rows long. */
-const PAGE = 20;
+/** Roles render 15 at a time (owner's call); the feed is hundreds of rows long. */
+const PAGE = 15;
 
 const SORTS = [
   ['match', 'Best match'],

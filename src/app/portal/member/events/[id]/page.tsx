@@ -4,12 +4,13 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
   Calendar, Clock, MapPin, Users, Ticket, Video, Building2, Mail, ExternalLink,
-  AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, X,
+  AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, X, CalendarPlus,
 } from 'lucide-react';
 import PortalLoading from '@/components/portal/PortalLoading';
 import RsvpButton from '@/components/portal/RsvpButton';
 import { fetchEventAction } from '@/app/actions/events';
 import type { EventDetail } from '@/server/repos/events';
+import { parseDateOnly } from '@/lib/dates';
 
 /**
  * One event, everything about it.
@@ -25,8 +26,9 @@ import type { EventDetail } from '@/server/repos/events';
  */
 
 const longDate = (iso: string | null): string => {
-  if (!iso) return 'Date to be announced';
-  return new Date(iso).toLocaleDateString('en-CA', {
+  const d = parseDateOnly(iso);
+  if (!d) return 'Date to be announced';
+  return d.toLocaleDateString('en-CA', {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
   });
 };
@@ -40,6 +42,42 @@ const FORMAT: Record<string, string> = {
   virtual: 'Online',
   hybrid: 'In person and online',
 };
+
+/**
+ * A Google Calendar "add event" link. Dates go as floating local times with
+ * the club's zone named, because event_time is text a person typed ("6:30 PM")
+ * and the organiser meant Ontario time; two hours is the default block. A time
+ * we cannot read becomes an all-day entry rather than a wrong hour.
+ */
+function googleCalendarUrl(event: EventDetail): string {
+  const day = (event.date ?? '').slice(0, 10).replace(/-/g, '');
+  const m = (event.time ?? '').trim().match(/^(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)?$/i);
+  let dates: string;
+  if (m && day) {
+    let h = Number(m[1]);
+    const min = m[2] ?? '00';
+    const ampm = m[3]?.toLowerCase().replace(/\./g, '');
+    if (ampm === 'pm' && h < 12) h += 12;
+    if (ampm === 'am' && h === 12) h = 0;
+    const hh = String(h).padStart(2, '0');
+    const eh = String((h + 2) % 24).padStart(2, '0');
+    dates = `${day}T${hh}${min}00/${day}T${eh}${min}00`;
+  } else {
+    dates = `${day}/${day}`;
+  }
+  const where = event.eventType === 'virtual'
+    ? (event.onlineUrl ?? 'Online')
+    : [event.venueName, event.location, event.city].filter(Boolean).join(', ');
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: event.title,
+    dates,
+    ctz: 'America/Toronto',
+    details: [event.description, `${location.origin}/portal/member/events/${event.id}`].filter(Boolean).join('\n\n'),
+    location: where,
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
 
 const FACT: React.CSSProperties = {
   display: 'flex', alignItems: 'flex-start', gap: 10, padding: '0.7rem 0',
@@ -57,16 +95,19 @@ export default function MemberEventPage() {
   const [error, setError] = React.useState('');
   const [lightbox, setLightbox] = React.useState<number | null>(null);
 
-  React.useEffect(() => {
-    (async () => {
-      const r = await fetchEventAction(eventId);
-      if (r.ok) {
-        if (r.data) setEvent(r.data);
-        else setError('That event could not be found. It may have been taken down.');
-      } else setError(r.error);
-      setLoading(false);
-    })();
+  // Named, not inline in the effect: the RSVP button calls it again after the
+  // server confirms a change, because the on-the-list card, the calendar links
+  // and the online join link all come from the event's own myRsvp.
+  const load = React.useCallback(async () => {
+    const r = await fetchEventAction(eventId);
+    if (r.ok) {
+      if (r.data) setEvent(r.data);
+      else setError('That event could not be found. It may have been taken down.');
+    } else setError(r.error);
+    setLoading(false);
   }, [eventId]);
+
+  React.useEffect(() => { void load(); }, [load]);
 
   if (loading) return <PortalLoading label="Loading this event" />;
 
@@ -242,6 +283,7 @@ export default function MemberEventPage() {
             initialGoing={event.going}
             initialMyRsvp={event.myRsvp}
             baseAttendees={event.attendees}
+            onChanged={() => void load()}
           />
           {event.admission === 'paid' && (
             <p style={{ margin: '0.6rem 0 0', fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>
@@ -309,14 +351,36 @@ export default function MemberEventPage() {
       )}
 
       {event.myRsvp && !past && (
-        <p style={{
-          display: 'flex', alignItems: 'center', gap: 7, margin: 0,
-          padding: '0.7rem 0.9rem', borderRadius: '0.85rem',
+        <div style={{
+          margin: 0, padding: '0.8rem 0.9rem', borderRadius: '0.85rem',
           background: 'var(--green-50)', color: 'var(--green-800)',
-          fontSize: '0.85rem', fontWeight: 700,
         }}>
-          <CheckCircle2 size={15} aria-hidden="true" /> You are on the list. See you there.
-        </p>
+          <p style={{
+            display: 'flex', alignItems: 'center', gap: 7, margin: 0,
+            fontSize: '0.85rem', fontWeight: 700,
+          }}>
+            <CheckCircle2 size={15} aria-hidden="true" /> You are on the list. See you there.
+          </p>
+          {/* Two ways in, because phones split two ways: Google Calendar takes a
+              link, Apple Calendar and Outlook take a file. A confirmation email
+              carries the same file. */}
+          {event.date && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+              <a
+                href={googleCalendarUrl(event)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bz-upload"
+                style={{ minHeight: 40 }}
+              >
+                <CalendarPlus size={14} aria-hidden="true" /> Google Calendar
+              </a>
+              <a href={`/api/events/${event.id}/calendar.ics`} className="bz-upload" style={{ minHeight: 40 }}>
+                <CalendarPlus size={14} aria-hidden="true" /> Apple / Outlook
+              </a>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Pictures, full size. */}

@@ -61,4 +61,11 @@
          push plugin requests it, but declares it nowhere, so it has to live
          here or requestPermissions() is refused without ever prompting. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- The business console scans a member's coupon QR with getUserMedia.
+         Capacitor grants the WebView's camera request only when the app itself
+         holds this permission; without the declaration the request is refused
+         before Android ever shows the user a prompt. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 </manifest>

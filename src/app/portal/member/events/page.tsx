@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Calendar, Users, MapPin, Ticket, Plus, ChevronRight } from 'lucide-react';
 import { requireProfile } from '@/server/auth';
 import { listMemberEvents } from '@/server/repos/home';
+import { parseDateOnly } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,8 +19,9 @@ export const dynamic = 'force-dynamic';
  */
 
 const monthDay = (iso: string | null): string => {
-  if (!iso) return 'Date TBA';
-  return new Date(iso).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
+  const d = parseDateOnly(iso);
+  if (!d) return 'Date TBA';
+  return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
 };
 
 const money = (cents: number, currency: string) =>

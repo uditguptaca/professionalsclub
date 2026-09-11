@@ -134,9 +134,16 @@ export default function CouponScanner({ initialCode = '' }: { initialCode?: stri
     } catch (thrown) {
       stopCamera();
       const name = (thrown as { name?: string })?.name ?? '';
+      // Inside the app there are no "browser settings": the permission lives
+      // in the phone's Settings under the app's name, and telling somebody to
+      // look in a browser they are not using sends them nowhere.
+      const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+      const inApp = cap?.isNativePlatform?.() === true;
       setCameraError(
         name === 'NotAllowedError'
-          ? 'The camera is blocked for this site. Allow it in your browser settings, or type the code instead.'
+          ? (inApp
+              ? 'Camera access is off for Professionals Club. Turn it on in your phone’s Settings, then try again - or type the code instead.'
+              : 'The camera is blocked for this site. Allow it in your browser settings, or type the code instead.')
           : name === 'NotFoundError'
             ? 'No camera on this device. Type the code instead.'
             : 'The camera would not start. Type the code instead.'

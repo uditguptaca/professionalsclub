@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { CommunityGroup, CommunityPost } from '@/types';
+import { COMMUNITY_GROUP_KINDS, type CommunityGroupKind } from '@/types';
 import {
   fetchCommunityStart, fetchPersonalFeed, fetchGroupsExplore,
   startGroup, joinCommunityGroup, leaveCommunityGroup,
@@ -105,7 +106,9 @@ export default function CommunityPage() {
   const [groupQuery, setGroupQuery] = useState('');
   const [groupsError, setGroupsError] = useState('');
   const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState({ name: '', description: '' });
+  const [form, setForm] = useState<{ name: string; description: string; kind: CommunityGroupKind }>({
+    name: '', description: '', kind: 'interest',
+  });
   const [formBusy, setFormBusy] = useState(false);
   const [formError, setFormError] = useState('');
 
@@ -288,7 +291,7 @@ export default function CommunityPage() {
     const r = await startGroup(form);
     if (r.ok) {
       commitGroups((g) => [r.data, ...g]);
-      setForm({ name: '', description: '' });
+      setForm({ name: '', description: '', kind: 'interest' });
       setCreating(false);
       setToast('Group created');
     } else {
@@ -465,7 +468,7 @@ export default function CommunityPage() {
           <div key={p.id} className="hf-group card" style={{ alignItems: 'flex-start' }}>
             <span className="hf-member-avatar" aria-hidden="true">{initials(p.firstName, p.lastName)}</span>
             <strong>{fullName(p)}</strong>
-            <small>{[p.jobTitle, p.city].filter(Boolean).join(' · ') || 'Member'}</small>
+            <small>{[p.jobTitle, p.company, p.city].filter(Boolean).join(' | ') || 'Member'}</small>
             <div style={{ marginTop: 6 }}>{followButton(p)}</div>
           </div>
         ))}
@@ -604,8 +607,12 @@ export default function CommunityPage() {
 
   // ---- Tab: GROUPS --------------------------------------------------------
   const mine = (groups ?? []).filter((g) => g.isMember);
-  const suggested = (groups ?? []).filter((g) => !g.isMember && g.suggestReason);
-  const rest = (groups ?? []).filter((g) => !g.isMember && !g.suggestReason);
+  // Everything I have not joined, filed by what kind of group it is, with the
+  // ones the club would suggest floated to the top of each section.
+  const byKind = (kind: CommunityGroupKind) =>
+    (groups ?? [])
+      .filter((g) => !g.isMember && g.kind === kind)
+      .sort((a, b) => Number(Boolean(b.suggestReason)) - Number(Boolean(a.suggestReason)));
 
   const groupCard = (g: CommunityGroup) => (
     <div key={g.id} className="pp-row" style={{ cursor: 'default' }}>
@@ -617,7 +624,8 @@ export default function CommunityPage() {
       >
         <strong>{g.name}</strong>
         <small style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {g.memberCount} member{g.memberCount === 1 ? '' : 's'}{g.description ? ` · ${g.description}` : ''}
+          {COMMUNITY_GROUP_KINDS.find((k) => k.key === g.kind)?.label ?? 'Interest'}
+          {' · '}{g.memberCount} member{g.memberCount === 1 ? '' : 's'}{g.description ? ` · ${g.description}` : ''}
         </small>
         {g.suggestReason && (
           <span className="pp-chip" style={{ marginTop: 4, fontSize: '0.68rem' }}>{g.suggestReason}</span>
@@ -704,19 +712,17 @@ export default function CommunityPage() {
               <div className="pp-group-card">{mine.map(groupCard)}</div>
             </section>
           )}
-          {suggested.length > 0 && (
-            <section className="pp-group">
-              <h2>Suggested for you</h2>
-              <p className="pp-group-sub">Based on your city and what you do.</p>
-              <div className="pp-group-card">{suggested.map(groupCard)}</div>
-            </section>
-          )}
-          {rest.length > 0 && (
-            <section className="pp-group">
-              <h2>{mine.length || suggested.length ? 'All groups' : 'Groups'}</h2>
-              <div className="pp-group-card">{rest.map(groupCard)}</div>
-            </section>
-          )}
+          {COMMUNITY_GROUP_KINDS.map(({ key, label, blurb }) => {
+            const list = byKind(key);
+            if (list.length === 0) return null;
+            return (
+              <section key={key} className="pp-group">
+                <h2>{label} groups</h2>
+                <p className="pp-group-sub">{blurb}.</p>
+                <div className="pp-group-card">{list.map(groupCard)}</div>
+              </section>
+            );
+          })}
         </div>
       )}
     </>
@@ -742,7 +748,7 @@ export default function CommunityPage() {
           >
             <strong>{fullName(p)}</strong>
           </Link>
-          <small>{[p.jobTitle, p.city].filter(Boolean).join(' · ') || 'Member'}</small>
+          <small>{[p.jobTitle, p.company, p.city].filter(Boolean).join(' | ') || 'Member'}</small>
           {p.incoming === 'accepted' && p.outgoing !== 'accepted' && (
             <span className="pp-chip" style={{ marginTop: 4, fontSize: '0.68rem' }}>Follows you</span>
           )}
@@ -854,6 +860,36 @@ export default function CommunityPage() {
             </p>
 
             <div className="pp-sheet-fields">
+              <div className="pp-field">
+                <span style={{ display: 'block', margin: '0 0 0.3rem 0.2rem', fontSize: '0.76rem', fontWeight: 750, color: 'var(--text-secondary)' }}>
+                  What kind of group?
+                </span>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }} role="group" aria-label="Kind of group">
+                  {COMMUNITY_GROUP_KINDS.map((k) => {
+                    const on = form.kind === k.key;
+                    return (
+                      <button
+                        key={k.key}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => setForm((f) => ({ ...f, kind: k.key }))}
+                        style={{
+                          minHeight: 42, padding: '0 14px', borderRadius: 999, cursor: 'pointer',
+                          border: on ? '1px solid transparent' : '1px solid var(--border-color)',
+                          background: on ? 'var(--green-950)' : 'var(--bg-primary)',
+                          color: on ? '#fff' : 'var(--text-secondary)',
+                          font: 'inherit', fontSize: '0.82rem', fontWeight: 700,
+                        }}
+                      >
+                        {k.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="pp-group-sub" style={{ margin: '0.35rem 0 0 0.2rem' }}>
+                  {COMMUNITY_GROUP_KINDS.find((k) => k.key === form.kind)?.blurb}.
+                </p>
+              </div>
               <div className="pp-field">
                 <label htmlFor="new-group-name">Group name</label>
                 <input

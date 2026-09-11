@@ -132,6 +132,10 @@ export async function publishPost(input: {
   body: string;
   groupId: string | null;
   media?: CommunityMedia[];
+  /** 'club' asks for an admin broadcast to every member (0049). The database
+      pins it to 'normal' for anyone who is not an admin, whatever is sent. */
+  audience?: 'normal' | 'club';
+  topic?: string | null;
 }): Promise<ActionResult<CommunityPost>> {
   return run('Posting', async () => {
     const uid = await requireUserId();
@@ -139,7 +143,9 @@ export async function publishPost(input: {
     const media = sanitizeMedia(input.media);
     if (!body && media.length === 0) throw new Error('Please keep it — write something or add a photo first.');
     if (body) assertClean(body);
-    return repo.createPost(uid, { body: body || ' ', groupId: input.groupId, media });
+    const audience = input.audience === 'club' ? 'club' : 'normal';
+    const topic = audience === 'club' && typeof input.topic === 'string' ? input.topic : null;
+    return repo.createPost(uid, { body: body || ' ', groupId: input.groupId, media, audience, topic });
   });
 }
 
@@ -227,6 +233,7 @@ export async function fetchGroup(groupId: string): Promise<ActionResult<Communit
 export async function startGroup(input: {
   name: string;
   description: string;
+  kind?: 'location' | 'activity' | 'interest';
 }): Promise<ActionResult<CommunityGroup>> {
   return run('Creating the group', async () => {
     const uid = await requireUserId();
@@ -235,7 +242,11 @@ export async function startGroup(input: {
     if (name.length < 3) throw new Error('Please keep it — the name needs at least 3 characters.');
     assertClean(name);
     assertClean(description);
-    return repo.createGroup(uid, { name, description, slug: slugify(name) });
+    // A group is a place, a shared activity, or a topic (0049). Anything else
+    // sent here is treated as a topic - the CHECK constraint would refuse it
+    // anyway, but with a message nobody should have to read.
+    const kind = input.kind === 'location' || input.kind === 'activity' ? input.kind : 'interest';
+    return repo.createGroup(uid, { name, description, slug: slugify(name), kind });
   });
 }
 

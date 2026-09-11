@@ -130,7 +130,7 @@ function toDetail(e: Record<string, unknown>): EventDetail {
 }
 
 const DETAIL_COLUMNS = `
-  e.id, e.title, e.description, e.event_date, e.event_time, e.location,
+  e.id, e.title, e.description, to_char(e.event_date, 'YYYY-MM-DD') as event_date, e.event_time, e.location,
   e.venue_name, e.city, e.event_type, e.capacity, e.attendees, e.image,
   e.gallery, e.organiser, e.online_url, e.contact_email, e.admission,
   e.price_cents, e.currency, e.rsvp_url, e.status, e.is_published,

@@ -86,8 +86,8 @@ const shell = (heading: string, body: string, cta?: { href: string; label: strin
       </p>` : ''}
     </div>
     <div style="padding:16px 28px;border-top:1px solid #e7e0d5;color:#6b6b6b;font-size:12px;line-height:1.6">
-      You are receiving this because you offered to help members at your company.
-      Turn it off under Where I work in your portal profile.
+      Sent by Professionals Club because of something you did or asked for in the portal.
+      Notification preferences are under your profile.
     </div>
   </div>
 </div>`;
@@ -149,6 +149,34 @@ const TEMPLATES: Record<string, (payload: Payload) => Omit<Message, 'to'>> = {
     };
   },
 
+  event_rsvp: (d) => {
+    const title = esc(d.title);
+    const when = esc(d.when);
+    const where = esc(d.where);
+    const id = String(d.eventId ?? '');
+    const link = `${SITE}/portal/member/events/${id}`;
+    const ics = `${SITE}/api/events/${id}/calendar.ics`;
+    return {
+      subject: `You are going to ${title}`,
+      html: shell(
+        `See you at ${title}`,
+        p(`<strong>${when}</strong><br>${where}`) +
+        p(`Your place is noted. If plans change, open the event and tap Going again to step back.`) +
+        p(`<a href="${ics}" style="color:#e85d04;font-weight:700">Add it to your calendar</a> - the file opens in Apple Calendar, Outlook and Google.`),
+        { href: link, label: 'Open the event' }
+      ),
+      text:
+        `You are going to ${title}.
+${when}
+${where}
+
+` +
+        `Add it to your calendar: ${ics}
+Event details: ${link}
+`,
+    };
+  },
+
   business_invite: (d) => {
     const business = esc(d.business);
     const link = String(d.link ?? '');
@@ -193,6 +221,15 @@ export interface DrainResult { sent: number; failed: number; skipped: number }
  * any user session ever holding an address.
  */
 export async function drainOutbox(limit = 50): Promise<DrainResult> {
+  // Locally, no key means "log it and call it sent" - the queue is the dev log.
+  // On Vercel the same shortcut would mark real mail as delivered when nothing
+  // left the building, and there is no getting those rows back. Leave them
+  // pending: the moment RESEND_API_KEY is added, the next drain sends them.
+  if (!process.env.RESEND_API_KEY && process.env.VERCEL) {
+    console.warn('[email] RESEND_API_KEY is not set; leaving the outbox queued.');
+    return { sent: 0, failed: 0, skipped: 0 };
+  }
+
   return withElevated(async (db) => {
     const rows = (await db`
       select o.id, o.template, o.payload, o.attempts,

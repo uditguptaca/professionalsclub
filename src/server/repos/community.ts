@@ -39,6 +39,9 @@ const POST_SELECT = `
   n.first_name as author_first_name,
   n.last_name  as author_last_name,
   n.city       as author_city,
+  n.job_title  as author_job_title,
+  n.company    as author_company,
+  p.audience, p.topic,
   g.name       as group_name,
   (select count(*)::int from public.community_likes l where l.post_id = p.id) as like_count,
   (select count(*)::int from public.community_comments c
@@ -48,7 +51,7 @@ const POST_SELECT = `
 `;
 
 const GROUP_SELECT = `
-  g.id, g.slug, g.name, g.description, g.created_by, g.is_archived, g.created_at,
+  g.id, g.slug, g.name, g.description, g.kind, g.created_by, g.is_archived, g.created_at,
   (select count(*)::int from public.community_group_members m where m.group_id = g.id) as member_count,
   exists(select 1 from public.community_group_members m
      where m.group_id = g.id and m.member_id = app.current_user_id()) as is_member,
@@ -109,6 +112,7 @@ export async function personalFeedOn(
              g.slug as group_slug,
              (p.group_id is not null and p.group_id in (select id from mine)) as in_group,
              case
+               when p.audience = 'club' then 'club'
                when p.author_id = $1 then 'mine'
                when p.group_id in (select id from mine) then 'group'
                when p.group_id in (select id from suggested_groups) then 'suggested_group'
@@ -119,7 +123,8 @@ export async function personalFeedOn(
         left join public.community_groups g on g.id = p.group_id
        where p.status = 'active'
          and (
-           p.author_id = $1
+           p.audience = 'club'
+           or p.author_id = $1
            or (p.group_id is null and p.author_id in (select id from followed))
            or p.group_id in (select id from mine)
            or p.group_id in (select id from suggested_groups)
@@ -155,7 +160,7 @@ export async function exploreGroupsOn(db: Db, userId: string, query = ''): Promi
                when coalesce((select city from me), '') <> ''
                     and (g.name ilike '%' || (select city from me) || '%'
                          or g.description ilike '%' || (select city from me) || '%')
-                 then 'Popular in ' || (select city from me)
+                 then case when g.kind = 'location' then 'Your city' else 'Popular in ' || (select city from me) end
                when coalesce((select industry from me), '') <> ''
                     and (g.name ilike '%' || (select industry from me) || '%'
                          or g.description ilike '%' || (select industry from me) || '%')
@@ -223,6 +228,8 @@ export async function communityStart(userId: string): Promise<{
                  g.slug as group_slug,
                  (p.group_id is not null and p.group_id in (select id from my_groups)) as in_group,
                  case
+                   -- A club broadcast (0049) reaches every member, whoever posted it.
+                   when p.audience = 'club' then 'club'
                    when p.author_id = $1 then 'mine'
                    when p.group_id in (select id from my_groups) then 'group'
                    when p.group_id in (select id from suggested_groups) then 'suggested_group'
@@ -233,7 +240,8 @@ export async function communityStart(userId: string): Promise<{
             left join public.community_groups g on g.id = p.group_id
            where p.status = 'active'
              and (
-               p.author_id = $1
+               p.audience = 'club'
+               or p.author_id = $1
                or (p.group_id is null and p.author_id in (select id from followed))
                or p.group_id in (select id from my_groups)
                or p.group_id in (select id from suggested_groups)
@@ -293,14 +301,16 @@ export async function listFeed(
 ): Promise<CommunityPost[]> {
   const limit = Math.min(Math.max(opts.limit ?? 25, 1), 50);
   return withUserRead(userId, async (db) => {
+    // A club broadcast (0049) is part of every scope: the whole point of it is
+    // that an admin posts once and it is in every group.
     const scope =
       opts.groupId === undefined
-        ? `(p.group_id is null or exists(
+        ? `(p.audience = 'club' or p.group_id is null or exists(
              select 1 from public.community_group_members gm
              where gm.group_id = p.group_id and gm.member_id = app.current_user_id()))`
         : opts.groupId === null
-          ? `p.group_id is null`
-          : `p.group_id = $1`;
+          ? `(p.audience = 'club' or p.group_id is null)`
+          : `(p.audience = 'club' or p.group_id = $1)`;
 
     const params: unknown[] = opts.groupId ? [opts.groupId] : [];
     if (opts.before) params.push(opts.before);
@@ -323,12 +333,20 @@ export async function listFeed(
 
 export async function createPost(
   userId: string,
-  input: { body: string; groupId: string | null; media: { url: string; type: 'image' | 'video' }[] }
+  input: {
+    body: string;
+    groupId: string | null;
+    media: { url: string; type: 'image' | 'video' }[];
+    /** 'club' is an admin broadcast to every member. Pinned to 'normal' for anyone else by guard_post_audience. */
+    audience?: 'normal' | 'club';
+    topic?: string | null;
+  }
 ): Promise<CommunityPost> {
   return withUser(userId, async (db) => {
     const inserted = first(await db`
-        insert into public.community_posts (author_id, group_id, body, media)
-        values (${userId}::uuid, ${input.groupId}::uuid, ${input.body}, ${JSON.stringify(input.media)}::jsonb)
+        insert into public.community_posts (author_id, group_id, body, media, audience, topic)
+        values (${userId}::uuid, ${input.groupId}::uuid, ${input.body}, ${JSON.stringify(input.media)}::jsonb,
+                ${input.audience ?? 'normal'}, ${input.topic ?? null})
         returning id
       `,
       'Post was not created'
@@ -464,12 +482,12 @@ export async function getGroup(userId: string, groupId: string): Promise<Communi
 
 export async function createGroup(
   userId: string,
-  input: { name: string; description: string; slug: string }
+  input: { name: string; description: string; slug: string; kind: 'location' | 'activity' | 'interest' }
 ): Promise<CommunityGroup> {
   return withUser(userId, async (db) => {
     const inserted = first(await db`
-        insert into public.community_groups (slug, name, description, created_by)
-        values (${input.slug}, ${input.name}, ${input.description}, ${userId}::uuid)
+        insert into public.community_groups (slug, name, description, kind, created_by)
+        values (${input.slug}, ${input.name}, ${input.description}, ${input.kind}, ${userId}::uuid)
         returning id
       `,
       'Group was not created'

@@ -62,5 +62,10 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<!-- The business console scans a member's coupon QR. WKWebView asks the
+	     user for the camera on the page's behalf, but only when this text
+	     exists; without it iOS refuses the request outright. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Professionals Club uses the camera to scan a member's coupon code at your counter.</string>
 </dict>
 </plist>
