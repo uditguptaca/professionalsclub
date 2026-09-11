@@ -64,7 +64,14 @@ export default function JobDetailPage() {
 
   const [job, setJob] = useState<JobDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  /**
+   * Two errors, deliberately. `error` means the role itself could not be
+   * loaded and the screen has nothing to show; `actionError` means a button
+   * failed and the role is still right there. Sharing one state meant a
+   * refused Featured toggle replaced the whole page with an error card.
+   */
   const [error, setError] = useState('');
+  const [actionError, setActionError] = useState('');
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -88,7 +95,7 @@ export default function JobDetailPage() {
     setJob({ ...job, applied });
     setBusy(true);
     const res = await setJobApplied(job.id, applied);
-    if (!res.ok) { setError(res.error); setJob({ ...job, applied: !applied }); }
+    if (!res.ok) { setActionError(res.error); setJob({ ...job, applied: !applied }); }
     setBusy(false);
   }
 
@@ -102,9 +109,9 @@ export default function JobDetailPage() {
     const before = job;
     setJob({ ...job, ...patch });
     setBusy(true);
-    setError('');
+    setActionError('');
     const res = await curatorUpdateRole(job.id, patch);
-    if (!res.ok) { setError(res.error); setJob(before); }
+    if (!res.ok) { setActionError(res.error); setJob(before); }
     setBusy(false);
   }
 
@@ -205,6 +212,12 @@ export default function JobDetailPage() {
         }}>
           <BadgeCheck size={15} aria-hidden="true" /> {job.matchReasons[0]}
         </p>
+      )}
+
+      {actionError && (
+        <div role="alert" className="community-error" style={{ marginBottom: 12 }}>
+          <AlertCircle size={15} aria-hidden="true" /> {actionError}
+        </div>
       )}
 
       {/* Closed roles get the reason instead of the two actions. */}
