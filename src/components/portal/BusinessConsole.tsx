@@ -3,21 +3,22 @@ import React from 'react';
 import { upload } from '@vercel/blob/client';
 import {
   Building2, Calendar, Tag, Ticket, CheckCircle2, Clock, Plus, Pencil, Trash2,
-  Upload, Eye, X, AlertCircle, ScanLine, Loader2,
+  Upload, Eye, X, AlertCircle, ScanLine,
 } from 'lucide-react';
 import PortalLoading from '@/components/portal/PortalLoading';
 import EventEditor from '@/components/portal/EventEditor';
+import CouponScanner from '@/components/portal/CouponScanner';
 import { useConfirm } from '@/components/portal/confirm';
 import { COMMUNITY_CITIES } from '@/lib/cities';
 import { readCache, writeCache } from '@/lib/swr-cache';
 import {
   fetchBusinessHomeAction, updateMyBusinessAction,
   createOfferAction, updateOfferAction, deleteOfferAction,
-  createCouponAction, updateCouponAction, deleteCouponAction, redeemCodeAction,
+  createCouponAction, updateCouponAction, deleteCouponAction,
   createBusinessEventAction, updateBusinessEventAction, deleteBusinessEventAction,
 } from '@/app/actions/business';
 import type {
-  BusinessHome, BusinessOffer, BusinessEvent, BusinessCoupon, RedeemOutcome,
+  BusinessHome, BusinessOffer, BusinessEvent, BusinessCoupon,
 } from '@/server/repos/business';
 
 /**
@@ -44,6 +45,17 @@ const CATEGORIES = [
 
 /** `businesses.logo` is free text: usually initials, sometimes an image URL. */
 const isImage = (logo: string) => /^(https?:\/\/|\/)/.test(logo);
+
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+/** "Weekdays only" in the words a business would use. */
+const daysLabel = (days: number[]): string | null => {
+  if (days.length === 0 || days.length === 7) return null;
+  const set = [...days].sort((a, b) => a - b);
+  if (set.join() === '1,2,3,4,5') return 'Weekdays only';
+  if (set.join() === '0,6') return 'Weekends only';
+  return set.map((d) => DAY_NAMES[d]).join(', ') + ' only';
+};
 
 const monthDay = (iso: string | null): string =>
   iso ? new Date(iso).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Date TBA';
@@ -198,7 +210,7 @@ export default function BusinessConsole({
                   : <p className="bz-muted">Events unlock once your business is verified.</p>
               )}
 
-              {tab === 'till' && <RedeemTab />}
+              {tab === 'till' && <CouponScanner />}
             </>
           )}
         </section>
@@ -502,8 +514,8 @@ function CouponsTab({ businessId, coupons, mutate, confirm }: {
   return (
     <>
       <p className="bz-muted" style={{ marginTop: 0 }}>
-        A coupon is claimed in the app and spent at your counter. Members see a one-time
-        code; you type it into Redeem and it cannot be used again.
+        A coupon is claimed in the app and spent at your counter. The member shows a
+        QR code, you scan it on the Redeem tab, and it cannot be used again.
       </p>
       <button type="button" className="btn btn-primary" style={{ minHeight: 46 }} onClick={() => setEditing('new')}>
         <Plus size={15} aria-hidden="true" /> New coupon
@@ -535,6 +547,8 @@ function CouponsTab({ businessId, coupons, mutate, confirm }: {
               {c.spent} used · {c.outstanding} claimed and waiting
               {c.totalLimit ? ` · ${Math.max(c.totalLimit - c.redeemedCount, 0)} of ${c.totalLimit} left` : ''}
               {c.endsAt ? ` · ends ${monthDay(c.endsAt)}` : ''}
+              {daysLabel(c.validDays) ? ` · ${daysLabel(c.validDays)}` : ''}
+              {c.cooldownDays > 0 ? ` · once every ${c.cooldownDays} days` : ''}
             </p>
             <div className="bz-actions">
               <button type="button" className="bz-upload" onClick={() => setEditing(c)}>
@@ -583,7 +597,9 @@ function CouponForm({ coupon, businessId, onSave, onCancel }: {
     endsAt: coupon?.endsAt ? coupon.endsAt.slice(0, 10) : '',
     totalLimit: coupon?.totalLimit ? String(coupon.totalLimit) : '',
     perMemberLimit: String(coupon?.perMemberLimit ?? 1),
+    cooldownDays: String(coupon?.cooldownDays ?? 0),
   });
+  const [validDays, setValidDays] = React.useState<number[]>(coupon?.validDays ?? []);
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -611,6 +627,8 @@ function CouponForm({ coupon, businessId, onSave, onCancel }: {
         endsAt: form.endsAt ? `${form.endsAt}T23:59:59` : null,
         totalLimit: form.totalLimit.trim() === '' ? null : Number(form.totalLimit),
         perMemberLimit: Number(form.perMemberLimit),
+        validDays,
+        cooldownDays: Number(form.cooldownDays || 0),
         businessId,
       });
       setBusy(false);
@@ -688,6 +706,48 @@ function CouponForm({ coupon, businessId, onSave, onCancel }: {
         </Field>
       </div>
 
+      <div style={{ marginBottom: 14 }}>
+        <span style={{
+          display: 'block', margin: '0 0 0.4rem 0.2rem',
+          fontSize: '0.76rem', fontWeight: 750, color: 'var(--text-secondary)',
+        }}>
+          Which days does it run?
+        </span>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }} role="group" aria-label="Days this offer runs">
+          {DAY_NAMES.map((name, day) => {
+            const on = validDays.includes(day);
+            return (
+              <button
+                key={name}
+                type="button"
+                aria-pressed={on}
+                onClick={() => setValidDays((d) =>
+                  d.includes(day) ? d.filter((x) => x !== day) : [...d, day])}
+                style={{
+                  minWidth: 46, minHeight: 42, borderRadius: 10, cursor: 'pointer',
+                  border: on ? '1px solid transparent' : '1px solid var(--border-color)',
+                  background: on ? 'var(--green-950)' : 'var(--bg-primary)',
+                  color: on ? '#fff' : 'var(--text-secondary)',
+                  font: 'inherit', fontSize: '0.8rem', fontWeight: 700,
+                }}
+              >
+                {name}
+              </button>
+            );
+          })}
+        </div>
+        <p className="bz-muted" style={{ margin: '0.35rem 0 0', fontSize: '0.78rem' }}>
+          {validDays.length === 0
+            ? 'None picked means any day. A code shown on a day you have not picked is refused at the counter.'
+            : `${daysLabel(validDays) ?? 'Any day'}. Other days are refused when you scan.`}
+        </p>
+      </div>
+
+      <Field label="Wait between uses (days)" htmlFor="cp-cool"
+        hint="0 means no wait. Use it with a per-member limit above 1 for something like once a month.">
+        <input id="cp-cool" type="number" min={0} max={365} value={form.cooldownDays} onChange={set('cooldownDays')} />
+      </Field>
+
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         {image && <img src={image} alt="" className="bz-logo" />}
         <button type="button" className="bz-upload" disabled={uploading}
@@ -708,89 +768,6 @@ function CouponForm({ coupon, businessId, onSave, onCancel }: {
         <button type="button" className="btn btn-secondary" onClick={onCancel} style={{ minHeight: 46 }}>Cancel</button>
       </div>
     </form>
-  );
-}
-
-// ---- The till --------------------------------------------------------------------
-
-const OUTCOME_COPY: Record<RedeemOutcome['outcome'], { tone: 'good' | 'bad'; line: string }> = {
-  redeemed: { tone: 'good', line: 'Accepted. Give them the discount.' },
-  already_used: { tone: 'bad', line: 'This code was already used.' },
-  expired: { tone: 'bad', line: 'This code expired before it was used.' },
-  void: { tone: 'bad', line: 'This code is no longer valid.' },
-  not_found: { tone: 'bad', line: 'No code like that. Check the letters and try again.' },
-};
-
-function RedeemTab() {
-  const [code, setCode] = React.useState('');
-  const [busy, setBusy] = React.useState(false);
-  const [result, setResult] = React.useState<RedeemOutcome | null>(null);
-  const [error, setError] = React.useState('');
-
-  return (
-    <div className="bz-card">
-      <p className="bz-muted" style={{ marginTop: 0 }}>
-        The member shows you an 8-character code on their phone. Type it here before
-        you give the discount - that is what marks it used.
-      </p>
-
-      <form onSubmit={async (e) => {
-        e.preventDefault();
-        setBusy(true); setError(''); setResult(null);
-        const r = await redeemCodeAction(code);
-        setBusy(false);
-        if (r.ok) { setResult(r.data); if (r.data.outcome === 'redeemed') setCode(''); }
-        else setError(r.error);
-      }}>
-        <Field label="Member's code" htmlFor="rd-code">
-          <input
-            id="rd-code"
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            required
-            maxLength={12}
-            autoComplete="off"
-            autoCapitalize="characters"
-            spellCheck={false}
-            placeholder="ABCD2345"
-            style={{ fontSize: '1.4rem', letterSpacing: '0.18em', fontWeight: 800, textAlign: 'center' }}
-          />
-        </Field>
-        <button type="submit" className="btn btn-primary" disabled={busy || code.trim().length < 4}
-          style={{ minHeight: 50, width: '100%', justifyContent: 'center', gap: 8 }}>
-          {busy ? <Loader2 size={16} className="spin" aria-hidden="true" /> : <ScanLine size={16} aria-hidden="true" />}
-          {busy ? 'Checking…' : 'Check and accept'}
-        </button>
-      </form>
-
-      {error && <p className="community-error" role="alert" style={{ marginTop: 12 }}>
-        <AlertCircle size={14} aria-hidden="true" /> {error}
-      </p>}
-
-      {result && (
-        <div
-          role="status"
-          style={{
-            marginTop: 14, padding: '0.9rem 1rem', borderRadius: '0.9rem',
-            background: OUTCOME_COPY[result.outcome].tone === 'good' ? 'var(--green-50)' : 'var(--bg-secondary)',
-            border: `1px solid ${OUTCOME_COPY[result.outcome].tone === 'good' ? 'rgba(45,122,79,0.3)' : 'var(--border-color)'}`,
-          }}
-        >
-          <strong style={{
-            display: 'block', fontSize: '1rem',
-            color: OUTCOME_COPY[result.outcome].tone === 'good' ? 'var(--success-600)' : 'var(--text-primary)',
-          }}>
-            {OUTCOME_COPY[result.outcome].line}
-          </strong>
-          {result.couponTitle && (
-            <span className="bz-muted" style={{ fontSize: '0.85rem' }}>
-              {result.couponTitle}
-              {result.redeemedAt ? ` · ${new Date(result.redeemedAt).toLocaleString('en-CA')}` : ''}
-            </span>
-          )}
-        </div>
-      )}
-    </div>
   );
 }
 

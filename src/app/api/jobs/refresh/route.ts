@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { syncAllCompanies } from '@/server/jobs/sync';
 import { checkJobLiveness } from '@/server/jobs/liveness';
 import { drainOutbox } from '@/server/email';
+import { expireCouponHolds } from '@/server/repos/offers';
 
 /**
  * Scheduled refresh: pull every company's job feed, then send whatever mail is
@@ -42,6 +43,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ ok: true, ms: Date.now() - started, liveness });
   }
 
+  // Coupon seats held by codes nobody showed. A member's own stale hold is
+  // returned the moment they ask for the code again (0048), but a capped offer
+  // would otherwise stay short a seat for everybody else until they did.
+  const couponHolds = await expireCouponHolds();
+
   const companies = await syncAllCompanies();
   // After the feeds, not before: sync reopens anything an employer re-listed,
   // so checking links afterwards never fights a fresher signal.
@@ -58,6 +64,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     closed: companies.reduce((n, c) => n + c.closed, 0),
     liveness,
     email,
+    couponHolds,
     // Named rather than counted: a feed that has been broken for a week is
     // something an operator needs to see.
     failures: failures.map((c) => ({ company: c.company, kind: c.kind, error: c.error })),

@@ -1,5 +1,6 @@
 import 'server-only';
 import { withUser, withUserRead } from '@/server/db';
+import { codeQr } from '@/server/qr';
 
 /**
  * Member offers: the discounts a member can actually use.
@@ -33,6 +34,9 @@ export interface MemberCoupon {
   redeemMode: string;
   endsAt: string | null;
   perMemberLimit: number;
+  /** Days this offer runs, 0 = Sunday. Empty means any day. */
+  validDays: number[];
+  cooldownDays: number;
   /** null when the coupon is uncapped. */
   seatsLeft: number | null;
   businessId: string;
@@ -54,6 +58,8 @@ export interface MyCouponCode {
   couponId: string;
   couponTitle: string;
   redeemMode: string;
+  /** The QR the business scans, as a data URL. Null for online promo codes. */
+  qr: string | null;
   /** The shared code to type at an online checkout, for online coupons only. */
   promoCode: string | null;
   businessName: string;
@@ -93,6 +99,7 @@ export async function offersHome(userId: string): Promise<OffersHome> {
             'amountOffCents', c.amount_off_cents, 'currency', c.currency,
             'minSpendCents', c.min_spend_cents, 'redeemMode', c.redeem_mode,
             'endsAt', c.ends_at, 'perMemberLimit', c.per_member_limit,
+            'validDays', c.valid_days, 'cooldownDays', c.cooldown_days,
             'seatsLeft', case when c.total_limit is null then null
                               else greatest(c.total_limit - c.redeemed_count, 0) end,
             'businessId', b.id, 'businessName', b.name, 'businessSlug', b.slug,
@@ -110,7 +117,7 @@ export async function offersHome(userId: string): Promise<OffersHome> {
           select json_agg(json_build_object(
             'id', r.id, 'code', r.code, 'status', r.status,
             'createdAt', r.created_at, 'expiresAt', r.expires_at, 'redeemedAt', r.redeemed_at,
-            'couponId', c.id, 'couponTitle', c.title, 'redeemMode', c.redeem_mode,
+            'couponId', c.id, 'couponTitle', c.title, 'redeemMode', c.redeem_mode, 'qr', null,
             'promoCode', case when c.redeem_mode = 'online' then c.promo_code else null end,
             'businessName', b.name, 'businessSlug', b.slug, 'businessLogo', b.logo
           ) order by r.created_at desc)
@@ -135,12 +142,16 @@ export async function offersHome(userId: string): Promise<OffersHome> {
     );
 
     const payload = rows[0]?.payload ?? { coupons: [], myCodes: [], announcements: [] };
-    for (const c of payload.coupons) c.endsAt = iso(c.endsAt);
+    for (const c of payload.coupons) {
+      c.endsAt = iso(c.endsAt);
+      c.validDays = Array.isArray(c.validDays) ? c.validDays.map(Number) : [];
+    }
     for (const m of payload.myCodes) {
       m.createdAt = iso(m.createdAt);
       m.expiresAt = iso(m.expiresAt);
       m.redeemedAt = iso(m.redeemedAt);
     }
+    await attachQr(payload.myCodes);
     for (const a of payload.announcements) a.validUntil = iso(a.validUntil);
     return payload;
   });
@@ -173,5 +184,183 @@ export async function claimCoupon(userId: string, couponId: string): Promise<Cla
       status: r.status as string,
       expiresAt: iso(r.expires_at),
     };
+  });
+}
+
+/**
+ * Draw the QR for every code still waiting to be spent.
+ *
+ * Only the live in-store ones: an online coupon is a promo code typed into a
+ * checkout, and a used code is history. Rendering a picture for either would be
+ * work nobody looks at.
+ */
+async function attachQr(codes: MyCouponCode[]): Promise<void> {
+  await Promise.all(codes.map(async (c) => {
+    if (c.status === 'reserved' && c.redeemMode !== 'online') {
+      c.qr = await codeQr(c.code);
+    }
+  }));
+}
+
+// ============================================================ One business
+
+export interface MemberBusinessPage {
+  id: string;
+  name: string;
+  slug: string;
+  logo: string | null;
+  coverImage: string | null;
+  category: string;
+  city: string | null;
+  province: string | null;
+  address: string | null;
+  descriptionShort: string | null;
+  descriptionFull: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  businessHours: string | null;
+  serviceArea: string | null;
+  memberRateText: string | null;
+  isFeatured: boolean;
+  coupons: MemberCoupon[];
+  announcements: MemberAnnouncement[];
+  events: {
+    id: string;
+    title: string;
+    date: string | null;
+    time: string | null;
+    location: string | null;
+    image: string | null;
+    admission: string;
+    priceCents: number;
+    currency: string;
+  }[];
+  myCodes: MyCouponCode[];
+}
+
+/**
+ * A business, as a member sees it: who they are, what they are offering, and
+ * what is coming up.
+ *
+ * This is the screen the QR is generated on. A member opens the business they
+ * are standing in, taps the offer, and the code is on the phone - which is why
+ * their own live codes for THIS business come back with it rather than living
+ * only on the offers tab.
+ *
+ * Every row here is still gated by the same policies as everywhere else: an
+ * unverified business is not visible, a paused coupon is not listed, and an
+ * event the club has not approved does not appear.
+ */
+export async function memberBusinessPage(
+  userId: string,
+  slug: string
+): Promise<MemberBusinessPage | null> {
+  const page = await withUserRead(userId, async (db) => {
+    const rows = await db.run<{ payload: MemberBusinessPage | null }>(
+      `
+      with biz as (
+        select * from public.businesses
+         where slug = $2 and verification_status = 'verified'
+         limit 1
+      )
+      select case when not exists (select 1 from biz) then null else (
+        select json_build_object(
+          'id', b.id, 'name', b.name, 'slug', b.slug, 'logo', b.logo,
+          'coverImage', b.cover_image, 'category', b.category, 'city', b.city,
+          'province', b.province, 'address', b.address,
+          'descriptionShort', b.description_short, 'descriptionFull', b.description_full,
+          'phone', b.phone, 'email', b.email, 'website', b.website,
+          'businessHours', b.business_hours, 'serviceArea', b.service_area,
+          'memberRateText', b.member_rate_text, 'isFeatured', b.is_featured,
+          'coupons', coalesce((
+            select json_agg(json_build_object(
+              'id', c.id, 'title', c.title, 'description', c.description, 'terms', c.terms,
+              'image', c.image, 'discountKind', c.discount_kind, 'percentOff', c.percent_off,
+              'amountOffCents', c.amount_off_cents, 'currency', c.currency,
+              'minSpendCents', c.min_spend_cents, 'redeemMode', c.redeem_mode,
+              'endsAt', c.ends_at, 'perMemberLimit', c.per_member_limit,
+              'validDays', c.valid_days, 'cooldownDays', c.cooldown_days,
+              'seatsLeft', case when c.total_limit is null then null
+                                else greatest(c.total_limit - c.redeemed_count, 0) end,
+              'businessId', b.id, 'businessName', b.name, 'businessSlug', b.slug,
+              'businessLogo', b.logo, 'businessCity', b.city,
+              'myClaims', (select count(*) from public.coupon_redemptions r
+                            where r.coupon_id = c.id and r.member_id = $1 and r.status <> 'void')
+            ) order by c.created_at desc)
+              from public.business_coupons c
+             where c.business_id = b.id and c.is_active
+               and (c.starts_at is null or c.starts_at <= now())
+               and (c.ends_at is null or c.ends_at > now())
+          ), '[]'::json),
+          'announcements', coalesce((
+            select json_agg(json_build_object(
+              'id', o.id, 'title', o.title, 'description', o.description,
+              'validUntil', o.valid_until, 'businessName', b.name,
+              'businessSlug', b.slug, 'businessLogo', b.logo
+            ) order by o.created_at desc)
+              from public.business_offers o
+             where o.business_id = b.id and o.is_active
+          ), '[]'::json),
+          'events', coalesce((
+            select json_agg(json_build_object(
+              'id', e.id, 'title', e.title, 'date', e.event_date, 'time', e.event_time,
+              'location', coalesce(e.venue_name, e.location), 'image', e.image,
+              'admission', e.admission, 'priceCents', e.price_cents, 'currency', e.currency
+            ) order by e.event_date asc nulls last)
+              from public.events e
+             where e.business_id = b.id and e.is_published
+               and e.moderation_status = 'approved' and e.status = 'upcoming'
+          ), '[]'::json),
+          'myCodes', coalesce((
+            select json_agg(json_build_object(
+              'id', r.id, 'code', r.code, 'status', r.status,
+              'createdAt', r.created_at, 'expiresAt', r.expires_at, 'redeemedAt', r.redeemed_at,
+              'couponId', c.id, 'couponTitle', c.title, 'redeemMode', c.redeem_mode, 'qr', null,
+              'promoCode', case when c.redeem_mode = 'online' then c.promo_code else null end,
+              'businessName', b.name, 'businessSlug', b.slug, 'businessLogo', b.logo
+            ) order by r.created_at desc)
+              from public.coupon_redemptions r
+              join public.business_coupons c on c.id = r.coupon_id
+             where r.business_id = b.id and r.member_id = $1 and r.status = 'reserved'
+          ), '[]'::json)
+        ) from biz b
+      ) end as payload
+      `,
+      [userId, slug]
+    );
+    return rows[0]?.payload ?? null;
+  });
+
+  if (!page) return null;
+  for (const c of page.coupons) {
+    c.endsAt = iso(c.endsAt);
+    c.validDays = Array.isArray(c.validDays) ? c.validDays.map(Number) : [];
+  }
+  for (const a of page.announcements) a.validUntil = iso(a.validUntil);
+  for (const e of page.events) e.date = iso(e.date);
+  for (const m of page.myCodes) {
+    m.createdAt = iso(m.createdAt);
+    m.expiresAt = iso(m.expiresAt);
+    m.redeemedAt = iso(m.redeemedAt);
+  }
+  await attachQr(page.myCodes);
+  return page;
+}
+
+/**
+ * Return the seats held by codes nobody showed.
+ *
+ * Elevated is not needed and not used: expire_coupon_reservations() is a
+ * SECURITY DEFINER function with no grant to app roles, so the only caller is
+ * server-side code like this one, running on the cron's connection.
+ */
+export async function expireCouponHolds(): Promise<number> {
+  const { withElevated } = await import('@/server/db');
+  return withElevated(async (db) => {
+    const rows = await db<{ expired: number }>`
+      select public.expire_coupon_reservations() as expired
+    `;
+    return Number(rows[0]?.expired ?? 0);
   });
 }

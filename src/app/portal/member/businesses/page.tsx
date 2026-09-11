@@ -340,8 +340,10 @@ export default function MemberBusinessDirectory() {
                     </span>
 
                     <div style={{ display: 'flex', gap: 8, padding: '0 1rem 1rem' }}>
+                      {/* Inside the portal, not out to the public page: this is
+                          where the member's offers and their QR code live. */}
                       <Link
-                        href={`/businesses/${biz.slug}`}
+                        href={`/portal/member/businesses/${biz.slug}`}
                         className="btn btn-outline btn-sm"
                         style={{ flex: 1, minHeight: 44 }}
                       >

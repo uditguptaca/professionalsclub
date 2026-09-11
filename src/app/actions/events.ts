@@ -48,6 +48,17 @@ export async function fetchOffersAction(): Promise<ActionResult<offers.OffersHom
   return run('Loading member offers', async () => offers.offersHome(await requireUserId()));
 }
 
+/** One business, as a member sees it: their offers, their events, my codes. */
+export async function fetchBusinessPageAction(
+  slug: string
+): Promise<ActionResult<offers.MemberBusinessPage | null>> {
+  return run('Loading the business', async () => {
+    const userId = await requireUserId();
+    if (typeof slug !== 'string' || slug.length < 1 || slug.length > 120) return null;
+    return offers.memberBusinessPage(userId, slug);
+  });
+}
+
 /** Claim a coupon code. Every rule that says no lives in claim_coupon(). */
 export async function claimCouponAction(couponId: string): Promise<ActionResult<offers.ClaimResult>> {
   return run('Claiming the offer', async () => {

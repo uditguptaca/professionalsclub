@@ -141,6 +141,9 @@ export interface BusinessCoupon {
   endsAt: string | null;
   totalLimit: number | null;
   perMemberLimit: number;
+  /** Days of the week it runs, 0 = Sunday. Empty means any day. */
+  validDays: number[];
+  cooldownDays: number;
   redeemedCount: number;
   isActive: boolean;
   /** Claimed codes still waiting to be spent at the counter. */
@@ -220,6 +223,7 @@ export async function fetchBusinessHome(userId: string): Promise<BusinessHome> {
             'minSpendCents', c.min_spend_cents, 'redeemMode', c.redeem_mode,
             'promoCode', c.promo_code, 'startsAt', c.starts_at, 'endsAt', c.ends_at,
             'totalLimit', c.total_limit, 'perMemberLimit', c.per_member_limit,
+            'validDays', c.valid_days, 'cooldownDays', c.cooldown_days,
             'redeemedCount', c.redeemed_count, 'isActive', c.is_active,
             -- Straight off the redemption rows rather than the counter: the
             -- counter is "seats taken", these two are what the owner asks about
@@ -239,7 +243,11 @@ export async function fetchBusinessHome(userId: string): Promise<BusinessHome> {
     const payload = rows[0]?.payload ?? { business: null, offers: [], events: [], coupons: [] };
     for (const e of payload.events) e.date = iso(e.date);
     for (const o of payload.offers) o.validUntil = iso(o.validUntil);
-    for (const c of payload.coupons) { c.startsAt = iso(c.startsAt); c.endsAt = iso(c.endsAt); }
+    for (const c of payload.coupons) {
+      c.startsAt = iso(c.startsAt);
+      c.endsAt = iso(c.endsAt);
+      c.validDays = Array.isArray(c.validDays) ? c.validDays.map(Number) : [];
+    }
     return payload;
   });
 }
@@ -414,6 +422,8 @@ const COUPON_WRITABLE: ColumnMap = {
   endsAt: 'ends_at',
   totalLimit: 'total_limit',
   perMemberLimit: 'per_member_limit',
+  validDays: 'valid_days',
+  cooldownDays: 'cooldown_days',
   isActive: 'is_active',
 };
 
@@ -449,6 +459,19 @@ function validateCoupon(data: Record<string, unknown>): void {
   if (data.totalLimit !== null && data.totalLimit !== undefined && data.totalLimit !== '') {
     const total = Number(data.totalLimit);
     if (!Number.isFinite(total) || total < 1) throw new Error('The total limit must be at least 1.');
+  }
+
+  if (data.validDays !== undefined) {
+    const days = Array.isArray(data.validDays) ? data.validDays.map(Number) : [];
+    if (days.some((d) => !Number.isInteger(d) || d < 0 || d > 6)) {
+      throw new Error('Pick the days of the week this offer runs.');
+    }
+  }
+  if (data.cooldownDays !== undefined && data.cooldownDays !== null) {
+    const cd = Number(data.cooldownDays);
+    if (!Number.isFinite(cd) || cd < 0 || cd > 365) {
+      throw new Error('The wait between uses has to be between 0 and 365 days.');
+    }
   }
 
   const starts = data.startsAt ? Date.parse(String(data.startsAt)) : null;
@@ -530,9 +553,17 @@ export async function couponActivity(userId: string, limit = 50): Promise<Coupon
 }
 
 export interface RedeemOutcome {
-  outcome: 'redeemed' | 'already_used' | 'expired' | 'void' | 'not_found';
+  outcome: 'redeemed' | 'already_used' | 'expired' | 'void' | 'not_found' | 'wrong_day' | 'paused';
   couponTitle: string | null;
   redeemedAt: string | null;
+  /** What the discount is, so the till knows what it just accepted. */
+  discountKind: string | null;
+  percentOff: number | null;
+  amountOffCents: number | null;
+  currency: string | null;
+  /** The two conditions only a person can check, shown at the moment of use. */
+  minSpendCents: number;
+  terms: string;
 }
 
 /**
@@ -555,6 +586,13 @@ export async function redeemCode(userId: string, code: string): Promise<RedeemOu
       outcome: ((r?.outcome as string) ?? 'not_found') as RedeemOutcome['outcome'],
       couponTitle: (r?.coupon_title as string | null) ?? null,
       redeemedAt: iso(r?.redeemed_at),
+      discountKind: (r?.discount_kind as string | null) ?? null,
+      percentOff: r?.percent_off === null || r?.percent_off === undefined ? null : Number(r.percent_off),
+      amountOffCents: r?.amount_off_cents === null || r?.amount_off_cents === undefined
+        ? null : Number(r.amount_off_cents),
+      currency: (r?.currency as string | null) ?? null,
+      minSpendCents: Number(r?.min_spend_cents ?? 0),
+      terms: (r?.terms as string | null) ?? '',
     };
   });
 }
