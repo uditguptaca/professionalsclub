@@ -4,6 +4,10 @@ import { requireUserId, requireAdminId, getBusinessUser } from '@/server/auth';
 import * as repo from '@/server/repos/business';
 import * as invites from '@/server/repos/business-invites';
 import { setEventRsvp } from '@/server/repos/home';
+import { createBusinessPost, listBusinessPosts, deletePost } from '@/server/repos/community';
+import { recommendBusinesses, type BusinessSuggestion } from '@/server/repos/recommendations';
+import { sanitizeMedia, assertClean } from '@/server/media';
+import type { CommunityPost, CommunityMedia } from '@/types';
 
 /**
  * Server Actions for the business owner module, plus the member RSVP toggle.
@@ -179,6 +183,54 @@ export async function deleteBusinessEventAction(eventId: string): Promise<Action
     await repo.deleteBusinessEvent(uid, eventId);
     return repo.fetchBusinessHome(uid);
   });
+}
+
+// ---- Business posts (0050) --------------------------------------------------------
+
+/**
+ * A business posting as itself. The same wordlist and media rules a member's
+ * post goes through; the database adds the rest - a business cannot post into
+ * a group, cannot speak as the club, and must be verified.
+ */
+export async function createBusinessPostAction(
+  businessId: string,
+  input: { body: string; media?: CommunityMedia[] }
+): Promise<ActionResult<CommunityPost>> {
+  return run('Posting', async (uid) => {
+    const body = String(input.body ?? '').trim();
+    const media = sanitizeMedia(input.media);
+    if (!body && media.length === 0) throw new Error('Write something or add a photo first.');
+    if (body) assertClean(body);
+    if (typeof businessId !== 'string' || businessId.length !== 36) throw new Error('Unknown business.');
+    return createBusinessPost(uid, businessId, { body: body || ' ', media });
+  });
+}
+
+/** A business's posts: for its console, and for the member business page. */
+export async function fetchBusinessPostsAction(businessId: string): Promise<ActionResult<CommunityPost[]>> {
+  return run('Loading posts', async (uid) => {
+    if (typeof businessId !== 'string' || businessId.length !== 36) return [];
+    return listBusinessPosts(uid, businessId);
+  });
+}
+
+export async function deleteBusinessPostAction(postId: string): Promise<ActionResult<null>> {
+  return run('Removing the post', async (uid) => {
+    if (typeof postId !== 'string' || postId.length !== 36) throw new Error('Unknown post.');
+    await deletePost(uid, postId);
+    return null;
+  });
+}
+
+// ---- Suggested businesses (0050) ----------------------------------------------------
+
+/**
+ * Businesses this member has not saved, with the reason each is suggested:
+ * who they follow saved it, they save this category, it is in their city, or
+ * it matches their work. Members only - a business account has no circle.
+ */
+export async function fetchBusinessSuggestionsAction(): Promise<ActionResult<BusinessSuggestion[]>> {
+  return runMember('Loading suggestions', (uid) => recommendBusinesses(uid, 8));
 }
 
 // ---- Member RSVP ---------------------------------------------------------------

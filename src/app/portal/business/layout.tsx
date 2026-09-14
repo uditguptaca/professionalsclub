@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { requireBusinessUser } from '@/server/auth';
 import BusinessTopbar from '@/components/portal/BusinessTopbar';
+import { ConfirmProvider } from '@/components/portal/confirm';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,7 +39,10 @@ export default async function BusinessLayout({ children }: { children: React.Rea
         }}
       >
         <div style={{ width: '100%', maxWidth: '52rem', margin: '0 auto' }}>
-          {children}
+          {/* Without this, useConfirm() falls back to window.confirm, which the
+              native shells caption "localhost says". The member side gets it
+              from PortalShell; this side has no shell. */}
+          <ConfirmProvider>{children}</ConfirmProvider>
         </div>
       </main>
       <footer style={{

@@ -514,7 +514,8 @@ export interface CommunityMedia {
 
 export interface CommunityPost {
   id: string;
-  authorId: string;
+  /** Null when a business posted (0050): then businessId is set and is the author. */
+  authorId: string | null;
   groupId: string | null;
   body: string;
   media: CommunityMedia[];
@@ -533,8 +534,13 @@ export interface CommunityPost {
   /** 'club' = posted by the club for every member; only admins can set it (0049). */
   audience: 'normal' | 'club';
   topic: CommunityTopic | null;
+  /** Set when a business posted this (0050). The byline is the business, not a person. */
+  businessId: string | null;
+  businessName: string | null;
+  businessSlug: string | null;
+  businessLogo: string | null;
   /** Why this post is in MY feed. 'suggested_group' posts carry a join CTA. */
-  source?: 'mine' | 'followed' | 'group' | 'suggested_group' | 'club';
+  source?: 'mine' | 'followed' | 'group' | 'suggested_group' | 'club' | 'saved_business';
   /** For group posts: whether I am already in that group. */
   inGroup?: boolean;
   groupSlug?: string | null;

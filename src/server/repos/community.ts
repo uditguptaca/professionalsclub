@@ -42,6 +42,10 @@ const POST_SELECT = `
   n.job_title  as author_job_title,
   n.company    as author_company,
   p.audience, p.topic,
+  p.business_id,
+  bz.name      as business_name,
+  bz.slug      as business_slug,
+  bz.logo      as business_logo,
   g.name       as group_name,
   (select count(*)::int from public.community_likes l where l.post_id = p.id) as like_count,
   (select count(*)::int from public.community_comments c
@@ -113,13 +117,15 @@ export async function personalFeedOn(
              (p.group_id is not null and p.group_id in (select id from mine)) as in_group,
              case
                when p.audience = 'club' then 'club'
+               when p.business_id is not null then 'saved_business'
                when p.author_id = $1 then 'mine'
                when p.group_id in (select id from mine) then 'group'
                when p.group_id in (select id from suggested_groups) then 'suggested_group'
                else 'followed'
              end as source
         from public.community_posts p
-        join public.member_names n on n.id = p.author_id
+        left join public.member_names n on n.id = p.author_id
+        left join public.businesses bz on bz.id = p.business_id
         left join public.community_groups g on g.id = p.group_id
        where p.status = 'active'
          and (
@@ -128,6 +134,9 @@ export async function personalFeedOn(
            or (p.group_id is null and p.author_id in (select id from followed))
            or p.group_id in (select id from mine)
            or p.group_id in (select id from suggested_groups)
+           -- A business I saved is a business I asked to hear from (0050).
+           or (p.business_id is not null and p.business_id in (
+                 select s.business_id from public.member_saved_businesses s where s.member_id = $1))
          )
          ${beforeClause}
        order by p.created_at desc
@@ -230,13 +239,15 @@ export async function communityStart(userId: string): Promise<{
                  case
                    -- A club broadcast (0049) reaches every member, whoever posted it.
                    when p.audience = 'club' then 'club'
+                   when p.business_id is not null then 'saved_business'
                    when p.author_id = $1 then 'mine'
                    when p.group_id in (select id from my_groups) then 'group'
                    when p.group_id in (select id from suggested_groups) then 'suggested_group'
                    else 'followed'
                  end as source
             from public.community_posts p
-            join public.member_names n on n.id = p.author_id
+            left join public.member_names n on n.id = p.author_id
+            left join public.businesses bz on bz.id = p.business_id
             left join public.community_groups g on g.id = p.group_id
            where p.status = 'active'
              and (
@@ -245,6 +256,8 @@ export async function communityStart(userId: string): Promise<{
                or (p.group_id is null and p.author_id in (select id from followed))
                or p.group_id in (select id from my_groups)
                or p.group_id in (select id from suggested_groups)
+               or (p.business_id is not null and p.business_id in (
+                     select s.business_id from public.member_saved_businesses s where s.member_id = $1))
              )
            order by p.created_at desc
            limit $2
@@ -320,7 +333,8 @@ export async function listFeed(
     const rows = await db.run(
       `select ${POST_SELECT}
        from public.community_posts p
-       join public.member_names n on n.id = p.author_id
+       left join public.member_names n on n.id = p.author_id
+       left join public.businesses bz on bz.id = p.business_id
        left join public.community_groups g on g.id = p.group_id
        where p.status = 'active' and ${scope} ${beforeClause}
        order by p.created_at desc
@@ -355,11 +369,52 @@ export async function createPost(
   });
 }
 
+/**
+ * A business posting as itself (0050). No author_id - the business is the
+ * author - and never a group or a club audience; the insert policy and
+ * guard_post_audience refuse both regardless of what arrives here.
+ */
+export async function createBusinessPost(
+  userId: string,
+  businessId: string,
+  input: { body: string; media: { url: string; type: 'image' | 'video' }[] }
+): Promise<CommunityPost> {
+  return withUser(userId, async (db) => {
+    const inserted = first(await db`
+        insert into public.community_posts (author_id, business_id, group_id, body, media)
+        values (null, ${businessId}::uuid, null, ${input.body}, ${JSON.stringify(input.media)}::jsonb)
+        returning id
+      `,
+      'Post was not created'
+    ) as { id: string };
+    return fetchPost(db, inserted.id);
+  });
+}
+
+/** Everything one business has posted, newest first. RLS scopes it to what the caller may see. */
+export async function listBusinessPosts(userId: string, businessId: string, limit = 30): Promise<CommunityPost[]> {
+  return withUserRead(userId, async (db) => {
+    const rows = await db.run(
+      `select ${POST_SELECT}
+       from public.community_posts p
+       left join public.member_names n on n.id = p.author_id
+       left join public.businesses bz on bz.id = p.business_id
+       left join public.community_groups g on g.id = p.group_id
+       where p.business_id = $1 and p.status = 'active'
+       order by p.created_at desc
+       limit $2`,
+      [businessId, Math.min(Math.max(limit, 1), 60)]
+    );
+    return toDomainAll<CommunityPost>(rows);
+  });
+}
+
 async function fetchPost(db: Db, id: string): Promise<CommunityPost> {
   const rows = await db.run(
     `select ${POST_SELECT}
      from public.community_posts p
-     join public.member_names n on n.id = p.author_id
+     left join public.member_names n on n.id = p.author_id
+     left join public.businesses bz on bz.id = p.business_id
      left join public.community_groups g on g.id = p.group_id
      where p.id = $1`,
     [id]

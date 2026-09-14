@@ -11,10 +11,11 @@ import {
   reportCommunityContent, blockCommunityMember, fetchGroups,
   joinCommunityGroup, fetchCommunityHome,
 } from '@/app/actions/community';
+import { createBusinessPostAction, deleteBusinessPostAction } from '@/app/actions/business';
 import {
   Heart, MessageCircle, Send, Trash2, Flag, UserX, Loader2,
   MoreHorizontal, ImagePlus, Clapperboard, X, ChevronLeft, ChevronRight,
-  Link2, Check, Plus, Users, ShieldCheck,
+  Link2, Check, Plus, Users, ShieldCheck, Store,
 } from 'lucide-react';
 import { useConfirm } from '@/components/portal/confirm';
 
@@ -47,7 +48,31 @@ const initials = (first: string, last: string) =>
 
 /** Deterministic avatar tone per author — quiet variety, no rainbow. */
 const TONES = ['tone-moss', 'tone-clay', 'tone-pine', 'tone-fawn'];
-const toneFor = (id: string) => TONES[(id.charCodeAt(0) + id.charCodeAt(id.length - 1)) % TONES.length];
+const toneFor = (id: string | null) => {
+  const s = id || 'x';
+  return TONES[(s.charCodeAt(0) + s.charCodeAt(s.length - 1)) % TONES.length];
+};
+
+/** `businesses.logo` is free text: usually initials, sometimes an image URL. */
+const isImageUrl = (v: string | null) => Boolean(v && /^(https?:\/\/|\/)/.test(v));
+
+/** The avatar for a post by a business: its logo if it has one, else its initial. */
+function BusinessAvatar({ name, logo, className = '' }: { name: string; logo: string | null; className?: string }) {
+  if (isImageUrl(logo)) {
+    return (
+      <img
+        src={logo as string} alt="" aria-hidden="true"
+        className={`community-avatar ${className}`}
+        style={{ objectFit: 'contain', background: '#fff', border: '1px solid var(--border-color)' }}
+      />
+    );
+  }
+  return (
+    <span className={`community-avatar tone-pine ${className}`} aria-hidden="true">
+      {(logo?.trim() || name.charAt(0) || '?').slice(0, 2).toUpperCase()}
+    </span>
+  );
+}
 
 // ============================================================ Upload
 
@@ -119,10 +144,13 @@ export function PostComposer({
   groupId,
   placeholder,
   onPosted,
+  business,
 }: {
   groupId: string | null;
   placeholder: string;
   onPosted: (post: CommunityPost) => void;
+  /** Set when a business is the author (0050): the post is signed by it, not by a person. */
+  business?: { id: string; name: string; logo: string | null };
 }) {
   const { profile } = useApp();
   const [body, setBody] = useState('');
@@ -178,11 +206,14 @@ export function PostComposer({
     if (busy || uploading > 0 || (!body.trim() && drafts.length === 0)) return;
     setBusy(true);
     setError('');
-    const result = await publishPost({
-      body, groupId, media: drafts.map((d) => d.media),
-      audience: isAdmin && asClub ? 'club' : 'normal',
-      topic: isAdmin && asClub ? topic : null,
-    });
+    const media = drafts.map((d) => d.media);
+    const result = business
+      ? await createBusinessPostAction(business.id, { body, media })
+      : await publishPost({
+        body, groupId, media,
+        audience: isAdmin && asClub ? 'club' : 'normal',
+        topic: isAdmin && asClub ? topic : null,
+      });
     if (result.ok) {
       setBody('');
       drafts.forEach((d) => URL.revokeObjectURL(d.previewUrl));
@@ -198,7 +229,9 @@ export function PostComposer({
   return (
     <div className={`community-panel community-composer ${expanded ? 'is-expanded' : ''}`}>
       <div className="community-composer-row">
-        {profile && (
+        {business ? (
+          <BusinessAvatar name={business.name} logo={business.logo} />
+        ) : profile && (
           <span className={`community-avatar ${toneFor(profile.id)}`} aria-hidden="true">
             {initials(profile.firstName, profile.lastName)}
           </span>
@@ -568,11 +601,13 @@ function CommentThread({
 // ============================================================ Post card
 
 export function PostCard({
-  post, onDeleted, onAuthorBlocked,
+  post, onDeleted, onAuthorBlocked, manageBusiness = false,
 }: {
   post: CommunityPost;
   onDeleted: (id: string) => void;
   onAuthorBlocked: (authorId: string) => void;
+  /** The business console: the owner may delete, and there is no member here to like or comment. */
+  manageBusiness?: boolean;
 }) {
   const { profile } = useApp();
   const [likeState, setLikeState] = useState({ liked: post.likedByMe, count: post.likeCount });
@@ -590,7 +625,15 @@ export function PostCard({
   const [linkCopied, setLinkCopied] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const confirm = useConfirm();
-  const mine = profile?.id === post.authorId;
+  const byBusiness = !post.authorId && Boolean(post.businessId);
+  const mine = byBusiness ? manageBusiness : Boolean(profile) && profile?.id === post.authorId;
+  // A business account has no member profile: it can read its own posts and
+  // members' comments on them, but liking and commenting are for members.
+  const canInteract = Boolean(profile);
+  const displayName = byBusiness ? (post.businessName ?? 'Business') : `${post.authorFirstName} ${post.authorLastName}`;
+  const authorHref = byBusiness
+    ? (manageBusiness ? null : `/portal/member/businesses/${post.businessSlug}`)
+    : (mine ? '/portal/member/profile' : `/portal/member/people/${post.authorId}`);
 
   // The options popover dismisses on outside click and Escape.
   useEffect(() => {
@@ -632,7 +675,7 @@ export function PostCard({
     if (!ok) return;
     setActionBusy(true);
     setActionError('');
-    const r = await removeOwnPost(post.id);
+    const r = byBusiness ? await deleteBusinessPostAction(post.id) : await removeOwnPost(post.id);
     if (r.ok) onDeleted(post.id);
     else setActionError(r.error);
     setActionBusy(false);
@@ -658,6 +701,7 @@ export function PostCard({
   };
 
   const block = async () => {
+    if (!post.authorId) return;
     const ok = await confirm({
       title: `Block ${post.authorFirstName}?`,
       message: 'Neither of you will see the other\u2019s posts or comments. You can undo this from your profile.',
@@ -686,28 +730,46 @@ export function PostCard({
       <header className="community-post-head">
         {/* The author's name and avatar open their profile. Your own posts
             link to your own profile screen, which is the editable one. */}
-        <Link
-          href={mine ? '/portal/member/profile' : `/portal/member/people/${post.authorId}`}
-          className={`community-avatar ${toneFor(post.authorId)}`}
-          aria-label={`${post.authorFirstName} ${post.authorLastName}'s profile`}
-          style={{ textDecoration: 'none', flexShrink: 0 }}
-        >
-          {initials(post.authorFirstName, post.authorLastName)}
-        </Link>
-        <div className="community-post-meta">
+        {byBusiness ? (
+          authorHref ? (
+            <Link href={authorHref} aria-label={`${displayName}'s page`} style={{ textDecoration: 'none', flexShrink: 0, display: 'inline-flex' }}>
+              <BusinessAvatar name={displayName} logo={post.businessLogo} />
+            </Link>
+          ) : <BusinessAvatar name={displayName} logo={post.businessLogo} />
+        ) : (
           <Link
-            href={mine ? '/portal/member/profile' : `/portal/member/people/${post.authorId}`}
-            style={{ textDecoration: 'none', color: 'inherit' }}
+            href={authorHref as string}
+            className={`community-avatar ${toneFor(post.authorId)}`}
+            aria-label={`${displayName}'s profile`}
+            style={{ textDecoration: 'none', flexShrink: 0 }}
           >
-            <strong>{post.authorFirstName} {post.authorLastName}</strong>
+            {initials(post.authorFirstName, post.authorLastName)}
           </Link>
+        )}
+        <div className="community-post-meta">
+          {authorHref ? (
+            <Link href={authorHref} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <strong>{displayName}</strong>
+            </Link>
+          ) : <strong>{displayName}</strong>}
           {/* Who they are, in the order people ask it: role, employer, city. */}
-          {(post.authorJobTitle || post.authorCompany || post.authorCity) && (
+          {!byBusiness && (post.authorJobTitle || post.authorCompany || post.authorCity) && (
             <small style={{ display: 'block', color: 'var(--text-secondary)', fontWeight: 600 }}>
               {[post.authorJobTitle, post.authorCompany, post.authorCity].filter(Boolean).join(' | ')}
             </small>
           )}
           <small>
+            {byBusiness && (
+              <span
+                className="pp-chip"
+                style={{
+                  marginRight: 6, fontSize: '0.66rem', verticalAlign: 'middle',
+                  background: 'var(--green-950)', color: '#fff',
+                }}
+              >
+                <Store size={10} aria-hidden="true" /> Business
+              </span>
+            )}
             {post.audience === 'club' && (
               <span
                 className="pp-chip"
@@ -719,7 +781,7 @@ export function PostCard({
                 Club update{post.topic ? ` · ${topicLabel(post.topic)}` : ''}
               </span>
             )}
-            {post.audience === 'club' ? ' ' : ''}{timeAgo(post.createdAt)}
+            {post.audience === 'club' || byBusiness ? ' ' : ''}{timeAgo(post.createdAt)}
             {post.groupName ? <> · <em>{post.groupName}</em></> : null}
           </small>
         </div>
@@ -733,7 +795,7 @@ export function PostCard({
           >
             {actionBusy ? <Loader2 size={16} className="spin" /> : <Trash2 size={16} />}
           </button>
-        ) : (
+        ) : !canInteract ? null : (
           <div className="community-menu-wrap" ref={menuRef}>
             <button
               className="community-tool community-tool-icon"
@@ -773,7 +835,9 @@ export function PostCard({
                 ) : (
                   <>
                     <button onClick={() => setReporting(true)}><Flag size={14} /> Report post</button>
-                    <button onClick={block} disabled={actionBusy}><UserX size={14} /> Block {post.authorFirstName}</button>
+                    {post.authorId && (
+                      <button onClick={block} disabled={actionBusy}><UserX size={14} /> Block {post.authorFirstName}</button>
+                    )}
                   </>
                 )}
               </div>
@@ -788,7 +852,7 @@ export function PostCard({
       {actionError && <p role="alert" className="community-error">{actionError}</p>}
 
       <footer className="community-post-foot">
-        <div className="community-action-row">
+        {canInteract && <div className="community-action-row">
           <button
             className={`community-action ${likeState.liked ? 'is-liked' : ''} ${likePop ? 'is-pop' : ''}`}
             onClick={toggleLike}
@@ -808,7 +872,7 @@ export function PostCard({
           <button className="community-action" onClick={copyLink} aria-label="Copy link">
             {linkCopied ? <Check size={21} strokeWidth={1.8} /> : <Link2 size={21} strokeWidth={1.8} />}
           </button>
-        </div>
+        </div>}
 
         {likeState.count > 0 && (
           <p className="community-likes-line">
@@ -816,9 +880,13 @@ export function PostCard({
           </p>
         )}
         {!commentsOpen && commentCount > 0 && (
-          <button className="community-comments-line" onClick={() => setCommentsOpen(true)}>
-            View {commentCount === 1 ? 'the comment' : `all ${commentCount} comments`}
-          </button>
+          canInteract ? (
+            <button className="community-comments-line" onClick={() => setCommentsOpen(true)}>
+              View {commentCount === 1 ? 'the comment' : `all ${commentCount} comments`}
+            </button>
+          ) : (
+            <p className="community-likes-line">{commentCount} {commentCount === 1 ? 'comment' : 'comments'}</p>
+          )
         )}
       </footer>
 

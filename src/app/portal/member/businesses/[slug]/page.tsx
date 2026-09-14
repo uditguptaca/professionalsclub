@@ -8,8 +8,11 @@ import {
 } from 'lucide-react';
 import PortalLoading from '@/components/portal/PortalLoading';
 import CouponCode from '@/components/portal/CouponCode';
+import { PostCard } from '@/components/portal/community';
 import { fetchBusinessPageAction, claimCouponAction } from '@/app/actions/events';
+import { fetchBusinessPostsAction } from '@/app/actions/business';
 import type { MemberBusinessPage, MemberCoupon } from '@/server/repos/offers';
+import type { CommunityPost } from '@/types';
 import { parseDateOnly } from '@/lib/dates';
 
 /**
@@ -67,6 +70,7 @@ export default function MemberBusinessPage() {
   const [error, setError] = React.useState('');
   const [claiming, setClaiming] = React.useState('');
   const [justClaimed, setJustClaimed] = React.useState('');
+  const [posts, setPosts] = React.useState<CommunityPost[]>([]);
 
   const load = React.useCallback(async () => {
     const r = await fetchBusinessPageAction(slug);
@@ -78,6 +82,15 @@ export default function MemberBusinessPage() {
   }, [slug]);
 
   React.useEffect(() => { void load(); }, [load]);
+
+  // The business's own posts (0050). Loaded beside the page, not inside it:
+  // a slow feed must not hold up the coupon a member is standing here for.
+  React.useEffect(() => {
+    if (!page?.id) return;
+    let alive = true;
+    fetchBusinessPostsAction(page.id).then((r) => { if (alive && r.ok) setPosts(r.data); });
+    return () => { alive = false; };
+  }, [page?.id]);
 
   const claim = async (couponId: string) => {
     setError('');
@@ -265,6 +278,20 @@ export default function MemberBusinessPage() {
                   {a.description}
                 </p>
               </div>
+            ))}
+          </section>
+        )}
+
+        {posts.length > 0 && (
+          <section className="hf-section">
+            <div className="hf-section-head"><h2>From {page.name}</h2></div>
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                onDeleted={(id) => setPosts((p) => p.filter((x) => x.id !== id))}
+                onAuthorBlocked={() => {}}
+              />
             ))}
           </section>
         )}

@@ -7,9 +7,11 @@ import PortalLoading from '@/components/portal/PortalLoading';
 import {
   submitBusinessContactRequest, fetchSavedBusinessIds, toggleSaveBusiness,
 } from '@/app/actions/portal';
+import { fetchBusinessSuggestionsAction } from '@/app/actions/business';
+import type { BusinessSuggestion } from '@/server/repos/recommendations';
 import {
   Search, Tag, MapPin, Phone, Mail, Globe, X, Building2, Bookmark,
-  Check, Star, ChevronRight, Send, AlertCircle, ArrowDownAZ,
+  Check, Star, ChevronRight, Send, AlertCircle, ArrowDownAZ, Sparkles, Users,
 } from 'lucide-react';
 import { BUSINESS_CATEGORIES, type BusinessContactHelpType } from '@/types';
 
@@ -60,6 +62,14 @@ export default function MemberBusinessDirectory() {
   const [savingIds, setSavingIds] = useState<string[]>([]);
   const [saveError, setSaveError] = useState('');
   const touchedSaves = useRef(false);
+
+  // Suggested for you (0050): what the people you follow saved, what you save,
+  // your city, your line of work. Each card says which, so the member can
+  // judge the suggestion rather than take it on trust.
+  const [suggested, setSuggested] = useState<BusinessSuggestion[]>([]);
+  useEffect(() => {
+    fetchBusinessSuggestionsAction().then((r) => { if (r.ok) setSuggested(r.data); });
+  }, []);
 
   useEffect(() => {
     fetchSavedBusinessIds().then(result => {
@@ -142,6 +152,10 @@ export default function MemberBusinessDirectory() {
   }, [publicBiz, search, category, dealsOnly, savedOnly, savedBiz, sort]);
 
   const savedVisible = publicBiz.filter(b => savedBiz.includes(b.id)).length;
+
+  // A suggestion the member has since saved has done its job and steps aside.
+  const filtering = Boolean(search || category || dealsOnly || savedOnly);
+  const suggestions = filtering ? [] : suggested.filter(s => !savedBiz.includes(s.id)).slice(0, 6);
 
   const sheetBiz = contactSheet ? businesses.find(b => b.id === contactSheet) : null;
 
@@ -268,6 +282,76 @@ export default function MemberBusinessDirectory() {
             </div>
           )}
         </section>
+
+        {/* ---- Suggested for you ---- */}
+        {suggestions.length > 0 && (
+          <section className="hf-section" aria-labelledby="biz-suggested">
+            <div className="hf-section-head">
+              <h2 id="biz-suggested" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Sparkles size={16} aria-hidden="true" style={{ color: 'var(--primary-600)' }} /> Suggested for you
+              </h2>
+            </div>
+            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, scrollSnapType: 'x proximity' }}>
+              {suggestions.map(s => {
+                const busy = savingIds.includes(s.id);
+                const social = s.reasons[0] && /saved this|you follow/.test(s.reasons[0]);
+                return (
+                  <article
+                    key={s.id}
+                    className="card"
+                    style={{
+                      flex: '0 0 min(78vw, 270px)', scrollSnapAlign: 'start', padding: '0.9rem',
+                      display: 'flex', flexDirection: 'column', gap: 8,
+                    }}
+                  >
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', minWidth: 0 }}>
+                      {s.logo && /^(https?:\/\/|\/)/.test(s.logo) ? (
+                        <img src={s.logo} alt="" style={{ width: 40, height: 40, borderRadius: 10, objectFit: 'contain', background: '#fff', flexShrink: 0 }} />
+                      ) : (
+                        <span aria-hidden="true" style={{
+                          display: 'grid', placeItems: 'center', width: 40, height: 40, flexShrink: 0,
+                          borderRadius: 10, background: 'var(--green-950)', color: '#fff', fontWeight: 800,
+                        }}>
+                          {(s.logo?.trim() || s.name.charAt(0)).slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                      <div style={{ minWidth: 0 }}>
+                        <strong style={{ display: 'block', fontSize: '0.95rem', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {s.name}
+                        </strong>
+                        <small style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
+                          {s.category}{s.city ? ` · ${s.city}` : ''}
+                        </small>
+                      </div>
+                    </div>
+                    <p style={{
+                      margin: 0, fontSize: '0.8rem', lineHeight: 1.45, fontWeight: 700,
+                      color: social ? 'var(--success-600)' : 'var(--text-secondary)',
+                      display: 'flex', alignItems: 'flex-start', gap: 5,
+                    }}>
+                      {social ? <Users size={13} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} /> : null}
+                      <span>{s.reasons.slice(0, 2).join(' · ')}</span>
+                    </p>
+                    {s.memberRateText && (
+                      <span className="hf-deal" style={{ alignSelf: 'flex-start' }}><Tag size={11} aria-hidden="true" /> {s.memberRateText}</span>
+                    )}
+                    <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
+                      <Link href={`/portal/member/businesses/${s.slug}`} className="btn btn-outline btn-sm" style={{ flex: 1, minHeight: 42 }}>
+                        View
+                      </Link>
+                      <button
+                        type="button" className="btn btn-primary btn-sm" style={{ flex: 1, minHeight: 42, gap: 6 }}
+                        disabled={busy} onClick={() => handleToggleSave(s.id)}
+                      >
+                        <Bookmark size={14} aria-hidden="true" /> Save
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* ---- Listings ---- */}
         <section className="hf-section">

@@ -3,8 +3,10 @@ import React from 'react';
 import { upload } from '@vercel/blob/client';
 import {
   Building2, Calendar, Tag, Ticket, CheckCircle2, Clock, Plus, Pencil, Trash2,
-  Upload, Eye, X, AlertCircle, ScanLine,
+  Upload, Eye, X, AlertCircle, ScanLine, MessageSquareText,
 } from 'lucide-react';
+import { PostComposer, PostCard } from '@/components/portal/community';
+import type { CommunityPost } from '@/types';
 import PortalLoading from '@/components/portal/PortalLoading';
 import EventEditor from '@/components/portal/EventEditor';
 import CouponScanner from '@/components/portal/CouponScanner';
@@ -17,6 +19,7 @@ import {
   createOfferAction, updateOfferAction, deleteOfferAction,
   createCouponAction, updateCouponAction, deleteCouponAction,
   createBusinessEventAction, updateBusinessEventAction, deleteBusinessEventAction,
+  fetchBusinessPostsAction,
 } from '@/app/actions/business';
 import type {
   BusinessHome, BusinessOffer, BusinessEvent, BusinessCoupon,
@@ -30,9 +33,9 @@ import type {
  * Both are the same person doing the same job, so they get the same screen -
  * two copies would have drifted the first time a field was added.
  *
- * Five tabs, in the order the work actually happens: the page members read,
- * the offers and coupons that bring them in, the events, and the till where a
- * code gets spent.
+ * Six tabs, in the order the work actually happens: the page members read,
+ * the offers and coupons that bring them in, the events, the posts that reach
+ * members who saved the business (0050), and the till where a code gets spent.
  */
 
 const CACHE_KEY = 'business-home';
@@ -79,7 +82,7 @@ type Mutate = (
   done: string
 ) => Promise<boolean>;
 
-type Tab = 'page' | 'offers' | 'coupons' | 'events' | 'till';
+type Tab = 'page' | 'offers' | 'coupons' | 'events' | 'posts' | 'till';
 
 export default function BusinessConsole({
   heading = 'My Business',
@@ -138,6 +141,7 @@ export default function BusinessConsole({
     ['offers', 'Offers', Tag, home?.offers.length ?? 0],
     ['coupons', 'Coupons', Ticket, home?.coupons.length ?? 0],
     ['events', 'Events', Calendar, home?.events.length ?? 0],
+    ['posts', 'Posts', MessageSquareText, 0],
     ['till', 'Redeem', ScanLine, 0],
   ];
 
@@ -211,6 +215,12 @@ export default function BusinessConsole({
                 verified
                   ? <EventsTab businessId={business.id} events={home!.events} mutate={mutate} confirm={confirm} />
                   : <p className="bz-muted">Events unlock once your business is verified.</p>
+              )}
+
+              {tab === 'posts' && (
+                verified
+                  ? <PostsTab business={business} />
+                  : <p className="bz-muted">Posts unlock once your business is verified.</p>
               )}
 
               {tab === 'till' && <CouponScanner />}
@@ -771,6 +781,56 @@ function CouponForm({ coupon, businessId, onSave, onCancel }: {
         <button type="button" className="btn btn-secondary" onClick={onCancel} style={{ minHeight: 46 }}>Cancel</button>
       </div>
     </form>
+  );
+}
+
+// ---- Posts (0050) -------------------------------------------------------------------
+
+/**
+ * The business speaking in the community. A post reaches the business's own
+ * page and the feed of every member who saved it - not every member, which is
+ * what keeps this from being an advertising channel. Members like and comment
+ * as on any post; the business reads them here.
+ */
+function PostsTab({ business }: { business: NonNullable<BusinessHome['business']> }) {
+  const [posts, setPosts] = React.useState<CommunityPost[] | null>(null);
+  const [error, setError] = React.useState('');
+
+  React.useEffect(() => {
+    let alive = true;
+    fetchBusinessPostsAction(business.id).then((r) => {
+      if (!alive) return;
+      if (r.ok) setPosts(r.data);
+      else { setPosts([]); setError(r.error); }
+    });
+    return () => { alive = false; };
+  }, [business.id]);
+
+  return (
+    <>
+      <p className="bz-muted" style={{ marginTop: 0 }}>
+        Posts go to members who saved {business.name}, and sit on your page for everyone
+        else. A photo of what is new this week does more than a sales line.
+      </p>
+      <PostComposer
+        groupId={null}
+        placeholder={`What's new at ${business.name}?`}
+        business={{ id: business.id, name: business.name, logo: business.logo ?? null }}
+        onPosted={(post) => setPosts((p) => [post, ...(p ?? [])])}
+      />
+      {error && <p className="community-error" role="alert"><AlertCircle size={14} aria-hidden="true" /> {error}</p>}
+      {posts === null && <p className="bz-muted" style={{ marginTop: 12 }}>Loading your posts…</p>}
+      {posts?.length === 0 && <p className="bz-muted" style={{ marginTop: 12 }}>No posts yet.</p>}
+      {posts?.map((post) => (
+        <PostCard
+          key={post.id}
+          post={post}
+          manageBusiness
+          onDeleted={(id) => setPosts((p) => (p ?? []).filter((x) => x.id !== id))}
+          onAuthorBlocked={() => {}}
+        />
+      ))}
+    </>
   );
 }
 
