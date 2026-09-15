@@ -496,6 +496,7 @@ const PROFILE_WRITABLE = {
   professionalSummary: 'professional_summary',
   preferredContactMethod: 'preferred_contact_method',
   preferredLanguage: 'preferred_language',
+  isPrivate: 'is_private',
 } as const;
 
 /**

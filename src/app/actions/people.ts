@@ -2,30 +2,54 @@
 
 import { requireUserId } from '@/server/auth';
 import * as repo from '@/server/repos/people';
+import { listMemberPosts } from '@/server/repos/community';
+import type { CommunityPost } from '@/types';
 
 /**
- * The member profile screen's one read. Like every action here the caller is
- * resolved from the session, never passed in, and the 0041 views decide what
- * a member is allowed to learn about another member.
+ * The member profile screen's reads. Like every action here the caller is
+ * resolved from the session, never passed in, and the 0041/0051 views and
+ * can_view_member() decide what a member is allowed to learn about another.
  */
 
 export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
-export async function fetchMemberProfile(memberId: string) {
+const isId = (v: unknown): v is string => typeof v === 'string' && v.length === 36;
+
+function fail(context: string, error: unknown): { ok: false; error: string } {
+  const detail = error instanceof Error ? error.message : String(error);
+  console.error(`[people] ${context}:`, detail);
+  if (detail.startsWith('Not signed in') || detail.startsWith('This account is not active')) {
+    return { ok: false, error: detail };
+  }
+  return { ok: false, error: `${context} failed. Please try again.` };
+}
+
+export async function fetchMemberProfile(memberId: string): Promise<ActionResult<repo.MemberProfile>> {
   try {
     const userId = await requireUserId();
-    if (typeof memberId !== 'string' || memberId.length !== 36) {
-      return { ok: false as const, error: 'That member could not be found.' };
-    }
+    if (!isId(memberId)) return { ok: false, error: 'That member could not be found.' };
     const data = await repo.memberProfile(userId, memberId);
-    if (!data) return { ok: false as const, error: 'That member could not be found.' };
-    return { ok: true as const, data };
+    if (!data) return { ok: false, error: 'That member could not be found.' };
+    return { ok: true, data };
   } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error);
-    console.error('[people] Loading profile:', detail);
-    if (detail.startsWith('Not signed in') || detail.startsWith('This account is not active')) {
-      return { ok: false as const, error: detail };
-    }
-    return { ok: false as const, error: 'Loading that profile failed. Please try again.' };
+    return fail('Loading that profile', error);
+  }
+}
+
+/**
+ * A member's posts, oldest-cursor paged. Empty for a private profile the
+ * caller does not follow - the database says so, not this file.
+ */
+export async function fetchMemberPosts(
+  memberId: string,
+  before?: string | null
+): Promise<ActionResult<CommunityPost[]>> {
+  try {
+    const userId = await requireUserId();
+    if (!isId(memberId)) return { ok: true, data: [] };
+    const cursor = typeof before === 'string' && !Number.isNaN(Date.parse(before)) ? before : null;
+    return { ok: true, data: await listMemberPosts(userId, memberId, cursor) };
+  } catch (error) {
+    return fail('Loading their posts', error);
   }
 }

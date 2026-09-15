@@ -345,6 +345,36 @@ export async function listFeed(
   });
 }
 
+/**
+ * One member's posts for their profile page (0051). Empty unless
+ * can_view_member() says the caller may see them: a private profile shows its
+ * posts only to accepted followers. RLS still applies underneath.
+ */
+export async function listMemberPosts(
+  userId: string,
+  memberId: string,
+  before: string | null = null,
+  limit = 20
+): Promise<CommunityPost[]> {
+  return withUserRead(userId, async (db) => {
+    const rows = await db.run(
+      `select ${POST_SELECT}
+       from public.community_posts p
+       left join public.member_names n on n.id = p.author_id
+       left join public.businesses bz on bz.id = p.business_id
+       left join public.community_groups g on g.id = p.group_id
+       where p.author_id = $1
+         and p.status = 'active'
+         and public.can_view_member($1)
+         and ($2::timestamptz is null or p.created_at < $2::timestamptz)
+       order by p.created_at desc
+       limit $3`,
+      [memberId, before, Math.min(Math.max(limit, 1), 50)]
+    );
+    return toDomainAll<CommunityPost>(rows);
+  });
+}
+
 export async function createPost(
   userId: string,
   input: {

@@ -50,8 +50,13 @@ export async function searchPeople(query: string) {
   return run('Searching members', (uid) => repo.searchPeople(uid, query));
 }
 
+/** Resolves to the edge the database created: 'pending' (a request) or 'accepted'. */
 export async function followMember(targetId: string) {
   return run('Sending follow request', (uid) => repo.follow(uid, targetId));
+}
+
+export async function listFollowRequests() {
+  return run('Loading follow requests', (uid) => repo.followRequests(uid));
 }
 
 export async function acceptFollowRequest(followerId: string) {

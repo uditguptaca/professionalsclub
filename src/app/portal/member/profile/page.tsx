@@ -20,7 +20,7 @@ import type { CompanyInsider } from '@/types';
 import {
   User, Briefcase, Building2, HandHeart, Heart, Bell, MapPin,
   Trash2, AlertCircle, ChevronRight, Save, X, BadgeCheck, Plus, Check,
-  GraduationCap, Link2, Mail,
+  GraduationCap, Link2, Mail, Lock,
 } from 'lucide-react';
 
 /**
@@ -99,6 +99,19 @@ export default function MemberProfilePage() {
   const [toast, setToast] = useState('');
   const [error, setError] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [privacyBusy, setPrivacyBusy] = useState(false);
+  // Private by default (0051); undefined only on a profile row older than the flag.
+  const isPrivate = profile?.isPrivate ?? true;
+
+  const togglePrivacy = async () => {
+    if (privacyBusy) return;
+    setPrivacyBusy(true);
+    setError('');
+    const result = await updateOwnProfile({ isPrivate: !isPrivate });
+    if (!result.ok) setError(result.error);
+    else await refreshProfile();
+    setPrivacyBusy(false);
+  };
 
   const [roles, setRoles] = useState<CompanyInsider[]>([]);
   const [rolesError, setRolesError] = useState('');
@@ -368,6 +381,28 @@ export default function MemberProfilePage() {
         <section className="pp-group">
           <h2>Settings</h2>
           <div className="pp-group-card">
+            <div className="pp-row pp-row-static" style={{ alignItems: 'center' }}>
+              <span className="pp-row-icon"><Lock size={17} /></span>
+              <span className="pp-row-body">
+                <small>Private profile</small>
+                <strong style={{ whiteSpace: 'normal' }}>
+                  {isPrivate
+                    ? 'Only people you accept see your posts and details'
+                    : 'Any member can see your posts and details'}
+                </strong>
+              </span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isPrivate}
+                aria-label="Private profile"
+                className={`cm-switch${isPrivate ? ' is-on' : ''}`}
+                disabled={privacyBusy}
+                onClick={() => void togglePrivacy()}
+              >
+                <span className="cm-switch-knob" />
+              </button>
+            </div>
             {row(<Bell size={17} />, 'How we reach you', [form.preferredContactMethod, form.preferredLanguage].filter(Boolean).join(' · '), () => openSheet('prefs'))}
             <div className="pp-row pp-row-static">
               <span className="pp-row-icon"><Mail size={17} /></span>

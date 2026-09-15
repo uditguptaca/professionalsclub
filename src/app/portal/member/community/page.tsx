@@ -16,7 +16,7 @@ import { useConfirm } from '@/components/portal/confirm';
 import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
 import {
   Newspaper, UsersRound, Search, Plus, Users, Check, ChevronRight, X,
-  AlertCircle, UserPlus, MessageCircle, Sparkles,
+  AlertCircle, UserPlus, MessageCircle, Sparkles, Clock, UserRoundCheck,
 } from 'lucide-react';
 
 /**
@@ -114,6 +114,8 @@ export default function CommunityPage() {
 
   // ---- People -------------------------------------------------------------
   const [people, setPeople] = useState<ChatPerson[] | null>(cached?.people.suggestions ?? null);
+  // Who is waiting for my answer (0051). Shown as one row above the directory.
+  const [requests, setRequests] = useState<ChatPerson[]>(cached?.people.requests ?? []);
   const [peopleQuery, setPeopleQuery] = useState('');
   const [peopleError, setPeopleError] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -151,6 +153,7 @@ export default function CommunityPage() {
       setPosts(r.data.posts);
       setGroups(r.data.groups);
       setRailPeople(r.data.people.suggestions);
+      setRequests(r.data.people.requests);
       setFeedEnd(r.data.posts.length < PAGE);
       setFeedError('');
     } else {
@@ -308,11 +311,15 @@ export default function CommunityPage() {
 
   const follow = async (person: ChatPerson) => {
     setBusyId(person.id);
-    // Instant since 0040 - no request, no acceptance.
-    setFollowState(person.id, 'accepted');
+    // Most profiles are private (0051), so the likely answer is a request; the
+    // database's actual answer replaces the guess a moment later.
+    setFollowState(person.id, 'pending');
     const r = await followMember(person.id);
     if (!r.ok) { setFollowState(person.id, 'none'); setPeopleError(r.error); }
-    else setToast(`Following ${person.firstName}`);
+    else {
+      setFollowState(person.id, r.data.status);
+      setToast(r.data.status === 'accepted' ? `Following ${person.firstName}` : `Request sent to ${person.firstName}`);
+    }
     setBusyId(null);
   };
 
@@ -382,16 +389,7 @@ export default function CommunityPage() {
 
   // ---- Small shared bits --------------------------------------------------
   const tabBar = (
-    <div
-      role="tablist"
-      aria-label="Community"
-      style={{
-        position: 'sticky', top: 'var(--sat)', zIndex: 'var(--z-sticky)' as unknown as number,
-        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4, padding: 4,
-        margin: '0 0 1rem', background: 'var(--bg-primary)', border: HAIRLINE,
-        borderRadius: 999,
-      }}
-    >
+    <div className="cm-tabs cm-tabs--sticky" role="tablist" aria-label="Community">
       {TABS.map(({ id, label, icon: Icon }) => {
         const active = tab === id;
         return (
@@ -400,16 +398,13 @@ export default function CommunityPage() {
             type="button"
             role="tab"
             aria-selected={active}
+            className={active ? 'is-on' : ''}
             onClick={() => switchTab(id)}
-            style={{
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              minHeight: 44, border: 0, borderRadius: 999, cursor: 'pointer',
-              background: active ? 'var(--green-950)' : 'none',
-              color: active ? '#fff' : 'var(--text-secondary)',
-              font: 'inherit', fontSize: '0.88rem', fontWeight: active ? 700 : 600,
-            }}
           >
             <Icon size={16} aria-hidden="true" /> {label}
+            {id === 'people' && requests.length > 0 && (
+              <span className="cm-badge" aria-label={`${requests.length} follow requests`}>{requests.length}</span>
+            )}
           </button>
         );
       })}
@@ -430,20 +425,23 @@ export default function CommunityPage() {
     </span>
   );
 
-  // Instant follows (0040): the only states left are on and off.
-  const followButton = (person: ChatPerson) => {
-    const on = person.outgoing === 'accepted';
+  // Three states (0051): Follow -> Requested (tap again to withdraw) -> Following.
+  const followButton = (person: ChatPerson, wide = false) => {
+    const state = person.outgoing ?? 'none';
+    const cls = `cm-btn ${state === 'none' ? 'cm-btn--primary' : 'cm-btn--secondary'}${wide ? ' cm-btn--wide' : ''}`;
     return (
       <button
         type="button"
-        className={`pp-toggle ${on ? 'is-on' : ''}`}
-        style={{ padding: '0.35rem 0.8rem', minHeight: 40 }}
-        aria-pressed={on}
+        className={cls}
+        aria-pressed={state !== 'none'}
         disabled={busyId === person.id}
-        onClick={() => (on ? unfollow(person) : follow(person))}
+        onClick={() => (state === 'none' ? follow(person) : unfollow(person))}
+        title={state === 'pending' ? 'Tap to withdraw the request' : undefined}
       >
-        {on ? <Check size={13} aria-hidden="true" /> : <UserPlus size={13} aria-hidden="true" />}
-        {on ? 'Following' : 'Follow'}
+        {state === 'accepted' ? <UserRoundCheck size={15} aria-hidden="true" />
+          : state === 'pending' ? <Clock size={15} aria-hidden="true" />
+            : <UserPlus size={15} aria-hidden="true" />}
+        {state === 'accepted' ? 'Following' : state === 'pending' ? 'Requested' : (person.incoming === 'accepted' ? 'Follow back' : 'Follow')}
       </button>
     );
   };
@@ -463,13 +461,15 @@ export default function CommunityPage() {
           See all
         </button>
       </div>
-      <div className="hf-rail">
+      <div className="cm-rail">
         {list.map((p) => (
-          <div key={p.id} className="hf-group card" style={{ alignItems: 'flex-start' }}>
-            <span className="hf-member-avatar" aria-hidden="true">{initials(p.firstName, p.lastName)}</span>
-            <strong>{fullName(p)}</strong>
-            <small>{[p.jobTitle, p.company, p.city].filter(Boolean).join(' | ') || 'Member'}</small>
-            <div style={{ marginTop: 6 }}>{followButton(p)}</div>
+          <div key={p.id} className="cm-rail-card">
+            <Link href={`/portal/member/people/${p.id}`} className="cm-person-avatar cm-person-avatar--lg" aria-label={`${fullName(p)}'s profile`}>
+              {initials(p.firstName, p.lastName)}
+            </Link>
+            <Link href={`/portal/member/people/${p.id}`} className="cm-rail-name">{fullName(p)}</Link>
+            <small>{[p.jobTitle, p.company, p.city].filter(Boolean).join(' · ') || 'Member'}</small>
+            {followButton(p, true)}
           </div>
         ))}
       </div>
@@ -490,21 +490,22 @@ export default function CommunityPage() {
           See all
         </button>
       </div>
-      <div className="hf-rail">
+      <div className="cm-rail">
         {list.map((g) => (
-          <div key={g.id} className="hf-group card" style={{ alignItems: 'flex-start' }}>
-            {groupBadge(g.name, 38)}
-            <strong>{g.name}</strong>
+          <div key={g.id} className="cm-rail-card">
+            <Link href={`/portal/member/community/groups/${g.id}`} aria-label={g.name} style={{ textDecoration: 'none' }}>
+              {groupBadge(g.name, 52)}
+            </Link>
+            <Link href={`/portal/member/community/groups/${g.id}`} className="cm-rail-name">{g.name}</Link>
             <small><Users size={11} aria-hidden="true" /> {g.memberCount} member{g.memberCount === 1 ? '' : 's'}</small>
-            {g.suggestReason && <span className="pp-chip" style={{ fontSize: '0.68rem' }}>{g.suggestReason}</span>}
+            {g.suggestReason && <span className="cm-tag">{g.suggestReason}</span>}
             <button
               type="button"
-              className="btn btn-primary"
-              style={{ marginTop: 6, minHeight: 40, padding: '0 0.9rem', fontSize: '0.8rem' }}
+              className="cm-btn cm-btn--primary cm-btn--wide"
               disabled={busyId === g.id}
               onClick={() => joinGroupById(g)}
             >
-              {busyId === g.id ? 'Joining…' : 'Join'}
+              {busyId === g.id ? 'Joining…' : <><Plus size={15} aria-hidden="true" /> Join</>}
             </button>
           </div>
         ))}
@@ -530,14 +531,13 @@ export default function CommunityPage() {
       {posts === null ? (
         <div style={{ marginTop: 16 }}><PortalLoading label="Loading your feed" /></div>
       ) : posts.length === 0 ? (
-        <div className="card" style={{ marginTop: 16, padding: '2.2rem 1.25rem', textAlign: 'center' }}>
-          <Newspaper size={28} aria-hidden="true" style={{ opacity: 0.35 }} />
-          <p style={{ margin: '0.7rem 0 1rem', color: 'var(--text-secondary)' }}>
-            Your feed is quiet. Follow a few members or join a group, and their posts land here.
-          </p>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button type="button" className="btn btn-primary" onClick={() => switchTab('people')}>Find people</button>
-            <button type="button" className="btn btn-outline" onClick={() => switchTab('groups')}>Browse groups</button>
+        <div className="cm-empty" style={{ marginTop: 16 }}>
+          <Newspaper size={24} aria-hidden="true" />
+          <p><strong>Your feed is quiet.</strong></p>
+          <p>Follow a few members or join a group, and their posts land here.</p>
+          <div className="cm-empty-actions">
+            <button type="button" className="cm-btn cm-btn--primary cm-btn--lg" onClick={() => switchTab('people')}>Find people</button>
+            <button type="button" className="cm-btn cm-btn--secondary cm-btn--lg" onClick={() => switchTab('groups')}>Browse groups</button>
           </div>
         </div>
       ) : (
@@ -555,16 +555,14 @@ export default function CommunityPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
                     <Link
                       href={`/portal/member/community/groups/${post.groupId}`}
-                      className="pp-chip"
-                      style={{ textDecoration: 'none', minHeight: 32 }}
+                      className="cm-tag cm-tag--link"
                     >
                       <UsersRound size={12} aria-hidden="true" /> {post.groupName ?? 'Group'}
                     </Link>
                     {suggested && (
                       <button
                         type="button"
-                        className="btn btn-primary"
-                        style={{ minHeight: 36, padding: '0 0.85rem', fontSize: '0.78rem' }}
+                        className="cm-btn cm-btn--primary cm-btn--sm"
                         disabled={busyId === post.groupId}
                         onClick={() => joinGroupById({ id: post.groupId!, name: post.groupName ?? 'this group' })}
                       >
@@ -587,8 +585,7 @@ export default function CommunityPage() {
           {!feedEnd && (
             <button
               type="button"
-              className="btn btn-outline"
-              style={{ width: '100%', minHeight: 48 }}
+              className="cm-btn cm-btn--secondary cm-btn--lg cm-btn--wide"
               onClick={loadMore}
               disabled={loadingMore}
             >
@@ -634,19 +631,17 @@ export default function CommunityPage() {
       {g.isMember ? (
         <button
           type="button"
-          className="pp-toggle is-on"
-          style={{ padding: '0.35rem 0.8rem', minHeight: 40 }}
+          className="cm-btn cm-btn--secondary"
           aria-pressed
           disabled={busyId === g.id}
           onClick={() => leaveGroupById(g)}
         >
-          <Check size={13} aria-hidden="true" /> Joined
+          <Check size={15} aria-hidden="true" /> Joined
         </button>
       ) : (
         <button
           type="button"
-          className="btn btn-primary"
-          style={{ minHeight: 40, padding: '0 0.9rem', fontSize: '0.82rem' }}
+          className="cm-btn cm-btn--primary"
           disabled={busyId === g.id}
           onClick={() => joinGroupById(g)}
         >
@@ -659,30 +654,21 @@ export default function CommunityPage() {
   const groupsTab = (
     <>
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
-          <Search
-            size={16}
-            aria-hidden="true"
-            style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}
-          />
+        <label className="cm-search" style={{ flex: 1 }}>
+          <Search size={16} aria-hidden="true" />
           <input
             aria-label="Search groups"
             placeholder="Search groups"
             value={groupQuery}
             onChange={(e) => setGroupQuery(e.target.value)}
-            style={{
-              width: '100%', minHeight: 48, padding: '0 1rem 0 2.6rem', fontSize: 16,
-              border: HAIRLINE, borderRadius: 999, background: 'var(--bg-primary)', color: 'var(--text-primary)',
-            }}
           />
-        </div>
+        </label>
         <button
           type="button"
-          className="btn btn-primary"
-          style={{ minHeight: 48, whiteSpace: 'nowrap' }}
+          className="cm-btn cm-btn--primary cm-btn--lg"
           onClick={() => setCreating(true)}
         >
-          <Plus size={15} aria-hidden="true" /> New
+          <Plus size={16} aria-hidden="true" /> New group
         </button>
       </div>
 
@@ -695,14 +681,14 @@ export default function CommunityPage() {
       {groups === null ? (
         <PortalLoading label="Loading groups" />
       ) : groups.length === 0 ? (
-        <div className="card" style={{ padding: '2rem 1.25rem', textAlign: 'center' }}>
-          <UsersRound size={28} aria-hidden="true" style={{ opacity: 0.35 }} />
-          <p style={{ margin: '0.7rem 0 1rem', color: 'var(--text-secondary)' }}>
-            {groupQuery ? `No groups match “${groupQuery}”.` : 'No groups yet. Start the first one.'}
-          </p>
-          {groupQuery
-            ? <button type="button" className="btn btn-outline" onClick={() => setGroupQuery('')}>Clear search</button>
-            : <button type="button" className="btn btn-primary" onClick={() => setCreating(true)}>Start a group</button>}
+        <div className="cm-empty">
+          <UsersRound size={24} aria-hidden="true" />
+          <p><strong>{groupQuery ? `No groups match “${groupQuery}”.` : 'No groups yet.'}</strong></p>
+          <div className="cm-empty-actions">
+            {groupQuery
+              ? <button type="button" className="cm-btn cm-btn--secondary cm-btn--lg" onClick={() => setGroupQuery('')}>Clear search</button>
+              : <button type="button" className="cm-btn cm-btn--primary cm-btn--lg" onClick={() => setCreating(true)}>Start the first one</button>}
+          </div>
         </div>
       ) : (
         <div className="pp-groups">
@@ -731,67 +717,67 @@ export default function CommunityPage() {
   // ---- Tab: PEOPLE --------------------------------------------------------
   const personRow = (p: ChatPerson) => {
     return (
-      <div key={p.id} className="pp-row" style={{ cursor: 'default' }}>
+      <div key={p.id} className="cm-person">
         {/* Name and avatar open the member's profile. */}
-        <Link
-          href={`/portal/member/people/${p.id}`}
-          className="hf-member-avatar"
-          aria-label={`${fullName(p)}'s profile`}
-          style={{ textDecoration: 'none', flexShrink: 0 }}
-        >
+        <Link href={`/portal/member/people/${p.id}`} className="cm-person-avatar" aria-label={`${fullName(p)}'s profile`}>
           {initials(p.firstName, p.lastName)}
         </Link>
-        <div className="pp-row-body">
-          <Link
-            href={`/portal/member/people/${p.id}`}
-            style={{ textDecoration: 'none', color: 'inherit' }}
+        <Link href={`/portal/member/people/${p.id}`} className="cm-person-body" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <strong>{fullName(p)}</strong>
+          <small>
+            {[p.jobTitle, p.company, p.city].filter(Boolean).join(' · ') || 'Member'}
+            {p.incoming === 'accepted' && p.outgoing !== 'accepted' && <span className="cm-inline-tag">Follows you</span>}
+          </small>
+        </Link>
+        <div className="cm-person-actions">
+          {/* Anyone can be messaged; the chat lands in their requests if they
+              don't follow you. The button opens the actual conversation. */}
+          <button
+            type="button"
+            className="cm-btn cm-btn--secondary cm-btn--icon"
+            aria-label={`Message ${p.firstName}`}
+            disabled={busyId === p.id}
+            onClick={() => void message(p)}
           >
-            <strong>{fullName(p)}</strong>
-          </Link>
-          <small>{[p.jobTitle, p.company, p.city].filter(Boolean).join(' | ') || 'Member'}</small>
-          {p.incoming === 'accepted' && p.outgoing !== 'accepted' && (
-            <span className="pp-chip" style={{ marginTop: 4, fontSize: '0.68rem' }}>Follows you</span>
-          )}
+            <MessageCircle size={16} aria-hidden="true" />
+          </button>
+          {followButton(p)}
         </div>
-        {/* Anyone can be messaged; the chat lands in their requests if they
-            don't follow you. The button opens the actual conversation. */}
-        <button
-          type="button"
-          aria-label={`Message ${p.firstName}`}
-          disabled={busyId === p.id}
-          onClick={() => void message(p)}
-          style={{
-            display: 'grid', placeItems: 'center', width: 40, height: 40, borderRadius: '50%',
-            border: 0, cursor: 'pointer', opacity: busyId === p.id ? 0.6 : 1,
-            background: 'var(--green-50)', color: 'var(--green-800)', flexShrink: 0,
-          }}
-        >
-          <MessageCircle size={16} aria-hidden="true" />
-        </button>
-        {followButton(p)}
       </div>
     );
   };
 
   const peopleTab = (
     <>
-      <div style={{ position: 'relative', marginBottom: 12 }}>
-        <Search
-          size={16}
-          aria-hidden="true"
-          style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}
-        />
+      <label className="cm-search" style={{ marginBottom: 12 }}>
+        <Search size={16} aria-hidden="true" />
         <input
           aria-label="Search members"
           placeholder="Search by name, role or city"
           value={peopleQuery}
           onChange={(e) => setPeopleQuery(e.target.value)}
-          style={{
-            width: '100%', minHeight: 48, padding: '0 1rem 0 2.6rem', fontSize: 16,
-            border: HAIRLINE, borderRadius: 999, background: 'var(--bg-primary)', color: 'var(--text-primary)',
-          }}
         />
-      </div>
+      </label>
+
+      {requests.length > 0 && !peopleQuery && (
+        <Link href="/portal/member/people/requests" className="cm-requests">
+          <span className="cm-requests-avatars" aria-hidden="true">
+            {requests.slice(0, 3).map((p) => (
+              <span key={p.id} className="cm-person-avatar cm-person-avatar--sm">{initials(p.firstName, p.lastName)}</span>
+            ))}
+          </span>
+          <span className="cm-person-body">
+            <strong>Follow requests</strong>
+            <small>
+              {requests.length === 1
+                ? `${requests[0].firstName} wants to follow you`
+                : `${requests[0].firstName} and ${requests.length - 1} other${requests.length === 2 ? '' : 's'} want to follow you`}
+            </small>
+          </span>
+          <span className="cm-badge">{requests.length}</span>
+          <ChevronRight size={16} aria-hidden="true" style={{ color: 'var(--text-muted)' }} />
+        </Link>
+      )}
 
       {peopleError && (
         <div role="alert" className="community-error" style={{ marginBottom: 12 }}>
@@ -803,19 +789,19 @@ export default function CommunityPage() {
         {people === null ? (
           <PortalLoading label="Loading members" />
         ) : people.length === 0 ? (
-          <div className="card" style={{ padding: '2rem 1.25rem', textAlign: 'center' }}>
-            <Search size={28} aria-hidden="true" style={{ opacity: 0.35 }} />
-            <p style={{ margin: '0.7rem 0 1rem', color: 'var(--text-secondary)' }}>
-              {peopleQuery ? `No members match “${peopleQuery}”.` : 'No other members yet.'}
-            </p>
+          <div className="cm-empty">
+            <Search size={24} aria-hidden="true" />
+            <p><strong>{peopleQuery ? `No members match “${peopleQuery}”.` : 'No other members yet.'}</strong></p>
             {peopleQuery && (
-              <button type="button" className="btn btn-outline" onClick={() => setPeopleQuery('')}>Clear search</button>
+              <div className="cm-empty-actions">
+                <button type="button" className="cm-btn cm-btn--secondary cm-btn--lg" onClick={() => setPeopleQuery('')}>Clear search</button>
+              </div>
             )}
           </div>
         ) : (
           <section className="pp-group">
-            <h2>{peopleQuery ? `Results for “${peopleQuery}”` : 'Members'}</h2>
-            <div className="pp-group-card">{people.map(personRow)}</div>
+            <h2>{peopleQuery ? `Results for “${peopleQuery}”` : 'People you may know'}</h2>
+            <div className="cm-list">{people.map(personRow)}</div>
           </section>
         )}
       </div>

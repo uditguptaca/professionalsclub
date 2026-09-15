@@ -559,7 +559,12 @@ function CommentThread({
             {initials(c.authorFirstName, c.authorLastName)}
           </span>
           <p className="community-comment-text">
-            <strong>{c.authorFirstName} {c.authorLastName}</strong>{' '}
+            <Link
+              href={profile?.id === c.authorId ? '/portal/member/profile' : `/portal/member/people/${c.authorId}`}
+              style={{ textDecoration: 'none', color: 'inherit' }}
+            >
+              <strong>{c.authorFirstName} {c.authorLastName}</strong>
+            </Link>{' '}
             {c.body}
             <small>{timeAgo(c.createdAt)}</small>
           </p>

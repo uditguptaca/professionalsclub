@@ -372,14 +372,51 @@ export async function searchPeople(userId: string, query: string): Promise<ChatP
   });
 }
 
-/** Follow someone (idempotent). Instant — no request, no acceptance (0040). */
-export async function follow(userId: string, targetId: string): Promise<void> {
-  await withUser(userId, async (db) => {
-    await db.run(
+export type FollowStatus = 'pending' | 'accepted';
+
+/**
+ * Follow someone (idempotent). The database decides whether that is a request
+ * or a follow - pending for a private profile, accepted for a public one
+ * (0051) - and the caller gets told which, so the button can say so.
+ */
+export async function follow(userId: string, targetId: string): Promise<{ status: FollowStatus }> {
+  return withUser(userId, async (db) => {
+    const inserted = await db.run<{ status: FollowStatus }>(
       `insert into public.member_follows (follower_id, followee_id)
-       values ($1, $2) on conflict do nothing`,
+       values ($1, $2) on conflict do nothing returning status`,
       [userId, targetId]
     );
+    if (inserted[0]) return { status: inserted[0].status };
+    const existing = await db.run<{ status: FollowStatus }>(
+      `select status from public.member_follows where follower_id = $1 and followee_id = $2`,
+      [userId, targetId]
+    );
+    return { status: existing[0]?.status ?? 'pending' };
+  });
+}
+
+export interface FollowRequests {
+  /** People waiting for my answer. */
+  incoming: ChatPerson[];
+  /** People I have asked and who have not answered. */
+  outgoing: ChatPerson[];
+}
+
+/** Both sides of the request queue, one round trip. */
+export async function followRequests(userId: string): Promise<FollowRequests> {
+  return withUserRead(userId, async (db) => {
+    const rows = await db.run<{ payload: { incoming: Record<string, unknown>[]; outgoing: Record<string, unknown>[] } }>(
+      `with edges as (${COMMUNITY_EDGES_CTE})
+       select json_build_object(
+         'incoming', (select coalesce(json_agg(t), '[]'::json) from (
+           select * from edges where incoming = 'pending' order by created_at desc) t),
+         'outgoing', (select coalesce(json_agg(t), '[]'::json) from (
+           select * from edges where outgoing = 'pending' order by created_at desc) t)
+       ) as payload`,
+      [userId]
+    );
+    const p = rows[0]?.payload ?? { incoming: [], outgoing: [] };
+    return { incoming: (p.incoming ?? []).map(toPerson), outgoing: (p.outgoing ?? []).map(toPerson) };
   });
 }
 

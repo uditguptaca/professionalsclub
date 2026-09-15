@@ -215,13 +215,15 @@ export default function MemberHomePage() {
               <div className="hf-members card">
                 {feed.newMembers.slice(0, 4).map((m) => (
                   <div key={m.id} className="hf-member">
-                    <span className="hf-member-avatar" aria-hidden="true">{initials(m.firstName, m.lastName)}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <Link href={`/portal/member/people/${m.id}`} className="hf-member-avatar" aria-label={`${m.firstName} ${m.lastName}'s profile`} style={{ textDecoration: 'none' }}>
+                      {initials(m.firstName, m.lastName)}
+                    </Link>
+                    <Link href={`/portal/member/people/${m.id}`} style={{ flex: 1, minWidth: 0, textDecoration: 'none', color: 'inherit' }}>
                       <strong>{m.firstName} {m.lastName}</strong>
                       <small>
                         {[m.jobTitle, m.city].filter(Boolean).join(' · ') || 'Member'} · {joinedAgo(m.createdAt)}
                       </small>
-                    </div>
+                    </Link>
                     {(() => {
                       // Follows are requests now: none -> Requested -> Following.
                       const state = followed[m.id] ?? m.followState;
@@ -229,8 +231,7 @@ export default function MemberHomePage() {
                       return (
                         <button
                           type="button"
-                          className={`pp-toggle ${state === 'accepted' ? 'is-on' : ''}`}
-                          style={{ padding: '0.32rem 0.75rem', opacity: state === 'pending' ? 0.75 : 1 }}
+                          className={`cm-btn ${state === 'none' ? 'cm-btn--primary' : 'cm-btn--secondary'}`}
                           aria-pressed={state !== 'none'}
                           onClick={() => {
                             const next = state === 'none' ? 'pending' : 'none';

@@ -82,6 +82,8 @@ export interface Member {
   educationLevel?: string;
   linkedinUrl?: string;
   professionalSummary?: string;
+  /** Private by default (0051): the full profile and posts need an accepted follow. */
+  isPrivate?: boolean;
   verificationStatus: 'unverified' | 'pending' | 'verified';
   accountStatus: 'active' | 'suspended' | 'archived';
   createdAt: string;

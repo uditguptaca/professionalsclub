@@ -2,32 +2,31 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { fetchMemberProfile } from '@/app/actions/people';
+import { fetchMemberProfile, fetchMemberPosts } from '@/app/actions/people';
 import { followMember, unfollowMember, openChat, unblockMember } from '@/app/actions/chat';
 import type { MemberProfile } from '@/server/repos/people';
+import type { CommunityPost } from '@/types';
 import PortalLoading from '@/components/portal/PortalLoading';
+import { PostCard } from '@/components/portal/community';
 import { useConfirm } from '@/components/portal/confirm';
 import {
-  AlertCircle, ArrowLeft, Award, Briefcase, Building2, CalendarDays, Check,
-  GraduationCap, Heart, ExternalLink, MapPin, MessageCircle, ShieldCheck, Sparkles,
-  UserPlus, Users,
+  AlertCircle, ArrowLeft, Award, BadgeCheck, Briefcase, Building2, CalendarDays, Check,
+  Clock, ExternalLink, GraduationCap, Heart, Lock, MapPin, MessageCircle, Newspaper,
+  UserPlus, UserRoundCheck, Loader2,
 } from 'lucide-react';
 
 /**
  * One member's profile, as another member sees it.
  *
- * What appears here is exactly what the 0041 views publish - the professional
- * half of a profile, club events they RSVPd to, a verified business they run,
- * and whatever of their posts RLS already lets me see. No contact details: the
- * club is admin-mediated, and Message is the way to reach someone.
+ * The shape every social app taught people: identity and numbers at the top,
+ * two actions under it, then the person's own posts with their details one tab
+ * over. A private profile (the default, 0051) shows the top and a lock where
+ * the posts would be; the Follow button becomes Requested, and the rest
+ * appears the moment they accept.
  *
- * The whole page is ONE Server Action call. It was tempting to fetch the
- * profile, the events and the follow state separately; Next runs a client's
- * action calls one at a time, so that would have been three sequential round
- * trips to a remote database before anything appeared.
+ * What is shown is exactly what the 0041/0051 views publish. No contact
+ * details: the club is admin-mediated, and Message is the way to reach someone.
  */
-
-const HAIRLINE = '1px solid rgba(27,67,50,0.08)';
 
 const initialsOf = (first: string, last: string) =>
   `${first.charAt(0)}${last.charAt(0)}`.toUpperCase() || '?';
@@ -43,73 +42,13 @@ const eventDay = (iso: string | null) =>
     forty-skill list does not become the whole page. */
 function splitList(value: string | null, limit = 12): string[] {
   if (!value) return [];
-  return value
-    .split(/[,\n;]+/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .slice(0, limit);
+  return value.split(/[,\n;]+/).map((s) => s.trim()).filter(Boolean).slice(0, limit);
 }
 
-function Section({ title, icon: Icon, children }: {
-  title: string;
-  icon: React.ComponentType<{ size?: number; 'aria-hidden'?: boolean }>;
-  children: React.ReactNode;
-}) {
-  return (
-    <section style={{ marginBottom: '1.1rem' }}>
-      <h2 style={{
-        display: 'flex', alignItems: 'center', gap: 7,
-        margin: '0 0 0.55rem', fontSize: '0.78rem', fontWeight: 800,
-        letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)',
-      }}>
-        <Icon size={14} aria-hidden={true} /> {title}
-      </h2>
-      {children}
-    </section>
-  );
-}
+const compact = (n: number) =>
+  n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '')}k` : String(n);
 
-function Rows({ items }: { items: { label: string; value: string }[] }) {
-  return (
-    <div className="pp-group-card">
-      {items.map((it) => (
-        <div
-          key={it.label}
-          style={{
-            display: 'flex', gap: 12, padding: '0.7rem 0.85rem',
-            borderBottom: HAIRLINE, alignItems: 'baseline',
-          }}
-        >
-          <span style={{
-            flex: '0 0 7.5rem', fontSize: '0.78rem', fontWeight: 700,
-            color: 'var(--text-muted)',
-          }}>
-            {it.label}
-          </span>
-          <span style={{ flex: 1, minWidth: 0, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-            {it.value}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Chips({ values }: { values: string[] }) {
-  return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-      {values.map((v) => (
-        <span
-          key={v}
-          className="pp-chip"
-          style={{ background: 'var(--green-50)', color: 'var(--green-800)', fontSize: '0.76rem' }}
-        >
-          {v}
-        </span>
-      ))}
-    </div>
-  );
-}
+type Tab = 'posts' | 'about';
 
 export default function MemberProfilePage() {
   const params = useParams<{ id: string }>();
@@ -122,6 +61,11 @@ export default function MemberProfilePage() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [tab, setTab] = useState<Tab>('posts');
+  const [posts, setPosts] = useState<CommunityPost[] | null>(null);
+  const [postsEnd, setPostsEnd] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [toast, setToast] = useState('');
 
   const load = useCallback(async () => {
     const res = await fetchMemberProfile(memberId);
@@ -132,30 +76,80 @@ export default function MemberProfilePage() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const iFollow = profile?.outgoing === 'accepted';
+  // Posts arrive after the header has painted, and only when allowed.
+  const canView = profile?.canView ?? false;
+  useEffect(() => {
+    if (!profile || !canView) { setPosts(canView ? null : []); return; }
+    let alive = true;
+    fetchMemberPosts(profile.id).then((r) => {
+      if (!alive) return;
+      if (r.ok) { setPosts(r.data); setPostsEnd(r.data.length < 20); }
+      else { setPosts([]); setActionError(r.error); }
+    });
+    return () => { alive = false; };
+  }, [profile?.id, canView, profile]);
 
-  async function toggleFollow() {
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(''), 2400);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  const loadMore = async () => {
+    if (!profile || !posts || posts.length === 0 || loadingMore || postsEnd) return;
+    setLoadingMore(true);
+    const r = await fetchMemberPosts(profile.id, posts[posts.length - 1].createdAt);
+    if (r.ok) {
+      setPosts((p) => [...(p ?? []), ...r.data]);
+      if (r.data.length < 20) setPostsEnd(true);
+    } else setActionError(r.error);
+    setLoadingMore(false);
+  };
+
+  const outgoing = profile?.outgoing ?? 'none';
+
+  async function follow() {
     if (!profile) return;
     setActionError('');
-    if (iFollow) {
+    setBusy(true);
+    // Optimistic, in the direction the database will take: a private profile
+    // makes it a request, a public one a follow.
+    const next = profile.isPrivate ? 'pending' : 'accepted';
+    setProfile((p) => p && {
+      ...p,
+      outgoing: next,
+      followers: next === 'accepted' ? p.followers + 1 : p.followers,
+    });
+    const res = await followMember(profile.id);
+    if (!res.ok) setActionError(res.error);
+    else setToast(next === 'pending' ? `Request sent to ${profile.firstName}` : `Following ${profile.firstName}`);
+    await load();
+    setBusy(false);
+  }
+
+  async function unfollow() {
+    if (!profile) return;
+    setActionError('');
+    if (outgoing === 'accepted') {
       const ok = await confirm({
         title: `Unfollow ${profile.firstName}?`,
-        message: 'Their posts leave your feed. Your chat with them is not affected.',
+        message: profile.isPrivate
+          ? 'Their profile and posts become private to you again. Your chat is not affected.'
+          : 'Their posts leave your feed. Your chat with them is not affected.',
         confirmLabel: 'Unfollow',
         tone: 'danger',
       });
       if (!ok) return;
     }
     setBusy(true);
-    // Optimistic: the counts and the button flip together, then the server
-    // result replaces both.
     setProfile((p) => p && {
       ...p,
-      outgoing: iFollow ? 'none' : 'accepted',
-      followers: Math.max(0, p.followers + (iFollow ? -1 : 1)),
+      outgoing: 'none',
+      followers: outgoing === 'accepted' ? Math.max(0, p.followers - 1) : p.followers,
     });
-    const res = iFollow ? await unfollowMember(profile.id) : await followMember(profile.id);
+    const res = await unfollowMember(profile.id);
     if (!res.ok) setActionError(res.error);
+    else if (outgoing === 'pending') setToast('Request withdrawn');
     await load();
     setBusy(false);
   }
@@ -184,15 +178,7 @@ export default function MemberProfilePage() {
   if (error || !profile) {
     return (
       <div>
-        <button
-          type="button"
-          onClick={() => router.back()}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44,
-            border: 0, background: 'none', color: 'var(--text-secondary)',
-            font: 'inherit', fontWeight: 700, cursor: 'pointer', padding: 0,
-          }}
-        >
+        <button type="button" onClick={() => router.back()} className="cm-btn cm-btn--ghost" style={{ paddingLeft: 0 }}>
           <ArrowLeft size={16} aria-hidden="true" /> Back
         </button>
         <div role="alert" className="community-error" style={{ marginTop: 16 }}>
@@ -203,7 +189,7 @@ export default function MemberProfilePage() {
   }
 
   const name = `${profile.firstName} ${profile.lastName}`.trim();
-  const place = [profile.city, profile.province].filter(Boolean).join(', ');
+  const byline = [profile.jobTitle, profile.company, profile.city].filter(Boolean).join(' · ');
   const skills = splitList(profile.skills);
   const certs = splitList(profile.certifications, 8);
 
@@ -213,270 +199,233 @@ export default function MemberProfilePage() {
   if (profile.industry) work.push({ label: 'Industry', value: profile.industry });
   if (profile.professionalCategory) work.push({ label: 'Field', value: profile.professionalCategory });
   if (profile.experienceRange) work.push({ label: 'Experience', value: profile.experienceRange });
-
   const study: { label: string; value: string }[] = [];
   if (profile.educationLevel) study.push({ label: 'Education', value: profile.educationLevel });
   if (profile.fieldOfStudy) study.push({ label: 'Field of study', value: profile.fieldOfStudy });
 
+  const followButton = (() => {
+    if (outgoing === 'accepted') {
+      return (
+        <button type="button" className="cm-btn cm-btn--secondary cm-btn--lg" onClick={() => void unfollow()} disabled={busy} aria-pressed="true">
+          <UserRoundCheck size={17} aria-hidden="true" /> Following
+        </button>
+      );
+    }
+    if (outgoing === 'pending') {
+      return (
+        <button type="button" className="cm-btn cm-btn--secondary cm-btn--lg" onClick={() => void unfollow()} disabled={busy} aria-pressed="mixed" title="Tap to withdraw the request">
+          <Clock size={17} aria-hidden="true" /> Requested
+        </button>
+      );
+    }
+    return (
+      <button type="button" className="cm-btn cm-btn--primary cm-btn--lg" onClick={() => void follow()} disabled={busy}>
+        {busy ? <Loader2 size={17} className="spin" aria-hidden="true" /> : <UserPlus size={17} aria-hidden="true" />}
+        {profile.incoming === 'accepted' ? 'Follow back' : 'Follow'}
+      </button>
+    );
+  })();
+
   return (
-    <div>
-      {/* Hero: the same forest band the member's own profile uses. The back
-          control lives in the portal shell now, so there is none here. */}
-      <div className="pp-hero">
-        <span
-          aria-hidden="true"
-          style={{
-            display: 'grid', placeItems: 'center',
-            width: '5rem', height: '5rem', margin: '0 auto 0.7rem',
-            borderRadius: '50%', background: 'rgba(255,255,255,0.94)',
-            color: 'var(--green-950)', fontWeight: 800, fontSize: '1.4rem',
-          }}
-        >
-          {initialsOf(profile.firstName, profile.lastName)}
-        </span>
+    <div className="mp">
+      {/* ---- Identity: avatar beside the numbers, the way people expect ---- */}
+      <header className="mp-head">
+        <div className="mp-top">
+          <span className="mp-avatar" aria-hidden="true">{initialsOf(profile.firstName, profile.lastName)}</span>
+          <dl className="mp-stats" aria-label="Activity">
+            <div><dt>Posts</dt><dd>{compact(profile.postCount)}</dd></div>
+            <div><dt>Followers</dt><dd>{compact(profile.followers)}</dd></div>
+            <div><dt>Following</dt><dd>{compact(profile.following)}</dd></div>
+          </dl>
+        </div>
 
-        <h1>{name}</h1>
-        {/* Role | employer | city - the same line that sits under the name
-            everywhere else in the club (0049). */}
-        {(profile.jobTitle || profile.company || profile.city) && (
+        <div className="mp-identity">
+          <h1>
+            {name}
+            {profile.verified && (
+              <BadgeCheck size={18} aria-label="Verified member" className="mp-verified" />
+            )}
+            {profile.isPrivate && (
+              <Lock size={14} aria-label="Private profile" className="mp-lock" />
+            )}
+          </h1>
+          {byline && <p className="mp-byline">{byline}</p>}
+          <p className="mp-meta">
+            {profile.isVolunteer && <span><Heart size={12} aria-hidden="true" /> Volunteer</span>}
+            {profile.province && <span><MapPin size={12} aria-hidden="true" /> {[profile.city, profile.province].filter(Boolean).join(', ')}</span>}
+            <span><CalendarDays size={12} aria-hidden="true" /> Joined {monthYear(profile.memberSince)}</span>
+            {profile.incoming === 'accepted' && <span className="mp-follows-you">Follows you</span>}
+            {profile.incoming === 'pending' && (
+              <Link href="/portal/member/people/requests" className="mp-follows-you">Wants to follow you</Link>
+            )}
+          </p>
+          {profile.professionalSummary && (
+            <p className="mp-bio">{profile.professionalSummary}</p>
+          )}
+        </div>
+
+        {actionError && (
+          <div role="alert" className="community-error" style={{ marginTop: 10 }}>
+            <AlertCircle size={15} aria-hidden="true" /> {actionError}
+          </div>
+        )}
+
+        {profile.blocked ? (
+          <div className="mp-blocked">
+            <p>You blocked {profile.firstName}. Unblock them to follow or message again.</p>
+            <button type="button" className="cm-btn cm-btn--secondary" onClick={() => void unblock()} disabled={busy}>
+              Unblock
+            </button>
+          </div>
+        ) : (
+          <div className="mp-actions">
+            {followButton}
+            <button type="button" className="cm-btn cm-btn--secondary cm-btn--lg" onClick={() => void message()} disabled={busy}>
+              <MessageCircle size={17} aria-hidden="true" /> Message
+            </button>
+          </div>
+        )}
+      </header>
+
+      {/* ---- The private half ---- */}
+      {!profile.canView ? (
+        <section className="mp-private" aria-live="polite">
+          <span className="mp-private-icon" aria-hidden="true"><Lock size={22} /></span>
+          <h2>This profile is private</h2>
           <p>
-            {[profile.jobTitle, profile.company, profile.city].filter(Boolean).join(' | ')}
+            {outgoing === 'pending'
+              ? `Your request is with ${profile.firstName}. Their posts, work and skills appear here once they accept.`
+              : `Follow ${profile.firstName} to see their posts, work history and skills. They will accept or decline your request.`}
           </p>
-        )}
-
-        <div className="pp-hero-chips">
-          {profile.verified && (
-            <span className="pp-chip pp-chip-light">
-              <ShieldCheck size={12} aria-hidden="true" /> Verified
-            </span>
-          )}
-          {profile.isVolunteer && (
-            <span className="pp-chip pp-chip-light">
-              <Heart size={12} aria-hidden="true" /> Volunteer
-            </span>
-          )}
-          {place && (
-            <span className="pp-chip pp-chip-light">
-              <MapPin size={12} aria-hidden="true" /> {place}
-            </span>
-          )}
-          <span className="pp-chip pp-chip-light">
-            <CalendarDays size={12} aria-hidden="true" /> Member since {monthYear(profile.memberSince)}
-          </span>
-        </div>
-
-        <div style={{
-          display: 'flex', justifyContent: 'center', gap: 18, marginTop: '0.9rem',
-          fontSize: '0.8rem', color: 'rgba(255,255,255,0.85)',
-        }}>
-          <span><strong style={{ color: '#fff' }}>{profile.followers}</strong> followers</span>
-          <span><strong style={{ color: '#fff' }}>{profile.following}</strong> following</span>
-        </div>
-
-        {profile.incoming === 'accepted' && !iFollow && (
-          <p style={{ marginTop: '0.6rem', fontSize: '0.76rem', color: 'rgba(255,255,255,0.8)' }}>
-            Follows you
-          </p>
-        )}
-      </div>
-
-      {actionError && (
-        <div role="alert" className="community-error" style={{ marginBottom: 12 }}>
-          <AlertCircle size={15} aria-hidden="true" /> {actionError}
-        </div>
-      )}
-
-      {/* Actions */}
-      {profile.blocked ? (
-        <div className="pp-group-card" style={{ padding: '0.9rem', marginBottom: '1.2rem' }}>
-          <p style={{ margin: '0 0 0.7rem', fontSize: '0.86rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
-            You blocked {profile.firstName}. Unblock them to message again.
-          </p>
-          <button
-            type="button"
-            className="btn btn-sm btn-quiet"
-            onClick={() => void unblock()}
-            disabled={busy}
-            style={{ minHeight: 44 }}
-          >
-            Unblock
-          </button>
-        </div>
+        </section>
       ) : (
-        <div style={{ display: 'flex', gap: 10, marginBottom: '1.3rem' }}>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => void message()}
-            disabled={busy}
-            style={{ flex: 1, minHeight: 46, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}
-          >
-            <MessageCircle size={17} aria-hidden="true" /> Message
-          </button>
-          <button
-            type="button"
-            className={`pp-toggle ${iFollow ? 'is-on' : ''}`}
-            onClick={() => void toggleFollow()}
-            aria-pressed={iFollow}
-            disabled={busy}
-            style={{ flex: 1, minHeight: 46, justifyContent: 'center' }}
-          >
-            {iFollow
-              ? <><Check size={15} aria-hidden="true" /> Following</>
-              : <><UserPlus size={15} aria-hidden="true" /> Follow</>}
-          </button>
-        </div>
-      )}
+        <>
+          <div className="cm-tabs mp-tabs" role="tablist" aria-label="Profile sections">
+            <button type="button" role="tab" aria-selected={tab === 'posts'} className={tab === 'posts' ? 'is-on' : ''} onClick={() => setTab('posts')}>
+              <Newspaper size={15} aria-hidden="true" /> Posts
+            </button>
+            <button type="button" role="tab" aria-selected={tab === 'about'} className={tab === 'about' ? 'is-on' : ''} onClick={() => setTab('about')}>
+              <Briefcase size={15} aria-hidden="true" /> About
+            </button>
+          </div>
 
-      {profile.professionalSummary && (
-        <Section title="About" icon={Sparkles}>
-          <p style={{
-            margin: 0, padding: '0.85rem', borderRadius: 'var(--radius-lg)',
-            background: 'var(--bg-primary)', border: HAIRLINE,
-            fontSize: '0.9rem', lineHeight: 1.55, color: 'var(--text-secondary)',
-            whiteSpace: 'pre-wrap',
-          }}>
-            {profile.professionalSummary}
-          </p>
-        </Section>
-      )}
-
-      {work.length > 0 && (
-        <Section title="Work" icon={Briefcase}>
-          <Rows items={work} />
-        </Section>
-      )}
-
-      {skills.length > 0 && (
-        <Section title="Skills" icon={Sparkles}>
-          <Chips values={skills} />
-        </Section>
-      )}
-
-      {study.length > 0 && (
-        <Section title="Education" icon={GraduationCap}>
-          <Rows items={study} />
-        </Section>
-      )}
-
-      {certs.length > 0 && (
-        <Section title="Certifications" icon={Award}>
-          <Chips values={certs} />
-        </Section>
-      )}
-
-      {profile.business && (
-        <Section title="Business" icon={Building2}>
-          <Link
-            href={`/businesses/${profile.business.slug}`}
-            className="pp-row"
-            style={{ textDecoration: 'none' }}
-          >
-            {profile.business.logo
-              ? <img src={profile.business.logo} alt="" width={42} height={42}
-                  style={{ borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
-              : (
-                <span aria-hidden="true" style={{
-                  display: 'grid', placeItems: 'center', width: 42, height: 42, flexShrink: 0,
-                  borderRadius: 10, background: 'var(--green-50)', color: 'var(--green-800)',
-                }}>
-                  <Building2 size={18} />
-                </span>
+          {tab === 'posts' && (
+            <div className="mp-posts">
+              {posts === null && <PortalLoading label="Loading posts" />}
+              {posts?.length === 0 && (
+                <div className="cm-empty">
+                  <Newspaper size={24} aria-hidden="true" />
+                  <p><strong>No posts yet.</strong></p>
+                  <p>When {profile.firstName} shares something with the club, it shows up here.</p>
+                </div>
               )}
-            <span className="pp-row-body">
-              <strong>{profile.business.name}</strong>
-              <small>{[profile.business.category, profile.business.city].filter(Boolean).join(' · ')}</small>
-            </span>
-          </Link>
-        </Section>
+              {posts?.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  onDeleted={(id) => setPosts((p) => (p ?? []).filter((x) => x.id !== id))}
+                  onAuthorBlocked={() => { void load(); }}
+                />
+              ))}
+              {posts && posts.length > 0 && !postsEnd && (
+                <button type="button" className="cm-btn cm-btn--secondary cm-btn--lg" style={{ width: '100%' }} onClick={() => void loadMore()} disabled={loadingMore}>
+                  {loadingMore ? 'Loading…' : 'Show older posts'}
+                </button>
+              )}
+            </div>
+          )}
+
+          {tab === 'about' && (
+            <div className="mp-about">
+              {work.length > 0 && (
+                <section className="mp-section">
+                  <h2><Briefcase size={14} aria-hidden="true" /> Work</h2>
+                  <dl className="mp-rows">
+                    {work.map((it) => <div key={it.label}><dt>{it.label}</dt><dd>{it.value}</dd></div>)}
+                  </dl>
+                </section>
+              )}
+              {skills.length > 0 && (
+                <section className="mp-section">
+                  <h2><Check size={14} aria-hidden="true" /> Skills</h2>
+                  <div className="mp-chips">{skills.map((v) => <span key={v}>{v}</span>)}</div>
+                </section>
+              )}
+              {study.length > 0 && (
+                <section className="mp-section">
+                  <h2><GraduationCap size={14} aria-hidden="true" /> Education</h2>
+                  <dl className="mp-rows">
+                    {study.map((it) => <div key={it.label}><dt>{it.label}</dt><dd>{it.value}</dd></div>)}
+                  </dl>
+                </section>
+              )}
+              {certs.length > 0 && (
+                <section className="mp-section">
+                  <h2><Award size={14} aria-hidden="true" /> Certifications</h2>
+                  <div className="mp-chips">{certs.map((v) => <span key={v}>{v}</span>)}</div>
+                </section>
+              )}
+              {profile.business && (
+                <section className="mp-section">
+                  <h2><Building2 size={14} aria-hidden="true" /> Business</h2>
+                  <Link href={`/portal/member/businesses/${profile.business.slug}`} className="cm-person" style={{ textDecoration: 'none' }}>
+                    {profile.business.logo && /^(https?:\/\/|\/)/.test(profile.business.logo)
+                      ? <img src={profile.business.logo} alt="" className="cm-person-avatar" style={{ borderRadius: 12, objectFit: 'contain', background: '#fff' }} />
+                      : <span className="cm-person-avatar" aria-hidden="true" style={{ borderRadius: 12 }}><Building2 size={18} /></span>}
+                    <span className="cm-person-body">
+                      <strong>{profile.business.name}</strong>
+                      <small>{[profile.business.category, profile.business.city].filter(Boolean).join(' · ')}</small>
+                    </span>
+                    <ExternalLink size={15} aria-hidden="true" style={{ color: 'var(--text-muted)' }} />
+                  </Link>
+                </section>
+              )}
+              {profile.events.length > 0 && (
+                <section className="mp-section">
+                  <h2><CalendarDays size={14} aria-hidden="true" /> Club events ({profile.events.length})</h2>
+                  <div className="cm-list">
+                    {profile.events.map((e) => (
+                      <Link key={e.eventId} href={`/portal/member/events/${e.eventId}`} className="cm-person" style={{ textDecoration: 'none' }}>
+                        <span className="cm-person-avatar" aria-hidden="true" style={{ borderRadius: 12 }}><CalendarDays size={17} /></span>
+                        <span className="cm-person-body">
+                          <strong>{e.title}</strong>
+                          <small>{[eventDay(e.eventDate), e.eventTime, e.location].filter(Boolean).join(' · ')}</small>
+                        </span>
+                        {e.status === 'past' && <span className="cm-tag">Attended</span>}
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              )}
+              {profile.linkedinUrl && (
+                <section className="mp-section">
+                  <h2><ExternalLink size={14} aria-hidden="true" /> Elsewhere</h2>
+                  <a className="cm-person" href={profile.linkedinUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+                    <span className="cm-person-avatar" aria-hidden="true" style={{ borderRadius: 12 }}><ExternalLink size={17} /></span>
+                    <span className="cm-person-body">
+                      <strong>LinkedIn</strong>
+                      <small>{profile.linkedinUrl.replace(/^https?:\/\/(www\.)?/, '')}</small>
+                    </span>
+                  </a>
+                </section>
+              )}
+              {work.length === 0 && skills.length === 0 && study.length === 0 && certs.length === 0 && !profile.business && profile.events.length === 0 && !profile.linkedinUrl && (
+                <div className="cm-empty">
+                  <Briefcase size={24} aria-hidden="true" />
+                  <p><strong>Nothing here yet.</strong></p>
+                  <p>{profile.firstName} has not filled in their work and education details.</p>
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
 
-      {profile.events.length > 0 && (
-        <Section title={`Club events (${profile.events.length})`} icon={CalendarDays}>
-          <div className="pp-group-card">
-            {profile.events.map((e) => (
-              <div key={e.eventId} className="pp-row pp-row-static">
-                <span aria-hidden="true" style={{
-                  display: 'grid', placeItems: 'center', width: 40, height: 40, flexShrink: 0,
-                  borderRadius: 10, background: 'var(--green-50)', color: 'var(--green-800)',
-                }}>
-                  <CalendarDays size={17} />
-                </span>
-                <span className="pp-row-body">
-                  <strong>{e.title}</strong>
-                  <small>
-                    {[eventDay(e.eventDate), e.eventTime, e.location].filter(Boolean).join(' · ')}
-                  </small>
-                </span>
-                {e.status === 'past' && (
-                  <span className="pp-chip" style={{
-                    flexShrink: 0, background: 'var(--bg-secondary)',
-                    border: HAIRLINE, color: 'var(--text-muted)',
-                  }}>
-                    Attended
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {profile.posts.length > 0 && (
-        <Section title="Recent posts" icon={Users}>
-          <div className="pp-group-card">
-            {profile.posts.map((p) => (
-              <div key={p.id} className="pp-row pp-row-static" style={{ alignItems: 'flex-start' }}>
-                <span className="pp-row-body">
-                  <small style={{ color: 'var(--text-muted)' }}>
-                    {new Date(p.createdAt).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}
-                  </small>
-                  <span style={{
-                    fontSize: '0.88rem', color: 'var(--text-primary)', lineHeight: 1.5,
-                    display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
-                  }}>
-                    {p.body}
-                  </span>
-                </span>
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {profile.linkedinUrl && (
-        <Section title="Elsewhere" icon={ExternalLink}>
-          <a
-            className="pp-row"
-            href={profile.linkedinUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ textDecoration: 'none' }}
-          >
-            <span aria-hidden="true" style={{
-              display: 'grid', placeItems: 'center', width: 40, height: 40, flexShrink: 0,
-              borderRadius: 10, background: 'var(--green-50)', color: 'var(--green-800)',
-            }}>
-              <ExternalLink size={17} />
-            </span>
-            <span className="pp-row-body">
-              <strong>LinkedIn</strong>
-              <small style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {profile.linkedinUrl.replace(/^https?:\/\/(www\.)?/, '')}
-              </small>
-            </span>
-          </a>
-        </Section>
-      )}
-
-      <p style={{
-        margin: '1.4rem 0 0', fontSize: '0.74rem', color: 'var(--text-muted)',
-        lineHeight: 1.5, textAlign: 'center',
-      }}>
-        Members reach each other through chat. Phone numbers and email addresses
-        are never shown.
+      <p className="mp-footnote">
+        Members reach each other through chat. Phone numbers and email addresses are never shown.
       </p>
+
+      {toast && <div className="pp-toast" role="status"><Check size={15} aria-hidden="true" /> {toast}</div>}
     </div>
   );
 }
