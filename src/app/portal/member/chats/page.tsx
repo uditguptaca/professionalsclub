@@ -7,6 +7,7 @@ import {
   chatStart, listChats, openChat, acceptChatRequest, declineChatRequest,
   pollThread, sendChatMessage, markChatRead, setTyping,
   respondReferral, registerChatDevice, fetchConversationDevices,
+  fetchMissingWraps, backfillMessageWraps,
   blockMember, unblockMember, listBlockedMembers, reportMember,
   muteChat, clearChat, getChatSettings, updateChatSettings, reactToMessage,
 } from '@/app/actions/chat';
@@ -15,7 +16,7 @@ import type {
   MessageReaction, ChatDevice,
 } from '@/server/repos/chat';
 import {
-  e2eeAvailable, ensureDeviceKeys, sealMessage, openMessage,
+  e2eeAvailable, ensureDeviceKeys, sealMessage, openMessage, rewrapContentKey,
 } from '@/lib/e2ee';
 import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
 import type { PDFDocumentLoadingTask } from 'pdfjs-dist';
@@ -477,6 +478,9 @@ export default function MemberChatsPage() {
    * sender device's key from this same list.
    */
   const [devices, setDevices] = useState<ChatDevice[]>([]);
+  /** Polls since this thread opened, and how many messages this device cannot read. */
+  const tickRef = useRef(0);
+  const blindRef = useRef(0);
   /** This device's own id, once its keypair exists and is registered. */
   const [myDeviceId, setMyDeviceId] = useState<string | null>(null);
   const [plain, setPlain] = useState<Record<string, string | null>>({});
@@ -674,10 +678,28 @@ export default function MemberChatsPage() {
     nearBottomRef.current = true;
 
     const load = async () => {
-      const r = await pollThread(openId, sinceRef.current, myDeviceId);
+      // While this device cannot read something, another device may be
+      // filling in our wraps right now (0052). The incremental poll never
+      // revisits old messages, so every sixth tick asks for the whole thread.
+      tickRef.current += 1;
+      const full = blindRef.current > 0 && tickRef.current % 6 === 0;
+      const r = await pollThread(openId, full ? null : sinceRef.current, myDeviceId);
       if (!alive) return;
       if (r.ok) {
         sinceRef.current = r.data.watermark;
+        // A message that now carries a wrap for this device, after an earlier
+        // pass cached it as unreadable, must be decrypted afresh. That covers
+        // the first poll racing this device's own registration as well as a
+        // wrap another device filled in later (0052).
+        const gained = new Set(r.data.messages.filter((m) => m.wrappedKey).map((m) => m.id));
+        if (gained.size > 0) {
+          setPlain((p) => {
+            let changed = false;
+            const next = { ...p };
+            for (const id of gained) if (id in next && next[id] === null) { delete next[id]; changed = true; }
+            return changed ? next : p;
+          });
+        }
         // The device list can grow mid-conversation (the peer opens the app on
         // a new phone), and every seal from here on must include it.
         setDevices(r.data.devices);
@@ -719,6 +741,7 @@ export default function MemberChatsPage() {
     };
 
     pollRef.current = load;
+    tickRef.current = 0;
     void load();
     const timer = setInterval(() => {
       if (document.visibilityState === 'visible') void load();
@@ -771,17 +794,19 @@ export default function MemberChatsPage() {
     (async () => {
       const out: Record<string, string | null> = {};
       for (const m of todo) {
-        const senderKey = m.senderDeviceId
-          ? devices.find((d) => d.deviceId === m.senderDeviceId)?.publicKeyJwk
-          : undefined;
-        out[m.id] = (m.wrappedKey && m.wrapIv && m.senderDeviceId && senderKey)
+        // The wrap pairs OUR private key with the key of whichever device
+        // made it: the sender's (0042), or a device that re-wrapped it for
+        // us later (0052).
+        const byId = m.wrappedByDeviceId ?? m.senderDeviceId;
+        const byKey = byId ? devices.find((d) => d.deviceId === byId)?.publicKeyJwk : undefined;
+        out[m.id] = (m.wrappedKey && m.wrapIv && byId && byKey)
           ? await openMessage({
             cipher: m.cipher!,
             iv: m.iv!,
             wrappedKey: m.wrappedKey,
             wrapIv: m.wrapIv,
-            senderDeviceId: m.senderDeviceId,
-            senderPublicKeyJwk: senderKey,
+            senderDeviceId: byId,
+            senderPublicKeyJwk: byKey,
           })
           : null;
       }
@@ -789,6 +814,63 @@ export default function MemberChatsPage() {
     })();
     return () => { alive = false; };
   }, [messages, devices, plain]);
+
+  // How many messages this device still cannot read; the poll consults it.
+  useEffect(() => {
+    blindRef.current = messages.filter(
+      (m) => m.kind === 'text' && m.body == null && m.cipher && typeof plain[m.id] !== 'string'
+    ).length;
+  }, [messages, plain]);
+
+  // ---- Share keys with devices that arrived later (0052) ---------------------
+  // Whatever this device can read, it can re-wrap for every other device in
+  // the conversation that has no wrap yet: my new phone, their new browser.
+  // The server names the (message, device) pairs; the wrapping happens here,
+  // and the content keys never leave the client. Once per thread, and again
+  // whenever the device list changes.
+  const backfilledRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!openId || !myDeviceId || devices.length < 2 || !e2eeAvailable()) return;
+    // Wait until every message that has a wrap for us has been tried.
+    if (messages.some((m) => m.body == null && m.cipher && m.wrappedKey && !(m.id in plain))) return;
+    const readable = messages.filter((m) => typeof plain[m.id] === 'string' && m.wrappedKey && m.wrapIv);
+    if (readable.length === 0) return;
+    const stamp = `${openId}:${devices.map((d) => d.deviceId).sort().join(',')}`;
+    if (backfilledRef.current === stamp) return;
+    backfilledRef.current = stamp;
+
+    let alive = true;
+    (async () => {
+      const r = await fetchMissingWraps(openId);
+      if (!alive || !r.ok || r.data.length === 0) return;
+      const byMessage = new Map<string, string[]>();
+      for (const row of r.data) {
+        if (row.deviceId === myDeviceId) continue;
+        const list = byMessage.get(row.messageId) ?? [];
+        list.push(row.deviceId);
+        byMessage.set(row.messageId, list);
+      }
+      const wraps: { messageId: string; deviceId: string; wrappedKey: string; wrapIv: string; wrappedByDeviceId: string }[] = [];
+      for (const m of readable) {
+        const targetIds = byMessage.get(m.id);
+        if (!targetIds) continue;
+        const byId = m.wrappedByDeviceId ?? m.senderDeviceId;
+        const byKey = byId ? devices.find((d) => d.deviceId === byId)?.publicKeyJwk : undefined;
+        if (!byId || !byKey) continue;
+        const targets = targetIds
+          .map((id) => devices.find((d) => d.deviceId === id))
+          .filter((d): d is ChatDevice => Boolean(d));
+        if (targets.length === 0) continue;
+        const made = await rewrapContentKey(
+          { wrappedKey: m.wrappedKey!, wrapIv: m.wrapIv!, wrappedByDeviceId: byId, wrappedByPublicKeyJwk: byKey },
+          targets,
+        );
+        for (const w of made) wraps.push({ messageId: m.id, ...w });
+      }
+      if (alive && wraps.length > 0) await backfillMessageWraps(openId, wraps);
+    })();
+    return () => { alive = false; };
+  }, [openId, myDeviceId, devices, messages, plain]);
 
   // ---- Clear their unread while the thread is open --------------------------
   // Not "once per thread": messages that land WHILE you are reading are read
@@ -1766,6 +1848,10 @@ export default function MemberChatsPage() {
           {messages.map((m, i) => {
             const mine = m.senderId === currentUserId;
             const prev = messages[i - 1];
+            const isBlind = (x: ChatMessage) =>
+              x.kind === 'text' && x.body == null
+              && typeof plain[x.id] !== 'string'
+              && !(!(x.id in plain) && x.wrappedKey && x.wrapIv && x.senderDeviceId);
             const next = messages[i + 1];
             const day = dayLabel(m.createdAt);
             const newDay = !prev || dayLabel(prev.createdAt) !== day;
@@ -1783,6 +1869,37 @@ export default function MemberChatsPage() {
               && Boolean(m.wrappedKey && m.wrapIv && m.senderDeviceId);
             const readable = typeof decrypted === 'string';
             const pills = reactionGroups.get(m.id) ?? [];
+
+            // Messages this device cannot open are shown as ONE quiet line per
+            // run, not a bubble each: the fact is the same for all of them,
+            // and a wall of italics reads like a wall of errors (0052).
+            if (encrypted && !readable && !pending) {
+              if (prev && isBlind(prev)) return null;
+              let n = 1;
+              while (messages[i + n] && isBlind(messages[i + n])) n += 1;
+              return (
+                <React.Fragment key={m.id}>
+                  {newDay && (
+                    <span className="pp-chip" style={{
+                      alignSelf: 'center', margin: '0.35rem 0 0.65rem', background: 'var(--bg-primary)',
+                      border: HAIRLINE, color: 'var(--text-muted)',
+                    }}>
+                      {day}
+                    </span>
+                  )}
+                  <div className="ch-blind" role="note">
+                    <Lock size={14} aria-hidden="true" />
+                    <div>
+                      <strong>{n === 1 ? 'One earlier message is' : `${n} earlier messages are`} not available on this device yet</strong>
+                      <span>
+                        They were sealed for a device you used before. They appear here once you
+                        or {firstName} opens this chat on a device that has them.
+                      </span>
+                    </div>
+                  </div>
+                </React.Fragment>
+              );
+            }
 
             // Forwarded label + quoted reply, both above the content and inside
             // the bubble. The quote resolves through the thread by id, so a

@@ -224,6 +224,78 @@ export async function sealMessage(
 }
 
 /**
+ * This device's copy of a content key, unwrapped. `senderDeviceId` is the
+ * device whose private key made the wrap - the message's sender in the 0042
+ * case, or whichever device re-wrapped it for us later (0052).
+ */
+async function unwrapContentKey(input: {
+  wrappedKey: string;
+  wrapIv: string;
+  senderDeviceId: string;
+  senderPublicKeyJwk: string;
+}): Promise<ArrayBuffer | null> {
+  if (!e2eeAvailable()) return null;
+  const mine = await ensureDeviceKeys();
+  const myPriv = await myPrivateKey();
+  if (!mine || !myPriv) return null;
+  try {
+    const wrapKey = await wrappingKey(
+      myPriv, input.senderPublicKeyJwk, input.senderDeviceId, mine.deviceId,
+    );
+    if (!wrapKey) return null;
+    return await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: new Uint8Array(unb64(input.wrapIv)) },
+      wrapKey,
+      unb64(input.wrappedKey),
+    );
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Re-wrap a content key this device can open for other devices in the same
+ * conversation (0052): the phone that arrived after the message, the other
+ * person's new browser. The wraps are attributed to THIS device, because the
+ * reader pairs its private key with ours to open them.
+ */
+export async function rewrapContentKey(
+  input: { wrappedKey: string; wrapIv: string; wrappedByDeviceId: string; wrappedByPublicKeyJwk: string },
+  targets: (DeviceKey & { memberId: string })[],
+): Promise<{ deviceId: string; memberId: string; wrappedKey: string; wrapIv: string; wrappedByDeviceId: string }[]> {
+  if (!e2eeAvailable() || targets.length === 0) return [];
+  const mine = await ensureDeviceKeys();
+  const myPriv = await myPrivateKey();
+  if (!mine || !myPriv) return [];
+  const rawContentKey = await unwrapContentKey({
+    wrappedKey: input.wrappedKey, wrapIv: input.wrapIv,
+    senderDeviceId: input.wrappedByDeviceId, senderPublicKeyJwk: input.wrappedByPublicKeyJwk,
+  });
+  if (!rawContentKey) return [];
+
+  const out: { deviceId: string; memberId: string; wrappedKey: string; wrapIv: string; wrappedByDeviceId: string }[] = [];
+  for (const target of targets) {
+    if (target.deviceId === mine.deviceId) continue;
+    try {
+      const wrapKey = await wrappingKey(myPriv, target.publicKeyJwk, mine.deviceId, target.deviceId);
+      if (!wrapKey) continue;
+      const wrapIv = crypto.getRandomValues(new Uint8Array(12));
+      const wrapped = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: wrapIv }, wrapKey, rawContentKey);
+      out.push({
+        deviceId: target.deviceId,
+        memberId: target.memberId,
+        wrappedKey: b64(wrapped),
+        wrapIv: b64(wrapIv.buffer),
+        wrappedByDeviceId: mine.deviceId,
+      });
+    } catch {
+      // One malformed key must not sink the rest.
+    }
+  }
+  return out;
+}
+
+/**
  * Unwrap this device's copy of the content key and decrypt the body.
  * Null means "not readable on this device" - render the placeholder rather
  * than pretending the message is empty.
@@ -236,21 +308,10 @@ export async function openMessage(input: {
   senderDeviceId: string;
   senderPublicKeyJwk: string;
 }): Promise<string | null> {
-  if (!e2eeAvailable()) return null;
-  const mine = await ensureDeviceKeys();
-  const myPriv = await myPrivateKey();
-  if (!mine || !myPriv) return null;
+  const rawContentKey = await unwrapContentKey(input);
+  if (!rawContentKey) return null;
 
   try {
-    const wrapKey = await wrappingKey(
-      myPriv, input.senderPublicKeyJwk, input.senderDeviceId, mine.deviceId,
-    );
-    if (!wrapKey) return null;
-    const rawContentKey = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: new Uint8Array(unb64(input.wrapIv)) },
-      wrapKey,
-      unb64(input.wrappedKey),
-    );
     const contentKey = await crypto.subtle.importKey(
       'raw', rawContentKey, { name: 'AES-GCM', length: 256 }, false, ['decrypt'],
     );

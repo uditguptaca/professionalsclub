@@ -5017,3 +5017,13 @@ a.portal-sheet-user:active { background: var(--green-900, #14532d); }
   background: var(--green-50); color: var(--green-800); font-size: 0.78rem; font-weight: 700;
 }
 .mp-footnote { margin: 1.6rem 0 0; font-size: 0.74rem; line-height: 1.5; text-align: center; color: var(--text-muted); }
+
+/* --- Chat: messages this device cannot open, one line per run (0052) ---------- */
+.ch-blind {
+  display: flex; gap: 0.6rem; align-items: flex-start; align-self: center;
+  max-width: 30rem; margin: 0.35rem 0 0.75rem; padding: 0.7rem 0.85rem;
+  background: var(--bg-primary); border: 1px dashed rgba(27, 67, 50, 0.2); border-radius: 0.9rem;
+  color: var(--text-secondary); font-size: 0.78rem; line-height: 1.45;
+}
+.ch-blind > svg { flex-shrink: 0; margin-top: 2px; color: var(--green-700); }
+.ch-blind strong { display: block; color: var(--text-primary); font-weight: 700; margin-bottom: 0.15rem; }

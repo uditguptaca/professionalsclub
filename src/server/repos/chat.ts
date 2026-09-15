@@ -78,6 +78,8 @@ export interface ChatMessage {
   /** THIS device's wrap of the content key, when one exists for it. */
   wrappedKey: string | null;
   wrapIv: string | null;
+  /** The device that made that wrap (0052); null means the sender's device. */
+  wrappedByDeviceId: string | null;
 }
 
 /** One device's public key. Public by design - see 0042. */
@@ -173,6 +175,7 @@ const toMessage = (r: Record<string, unknown>): ChatMessage => ({
   senderDeviceId: (r.sender_device_id as string | null) ?? null,
   wrappedKey: (r.wrapped_key as string | null) ?? null,
   wrapIv: (r.wrap_iv as string | null) ?? null,
+  wrappedByDeviceId: (r.wrapped_by_device_id as string | null) ?? null,
 });
 
 const toPerson = (r: Record<string, unknown>): ChatPerson => ({
@@ -625,7 +628,7 @@ export async function pollThread(
                  -- My device's wrap of the content key. RLS on
                  -- member_message_keys already restricts this to my own
                  -- devices; the device_id filter picks the one asking.
-                 k.wrapped_key, k.wrap_iv,
+                 k.wrapped_key, k.wrap_iv, k.wrapped_by_device_id,
                  case when m.sender_id = $2 and not (select receipts from vis)
                       then null else m.read_at end as read_at
             from public.member_messages m
@@ -1279,6 +1282,57 @@ export async function conversationDevices(
  * last_seen_at current, which is what the ten-device cap evicts by. Only the
  * PUBLIC half ever arrives here.
  */
+export interface MissingWrap {
+  messageId: string;
+  deviceId: string;
+  memberId: string;
+}
+
+/** (message, device) pairs in my conversation that still have no wrap (0052). */
+export async function missingWraps(userId: string, conversationId: string): Promise<MissingWrap[]> {
+  return withUserRead(userId, async (db) => {
+    const rows = await db.run<Record<string, unknown>>(
+      `select message_id, device_id, member_id from public.missing_message_wraps($1, 300)`,
+      [conversationId]
+    );
+    return rows.map((r) => ({
+      messageId: r.message_id as string,
+      deviceId: r.device_id as string,
+      memberId: r.member_id as string,
+    }));
+  });
+}
+
+export interface WrapInput {
+  messageId: string;
+  deviceId: string;
+  wrappedKey: string;
+  wrapIv: string;
+  wrappedByDeviceId: string;
+}
+
+/**
+ * Store wraps this device made for other devices in the conversation (0052).
+ * The definer function checks every row; the count it stored comes back.
+ */
+export async function addMessageWraps(userId: string, conversationId: string, wraps: WrapInput[]): Promise<number> {
+  if (wraps.length === 0) return 0;
+  return withUser(userId, async (db) => {
+    const rows = wraps.slice(0, 500).map((w) => ({
+      message_id: w.messageId,
+      device_id: w.deviceId,
+      wrapped_key: w.wrappedKey,
+      wrap_iv: w.wrapIv,
+      wrapped_by_device_id: w.wrappedByDeviceId,
+    }));
+    const out = await db.run<{ n: number }>(
+      `select public.add_message_wraps($1, $2::jsonb) as n`,
+      [conversationId, JSON.stringify(rows)]
+    );
+    return Number(out[0]?.n ?? 0);
+  });
+}
+
 export async function registerDevice(
   userId: string,
   deviceId: string,

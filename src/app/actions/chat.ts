@@ -205,6 +205,16 @@ export async function fetchConversationDevices(conversationId: string) {
   return run('Loading device keys', (uid) => repo.conversationDevices(uid, conversationId));
 }
 
+/** Pairs in my conversation still lacking a wrap, so this device can fill them (0052). */
+export async function fetchMissingWraps(conversationId: string) {
+  return run('Checking message keys', (uid) => repo.missingWraps(uid, conversationId));
+}
+
+/** Wraps this device made for other devices in the conversation (0052). */
+export async function backfillMessageWraps(conversationId: string, wraps: repo.WrapInput[]) {
+  return run('Sharing message keys', (uid) => repo.addMessageWraps(uid, conversationId, wraps));
+}
+
 /** Publish THIS device's public key so peers can seal messages for it (0042). */
 export async function registerChatDevice(
   deviceId: string,
