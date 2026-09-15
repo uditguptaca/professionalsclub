@@ -471,6 +471,9 @@ export type CommunityContentStatus = 'active' | 'removed';
 export type CommunityReportStatus = 'open' | 'actioned' | 'dismissed';
 export type CommunityReportTarget = 'post' | 'comment';
 
+/** The feed's scope switch: everything relevant, only people I follow, or only my groups. */
+export type CommunityFeedScope = 'all' | 'following' | 'groups';
+
 export type CommunityGroupKind = 'location' | 'activity' | 'interest';
 
 export const COMMUNITY_GROUP_KINDS: { key: CommunityGroupKind; label: string; blurb: string }[] = [
@@ -541,6 +544,8 @@ export interface CommunityPost {
   businessName: string | null;
   businessSlug: string | null;
   businessLogo: string | null;
+  /** Up to two first names of the most recent likers, for "Liked by Priya and 3 others". */
+  likerNames?: string[];
   /** Why this post is in MY feed. 'suggested_group' posts carry a join CTA. */
   source?: 'mine' | 'followed' | 'group' | 'suggested_group' | 'club' | 'saved_business';
   /** For group posts: whether I am already in that group. */

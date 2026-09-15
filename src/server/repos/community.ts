@@ -9,7 +9,7 @@ import {
 } from '@/server/repos/chat';
 import type {
   CommunityGroup, CommunityPost, CommunityComment, CommunityReport,
-  CommunityReportTarget, CommunityReportStatus,
+  CommunityReportTarget, CommunityReportStatus, CommunityFeedScope,
 } from '@/types';
 
 /**
@@ -51,7 +51,12 @@ const POST_SELECT = `
   (select count(*)::int from public.community_comments c
      where c.post_id = p.id and c.status = 'active') as comment_count,
   exists(select 1 from public.community_likes l
-     where l.post_id = p.id and l.member_id = app.current_user_id()) as liked_by_me
+     where l.post_id = p.id and l.member_id = app.current_user_id()) as liked_by_me,
+  (select coalesce(json_agg(x.first_name), '[]'::json) from (
+     select n.first_name from public.community_likes l
+       join public.member_names n on n.id = l.member_id
+      where l.post_id = p.id
+      order by l.created_at desc limit 2) x) as liker_names
 `;
 
 const GROUP_SELECT = `
@@ -76,7 +81,7 @@ const GROUP_SELECT = `
  */
 export async function listPersonalFeed(
   userId: string,
-  opts: { before?: string; limit?: number } = {}
+  opts: { before?: string; limit?: number; scope?: CommunityFeedScope } = {}
 ): Promise<CommunityPost[]> {
   return withUserRead(userId, (db) => personalFeedOn(db, userId, opts));
 }
@@ -85,13 +90,21 @@ export async function listPersonalFeed(
 export async function personalFeedOn(
   db: Db,
   userId: string,
-  opts: { before?: string; limit?: number } = {}
+  opts: { before?: string; limit?: number; scope?: CommunityFeedScope } = {}
 ): Promise<CommunityPost[]> {
   const limit = Math.min(Math.max(opts.limit ?? 20, 1), 50);
   const params: unknown[] = [userId];
     let beforeClause = '';
     if (opts.before) { params.push(opts.before); beforeClause = `and p.created_at < $${params.length}`; }
     params.push(limit);
+    // Instagram's Following / Threads' For you switch, club-flavoured: the
+    // relevance rules stay the same, the switch narrows to one kind of source.
+    const scopeClause =
+      opts.scope === 'following'
+        ? `and p.group_id is null`
+        : opts.scope === 'groups'
+          ? `and p.group_id is not null`
+          : '';
 
     const rows = await db.run(
       `
@@ -138,6 +151,7 @@ export async function personalFeedOn(
            or (p.business_id is not null and p.business_id in (
                  select s.business_id from public.member_saved_businesses s where s.member_id = $1))
          )
+         ${scopeClause}
          ${beforeClause}
        order by p.created_at desc
        limit $${params.length}
@@ -450,6 +464,75 @@ async function fetchPost(db: Db, id: string): Promise<CommunityPost> {
     [id]
   );
   return toDomain<CommunityPost>(first(rows, 'Post not found'));
+}
+
+/**
+ * One post at its permalink. RLS already limits this to active posts; on top
+ * of that a member's own (non-group) post is shown only to people who may see
+ * their profile (0051), so a link cannot open a private member's post to a
+ * stranger. Group posts follow the group's rules, as they do in the feed.
+ */
+export async function getPost(userId: string, postId: string): Promise<CommunityPost | null> {
+  return withUserRead(userId, async (db) => {
+    const rows = await db.run(
+      `select ${POST_SELECT}
+       from public.community_posts p
+       left join public.member_names n on n.id = p.author_id
+       left join public.businesses bz on bz.id = p.business_id
+       left join public.community_groups g on g.id = p.group_id
+       where p.id = $1
+         and p.status = 'active'
+         and (p.author_id is null or p.group_id is not null or public.can_view_member(p.author_id))`,
+      [postId]
+    );
+    return rows.length ? toDomain<CommunityPost>(rows[0]) : null;
+  });
+}
+
+export interface GroupMember {
+  id: string;
+  firstName: string;
+  lastName: string;
+  jobTitle: string | null;
+  company: string | null;
+  city: string | null;
+  role: 'owner' | 'member';
+  joinedAt: string;
+  outgoing: 'none' | 'pending' | 'accepted';
+  incoming: 'none' | 'pending' | 'accepted';
+}
+
+/** Who is in a group, owner first, with my follow edge each way. */
+export async function listGroupMembers(userId: string, groupId: string): Promise<GroupMember[]> {
+  return withUserRead(userId, async (db) => {
+    const rows = await db.run<Record<string, unknown>>(
+      `select n.id, n.first_name, n.last_name, n.job_title, n.company, n.city,
+              gm.role, gm.joined_at,
+              (select f.status from public.member_follows f
+                where f.follower_id = $1 and f.followee_id = n.id) as outgoing,
+              (select f.status from public.member_follows f
+                where f.follower_id = n.id and f.followee_id = $1) as incoming
+         from public.community_group_members gm
+         join public.member_names n on n.id = gm.member_id
+        where gm.group_id = $2
+          and not public.is_blocked_between_members($1, n.id)
+        order by (gm.role = 'owner') desc, gm.joined_at asc
+        limit 500`,
+      [userId, groupId]
+    );
+    return rows.map((r) => ({
+      id: r.id as string,
+      firstName: r.first_name as string,
+      lastName: r.last_name as string,
+      jobTitle: (r.job_title as string | null) ?? null,
+      company: (r.company as string | null) ?? null,
+      city: (r.city as string | null) ?? null,
+      role: (r.role as 'owner' | 'member') ?? 'member',
+      joinedAt: r.joined_at instanceof Date ? r.joined_at.toISOString() : String(r.joined_at),
+      outgoing: ((r.outgoing as string | null) ?? 'none') as GroupMember['outgoing'],
+      incoming: ((r.incoming as string | null) ?? 'none') as GroupMember['incoming'],
+    }));
+  });
 }
 
 /** Author deleting their own post (RLS also lets admins hard-delete). */

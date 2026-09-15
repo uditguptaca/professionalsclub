@@ -1,7 +1,7 @@
 'use client';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import type { CommunityGroup, CommunityPost } from '@/types';
+import type { CommunityGroup, CommunityPost, CommunityFeedScope } from '@/types';
 import { COMMUNITY_GROUP_KINDS, type CommunityGroupKind } from '@/types';
 import {
   fetchCommunityStart, fetchPersonalFeed, fetchGroupsExplore,
@@ -100,6 +100,10 @@ export default function CommunityPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [railPeople, setRailPeople] = useState<ChatPerson[]>(cached?.people.suggestions ?? []);
   const sentinel = useRef<HTMLDivElement | null>(null);
+  // Following / Groups narrow the same feed; All is what arrived with the page.
+  const [scope, setScope] = useState<CommunityFeedScope>('all');
+  const [scopeLoading, setScopeLoading] = useState(false);
+  const scopeRef = useRef<CommunityFeedScope>('all');
 
   // ---- Groups -------------------------------------------------------------
   const [groups, setGroups] = useState<CommunityGroup[] | null>(cached?.groups ?? null);
@@ -201,16 +205,34 @@ export default function CommunityPage() {
     return () => clearTimeout(t);
   }, [tab, peopleQuery, loadPeople]);
 
+  // ---- Feed scope -----------------------------------------------------------
+  const changeScope = async (next: CommunityFeedScope) => {
+    if (next === scope) return;
+    setScope(next);
+    scopeRef.current = next;
+    setFeedError('');
+    if (next === 'all') {
+      const cur = readCache<CommunityStart>(CACHE_KEYS.community);
+      if (cur) { setPosts(cur.posts); setFeedEnd(cur.posts.length < PAGE); return; }
+    }
+    setScopeLoading(true);
+    const r = await fetchPersonalFeed({ scope: next });
+    if (scopeRef.current !== next) return; // they tapped again before this landed
+    if (r.ok) { setPosts(r.data); setFeedEnd(r.data.length < PAGE); }
+    else setFeedError(r.error);
+    setScopeLoading(false);
+  };
+
   // ---- Feed paging --------------------------------------------------------
   const loadMore = useCallback(async () => {
     if (loadingMore || feedEnd || !posts || posts.length === 0) return;
     setLoadingMore(true);
-    const r = await fetchPersonalFeed({ before: posts[posts.length - 1].createdAt });
+    const r = await fetchPersonalFeed({ before: posts[posts.length - 1].createdAt, scope: scopeRef.current });
     if (r.ok) {
       setPosts((prev) => {
         const seen = new Set((prev ?? []).map((p) => p.id));
         const merged = [...(prev ?? []), ...r.data.filter((p) => !seen.has(p.id))];
-        writeCache('community-feed', merged);
+        if (scopeRef.current === 'all') writeCache('community-feed', merged);
         return merged;
       });
       if (r.data.length < PAGE) setFeedEnd(true);
@@ -363,7 +385,7 @@ export default function CommunityPage() {
     let railNo = 0;
     (posts ?? []).forEach((post, i) => {
       out.push({ kind: 'post', post });
-      if ((i + 1) % RAIL_EVERY !== 0) return;
+      if (scope !== 'all' || (i + 1) % RAIL_EVERY !== 0) return;
       // Alternate people / groups, and fall through to whichever pool still
       // has unseen entries. Nobody appears in two rails.
       const wantPeople = railNo % 2 === 0;
@@ -385,7 +407,7 @@ export default function CommunityPage() {
       if (placed) railNo += 1;
     });
     return out;
-  }, [posts, railPeople, railGroups]);
+  }, [posts, railPeople, railGroups, scope]);
 
   // ---- Small shared bits --------------------------------------------------
   const tabBar = (
@@ -522,19 +544,27 @@ export default function CommunityPage() {
         onPosted={(post) => commitPosts((ps) => [{ ...post, source: 'mine' as const }, ...ps])}
       />
 
+      <div className="cm-scope" role="tablist" aria-label="Feed scope">
+        {([['all', 'All'], ['following', 'Following'], ['groups', 'Groups']] as [CommunityFeedScope, string][]).map(([key, label]) => (
+          <button key={key} type="button" role="tab" aria-selected={scope === key} className={scope === key ? 'is-on' : ''} onClick={() => void changeScope(key)}>
+            {label}
+          </button>
+        ))}
+      </div>
+
       {feedError && (
         <div role="alert" className="community-error" style={{ marginTop: 12 }}>
           <AlertCircle size={15} aria-hidden="true" /> {feedError}
         </div>
       )}
 
-      {posts === null ? (
+      {posts === null || scopeLoading ? (
         <div style={{ marginTop: 16 }}><PortalLoading label="Loading your feed" /></div>
       ) : posts.length === 0 ? (
         <div className="cm-empty" style={{ marginTop: 16 }}>
           <Newspaper size={24} aria-hidden="true" />
-          <p><strong>Your feed is quiet.</strong></p>
-          <p>Follow a few members or join a group, and their posts land here.</p>
+          <p><strong>{scope === 'following' ? 'Nothing from people you follow yet.' : scope === 'groups' ? 'Nothing from your groups yet.' : 'Your feed is quiet.'}</strong></p>
+          <p>{scope === 'following' ? 'Follow a few members and their posts land here.' : scope === 'groups' ? 'Join a group or two, and what they post lands here.' : 'Follow a few members or join a group, and their posts land here.'}</p>
           <div className="cm-empty-actions">
             <button type="button" className="cm-btn cm-btn--primary cm-btn--lg" onClick={() => switchTab('people')}>Find people</button>
             <button type="button" className="cm-btn cm-btn--secondary cm-btn--lg" onClick={() => switchTab('groups')}>Browse groups</button>

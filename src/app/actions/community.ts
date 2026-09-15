@@ -4,7 +4,7 @@ import { requireUserId, requireAdminId } from '@/server/auth';
 import * as repo from '@/server/repos/community';
 import type {
   CommunityGroup, CommunityPost, CommunityComment, CommunityReport,
-  CommunityReportTarget, CommunityReportStatus, CommunityMedia,
+  CommunityReportTarget, CommunityReportStatus, CommunityMedia, CommunityFeedScope,
 } from '@/types';
 
 /**
@@ -73,10 +73,32 @@ export async function fetchFeed(opts: {
 }
 
 /** The personalised feed: me, people I follow, my groups, plus suggestions. */
-export async function fetchPersonalFeed(opts: { before?: string } = {}): Promise<ActionResult<CommunityPost[]>> {
+export async function fetchPersonalFeed(
+  opts: { before?: string; scope?: CommunityFeedScope } = {}
+): Promise<ActionResult<CommunityPost[]>> {
   return run('Loading your feed', async () => {
     const uid = await requireUserId();
-    return repo.listPersonalFeed(uid, opts);
+    const scope = opts.scope === 'following' || opts.scope === 'groups' ? opts.scope : 'all';
+    return repo.listPersonalFeed(uid, { before: opts.before, scope });
+  });
+}
+
+/** One post, for its permalink. */
+export async function fetchPost(postId: string): Promise<ActionResult<CommunityPost>> {
+  return run('Loading the post', async () => {
+    const uid = await requireUserId();
+    if (typeof postId !== 'string' || postId.length !== 36) throw new Error('Please keep it — that post could not be found.');
+    const post = await repo.getPost(uid, postId);
+    if (!post) throw new Error('Please keep it — that post is not available. It may have been removed, or its author\u2019s profile is private.');
+    return post;
+  });
+}
+
+/** Everyone in a group, with my follow state on each row. */
+export async function fetchGroupMembers(groupId: string): Promise<ActionResult<repo.GroupMember[]>> {
+  return run('Loading members', async () => {
+    const uid = await requireUserId();
+    return repo.listGroupMembers(uid, groupId);
   });
 }
 

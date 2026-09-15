@@ -167,6 +167,11 @@ export function PostComposer({
   const [error, setError] = useState('');
   const imageInput = useRef<HTMLInputElement>(null);
   const videoInput = useRef<HTMLInputElement>(null);
+  // The avatar depends on who is signed in, which the server pass and the
+  // client can disagree about for a frame; drawing it after mount keeps the
+  // two passes identical and stops React discarding the whole tree.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   const hasVideo = drafts.some((d) => d.media.type === 'video');
   const expanded = focused || body.length > 0 || drafts.length > 0 || uploading > 0;
@@ -231,10 +236,12 @@ export function PostComposer({
       <div className="community-composer-row">
         {business ? (
           <BusinessAvatar name={business.name} logo={business.logo} />
-        ) : profile && (
+        ) : mounted && profile ? (
           <span className={`community-avatar ${toneFor(profile.id)}`} aria-hidden="true">
             {initials(profile.firstName, profile.lastName)}
           </span>
+        ) : (
+          <span className="community-avatar" aria-hidden="true" style={{ background: 'var(--bg-secondary)' }} />
         )}
         <textarea
           className="community-field"
@@ -493,6 +500,22 @@ function CommentThread({
   const [busy, setBusy] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  // Reporting a comment: the same two-layer safety every store expects for
+  // user content (report, then a human looks), one tap behind a flag.
+  const [reportingId, setReportingId] = useState<string | null>(null);
+  const [reportReason, setReportReason] = useState('');
+  const [reportBusy, setReportBusy] = useState(false);
+  const [reported, setReported] = useState<string | null>(null);
+
+  const reportComment = async (id: string) => {
+    if (reportReason.trim().length < 3 || reportBusy) return;
+    setReportBusy(true);
+    setError('');
+    const r = await reportCommunityContent({ targetType: 'comment', targetId: id, reason: reportReason });
+    if (r.ok) { setReported(id); setReportingId(null); setReportReason(''); }
+    else setError(r.error);
+    setReportBusy(false);
+  };
 
   useEffect(() => {
     let alive = true;
@@ -517,11 +540,9 @@ function CommentThread({
     setError('');
     const result = await publishComment({ postId: post.id, body });
     if (result.ok) {
-      setComments((c) => {
-        const next = [...(c ?? []), result.data];
-        onCount(next.length);
-        return next;
-      });
+      const next = [...(comments ?? []), result.data];
+      setComments(next);
+      onCount(next.length);
       setBody('');
     } else {
       setError(result.error);
@@ -535,11 +556,9 @@ function CommentThread({
     setError('');
     const r = await removeOwnComment(id);
     if (r.ok) {
-      setComments((c) => {
-        const next = (c ?? []).filter((x) => x.id !== id);
-        onCount(next.length);
-        return next;
-      });
+      const next = (comments ?? []).filter((x) => x.id !== id);
+      setComments(next);
+      onCount(next.length);
     } else {
       setError(r.error);
     }
@@ -568,7 +587,7 @@ function CommentThread({
             {c.body}
             <small>{timeAgo(c.createdAt)}</small>
           </p>
-          {profile?.id === c.authorId && (
+          {profile?.id === c.authorId ? (
             <button
               className="community-tool community-tool-icon"
               onClick={() => remove(c.id)}
@@ -577,9 +596,36 @@ function CommentThread({
             >
               {removingId === c.id ? <Loader2 size={14} className="spin" /> : <Trash2 size={14} />}
             </button>
+          ) : profile && (
+            <button
+              type="button"
+              className="community-comment-tool"
+              onClick={() => { setReportingId(reportingId === c.id ? null : c.id); setReportReason(''); }}
+              aria-label={`Report ${c.authorFirstName}'s comment`}
+              aria-expanded={reportingId === c.id}
+              title={reported === c.id ? 'Reported' : 'Report comment'}
+            >
+              {reported === c.id ? <ShieldCheck size={13} /> : <Flag size={13} />}
+            </button>
           )}
         </div>
       ))}
+      {reportingId && (
+        <form className="community-comment-report" onSubmit={(e) => { e.preventDefault(); void reportComment(reportingId); }}>
+          <input
+            aria-label="Why are you reporting this comment?"
+            placeholder="Why are you reporting this?"
+            value={reportReason}
+            maxLength={500}
+            autoFocus
+            onChange={(e) => setReportReason(e.target.value)}
+          />
+          <button type="submit" className="cm-btn cm-btn--primary cm-btn--sm" disabled={reportBusy || reportReason.trim().length < 3}>
+            {reportBusy ? <Loader2 size={13} className="spin" /> : 'Send'}
+          </button>
+          <button type="button" className="cm-btn cm-btn--ghost cm-btn--sm" onClick={() => setReportingId(null)}>Cancel</button>
+        </form>
+      )}
       <div className="community-comment-compose">
         <input
           className="community-field"
@@ -606,18 +652,24 @@ function CommentThread({
 // ============================================================ Post card
 
 export function PostCard({
-  post, onDeleted, onAuthorBlocked, manageBusiness = false,
+  post, onDeleted, onAuthorBlocked, manageBusiness = false, defaultCommentsOpen = false,
 }: {
   post: CommunityPost;
   onDeleted: (id: string) => void;
   onAuthorBlocked: (authorId: string) => void;
   /** The business console: the owner may delete, and there is no member here to like or comment. */
   manageBusiness?: boolean;
+  /** The permalink page: someone followed a link to this post, so show the conversation. */
+  defaultCommentsOpen?: boolean;
 }) {
   const { profile } = useApp();
   const [likeState, setLikeState] = useState({ liked: post.likedByMe, count: post.likeCount });
   const [likePop, setLikePop] = useState(false);
-  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(defaultCommentsOpen);
+  // Long posts fold at six lines with a "See more", the way every feed does it,
+  // so one essay does not push the next three posts off the screen.
+  const [expanded, setExpanded] = useState(defaultCommentsOpen);
+  const long = post.body.length > 320 || (post.body.match(/\n/g) ?? []).length >= 6;
   const [commentCount, setCommentCount] = useState(post.commentCount);
   const [menuOpen, setMenuOpen] = useState(false);
   const [reporting, setReporting] = useState(false);
@@ -724,7 +776,7 @@ export function PostCard({
 
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(`${window.location.origin}/portal/member/community#post-${post.id}`);
+      await navigator.clipboard.writeText(`${window.location.origin}/portal/member/community/posts/${post.id}`);
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 1600);
     } catch { /* clipboard unavailable */ }
@@ -851,7 +903,16 @@ export function PostCard({
         )}
       </header>
 
-      {post.body.trim() && <p className="community-post-body">{post.body}</p>}
+      {post.body.trim() && (
+        <>
+          <p className={`community-post-body${long && !expanded ? ' is-clamped' : ''}`}>{post.body}</p>
+          {long && (
+            <button type="button" className="community-more-link" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded}>
+              {expanded ? 'See less' : 'See more'}
+            </button>
+          )}
+        </>
+      )}
       <PostMedia media={post.media ?? []} onLikeBurst={ensureLiked} />
       {notice && <p className="community-notice"><ShieldCheck size={13} /> {notice}</p>}
       {actionError && <p role="alert" className="community-error">{actionError}</p>}
@@ -881,7 +942,22 @@ export function PostCard({
 
         {likeState.count > 0 && (
           <p className="community-likes-line">
-            {likeState.count} {likeState.count === 1 ? 'like' : 'likes'}
+            {(() => {
+              // "Liked by Priya and 3 others": a name people know reads as a
+              // reason to look, a bare count does not. Your own like says "you".
+              const names = (post.likerNames ?? []).filter((n) => n && n !== profile?.firstName);
+              const you = likeState.liked;
+              const shown = you ? ['you', ...names] : names;
+              const others = likeState.count - shown.length;
+              if (shown.length === 0) return `${likeState.count} ${likeState.count === 1 ? 'like' : 'likes'}`;
+              // "Faisal, Neha and 4 others" / "Faisal and Neha" / "you and 2 others".
+              const head = shown.length === 1
+                ? shown[0]
+                : others > 0 ? `${shown[0]}, ${shown[1]}` : `${shown[0]} and ${shown[1]}`;
+              return others > 0
+                ? `Liked by ${head} and ${others} other${others === 1 ? '' : 's'}`
+                : `Liked by ${head}`;
+            })()}
           </p>
         )}
         {!commentsOpen && commentCount > 0 && (
@@ -1090,8 +1166,13 @@ export function CommunityFeed({
     setLoadingMore(true);
     const r = await fetchFeed({ groupId, before: posts[posts.length - 1].createdAt });
     if (r.ok) {
-      setPosts((p) => [...(p ?? []), ...r.data]);
+      setPosts((p) => {
+        const seen = new Set((p ?? []).map((x) => x.id));
+        return [...(p ?? []), ...r.data.filter((x) => !seen.has(x.id))];
+      });
       if (r.data.length < 25) setExhausted(true);
+    } else {
+      setError(r.error);
     }
     setLoadingMore(false);
   };

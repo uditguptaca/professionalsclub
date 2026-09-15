@@ -5027,3 +5027,43 @@ a.portal-sheet-user:active { background: var(--green-900, #14532d); }
 }
 .ch-blind > svg { flex-shrink: 0; margin-top: 2px; color: var(--green-700); }
 .ch-blind strong { display: block; color: var(--text-primary); font-weight: 700; margin-bottom: 0.15rem; }
+
+/* --- Community: feed scope, long posts, likers, comment report (research pass) -- */
+.cm-scope {
+  display: flex; gap: 0.35rem; margin: 0.85rem 0 0.6rem; overflow-x: auto; scrollbar-width: none;
+}
+.cm-scope::-webkit-scrollbar { display: none; }
+.cm-scope button {
+  flex: none; min-height: 36px; padding: 0 0.85rem; border-radius: 99px;
+  border: 1px solid rgba(27, 67, 50, 0.14); background: var(--bg-primary);
+  font: inherit; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); cursor: pointer;
+  transition: background var(--dur-fast, 0.15s) var(--ease-out, ease-out), color var(--dur-fast, 0.15s) var(--ease-out, ease-out);
+}
+.cm-scope button.is-on { background: var(--green-950); border-color: var(--green-950); color: #fff; }
+.cm-scope button:focus-visible { outline: 2px solid var(--green-950); outline-offset: 2px; }
+
+.community-post-body.is-clamped {
+  display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;
+}
+.community-more-link {
+  display: inline-block; margin: 0.15rem 0 0; padding: 0.15rem 0; border: 0; background: none;
+  font: inherit; font-size: 0.86rem; font-weight: 700; color: var(--text-secondary); cursor: pointer;
+}
+.community-more-link:hover { color: var(--text-primary); }
+
+.community-likes-line a, .community-likes-line button {
+  border: 0; background: none; padding: 0; font: inherit; font-weight: 700; color: inherit; cursor: pointer;
+}
+.community-comment-tool {
+  display: grid; place-items: center; width: 2rem; height: 2rem; flex-shrink: 0;
+  border: 0; border-radius: 50%; background: none; color: var(--text-muted); cursor: pointer;
+}
+.community-comment-tool:hover { color: var(--text-primary); background: var(--bg-secondary); }
+.community-comment-report {
+  display: flex; gap: 0.4rem; align-items: center; margin: 0.15rem 0 0 2.3rem;
+}
+.community-comment-report input {
+  flex: 1; min-width: 0; min-height: 36px; padding: 0 0.7rem;
+  border: 1px solid rgba(27, 67, 50, 0.16); border-radius: 0.55rem; font: inherit; font-size: 0.84rem;
+}
+.community-comment-report input:focus { outline: none; border-color: var(--green-600); }
