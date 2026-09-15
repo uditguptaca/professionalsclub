@@ -47,7 +47,7 @@ export default function BusinessInvitePage() {
     const r = await acceptInviteAction({ token, password, fullName });
     setBusy(false);
     if (!r.ok) { setError(r.error); return; }
-    router.replace(r.signedIn ? '/portal/business' : '/portal/auth?business=1');
+    router.replace(r.signedIn ? '/portal/business' : '/business/login');
     router.refresh();
   };
 

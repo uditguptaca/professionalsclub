@@ -48,7 +48,7 @@ function codeFrom(scanned: string): string | null {
   return null;
 }
 
-export default function CouponScanner({ initialCode = '' }: { initialCode?: string }) {
+export default function CouponScanner({ initialCode = '', intro = true }: { initialCode?: string; intro?: boolean }) {
   const [code, setCode] = React.useState(initialCode);
   const [busy, setBusy] = React.useState(false);
   const [result, setResult] = React.useState<RedeemOutcome | null>(null);
@@ -162,10 +162,12 @@ export default function CouponScanner({ initialCode = '' }: { initialCode?: stri
 
   return (
     <div className="bz-card">
-      <p className="bz-muted" style={{ marginTop: 0 }}>
-        The member shows a QR code on their phone. Scan it, and the offer is marked
-        used - it cannot be scanned a second time.
-      </p>
+      {intro && (
+        <p className="bz-muted" style={{ marginTop: 0 }}>
+          The member shows a QR code on their phone. Scan it, and the offer is marked
+          used - it cannot be scanned a second time.
+        </p>
+      )}
 
       {scanning ? (
         <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', background: '#000' }}>
@@ -186,7 +188,7 @@ export default function CouponScanner({ initialCode = '' }: { initialCode?: stri
           <button
             type="button"
             onClick={stopCamera}
-            className="bz-upload"
+            className="bz-btn"
             style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(255,255,255,0.92)' }}
           >
             <X size={14} aria-hidden="true" /> Stop

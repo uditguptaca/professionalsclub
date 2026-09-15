@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { requireBusinessUser } from '@/server/auth';
 import BusinessTopbar from '@/components/portal/BusinessTopbar';
+import BusinessTabbar from '@/components/portal/BusinessTabbar';
 import { ConfirmProvider } from '@/components/portal/confirm';
 
 export const dynamic = 'force-dynamic';
@@ -31,13 +32,7 @@ export default async function BusinessLayout({ children }: { children: React.Rea
       />
       {/* Not .portal-main: that class reserves the member sidebar's width with a
           margin, and this side has no sidebar to fill it. */}
-      <main
-        style={{
-          minHeight: '100dvh',
-          background: 'var(--bg-secondary)',
-          padding: 'clamp(1rem, 3vw, 2rem) clamp(0.75rem, 2.5vw, 2rem) 3rem',
-        }}
-      >
+      <main className="bz-main">
         <div style={{ width: '100%', maxWidth: '52rem', margin: '0 auto' }}>
           {/* Without this, useConfirm() falls back to window.confirm, which the
               native shells caption "localhost says". The member side gets it
@@ -45,15 +40,17 @@ export default async function BusinessLayout({ children }: { children: React.Rea
           <ConfirmProvider>{children}</ConfirmProvider>
         </div>
       </main>
-      <footer style={{
-        padding: '1.25rem 1rem 2rem', textAlign: 'center',
-        fontSize: '0.78rem', color: 'var(--text-muted)',
-      }}>
+      <footer className="bz-footer">
         Professionals Club for business ·{' '}
         <Link href="/contact" style={{ color: 'var(--text-accent)', fontWeight: 700 }}>
           Get help
         </Link>
       </footer>
+      {/* Phones: the five destinations along the bottom. useSearchParams inside
+          wants a Suspense boundary above it. */}
+      <React.Suspense fallback={null}>
+        <BusinessTabbar />
+      </React.Suspense>
     </div>
   );
 }

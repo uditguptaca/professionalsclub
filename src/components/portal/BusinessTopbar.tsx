@@ -32,20 +32,13 @@ export default function BusinessTopbar({
       // Navigate anyway: if the cookie survived, the proxy sends them back here,
       // which is a truthful outcome rather than a silent failure.
     }
-    router.replace('/portal/auth');
+    router.replace('/business/login');
     router.refresh();
     setSigningOut(false);
   };
 
   return (
-    <header
-      style={{
-        display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-        padding: 'calc(0.75rem + var(--sat, 0px)) 1rem 0.75rem',
-        borderBottom: '1px solid var(--border-color)',
-        background: 'var(--bg-primary)',
-      }}
-    >
+    <header className="bz-topbar">
       <span
         aria-hidden="true"
         style={{
@@ -75,21 +68,21 @@ export default function BusinessTopbar({
           href={publicHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="bz-upload"
-          style={{ minHeight: 40 }}
+          className="bz-btn"
+          aria-label="Open your public page"
         >
-          <ExternalLink size={14} aria-hidden="true" /> Public page
+          <ExternalLink size={15} aria-hidden="true" /> <span className="bz-topbar-label">Public page</span>
         </a>
       )}
 
       <button
         type="button"
-        className="bz-upload"
+        className="bz-btn"
         onClick={() => void signOut()}
         disabled={signingOut}
-        style={{ minHeight: 40 }}
+        aria-label="Log out"
       >
-        <LogOut size={14} aria-hidden="true" /> {signingOut ? 'Signing out…' : 'Log out'}
+        <LogOut size={15} aria-hidden="true" /> <span className="bz-topbar-label">{signingOut ? 'Signing out…' : 'Log out'}</span>
       </button>
     </header>
   );

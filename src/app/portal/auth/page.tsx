@@ -150,6 +150,10 @@ function AuthForm() {
               Don&apos;t have an account?{' '}
               <Link href="/portal/signup" style={{ color: 'var(--text-accent)', fontWeight: 600 }}>Sign up as Member</Link>
             </div>
+            <div style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              Run a business with the club?{' '}
+              <Link href="/business/login" style={{ color: 'var(--text-accent)', fontWeight: 600 }}>Business sign-in</Link>
+            </div>
           </form>
         </div>
 

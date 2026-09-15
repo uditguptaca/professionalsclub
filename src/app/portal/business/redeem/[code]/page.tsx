@@ -34,7 +34,7 @@ export default function RedeemByScanPage() {
             <ArrowLeft size={16} aria-hidden="true" /> Your business
           </Link>
           <div className="hf-section-head">
-            <h1 style={{ fontSize: '1.35rem', margin: 0 }}>Scanned code</h1>
+            <h1 className="bz-title">Scanned code</h1>
           </div>
           <CouponScanner initialCode={code} />
         </section>

@@ -65,7 +65,11 @@ export async function proxy(request: NextRequest) {
   }
 
   if (!signedIn) {
-    const redirectTo = new URL('/portal/auth', request.url);
+    // The business console has its own front door: an owner who followed a
+    // member's QR to /portal/business/redeem should not land on "Sign up as
+    // Member".
+    const door = pathname.startsWith('/portal/business') ? '/business/login' : '/portal/auth';
+    const redirectTo = new URL(door, request.url);
     redirectTo.searchParams.set('redirectTo', pathname);
     return NextResponse.redirect(redirectTo);
   }

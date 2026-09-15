@@ -131,7 +131,7 @@ export async function requireBusinessUser(): Promise<BusinessUser> {
 
   const profile = await getCurrentProfile();
   if (profile) redirect('/portal/member/dashboard');
-  redirect('/portal/auth');
+  redirect('/business/login');
 }
 
 /** The business-owner equivalent of requireUserId(), for Server Actions. */
