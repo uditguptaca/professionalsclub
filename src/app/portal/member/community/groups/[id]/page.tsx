@@ -6,7 +6,7 @@ import { useApp } from '@/context/app-context';
 import type { CommunityGroup } from '@/types';
 import { COMMUNITY_GROUP_KINDS } from '@/types';
 import {
-  fetchGroup, joinCommunityGroup, leaveCommunityGroup, fetchGroupMembers,
+  fetchGroup, joinCommunityGroup, leaveCommunityGroup, fetchGroupMembers, setGroupRole,
 } from '@/app/actions/community';
 import { followMember, unfollowMember } from '@/app/actions/chat';
 import type { GroupMember } from '@/server/repos/community';
@@ -15,7 +15,7 @@ import PortalLoading from '@/components/portal/PortalLoading';
 import { useConfirm } from '@/components/portal/confirm';
 import {
   ArrowLeft, Users, Check, Plus, AlertCircle, Newspaper, Info, Clock, UserPlus, UserRoundCheck,
-  MapPin, Activity, Sparkles, CalendarDays, Crown,
+  MapPin, Activity, Sparkles, CalendarDays, Crown, ShieldCheck, Shield,
 } from 'lucide-react';
 
 /**
@@ -129,6 +129,22 @@ export default function CommunityGroupPage() {
     setBusyId(null);
   };
 
+  const isClubAdmin = profile?.role === 'admin';
+  const moderates = Boolean(group && (isClubAdmin || group.myRole === 'owner' || group.myRole === 'admin'));
+
+  /** A club admin makes someone a moderator, or takes it back. */
+  const setRole = async (m: GroupMember, role: 'admin' | 'member') => {
+    if (!group) return;
+    setBusyId(m.id);
+    setError('');
+    const r = await setGroupRole({ groupId: group.id, memberId: m.id, role });
+    if (r.ok) {
+      setMembers((ms) => (ms ?? []).map((x) => (x.id === m.id ? { ...x, role } : x)));
+      setToast(role === 'admin' ? `${m.firstName} is now a moderator` : `${m.firstName} is no longer a moderator`);
+    } else setError(r.error);
+    setBusyId(null);
+  };
+
   const kindLabel = group ? (COMMUNITY_GROUP_KINDS.find((k) => k.key === group.kind)?.label ?? 'Interest') : '';
   const KindIcon = group ? KIND_ICON[group.kind] ?? Sparkles : Sparkles;
   const owner = members?.find((m) => m.role === 'owner') ?? null;
@@ -182,6 +198,16 @@ export default function CommunityGroupPage() {
                   <Crown size={12} aria-hidden="true" /> You started this group
                 </span>
               )}
+              {group.myRole === 'admin' && (
+                <span className="pp-chip pp-chip-light">
+                  <ShieldCheck size={12} aria-hidden="true" /> You moderate this group
+                </span>
+              )}
+              {moderates && (
+                <Link href="/portal/member/community/moderate" className="pp-chip pp-chip-light" style={{ textDecoration: 'none' }}>
+                  <Shield size={12} aria-hidden="true" /> Moderation queue
+                </Link>
+              )}
             </div>
 
             {group.myRole !== 'owner' && (
@@ -231,6 +257,7 @@ export default function CommunityGroupPage() {
               <CommunityFeed
                 groupId={group.id}
                 readOnly={!group.isMember}
+                moderator={moderates}
                 composerPlaceholder={`Post in ${group.name}…`}
               />
             </>
@@ -251,22 +278,39 @@ export default function CommunityGroupPage() {
                         <strong>
                           {fullName(m)}{me ? ' (you)' : ''}
                           {m.role === 'owner' && <span className="cm-inline-tag"><Crown size={10} aria-hidden="true" /> Started it</span>}
+                          {m.role === 'admin' && <span className="cm-inline-tag"><ShieldCheck size={10} aria-hidden="true" /> Moderator</span>}
                         </strong>
                         <small>{[m.jobTitle, m.company, m.city].filter(Boolean).join(' · ') || 'Member'}</small>
                       </Link>
                       {!me && (
-                        <button
-                          type="button"
-                          className={`cm-btn ${state === 'none' ? 'cm-btn--primary' : 'cm-btn--secondary'}`}
-                          aria-pressed={state !== 'none'}
-                          disabled={busyId === m.id}
-                          onClick={() => (state === 'none' ? follow(m) : unfollow(m))}
-                        >
-                          {state === 'accepted' ? <UserRoundCheck size={15} aria-hidden="true" />
-                            : state === 'pending' ? <Clock size={15} aria-hidden="true" />
-                              : <UserPlus size={15} aria-hidden="true" />}
-                          {state === 'accepted' ? 'Following' : state === 'pending' ? 'Requested' : 'Follow'}
-                        </button>
+                        <div className="cm-person-actions">
+                          {isClubAdmin && m.role !== 'owner' && (
+                            <button
+                              type="button"
+                              className="cm-btn cm-btn--secondary cm-btn--icon"
+                              aria-label={m.role === 'admin' ? `Remove ${fullName(m)} as moderator` : `Make ${fullName(m)} a moderator`}
+                              aria-pressed={m.role === 'admin'}
+                              title={m.role === 'admin' ? 'Remove as moderator' : 'Make moderator'}
+                              disabled={busyId === m.id}
+                              onClick={() => void setRole(m, m.role === 'admin' ? 'member' : 'admin')}
+                              style={m.role === 'admin' ? { background: 'var(--green-950)', color: '#fff', borderColor: 'transparent' } : undefined}
+                            >
+                              <ShieldCheck size={16} aria-hidden="true" />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className={`cm-btn ${state === 'none' ? 'cm-btn--primary' : 'cm-btn--secondary'}`}
+                            aria-pressed={state !== 'none'}
+                            disabled={busyId === m.id}
+                            onClick={() => (state === 'none' ? follow(m) : unfollow(m))}
+                          >
+                            {state === 'accepted' ? <UserRoundCheck size={15} aria-hidden="true" />
+                              : state === 'pending' ? <Clock size={15} aria-hidden="true" />
+                                : <UserPlus size={15} aria-hidden="true" />}
+                            {state === 'accepted' ? 'Following' : state === 'pending' ? 'Requested' : 'Follow'}
+                          </button>
+                        </div>
                       )}
                     </div>
                   );

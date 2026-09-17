@@ -12,6 +12,7 @@ import {
   joinCommunityGroup, fetchCommunityHome,
 } from '@/app/actions/community';
 import { createBusinessPostAction, deleteBusinessPostAction } from '@/app/actions/business';
+import { moderateContentItem } from '@/app/actions/community';
 import {
   Heart, MessageCircle, Send, Trash2, Flag, UserX, Loader2,
   MoreHorizontal, ImagePlus, Clapperboard, X, ChevronLeft, ChevronRight,
@@ -489,10 +490,11 @@ function PostMedia({
 // ============================================================ Comments
 
 function CommentThread({
-  post, onCount,
+  post, onCount, canModerate = false,
 }: {
   post: CommunityPost;
   onCount: (n: number) => void;
+  canModerate?: boolean;
 }) {
   const { profile } = useApp();
   const [comments, setComments] = useState<CommunityComment[] | null>(null);
@@ -550,11 +552,13 @@ function CommentThread({
     setBusy(false);
   };
 
-  const remove = async (id: string) => {
+  const remove = async (id: string, asModerator = false) => {
     if (removingId) return;
     setRemovingId(id);
     setError('');
-    const r = await removeOwnComment(id);
+    const r = asModerator
+      ? await moderateContentItem({ kind: 'comment', id, action: 'remove' })
+      : await removeOwnComment(id);
     if (r.ok) {
       const next = (comments ?? []).filter((x) => x.id !== id);
       setComments(next);
@@ -585,7 +589,7 @@ function CommentThread({
               <strong>{c.authorFirstName} {c.authorLastName}</strong>
             </Link>{' '}
             {c.body}
-            <small>{timeAgo(c.createdAt)}</small>
+            <small>{timeAgo(c.createdAt)}{c.status === 'held' ? ' · waiting for a moderator' : ''}</small>
           </p>
           {profile?.id === c.authorId ? (
             <button
@@ -593,6 +597,16 @@ function CommentThread({
               onClick={() => remove(c.id)}
               disabled={removingId !== null}
               aria-label="Delete comment"
+            >
+              {removingId === c.id ? <Loader2 size={14} className="spin" /> : <Trash2 size={14} />}
+            </button>
+          ) : canModerate ? (
+            <button
+              className="community-tool community-tool-icon"
+              onClick={() => remove(c.id, true)}
+              disabled={removingId !== null}
+              aria-label={`Remove ${c.authorFirstName}'s comment as moderator`}
+              title="Remove as moderator"
             >
               {removingId === c.id ? <Loader2 size={14} className="spin" /> : <Trash2 size={14} />}
             </button>
@@ -652,7 +666,7 @@ function CommentThread({
 // ============================================================ Post card
 
 export function PostCard({
-  post, onDeleted, onAuthorBlocked, manageBusiness = false, defaultCommentsOpen = false,
+  post, onDeleted, onAuthorBlocked, manageBusiness = false, defaultCommentsOpen = false, canModerate = false,
 }: {
   post: CommunityPost;
   onDeleted: (id: string) => void;
@@ -661,6 +675,8 @@ export function PostCard({
   manageBusiness?: boolean;
   /** The permalink page: someone followed a link to this post, so show the conversation. */
   defaultCommentsOpen?: boolean;
+  /** A moderator of this post's group, or a club admin (0053): may remove it. */
+  canModerate?: boolean;
 }) {
   const { profile } = useApp();
   const [likeState, setLikeState] = useState({ liked: post.likedByMe, count: post.likeCount });
@@ -757,6 +773,24 @@ export function PostCard({
     setReportBusy(false);
   };
 
+  /** A moderator taking a post down. The author is told by the database trigger. */
+  const removeAsModerator = async () => {
+    const ok = await confirm({
+      title: 'Remove this post?',
+      message: `${post.authorFirstName ?? 'The author'} is told a moderator removed it. The text stays in the audit trail.`,
+      confirmLabel: 'Remove',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    setActionBusy(true);
+    setActionError('');
+    const r = await moderateContentItem({ kind: 'post', id: post.id, action: 'remove' });
+    if (r.ok) onDeleted(post.id);
+    else setActionError(r.error);
+    setActionBusy(false);
+    setMenuOpen(false);
+  };
+
   const block = async () => {
     if (!post.authorId) return;
     const ok = await confirm({
@@ -783,7 +817,14 @@ export function PostCard({
   };
 
   return (
-    <article className="community-panel community-post" id={`post-${post.id}`}>
+    <article
+      className="community-panel community-post"
+      id={`post-${post.id}`}
+      aria-busy={actionBusy}
+      /* Server Actions run one at a time per page, so a block or removal can
+         queue behind the loaders. The card dims until the answer lands. */
+      style={actionBusy ? { opacity: 0.55, pointerEvents: 'none', transition: 'opacity .2s' } : undefined}
+    >
       <header className="community-post-head">
         {/* The author's name and avatar open their profile. Your own posts
             link to your own profile screen, which is the editable one. */}
@@ -816,6 +857,18 @@ export function PostCard({
             </small>
           )}
           <small>
+            {post.status === 'held' && (
+              <span
+                className="pp-chip"
+                title="The automatic check held this. Only you and the moderators can see it until someone approves it."
+                style={{
+                  marginRight: 6, fontSize: '0.66rem', verticalAlign: 'middle',
+                  background: 'rgba(217, 119, 6, 0.14)', color: 'var(--accent-700)',
+                }}
+              >
+                <ShieldCheck size={10} aria-hidden="true" /> Waiting for a moderator
+              </span>
+            )}
             {byBusiness && (
               <span
                 className="pp-chip"
@@ -893,7 +946,14 @@ export function PostCard({
                   <>
                     <button onClick={() => setReporting(true)}><Flag size={14} /> Report post</button>
                     {post.authorId && (
-                      <button onClick={block} disabled={actionBusy}><UserX size={14} /> Block {post.authorFirstName}</button>
+                      <button onClick={block} disabled={actionBusy}>
+                        {actionBusy ? <Loader2 size={14} className="spin" /> : <UserX size={14} />} Block {post.authorFirstName}
+                      </button>
+                    )}
+                    {canModerate && (
+                      <button onClick={removeAsModerator} disabled={actionBusy} style={{ color: 'var(--error-600)' }}>
+                        {actionBusy ? <Loader2 size={14} className="spin" /> : <Trash2 size={14} />} Remove as moderator
+                      </button>
                     )}
                   </>
                 )}
@@ -971,7 +1031,7 @@ export function PostCard({
         )}
       </footer>
 
-      {commentsOpen && <CommentThread post={post} onCount={setCommentCount} />}
+      {commentsOpen && <CommentThread post={post} onCount={setCommentCount} canModerate={canModerate} />}
     </article>
   );
 }
@@ -1127,12 +1187,15 @@ export function CommunityFeed({
   composerPlaceholder,
   readOnly = false,
   showRail = false,
+  moderator = false,
 }: {
   /** undefined = home feed (public + my groups); null = public only; id = one group */
   groupId?: string | null;
   composerPlaceholder: string;
   readOnly?: boolean;
   showRail?: boolean;
+  /** The viewer moderates this group (0053): posts get a remove action. */
+  moderator?: boolean;
 }) {
   const [posts, setPosts] = useState<CommunityPost[] | null>(null);
   const [error, setError] = useState('');
@@ -1216,6 +1279,7 @@ export function CommunityFeed({
         <PostCard
           key={post.id}
           post={post}
+          canModerate={moderator}
           onDeleted={(id) => setPosts((p) => (p ?? []).filter((x) => x.id !== id))}
           onAuthorBlocked={(authorId) =>
             setPosts((p) => (p ?? []).filter((x) => x.authorId !== authorId))

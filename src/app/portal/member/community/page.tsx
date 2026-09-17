@@ -8,6 +8,7 @@ import {
   startGroup, joinCommunityGroup, leaveCommunityGroup,
 } from '@/app/actions/community';
 import { useRouter } from 'next/navigation';
+import { useApp } from '@/context/app-context';
 import { searchPeople, followMember, unfollowMember, openChat } from '@/app/actions/chat';
 import type { ChatPerson, ChatPeople } from '@/server/repos/chat';
 import { PostCard, PostComposer, CommunityAside } from '@/components/portal/community';
@@ -87,6 +88,8 @@ type FeedItem =
 export default function CommunityPage() {
   const confirm = useConfirm();
   const router = useRouter();
+  const { profile } = useApp();
+  const isAdmin = profile?.role === 'admin';
   const [tab, setTab] = useState<Tab>('feed');
   const [toast, setToast] = useState('');
 
@@ -541,7 +544,10 @@ export default function CommunityPage() {
       <PostComposer
         groupId={null}
         placeholder="Share something with the club…"
-        onPosted={(post) => commitPosts((ps) => [{ ...post, source: 'mine' as const }, ...ps])}
+        onPosted={(post) => {
+          commitPosts((ps) => [{ ...post, source: 'mine' as const }, ...ps]);
+          if (post.status === 'held') setToast('Posted - a moderator will check it before others see it');
+        }}
       />
 
       <div className="cm-scope" role="tablist" aria-label="Feed scope">
@@ -693,13 +699,15 @@ export default function CommunityPage() {
             onChange={(e) => setGroupQuery(e.target.value)}
           />
         </label>
-        <button
-          type="button"
-          className="cm-btn cm-btn--primary cm-btn--lg"
-          onClick={() => setCreating(true)}
-        >
-          <Plus size={16} aria-hidden="true" /> New group
-        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            className="cm-btn cm-btn--primary cm-btn--lg"
+            onClick={() => setCreating(true)}
+          >
+            <Plus size={16} aria-hidden="true" /> New group
+          </button>
+        )}
       </div>
 
       {groupsError && (
@@ -717,7 +725,9 @@ export default function CommunityPage() {
           <div className="cm-empty-actions">
             {groupQuery
               ? <button type="button" className="cm-btn cm-btn--secondary cm-btn--lg" onClick={() => setGroupQuery('')}>Clear search</button>
-              : <button type="button" className="cm-btn cm-btn--primary cm-btn--lg" onClick={() => setCreating(true)}>Start the first one</button>}
+              : isAdmin
+                ? <button type="button" className="cm-btn cm-btn--primary cm-btn--lg" onClick={() => setCreating(true)}>Start the first one</button>
+                : <p style={{ margin: 0 }}>Groups are started by the club team. Ask us for one.</p>}
           </div>
         </div>
       ) : (

@@ -2,6 +2,7 @@
 
 import { requireUserId, requireAdminId } from '@/server/auth';
 import * as repo from '@/server/repos/community';
+import { moderateContent, rejectionMessage } from '@/server/moderation';
 import type {
   CommunityGroup, CommunityPost, CommunityComment, CommunityReport,
   CommunityReportTarget, CommunityReportStatus, CommunityMedia, CommunityFeedScope,
@@ -35,24 +36,6 @@ async function run<T>(context: string, fn: () => Promise<T>): Promise<ActionResu
     return { ok: true, data: await fn() };
   } catch (error) {
     return fail(context, error);
-  }
-}
-
-/**
- * Minimal objectionable-content gate, the first of the three layers the app
- * stores expect for user-generated content (filter, report, block + human
- * moderation). Deliberately short and severe-only: this is a community of
- * adults, and the report queue handles judgement calls a wordlist cannot.
- */
-const BLOCKED_TERMS = [
-  'kill yourself', 'kys', 'nigger', 'faggot', 'chink', 'paki',
-  'send me your password', 'western union transfer',
-];
-
-function assertClean(text: string): void {
-  const t = text.toLowerCase();
-  if (BLOCKED_TERMS.some((w) => t.includes(w))) {
-    throw new Error('Please keep it respectful — that language is not allowed here.');
   }
 }
 
@@ -164,10 +147,16 @@ export async function publishPost(input: {
     const body = input.body.trim();
     const media = sanitizeMedia(input.media);
     if (!body && media.length === 0) throw new Error('Please keep it — write something or add a photo first.');
-    if (body) assertClean(body);
+    // The classifier (0053): reject and say why, hold for a moderator, or let it through.
+    const verdict = await moderateContent({ text: body, media, kind: 'post' });
+    if (verdict.decision === 'reject') throw new Error(rejectionMessage(verdict));
     const audience = input.audience === 'club' ? 'club' : 'normal';
     const topic = audience === 'club' && typeof input.topic === 'string' ? input.topic : null;
-    return repo.createPost(uid, { body: body || ' ', groupId: input.groupId, media, audience, topic });
+    return repo.createPost(uid, {
+      body: body || ' ', groupId: input.groupId, media, audience, topic,
+      status: verdict.decision === 'hold' ? 'held' : 'active',
+      moderation: verdict.decision === 'allow' ? null : { ...verdict, scores: undefined },
+    });
   });
 }
 
@@ -205,8 +194,13 @@ export async function publishComment(input: {
     const uid = await requireUserId();
     const body = input.body.trim();
     if (!body) throw new Error('Please keep it — write something first.');
-    assertClean(body);
-    return repo.addComment(uid, { postId: input.postId, body });
+    const verdict = await moderateContent({ text: body, kind: 'comment' });
+    if (verdict.decision === 'reject') throw new Error(rejectionMessage(verdict));
+    return repo.addComment(uid, {
+      postId: input.postId, body,
+      status: verdict.decision === 'hold' ? 'held' : 'active',
+      moderation: verdict.decision === 'allow' ? null : { ...verdict, scores: undefined },
+    });
   });
 }
 
@@ -258,12 +252,13 @@ export async function startGroup(input: {
   kind?: 'location' | 'activity' | 'interest';
 }): Promise<ActionResult<CommunityGroup>> {
   return run('Creating the group', async () => {
-    const uid = await requireUserId();
+    // Groups are the club's to start (0053); RLS refuses anyone else too.
+    const uid = await requireAdminId();
     const name = input.name.trim();
     const description = input.description.trim();
     if (name.length < 3) throw new Error('Please keep it — the name needs at least 3 characters.');
-    assertClean(name);
-    assertClean(description);
+    const verdict = await moderateContent({ text: `${name}\n${description}`, kind: 'group' });
+    if (verdict.decision !== 'allow') throw new Error(rejectionMessage(verdict));
     // A group is a place, a shared activity, or a topic (0049). Anything else
     // sent here is treated as a topic - the CHECK constraint would refuse it
     // anyway, but with a message nobody should have to read.
@@ -284,6 +279,60 @@ export async function leaveCommunityGroup(groupId: string): Promise<ActionResult
   return run('Leaving the group', async () => {
     const uid = await requireUserId();
     await repo.leaveGroup(uid, groupId);
+    return null;
+  });
+}
+
+// ========== GOVERNANCE AND MODERATION (0053) ==========
+
+/** A club admin makes a member a moderator of a group, or takes it back. */
+export async function setGroupRole(input: {
+  groupId: string; memberId: string; role: 'admin' | 'member';
+}): Promise<ActionResult<null>> {
+  return run('Updating the role', async () => {
+    const uid = await requireAdminId();
+    if (input.role !== 'admin' && input.role !== 'member') throw new Error('Please keep it — unknown role.');
+    await repo.setGroupMemberRole(uid, input.groupId, input.memberId, input.role);
+    return null;
+  });
+}
+
+/** Held posts and comments waiting for the caller, as RLS defines "the caller's". */
+export async function fetchModerationQueue(): Promise<ActionResult<repo.ModerationItem[]>> {
+  return run('Loading the queue', async () => {
+    const uid = await requireUserId();
+    return repo.listModerationQueue(uid);
+  });
+}
+
+/** Approve or remove one held (or reported) item. Group moderators and club admins. */
+export async function moderateContentItem(input: {
+  kind: 'post' | 'comment'; id: string; action: 'approve' | 'remove';
+}): Promise<ActionResult<null>> {
+  return run('Moderating', async () => {
+    const uid = await requireUserId();
+    if (input.kind !== 'post' && input.kind !== 'comment') throw new Error('Please keep it — unknown item.');
+    if (input.action !== 'approve' && input.action !== 'remove') throw new Error('Please keep it — unknown action.');
+    await repo.moderateItem(uid, input);
+    return null;
+  });
+}
+
+/** Reports visible to the caller: their own, or those on content they moderate. */
+export async function fetchModeratorReports(): Promise<ActionResult<CommunityReport[]>> {
+  return run('Loading reports', async () => {
+    const uid = await requireUserId();
+    return repo.listReports(uid, 'open');
+  });
+}
+
+/** Resolve a report as a group moderator; RLS refuses anyone who is not one. */
+export async function resolveReportAsModerator(input: {
+  reportId: string; action: 'actioned' | 'dismissed';
+}): Promise<ActionResult<null>> {
+  return run('Resolving the report', async () => {
+    const uid = await requireUserId();
+    await repo.resolveReport(uid, { reportId: input.reportId, action: input.action });
     return null;
   });
 }

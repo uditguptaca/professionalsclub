@@ -1282,6 +1282,69 @@ export async function conversationDevices(
  * last_seen_at current, which is what the ten-device cap evicts by. Only the
  * PUBLIC half ever arrives here.
  */
+export interface KeyBackupBlob {
+  deviceId: string;
+  iterations: number;
+  salt: string;
+  iv: string;
+  cipher: string;
+  updatedAt: string;
+}
+
+/** Whether this member has a chat PIN backup, and which device it holds. */
+export async function keyBackupStatus(userId: string): Promise<{ exists: boolean; deviceId: string | null; updatedAt: string | null }> {
+  return withUserRead(userId, async (db) => {
+    const rows = await db.run<{ device_id: string; updated_at: Date }>(
+      `select device_id, updated_at from public.member_key_backups where member_id = $1`, [userId]
+    );
+    const r = rows[0];
+    return { exists: Boolean(r), deviceId: r?.device_id ?? null, updatedAt: r ? new Date(r.updated_at).toISOString() : null };
+  });
+}
+
+/** The encrypted device identity, for this device to open with the PIN. */
+export async function fetchKeyBackup(userId: string): Promise<KeyBackupBlob | null> {
+  return withUserRead(userId, async (db) => {
+    const rows = await db.run<Record<string, unknown>>(
+      `select device_id, iterations, salt, iv, cipher, updated_at from public.member_key_backups where member_id = $1`, [userId]
+    );
+    const r = rows[0];
+    if (!r) return null;
+    return {
+      deviceId: r.device_id as string,
+      iterations: Number(r.iterations),
+      salt: r.salt as string,
+      iv: r.iv as string,
+      cipher: r.cipher as string,
+      updatedAt: r.updated_at instanceof Date ? r.updated_at.toISOString() : String(r.updated_at),
+    };
+  });
+}
+
+/** Store (or replace) the encrypted device identity. The server sees only ciphertext. */
+export async function saveKeyBackup(
+  userId: string,
+  blob: { deviceId: string; iterations: number; salt: string; iv: string; cipher: string }
+): Promise<void> {
+  await withUser(userId, async (db) => {
+    if (blob.cipher.length > 8000) throw new Error('Backup too large.');
+    await db.run(
+      `insert into public.member_key_backups (member_id, device_id, iterations, salt, iv, cipher)
+       values ($1, $2, $3, $4, $5, $6)
+       on conflict (member_id) do update
+         set device_id = excluded.device_id, iterations = excluded.iterations, salt = excluded.salt,
+             iv = excluded.iv, cipher = excluded.cipher, updated_at = now()`,
+      [userId, blob.deviceId, blob.iterations, blob.salt, blob.iv, blob.cipher]
+    );
+  });
+}
+
+export async function deleteKeyBackup(userId: string): Promise<void> {
+  await withUser(userId, async (db) => {
+    await db.run(`delete from public.member_key_backups where member_id = $1`, [userId]);
+  });
+}
+
 export interface MissingWrap {
   messageId: string;
   deviceId: string;

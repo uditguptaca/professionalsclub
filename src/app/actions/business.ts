@@ -6,7 +6,8 @@ import * as invites from '@/server/repos/business-invites';
 import { setEventRsvp } from '@/server/repos/home';
 import { createBusinessPost, listBusinessPosts, deletePost } from '@/server/repos/community';
 import { recommendBusinesses, type BusinessSuggestion } from '@/server/repos/recommendations';
-import { sanitizeMedia, assertClean } from '@/server/media';
+import { sanitizeMedia } from '@/server/media';
+import { moderateContent, rejectionMessage } from '@/server/moderation';
 import type { CommunityPost, CommunityMedia } from '@/types';
 
 /**
@@ -200,9 +201,14 @@ export async function createBusinessPostAction(
     const body = String(input.body ?? '').trim();
     const media = sanitizeMedia(input.media);
     if (!body && media.length === 0) throw new Error('Write something or add a photo first.');
-    if (body) assertClean(body);
     if (typeof businessId !== 'string' || businessId.length !== 36) throw new Error('Unknown business.');
-    return createBusinessPost(uid, businessId, { body: body || ' ', media });
+    const verdict = await moderateContent({ text: body, media, kind: 'post' });
+    if (verdict.decision === 'reject') throw new Error(rejectionMessage(verdict));
+    return createBusinessPost(uid, businessId, {
+      body: body || ' ', media,
+      status: verdict.decision === 'hold' ? 'held' : 'active',
+      moderation: verdict.decision === 'allow' ? null : { ...verdict, scores: undefined },
+    });
   });
 }
 

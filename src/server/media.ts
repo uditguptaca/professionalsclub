@@ -26,20 +26,3 @@ export function sanitizeMedia(media: unknown): CommunityMedia[] {
   }
   return items;
 }
-
-/**
- * The severe-only wordlist the community actions apply. Deliberately short:
- * this is a community of adults, and the report queue handles judgement calls
- * a wordlist cannot. Business posts go through the same gate as members'.
- */
-const BLOCKED_TERMS = [
-  'kill yourself', 'kys', 'nigger', 'faggot', 'chink', 'paki',
-  'send me your password', 'western union transfer',
-];
-
-export function assertClean(text: string): void {
-  const t = text.toLowerCase();
-  if (BLOCKED_TERMS.some((w) => t.includes(w))) {
-    throw new Error('Please keep it respectful — that language is not allowed here.');
-  }
-}

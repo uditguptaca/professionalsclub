@@ -171,6 +171,23 @@ categories, and the Android channel is `visibility: 0` (PRIVATE). Device tokens
 are treated like email addresses: no member session can read another member's,
 which is why the claim is `withElevated`.
 
+**Groups are the club's; moderators run them; content is checked first (0053).**
+Only `is_admin()` can insert a `community_groups` row. A club admin gives a
+member the `admin` role on `community_group_members`; `is_group_admin(group)`
+then lets them edit the group, remove members, flip post/comment `status`, and
+resolve reports there - and nowhere else. `src/server/moderation.ts` decides
+allow / hold / reject at submit time (rules always; Claude when
+`ANTHROPIC_API_KEY` is set). A `held` row is visible to its author and its
+moderators only, by RLS; there is no other wordlist and no client-side check.
+
+**The chat PIN backup is the member's alone (0054).** `member_key_backups`
+holds a device identity sealed in the browser under a PIN-derived key. Like
+`member_message_keys`, it has no `is_admin()` branch and must never get one:
+nobody at the club can read it or reset the PIN. A new device with no local
+keys asks for the PIN *before* minting keys (`src/app/portal/member/chats/page.tsx`
+registration effect); restoring makes that device the backed-up one, so every
+wrap addressed to it opens.
+
 ## Styling
 
 One 4,300-line stylesheet, [src/app/globals.css](src/app/globals.css), in

@@ -467,7 +467,16 @@ export interface JobPosting {
 }
 
 // ========== COMMUNITY ==========
-export type CommunityContentStatus = 'active' | 'removed';
+/** 'held' (0053): saved, visible to its author and moderators, waiting for review. */
+export type CommunityContentStatus = 'active' | 'held' | 'removed';
+
+/** What the classifier decided, kept for moderators. */
+export interface CommunityModeration {
+  decision: 'allow' | 'hold' | 'reject';
+  reasons: string[];
+  engine: 'rules' | 'rules+claude';
+  score: number;
+}
 export type CommunityReportStatus = 'open' | 'actioned' | 'dismissed';
 export type CommunityReportTarget = 'post' | 'comment';
 
@@ -507,7 +516,7 @@ export interface CommunityGroup {
   createdAt: string;
   memberCount: number;
   isMember: boolean;
-  myRole: 'owner' | 'member' | null;
+  myRole: 'owner' | 'admin' | 'member' | null;
   /** Set on explore/suggestion lists: why we are showing this group. */
   suggestReason?: string | null;
 }
@@ -525,6 +534,8 @@ export interface CommunityPost {
   body: string;
   media: CommunityMedia[];
   status: CommunityContentStatus;
+  /** Present on held or removed content for the author and moderators (0053). */
+  moderation?: CommunityModeration | null;
   createdAt: string;
   authorFirstName: string;
   authorLastName: string;
@@ -559,6 +570,7 @@ export interface CommunityComment {
   authorId: string;
   body: string;
   status: CommunityContentStatus;
+  moderation?: CommunityModeration | null;
   createdAt: string;
   authorFirstName: string;
   authorLastName: string;

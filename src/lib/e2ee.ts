@@ -130,6 +130,79 @@ async function ensureDeviceKeysUncached(): Promise<DeviceKey | null> {
   return { deviceId: id, publicKeyJwk: JSON.stringify(pub) };
 }
 
+/** True when this browser already holds a device keypair. */
+export function hasLocalKeys(): boolean {
+  if (!e2eeAvailable()) return false;
+  try {
+    const raw = localStorage.getItem(DEVICE_KEYS_KEY);
+    if (!raw) return false;
+    const pair = JSON.parse(raw) as StoredPair;
+    return Boolean(pair.pub && pair.priv && localStorage.getItem(DEVICE_ID_KEY));
+  } catch {
+    return false;
+  }
+}
+
+const BACKUP_ITERATIONS = 600_000;
+
+async function pinKey(secret: string, salt: ArrayBuffer, iterations: number): Promise<CryptoKey> {
+  const material = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret.normalize('NFKC')), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations },
+    material,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt'],
+  );
+}
+
+/**
+ * This device's identity (id + keypair), sealed under a PIN (0054). What comes
+ * back is ciphertext the server can store and never open.
+ */
+export async function exportDeviceBackup(secret: string): Promise<{
+  deviceId: string; iterations: number; salt: string; iv: string; cipher: string;
+} | null> {
+  if (!e2eeAvailable()) return null;
+  const id = localStorage.getItem(DEVICE_ID_KEY);
+  const raw = localStorage.getItem(DEVICE_KEYS_KEY);
+  if (!id || !raw) return null;
+  try {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const key = await pinKey(secret, salt.buffer, BACKUP_ITERATIONS);
+    const payload = new TextEncoder().encode(JSON.stringify({ v: 1, deviceId: id, keys: JSON.parse(raw) }));
+    const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, payload);
+    return { deviceId: id, iterations: BACKUP_ITERATIONS, salt: b64(salt.buffer), iv: b64(iv.buffer), cipher: b64(cipher) };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Open a backup with the PIN and become that device. Returns the restored
+ * device id, or null when the PIN is wrong (AES-GCM fails to authenticate).
+ * Replaces whatever keys this browser held.
+ */
+export async function importDeviceBackup(
+  secret: string,
+  blob: { iterations: number; salt: string; iv: string; cipher: string },
+): Promise<string | null> {
+  if (!e2eeAvailable()) return null;
+  try {
+    const key = await pinKey(secret, unb64(blob.salt), blob.iterations);
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(unb64(blob.iv)) }, key, unb64(blob.cipher));
+    const parsed = JSON.parse(new TextDecoder().decode(plain)) as { v: number; deviceId: string; keys: StoredPair };
+    if (!parsed?.deviceId || !parsed.keys?.pub || !parsed.keys?.priv) return null;
+    localStorage.setItem(DEVICE_ID_KEY, parsed.deviceId);
+    localStorage.setItem(DEVICE_KEYS_KEY, JSON.stringify(parsed.keys));
+    inflight = null; // the cached "which keys" answer is stale now
+    return parsed.deviceId;
+  } catch {
+    return null;
+  }
+}
+
 async function myPrivateKey(): Promise<CryptoKey | null> {
   const raw = localStorage.getItem(DEVICE_KEYS_KEY);
   if (!raw) return null;

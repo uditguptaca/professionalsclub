@@ -8,6 +8,7 @@ import {
   pollThread, sendChatMessage, markChatRead, setTyping,
   respondReferral, registerChatDevice, fetchConversationDevices,
   fetchMissingWraps, backfillMessageWraps,
+  keyBackupStatus, fetchKeyBackup, saveKeyBackup,
   blockMember, unblockMember, listBlockedMembers, reportMember,
   muteChat, clearChat, getChatSettings, updateChatSettings, reactToMessage,
 } from '@/app/actions/chat';
@@ -17,6 +18,7 @@ import type {
 } from '@/server/repos/chat';
 import {
   e2eeAvailable, ensureDeviceKeys, sealMessage, openMessage, rewrapContentKey,
+  hasLocalKeys, exportDeviceBackup, importDeviceBackup,
 } from '@/lib/e2ee';
 import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
 import type { PDFDocumentLoadingTask } from 'pdfjs-dist';
@@ -27,6 +29,7 @@ import {
   ArrowLeft, AlertCircle, Ban, Bell, BellOff, Building2, Check, CheckCheck, Copy, Eraser,
   FileText, Flag, Heart, ImagePlus, Info, Loader2, Lock, LockOpen, MessageCircle,
   MoreVertical, Paperclip, Plus, Reply, Send, Settings, Share2, ShieldCheck, UserX, Video, X,
+  KeyRound,
   type LucideIcon,
   Download,
 } from 'lucide-react';
@@ -504,6 +507,18 @@ export default function MemberChatsPage() {
 
   // Global chat settings + the blocked list.
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // ---- Chat PIN backup (0054) ---------------------------------------------
+  // Whether a PIN-sealed copy of a device identity exists for this member, and
+  // which device it holds. Null until asked.
+  const [backup, setBackup] = useState<{ exists: boolean; deviceId: string | null } | null>(null);
+  const [pinSheet, setPinSheet] = useState<'restore' | 'set' | null>(null);
+  const [pin, setPin] = useState('');
+  const [pin2, setPin2] = useState('');
+  const [pinBusy, setPinBusy] = useState(false);
+  const [pinError, setPinError] = useState('');
+  const [pinDismissed, setPinDismissed] = useState(false);
+  /** The member has answered "restore or start fresh" once this session. */
+  const pinDecidedRef = useRef(false);
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsError, setSettingsError] = useState('');
   const [chatSettings, setChatSettings] = useState<ChatSettings | null>(cached?.settings ?? null);
@@ -619,19 +634,91 @@ export default function MemberChatsPage() {
   // Registration is what makes future messages readable HERE: peers seal to
   // every device a member has registered, so a device that never registers
   // stays blind no matter how long it is signed in.
+  const registerThisDevice = useCallback(async () => {
+    const keys = await ensureDeviceKeys();
+    if (!keys) return;
+    setMyDeviceId(keys.deviceId);
+    const res = await registerChatDevice(keys.deviceId, keys.publicKeyJwk, deviceLabel());
+    // A failed registration must not stick: without it this device receives
+    // no wraps, so retry on the next visit rather than never again.
+    if (!res.ok) publishedRef.current = false;
+  }, []);
+
   useEffect(() => {
     if (!currentUserId || publishedRef.current) return;
     publishedRef.current = true;
     (async () => {
-      const keys = await ensureDeviceKeys();
-      if (!keys) return;
-      setMyDeviceId(keys.deviceId);
-      const res = await registerChatDevice(keys.deviceId, keys.publicKeyJwk, deviceLabel());
-      // A failed registration must not stick: without it this device receives
-      // no wraps, so retry on the next visit rather than never again.
-      if (!res.ok) publishedRef.current = false;
+      if (!e2eeAvailable()) return;
+      // A device with no keys asks about a PIN backup BEFORE minting fresh
+      // keys (0054). Restoring makes this device the backed-up one, so every
+      // message ever sealed for it opens here - the way a new phone gets its
+      // history back on WhatsApp or Messenger. Declining mints new keys as before.
+      const r = await keyBackupStatus();
+      const status = r.ok ? { exists: r.data.exists, deviceId: r.data.deviceId } : { exists: false, deviceId: null };
+      setBackup(status);
+      if (!hasLocalKeys() && status.exists && !pinDecidedRef.current) {
+        setPinSheet('restore');
+        publishedRef.current = false; // registration resumes with the decision
+        return;
+      }
+      await registerThisDevice();
     })();
-  }, [currentUserId]);
+  }, [currentUserId, registerThisDevice]);
+
+  const restoreWithPin = async () => {
+    if (pinBusy) return;
+    setPinBusy(true);
+    setPinError('');
+    const r = await fetchKeyBackup();
+    if (!r.ok || !r.data) {
+      setPinError(r.ok ? 'There is no backup to restore.' : r.error);
+      setPinBusy(false);
+      return;
+    }
+    const restored = await importDeviceBackup(pin, r.data);
+    if (!restored) {
+      setPinError('That PIN did not match. Check it and try again.');
+      setPinBusy(false);
+      return;
+    }
+    pinDecidedRef.current = true;
+    publishedRef.current = true;
+    // The poll effect keys on myDeviceId: registering the restored identity
+    // makes it refetch the open thread with this device's wraps.
+    await registerThisDevice();
+    setPinSheet(null);
+    setPin('');
+    setToast('Your messages are back on this device');
+    setPinBusy(false);
+  };
+
+  const continueAsNewDevice = async () => {
+    pinDecidedRef.current = true;
+    publishedRef.current = true;
+    setPinSheet(null);
+    setPin('');
+    setPinError('');
+    await registerThisDevice();
+  };
+
+  const savePin = async () => {
+    if (pinBusy) return;
+    if (pin.length < 6) { setPinError('Use at least 6 digits, or a short phrase you will remember.'); return; }
+    if (pin !== pin2) { setPinError('The two entries do not match.'); return; }
+    setPinBusy(true);
+    setPinError('');
+    if (!hasLocalKeys()) await registerThisDevice();
+    const blob = await exportDeviceBackup(pin);
+    if (!blob) { setPinError('This device has no chat keys yet. Reload and try again.'); setPinBusy(false); return; }
+    const r = await saveKeyBackup(blob);
+    if (!r.ok) { setPinError(r.error); setPinBusy(false); return; }
+    setBackup({ exists: true, deviceId: blob.deviceId });
+    setPinSheet(null);
+    setPin('');
+    setPin2('');
+    setToast('Chat PIN set. Your messages will follow you to a new phone.');
+    setPinBusy(false);
+  };
 
   // ---- Client environment: two panes above 768px, crypto support ------------
   useEffect(() => {
@@ -1892,9 +1979,20 @@ export default function MemberChatsPage() {
                     <div>
                       <strong>{n === 1 ? 'One earlier message is' : `${n} earlier messages are`} not available on this device yet</strong>
                       <span>
-                        They were sealed for a device you used before. They appear here once you
-                        or {firstName} opens this chat on a device that has them.
+                        {backup?.exists && backup.deviceId !== myDeviceId
+                          ? 'They were sealed for a device you used before. Restore them here with your chat PIN, or open this chat on that device once.'
+                          : `They were sealed for a device you used before. They appear here once you or ${firstName} opens this chat on a device that has them.`}
                       </span>
+                      {backup?.exists && backup.deviceId !== myDeviceId && (
+                        <button
+                          type="button"
+                          className="cm-btn cm-btn--primary cm-btn--sm"
+                          style={{ marginTop: 8 }}
+                          onClick={() => { setPin(''); setPinError(''); setPinSheet('restore'); }}
+                        >
+                          <KeyRound size={14} aria-hidden="true" /> Restore with your chat PIN
+                        </button>
+                      )}
                     </div>
                   </div>
                 </React.Fragment>
@@ -3030,6 +3128,38 @@ export default function MemberChatsPage() {
           fontFamily: 'var(--font-display)', fontSize: '0.98rem', fontWeight: 800,
           margin: '0 0 0.45rem', paddingLeft: '0.15rem',
         }}>
+          Chat PIN
+        </h3>
+        <div className="pp-group-card" style={{ marginBottom: '1rem' }}>
+          <div className="pp-row pp-row-static">
+            <span className="pp-row-icon"><KeyRound size={17} aria-hidden="true" /></span>
+            <span className="pp-row-body">
+              <strong>{backup?.exists ? 'PIN set' : 'No PIN yet'}</strong>
+              <small style={{ whiteSpace: 'normal', lineHeight: 1.35 }}>
+                {backup?.exists
+                  ? (backup.deviceId === myDeviceId
+                    ? 'Your messages can be restored on a new phone with this PIN.'
+                    : 'The backup is from another device. Restore it here, or replace it with this device.')
+                  : 'Set one so your messages follow you to a new phone. Neither the club nor anyone else can read them.'}
+              </small>
+            </span>
+            <div className="cm-person-actions">
+              {backup?.exists && backup.deviceId !== myDeviceId && (
+                <button type="button" className="cm-btn cm-btn--secondary" onClick={() => { setSettingsOpen(false); setPin(''); setPinError(''); setPinSheet('restore'); }}>
+                  Restore here
+                </button>
+              )}
+              <button type="button" className="cm-btn cm-btn--primary" onClick={() => { setSettingsOpen(false); setPin(''); setPin2(''); setPinError(''); setPinSheet('set'); }}>
+                {backup?.exists ? (backup.deviceId === myDeviceId ? 'Change PIN' : 'Use this device') : 'Set PIN'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <h3 style={{
+          fontFamily: 'var(--font-display)', fontSize: '0.98rem', fontWeight: 800,
+          margin: '0 0 0.45rem', paddingLeft: '0.15rem',
+        }}>
           Blocked
         </h3>
         {settingsLoading && blocked.length === 0 ? (
@@ -3188,6 +3318,113 @@ export default function MemberChatsPage() {
     </div>
   );
 
+  // ---- Chat PIN sheets and banner (0054) ------------------------------------
+  const pinSheetNode = pinSheet && (
+    <div
+      className="hf-sheet-scrim"
+      onClick={(e) => { if (e.target === e.currentTarget && pinSheet === 'set') setPinSheet(null); }}
+    >
+      <div className="hf-sheet pp-sheet" role="dialog" aria-modal="true" aria-label={pinSheet === 'restore' ? 'Restore your messages' : 'Set a chat PIN'}>
+        <div className="hf-sheet-head">
+          <h2>{pinSheet === 'restore' ? 'Restore your messages' : (backup?.exists ? 'Change your chat PIN' : 'Set a chat PIN')}</h2>
+          {pinSheet === 'set' && (
+            <button type="button" className="portal-sheet-close" onClick={() => setPinSheet(null)} aria-label="Close">
+              <X size={18} aria-hidden="true" />
+            </button>
+          )}
+        </div>
+        <p className="hf-sheet-sub">
+          {pinSheet === 'restore'
+            ? 'This device is new to your chats. Enter the chat PIN you set before and your conversations open here, like they do on a new phone with WhatsApp.'
+            : 'Your chat keys live on this device. A PIN seals a copy the club cannot read, so a new phone or a cleared browser can pick your messages back up.'}
+        </p>
+
+        <form onSubmit={(e) => { e.preventDefault(); void (pinSheet === 'restore' ? restoreWithPin() : savePin()); }}>
+          <div className="pp-field" style={{ marginBottom: 10 }}>
+            <label htmlFor="chat-pin">Chat PIN</label>
+            <input
+              id="chat-pin"
+              className="ch-pin-input"
+              type="password"
+              inputMode="text"
+              autoComplete={pinSheet === 'restore' ? 'current-password' : 'new-password'}
+              autoFocus
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
+              placeholder="6+ digits or a short phrase"
+            />
+          </div>
+          {pinSheet === 'set' && (
+            <div className="pp-field" style={{ marginBottom: 10 }}>
+              <label htmlFor="chat-pin-2">Enter it again</label>
+              <input
+                id="chat-pin-2"
+                className="ch-pin-input"
+                type="password"
+                inputMode="text"
+                autoComplete="new-password"
+                value={pin2}
+                onChange={(e) => setPin2(e.target.value)}
+              />
+            </div>
+          )}
+
+          {pinError && (
+            <div role="alert" className="community-error" style={{ marginBottom: 10 }}>
+              <AlertCircle size={15} aria-hidden="true" /> {pinError}
+            </div>
+          )}
+
+          <button type="submit" className="pp-sheet-save" disabled={pinBusy || pin.length === 0} style={{ width: '100%' }}>
+            {pinBusy
+              ? <><Loader2 size={16} className="spin" aria-hidden="true" /> {pinSheet === 'restore' ? 'Restoring…' : 'Saving…'}</>
+              : <><KeyRound size={16} aria-hidden="true" /> {pinSheet === 'restore' ? 'Restore my messages' : 'Save PIN'}</>}
+          </button>
+          {pinSheet === 'restore' && (
+            <button
+              type="button"
+              className="cm-btn cm-btn--ghost cm-btn--lg"
+              style={{ width: '100%', marginTop: 8 }}
+              onClick={() => void continueAsNewDevice()}
+              disabled={pinBusy}
+            >
+              Set up as a new device instead
+            </button>
+          )}
+          {pinSheet === 'set' && (
+            <p style={{ margin: '0.7rem 0 0', fontSize: '0.76rem', lineHeight: 1.45, color: 'var(--text-muted)', textAlign: 'center' }}>
+              Nobody at Professionals Club can reset this PIN. If you forget it, a new device starts with a fresh set of keys.
+            </p>
+          )}
+        </form>
+      </div>
+    </div>
+  );
+
+  const pinBanner = e2eeOk && backup && myDeviceId && !pinDismissed && (
+    !backup.exists ? (
+      <div className="ch-pin-banner" role="note">
+        <KeyRound size={18} aria-hidden="true" />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <strong>Set a chat PIN</strong>
+          <small>So your messages follow you to a new phone. Nobody else can read them.</small>
+        </div>
+        <button type="button" className="cm-btn cm-btn--primary cm-btn--sm" onClick={() => { setPin(''); setPin2(''); setPinError(''); setPinSheet('set'); }}>Set PIN</button>
+        <button type="button" className="cm-btn cm-btn--ghost cm-btn--icon" aria-label="Not now" onClick={() => setPinDismissed(true)}><X size={15} aria-hidden="true" /></button>
+      </div>
+    ) : backup.deviceId !== myDeviceId ? (
+      <div className="ch-pin-banner" role="note">
+        <KeyRound size={18} aria-hidden="true" />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <strong>Your older messages are on another device</strong>
+          <small>Restore them here with your chat PIN.</small>
+        </div>
+        <button type="button" className="cm-btn cm-btn--primary cm-btn--sm" onClick={() => { setPin(''); setPinError(''); setPinSheet('restore'); }}>Restore</button>
+        <button type="button" className="cm-btn cm-btn--ghost cm-btn--icon" aria-label="Not now" onClick={() => setPinDismissed(true)}><X size={15} aria-hidden="true" /></button>
+      </div>
+    ) : null
+  );
+
   // ---- Phones: the thread IS the screen, edge to edge ----------------------
   if (!isWide && openThread) {
     return (
@@ -3198,7 +3435,7 @@ export default function MemberChatsPage() {
         {forwardSheet}
         {threadMenuSheet}
         {reportSheet}
-        {settingsSheet}
+        {settingsSheet}{pinSheetNode}
         {lightboxNode}
         {pdfNode}
       {toastNode}
@@ -3257,6 +3494,7 @@ export default function MemberChatsPage() {
         </div>
       )}
 
+      {pinBanner}
       {isWide ? (
         <div
           className="pp-group-card"
@@ -3307,7 +3545,7 @@ export default function MemberChatsPage() {
       {forwardSheet}
       {threadMenuSheet}
       {reportSheet}
-      {settingsSheet}
+      {settingsSheet}{pinSheetNode}
       {lightboxNode}
       {pdfNode}
       {toastNode}

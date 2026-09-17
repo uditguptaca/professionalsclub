@@ -5067,3 +5067,40 @@ a.portal-sheet-user:active { background: var(--green-900, #14532d); }
   border: 1px solid rgba(27, 67, 50, 0.16); border-radius: 0.55rem; font: inherit; font-size: 0.84rem;
 }
 .community-comment-report input:focus { outline: none; border-color: var(--green-600); }
+
+/* --- Moderation queue (0053) ------------------------------------------------ */
+.md-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.md-item {
+  padding: 0.9rem 1rem; background: var(--bg-primary);
+  border: 1px solid rgba(27, 67, 50, 0.1); border-radius: 16px;
+}
+.md-item-head { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.md-item-head small { margin-left: auto; font-size: 0.74rem; color: var(--text-muted); }
+.md-item-author { margin: 0.5rem 0 0.25rem; font-size: 0.86rem; color: var(--text-secondary); }
+.md-item-author a { color: var(--text-primary); font-weight: 700; text-decoration: none; }
+.md-item-body {
+  margin: 0.25rem 0 0.5rem; padding: 0.6rem 0.8rem; border-radius: 10px;
+  background: var(--bg-secondary); font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere;
+  max-height: 12rem; overflow: auto;
+}
+.md-item-media { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0 0 0.5rem; }
+.md-item-media img, .md-item-media video { width: 96px; height: 96px; object-fit: cover; border-radius: 10px; background: var(--bg-secondary); }
+.md-item-reasons {
+  display: flex; align-items: center; gap: 0.35rem; margin: 0 0 0.6rem;
+  font-size: 0.78rem; font-weight: 700; color: var(--accent-700);
+}
+
+/* --- Chat PIN (0054) ---------------------------------------------------------- */
+.ch-pin-banner {
+  display: flex; align-items: center; gap: 0.7rem; margin: 0 0 1rem; padding: 0.7rem 0.9rem;
+  background: var(--bg-primary); border: 1px solid rgba(27, 67, 50, 0.12); border-radius: 14px;
+}
+.ch-pin-banner > svg { flex-shrink: 0; color: var(--green-700); }
+.ch-pin-banner strong { display: block; font-size: 0.88rem; }
+.ch-pin-banner small { display: block; font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; }
+.ch-pin-banner .cm-btn { flex-shrink: 0; }
+.ch-pin-input {
+  width: 100%; min-height: 52px; padding: 0 1rem; font-size: 1.3rem; letter-spacing: 0.25em; text-align: center;
+  border: 1px solid rgba(27, 67, 50, 0.16); border-radius: 12px; background: var(--bg-primary); color: var(--text-primary);
+}
+.ch-pin-input:focus { outline: none; border-color: var(--green-700); }

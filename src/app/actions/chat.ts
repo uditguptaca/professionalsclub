@@ -215,6 +215,24 @@ export async function backfillMessageWraps(conversationId: string, wraps: repo.W
   return run('Sharing message keys', (uid) => repo.addMessageWraps(uid, conversationId, wraps));
 }
 
+// ---- Chat PIN backup (0054) ---------------------------------------------------
+
+export async function keyBackupStatus() {
+  return run('Checking your chat backup', (uid) => repo.keyBackupStatus(uid));
+}
+
+export async function fetchKeyBackup() {
+  return run('Loading your chat backup', (uid) => repo.fetchKeyBackup(uid));
+}
+
+export async function saveKeyBackup(blob: { deviceId: string; iterations: number; salt: string; iv: string; cipher: string }) {
+  return run('Saving your chat backup', (uid) => repo.saveKeyBackup(uid, blob));
+}
+
+export async function deleteKeyBackup() {
+  return run('Removing your chat backup', (uid) => repo.deleteKeyBackup(uid));
+}
+
 /** Publish THIS device's public key so peers can seal messages for it (0042). */
 export async function registerChatDevice(
   deviceId: string,

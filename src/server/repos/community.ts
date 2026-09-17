@@ -9,7 +9,7 @@ import {
 } from '@/server/repos/chat';
 import type {
   CommunityGroup, CommunityPost, CommunityComment, CommunityReport,
-  CommunityReportTarget, CommunityReportStatus, CommunityFeedScope,
+  CommunityReportTarget, CommunityReportStatus, CommunityFeedScope, CommunityContentStatus,
 } from '@/types';
 
 /**
@@ -35,7 +35,7 @@ function first<T>(rows: unknown[], message: string): T {
 }
 
 const POST_SELECT = `
-  p.id, p.author_id, p.group_id, p.body, p.media, p.status, p.created_at,
+  p.id, p.author_id, p.group_id, p.body, p.media, p.status, p.moderation, p.created_at,
   n.first_name as author_first_name,
   n.last_name  as author_last_name,
   n.city       as author_city,
@@ -140,7 +140,7 @@ export async function personalFeedOn(
         left join public.member_names n on n.id = p.author_id
         left join public.businesses bz on bz.id = p.business_id
         left join public.community_groups g on g.id = p.group_id
-       where p.status = 'active'
+       where (p.status = 'active' or (p.status = 'held' and p.author_id = $1))
          and (
            p.audience = 'club'
            or p.author_id = $1
@@ -350,7 +350,8 @@ export async function listFeed(
        left join public.member_names n on n.id = p.author_id
        left join public.businesses bz on bz.id = p.business_id
        left join public.community_groups g on g.id = p.group_id
-       where p.status = 'active' and ${scope} ${beforeClause}
+       where (p.status = 'active' or (p.status = 'held' and p.author_id = app.current_user_id()))
+         and ${scope} ${beforeClause}
        order by p.created_at desc
        limit $${params.length}`,
       params
@@ -378,7 +379,7 @@ export async function listMemberPosts(
        left join public.businesses bz on bz.id = p.business_id
        left join public.community_groups g on g.id = p.group_id
        where p.author_id = $1
-         and p.status = 'active'
+         and (p.status = 'active' or (p.status = 'held' and p.author_id = app.current_user_id()))
          and public.can_view_member($1)
          and ($2::timestamptz is null or p.created_at < $2::timestamptz)
        order by p.created_at desc
@@ -394,6 +395,9 @@ export async function createPost(
   input: {
     body: string;
     groupId: string | null;
+    /** 'held' when the classifier wants a moderator to look first (0053). */
+    status?: 'active' | 'held';
+    moderation?: Record<string, unknown> | null;
     media: { url: string; type: 'image' | 'video' }[];
     /** 'club' is an admin broadcast to every member. Pinned to 'normal' for anyone else by guard_post_audience. */
     audience?: 'normal' | 'club';
@@ -402,9 +406,10 @@ export async function createPost(
 ): Promise<CommunityPost> {
   return withUser(userId, async (db) => {
     const inserted = first(await db`
-        insert into public.community_posts (author_id, group_id, body, media, audience, topic)
+        insert into public.community_posts (author_id, group_id, body, media, audience, topic, status, moderation)
         values (${userId}::uuid, ${input.groupId}::uuid, ${input.body}, ${JSON.stringify(input.media)}::jsonb,
-                ${input.audience ?? 'normal'}, ${input.topic ?? null})
+                ${input.audience ?? 'normal'}, ${input.topic ?? null},
+                ${input.status ?? 'active'}, ${input.moderation ? JSON.stringify(input.moderation) : null}::jsonb)
         returning id
       `,
       'Post was not created'
@@ -421,12 +426,18 @@ export async function createPost(
 export async function createBusinessPost(
   userId: string,
   businessId: string,
-  input: { body: string; media: { url: string; type: 'image' | 'video' }[] }
+  input: {
+    body: string;
+    media: { url: string; type: 'image' | 'video' }[];
+    status?: 'active' | 'held';
+    moderation?: Record<string, unknown> | null;
+  }
 ): Promise<CommunityPost> {
   return withUser(userId, async (db) => {
     const inserted = first(await db`
-        insert into public.community_posts (author_id, business_id, group_id, body, media)
-        values (null, ${businessId}::uuid, null, ${input.body}, ${JSON.stringify(input.media)}::jsonb)
+        insert into public.community_posts (author_id, business_id, group_id, body, media, status, moderation)
+        values (null, ${businessId}::uuid, null, ${input.body}, ${JSON.stringify(input.media)}::jsonb,
+                ${input.status ?? 'active'}, ${input.moderation ? JSON.stringify(input.moderation) : null}::jsonb)
         returning id
       `,
       'Post was not created'
@@ -481,7 +492,7 @@ export async function getPost(userId: string, postId: string): Promise<Community
        left join public.businesses bz on bz.id = p.business_id
        left join public.community_groups g on g.id = p.group_id
        where p.id = $1
-         and p.status = 'active'
+         and (p.status = 'active' or (p.status = 'held' and p.author_id = app.current_user_id()))
          and (p.author_id is null or p.group_id is not null or public.can_view_member(p.author_id))`,
       [postId]
     );
@@ -496,7 +507,7 @@ export interface GroupMember {
   jobTitle: string | null;
   company: string | null;
   city: string | null;
-  role: 'owner' | 'member';
+  role: 'owner' | 'admin' | 'member';
   joinedAt: string;
   outgoing: 'none' | 'pending' | 'accepted';
   incoming: 'none' | 'pending' | 'accepted';
@@ -527,7 +538,7 @@ export async function listGroupMembers(userId: string, groupId: string): Promise
       jobTitle: (r.job_title as string | null) ?? null,
       company: (r.company as string | null) ?? null,
       city: (r.city as string | null) ?? null,
-      role: (r.role as 'owner' | 'member') ?? 'member',
+      role: (r.role as 'owner' | 'admin' | 'member') ?? 'member',
       joinedAt: r.joined_at instanceof Date ? r.joined_at.toISOString() : String(r.joined_at),
       outgoing: ((r.outgoing as string | null) ?? 'none') as GroupMember['outgoing'],
       incoming: ((r.incoming as string | null) ?? 'none') as GroupMember['incoming'],
@@ -572,11 +583,12 @@ export async function toggleLike(
 export async function listComments(userId: string, postId: string): Promise<CommunityComment[]> {
   return withUserRead(userId, async (db) => {
     const rows = await db`
-      select c.id, c.post_id, c.author_id, c.body, c.status, c.created_at,
+      select c.id, c.post_id, c.author_id, c.body, c.status, c.moderation, c.created_at,
              n.first_name as author_first_name, n.last_name as author_last_name
       from public.community_comments c
       join public.member_names n on n.id = c.author_id
-      where c.post_id = ${postId}::uuid and c.status = 'active'
+      where c.post_id = ${postId}::uuid
+        and (c.status = 'active' or (c.status = 'held' and c.author_id = app.current_user_id()))
       order by c.created_at asc
     `;
     return toDomainAll<CommunityComment>(rows);
@@ -585,18 +597,19 @@ export async function listComments(userId: string, postId: string): Promise<Comm
 
 export async function addComment(
   userId: string,
-  input: { postId: string; body: string }
+  input: { postId: string; body: string; status?: 'active' | 'held'; moderation?: Record<string, unknown> | null }
 ): Promise<CommunityComment> {
   return withUser(userId, async (db) => {
     const inserted = first(await db`
-        insert into public.community_comments (post_id, author_id, body)
-        values (${input.postId}::uuid, ${userId}::uuid, ${input.body})
+        insert into public.community_comments (post_id, author_id, body, status, moderation)
+        values (${input.postId}::uuid, ${userId}::uuid, ${input.body},
+                ${input.status ?? 'active'}, ${input.moderation ? JSON.stringify(input.moderation) : null}::jsonb)
         returning id
       `,
       'Comment was not created'
     ) as { id: string };
     const rows = await db`
-      select c.id, c.post_id, c.author_id, c.body, c.status, c.created_at,
+      select c.id, c.post_id, c.author_id, c.body, c.status, c.moderation, c.created_at,
              n.first_name as author_first_name, n.last_name as author_last_name
       from public.community_comments c
       join public.member_names n on n.id = c.author_id
@@ -688,6 +701,103 @@ export async function leaveGroup(userId: string, groupId: string): Promise<void>
       delete from public.community_group_members
       where group_id = ${groupId}::uuid and member_id = ${userId}::uuid
     `;
+  });
+}
+
+// ========== GOVERNANCE (0053) ==========
+
+/**
+ * A club admin makes a member a moderator of a group, or takes it back. The
+ * member is added to the group if they are not in it yet; RLS lets only a club
+ * admin insert someone else or change a role.
+ */
+export async function setGroupMemberRole(
+  userId: string,
+  groupId: string,
+  memberId: string,
+  role: 'admin' | 'member'
+): Promise<void> {
+  await withUser(userId, async (db) => {
+    await db`
+      insert into public.community_group_members (group_id, member_id, role)
+      values (${groupId}::uuid, ${memberId}::uuid, ${role})
+      on conflict (group_id, member_id) do update set role = excluded.role
+        where public.community_group_members.role <> 'owner'
+    `;
+  });
+}
+
+export interface ModerationItem {
+  kind: 'post' | 'comment';
+  id: string;
+  postId: string;
+  body: string;
+  media: unknown[];
+  status: CommunityContentStatus;
+  moderation: Record<string, unknown> | null;
+  createdAt: string;
+  authorId: string | null;
+  authorFirstName: string | null;
+  authorLastName: string | null;
+  groupId: string | null;
+  groupName: string | null;
+}
+
+/**
+ * What is waiting for the caller: held posts and comments in groups they
+ * moderate (every group for a club admin, plus club-wide content). RLS
+ * decides what "they moderate" means; this only asks for status = 'held'.
+ */
+export async function listModerationQueue(userId: string): Promise<ModerationItem[]> {
+  return withUserRead(userId, async (db) => {
+    const rows = await db.run<Record<string, unknown>>(
+      `select 'post' as kind, p.id, p.id as post_id, p.body, p.media, p.status, p.moderation, p.created_at,
+              p.author_id, n.first_name, n.last_name, p.group_id, g.name as group_name
+         from public.community_posts p
+         left join public.member_names n on n.id = p.author_id
+         left join public.community_groups g on g.id = p.group_id
+        where p.status = 'held' and p.author_id is distinct from $1
+       union all
+       select 'comment', c.id, c.post_id, c.body, '[]'::jsonb, c.status, c.moderation, c.created_at,
+              c.author_id, n.first_name, n.last_name, p.group_id, g.name
+         from public.community_comments c
+         join public.community_posts p on p.id = c.post_id
+         left join public.member_names n on n.id = c.author_id
+         left join public.community_groups g on g.id = p.group_id
+        where c.status = 'held' and c.author_id is distinct from $1
+       order by created_at desc
+       limit 200`,
+      [userId]
+    );
+    return rows.map((r) => ({
+      kind: r.kind as 'post' | 'comment',
+      id: r.id as string,
+      postId: r.post_id as string,
+      body: (r.body as string) ?? '',
+      media: Array.isArray(r.media) ? (r.media as unknown[]) : [],
+      status: r.status as CommunityContentStatus,
+      moderation: (r.moderation as Record<string, unknown> | null) ?? null,
+      createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at),
+      authorId: (r.author_id as string | null) ?? null,
+      authorFirstName: (r.first_name as string | null) ?? null,
+      authorLastName: (r.last_name as string | null) ?? null,
+      groupId: (r.group_id as string | null) ?? null,
+      groupName: (r.group_name as string | null) ?? null,
+    }));
+  });
+}
+
+/** Approve (make active) or remove a post or comment. RLS decides who may. */
+export async function moderateItem(
+  userId: string,
+  input: { kind: 'post' | 'comment'; id: string; action: 'approve' | 'remove' }
+): Promise<void> {
+  await withUser(userId, async (db) => {
+    const status = input.action === 'approve' ? 'active' : 'removed';
+    const rows = input.kind === 'post'
+      ? await db`update public.community_posts set status = ${status} where id = ${input.id}::uuid returning id`
+      : await db`update public.community_comments set status = ${status} where id = ${input.id}::uuid returning id`;
+    if (rows.length === 0) throw new Error('You cannot moderate that.');
   });
 }
 
