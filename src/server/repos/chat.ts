@@ -729,6 +729,9 @@ export async function sendChatMessage(
     forwarded?: boolean;
     /** File-preview thumbnail (first PDF page), uploaded like any image. */
     thumbUrl?: string;
+    /** Link card for a PLAINTEXT message. Sealed messages carry theirs inside
+        the ciphertext (src/lib/chat-links.tsx), so it is ignored there. */
+    linkPreview?: { url: string; siteName: string; title?: string; description?: string; image?: string };
     /** The device that sealed this, and one wrap of the content key per
         device that may read it (0042). Absent for plaintext. */
     senderDeviceId?: string;
@@ -755,6 +758,21 @@ export async function sendChatMessage(
     }
     if (content.forwarded) metaObj.forwarded = true;
     if (content.thumbUrl) metaObj.thumb = content.thumbUrl;
+    if (kind === 'text' && !encrypted && content.linkPreview) {
+      const clean = (v: unknown, n: number) => (typeof v === 'string' && v.trim() ? v.slice(0, n) : undefined);
+      const lp = content.linkPreview;
+      const url = clean(lp.url, 2000);
+      const image = clean(lp.image, 1000);
+      if (url && /^https?:\/\//i.test(url)) {
+        metaObj.linkPreview = {
+          url,
+          siteName: clean(lp.siteName, 80) ?? new URL(url).hostname,
+          ...(clean(lp.title, 160) ? { title: clean(lp.title, 160) } : {}),
+          ...(clean(lp.description, 300) ? { description: clean(lp.description, 300) } : {}),
+          ...(image && /^https?:\/\//i.test(image) ? { image } : {}),
+        };
+      }
+    }
     const meta = Object.keys(metaObj).length ? JSON.stringify(metaObj) : null;
 
     // A reply may only point inside this same conversation - otherwise a

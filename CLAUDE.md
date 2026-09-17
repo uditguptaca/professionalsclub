@@ -188,6 +188,13 @@ keys asks for the PIN *before* minting keys (`src/app/portal/member/chats/page.t
 registration effect); restoring makes that device the backed-up one, so every
 wrap addressed to it opens.
 
+**Chat link previews are made on the sender's device and travel inside the
+ciphertext.** `src/lib/chat-links.tsx` wraps text + card in an envelope that
+`sealMessage` encrypts like any other text; `/api/link-preview` (signed-in only,
+private-address-blocked) sees a URL, never a message. Everything that shows a
+message's text goes through `unpackContent()`. Only the plaintext fallback (no
+devices to seal for) stores the card in `meta.linkPreview`.
+
 ## Styling
 
 One 4,300-line stylesheet, [src/app/globals.css](src/app/globals.css), in

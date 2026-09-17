@@ -21,6 +21,8 @@ import {
   hasLocalKeys, exportDeviceBackup, importDeviceBackup,
 } from '@/lib/e2ee';
 import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
+import { linkify, firstUrl, packContent, unpackContent } from '@/lib/chat-links';
+import type { LinkPreview } from '@/types';
 import type { PDFDocumentLoadingTask } from 'pdfjs-dist';
 import { useApp } from '@/context/app-context';
 import { useConfirm } from '@/components/portal/confirm';
@@ -29,7 +31,7 @@ import {
   ArrowLeft, AlertCircle, Ban, Bell, BellOff, Building2, Check, CheckCheck, Copy, Eraser,
   FileText, Flag, Heart, ImagePlus, Info, Loader2, Lock, LockOpen, MessageCircle,
   MoreVertical, Paperclip, Plus, Reply, Send, Settings, Share2, ShieldCheck, UserX, Video, X,
-  KeyRound,
+  KeyRound, Link2,
   type LucideIcon,
   Download,
 } from 'lucide-react';
@@ -225,6 +227,36 @@ async function pdfFirstPageJpeg(file: File): Promise<File | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * The Open Graph card under a message (WhatsApp/Instagram shape: picture,
+ * site, title, a line of description). The whole card is the link; an image
+ * that fails to load simply leaves.
+ */
+function LinkCard({ preview, mine, onOpen }: { preview: LinkPreview; mine: boolean; onOpen: (url: string) => void }) {
+  const [imgOk, setImgOk] = useState(Boolean(preview.image));
+  return (
+    <a
+      href={preview.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`ch-lp ${mine ? 'is-mine' : ''}`}
+      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onOpen(preview.url); }}
+    >
+      {imgOk && preview.image && (
+        <img
+          className="ch-lp-img" src={preview.image} alt="" loading="lazy" decoding="async"
+          referrerPolicy="no-referrer" onError={() => setImgOk(false)}
+        />
+      )}
+      <span className="ch-lp-body">
+        <small>{preview.siteName}</small>
+        {preview.title && <strong>{preview.title}</strong>}
+        {preview.description && <span>{preview.description}</span>}
+      </span>
+    </a>
+  );
 }
 
 /**
@@ -474,6 +506,16 @@ export default function MemberChatsPage() {
   const [fwdBusy, setFwdBusy] = useState<string | null>(null);
   /** The message a tapped quote just jumped to, flashed for a beat. */
   const [flashId, setFlashId] = useState<string | null>(null);
+  // ---- Link previews: made here, sealed with the text ------------------------
+  const [linkPreview, setLinkPreview] = useState<LinkPreview | null>(null);
+  const [previewBusy, setPreviewBusy] = useState(false);
+  const previewUrlRef = useRef<string | null>(null);
+  const previewDismissedRef = useRef<string | null>(null);
+  // ---- Motion: bubbles that arrived after the thread opened animate in; a
+  // double tap hearts a message with a burst, Instagram-style.
+  const seenIdsRef = useRef<Set<string> | null>(null);
+  const lastTapRef = useRef<{ id: string; at: number }>({ id: '', at: 0 });
+  const [burst, setBurst] = useState<{ id: string; key: number } | null>(null);
 
   /**
    * Every device belonging to either side of the open thread, straight off the
@@ -854,6 +896,8 @@ export default function MemberChatsPage() {
     setPeerTypingAt(null);
     setReferrals([]);
     setReactions([]);
+    setLinkPreview(null); previewUrlRef.current = null; previewDismissedRef.current = null;
+    seenIdsRef.current = null; setBurst(null);
     setAttachNote(false);
     setAttachMenu(false);
     setThreadMenu(false);
@@ -974,6 +1018,54 @@ export default function MemberChatsPage() {
       .then(() => refreshChats())
       .finally(() => { markingRef.current = false; });
   }, [openId, openThread, refreshChats]);
+
+  // ---- Link preview while typing --------------------------------------------
+  // The first URL in the draft is looked up through our own route (signed-in
+  // members only) half a second after the last keystroke, WhatsApp-style.
+  // Dismissing the card remembers that URL so it does not come straight back.
+  useEffect(() => {
+    const url = firstUrl(draft);
+    if (!url) {
+      // No link left in the draft: forget both the card and the dismissal, so
+      // typing the same link into a fresh message brings its card back.
+      previewUrlRef.current = null;
+      previewDismissedRef.current = null;
+      if (linkPreview) setLinkPreview(null);
+      return;
+    }
+    if (url === previewUrlRef.current || url === previewDismissedRef.current) return;
+    const ctrl = new AbortController();
+    const t = window.setTimeout(async () => {
+      previewUrlRef.current = url;
+      setPreviewBusy(true);
+      try {
+        const r = await fetch(`/api/link-preview?url=${encodeURIComponent(url)}`, { signal: ctrl.signal });
+        const j = (await r.json()) as { ok: boolean; preview?: LinkPreview };
+        if (!ctrl.signal.aborted) setLinkPreview(j.ok && j.preview ? j.preview : null);
+      } catch {
+        if (!ctrl.signal.aborted) setLinkPreview(null);
+      }
+      if (!ctrl.signal.aborted) setPreviewBusy(false);
+    }, 500);
+    return () => { window.clearTimeout(t); ctrl.abort(); };
+  }, [draft, linkPreview]);
+
+  // First paint of a thread: what is already there is "seen"; whatever lands
+  // afterwards animates in. Ids are marked seen after the entrance has played,
+  // so a poll re-render mid-animation does not cut it short.
+  useEffect(() => {
+    if (!openId || messages.length === 0) return;
+    if (seenIdsRef.current === null) { seenIdsRef.current = new Set(messages.map((m) => m.id)); return; }
+    const set = seenIdsRef.current;
+    const t = window.setTimeout(() => { for (const m of messages) set.add(m.id); }, 450);
+    return () => window.clearTimeout(t);
+  }, [openId, messages]);
+
+  useEffect(() => {
+    if (!burst) return;
+    const t = window.setTimeout(() => setBurst(null), 800);
+    return () => window.clearTimeout(t);
+  }, [burst]);
 
   // ---- Stay pinned to the bottom, but only if we were already there ---------
   useEffect(() => {
@@ -1279,7 +1371,17 @@ export default function MemberChatsPage() {
       return typeof name === 'string' && name ? name : '📎 Document';
     }
     const text = m.body ?? plain[m.id];
-    return typeof text === 'string' && text.trim() ? text : '🔒 Message';
+    return typeof text === 'string' && text.trim() ? (unpackContent(text).text.trim() || '🔗 Link') : '🔒 Message';
+  };
+
+  /** Text and link card of a message: from the envelope, or from meta for plaintext. */
+  const contentOf = (m: ChatMessage, text: string) => {
+    const c = unpackContent(text);
+    if (!c.preview && m.body != null) {
+      const lp = (m.meta as { linkPreview?: LinkPreview } | null)?.linkPreview;
+      if (lp && typeof lp.url === 'string') c.preview = lp;
+    }
+    return c;
   };
 
   /** Plaintext of a text message, or null when this device cannot read it. */
@@ -1311,7 +1413,7 @@ export default function MemberChatsPage() {
     setMsgMenu(null);
     if (!text) return;
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(unpackContent(text).text);
       setToast('Copied');
     } catch {
       setSendError('This device would not let the app copy to the clipboard.');
@@ -1354,9 +1456,13 @@ export default function MemberChatsPage() {
       // The target conversation has its own devices, so ciphertext from THIS
       // thread is worthless there. Re-seal from the plaintext this device
       // already holds, for that conversation's devices.
+      const c = contentOf(m, text);
       const theirDevices = await fetchConversationDevices(target.id);
-      const sealed = theirDevices.ok ? await sealText(text, theirDevices.data) : null;
-      payload = { ...(sealed ?? { body: text }), forwarded: true };
+      const sealed = theirDevices.ok ? await sealText(packContent(c.text, c.preview), theirDevices.data) : null;
+      payload = {
+        ...(sealed ?? { body: c.text, ...(c.preview ? { linkPreview: c.preview } : {}) }),
+        forwarded: true,
+      };
     } else if (m.attachmentUrl && (m.kind === 'image' || m.kind === 'video' || m.kind === 'file')) {
       const meta = (m.meta ?? {}) as { name?: string; size?: number; mime?: string; thumb?: string };
       payload = {
@@ -1431,6 +1537,18 @@ export default function MemberChatsPage() {
         sw.el.style.transform = '';
         if (trigger && pollOpen !== false) setReplyTo(m);
       }
+      // Instagram's double tap: a heart on the bubble, with a burst. Text
+      // bubbles only - a first tap on a photo already opens the lightbox.
+      if (!sw.active && !pressRef.current.fired && m.kind === 'text' && pollOpen !== false) {
+        const now = Date.now();
+        if (lastTapRef.current.id === m.id && now - lastTapRef.current.at < 320) {
+          lastTapRef.current = { id: '', at: 0 };
+          if (myReactionTo(m.id) !== '❤️') void react(m.id, '❤️');
+          setBurst({ id: m.id, key: now });
+        } else {
+          lastTapRef.current = { id: m.id, at: now };
+        }
+      }
       swipeRef.current = { el: null, dx: 0, active: false };
       cancelPress();
     },
@@ -1496,7 +1614,11 @@ export default function MemberChatsPage() {
     setSending(true);
     setSendError('');
 
-    const sealed = await sealText(text, devices);
+    // The link card travels inside the ciphertext (src/lib/chat-links.tsx);
+    // only the plaintext fallback puts it in meta, where the text is readable anyway.
+    const card = linkPreview && firstUrl(text) === linkPreview.url ? linkPreview : null;
+    const outText = packContent(text, card);
+    const sealed = await sealText(outText, devices);
     // Only refuse to send when sealing was EXPECTED to work: devices exist for
     // this thread but this device could not use them. With no devices at all
     // there is nothing to seal for, and plaintext is the honest fallback the
@@ -1508,15 +1630,16 @@ export default function MemberChatsPage() {
     }
 
     const res = await sendChatMessage(openId, {
-      ...(sealed ?? { body: text }),
+      ...(sealed ?? { body: text, ...(card ? { linkPreview: card } : {}) }),
       ...(replyTo ? { replyTo: replyTo.id } : {}),
     });
     if (res.ok) {
       // Seed the cache with what we just typed: no unwrap round trip, no flash
       // of the placeholder on our own bubble.
-      if (sealed) setPlain((p) => ({ ...p, [res.data.id]: text }));
+      if (sealed) setPlain((p) => ({ ...p, [res.data.id]: outText }));
       setReplyTo(null);
       setDraft('');
+      setLinkPreview(null); previewUrlRef.current = null; previewDismissedRef.current = null;
       if (taRef.current) taRef.current.style.height = 'auto';
       nearBottomRef.current = true;
       setMessages((prev) => [...prev, res.data]);
@@ -1956,6 +2079,8 @@ export default function MemberChatsPage() {
               && Boolean(m.wrappedKey && m.wrapIv && m.senderDeviceId);
             const readable = typeof decrypted === 'string';
             const pills = reactionGroups.get(m.id) ?? [];
+            const fresh = seenIdsRef.current !== null && !seenIdsRef.current.has(m.id);
+            const content = contentOf(m, readable ? decrypted : '');
 
             // Messages this device cannot open are shown as ONE quiet line per
             // run, not a bubble each: the fact is the same for all of them,
@@ -2281,7 +2406,12 @@ export default function MemberChatsPage() {
                   fontSize: '0.9rem', lineHeight: 1.45, overflowWrap: 'anywhere',
                 }}>
                   {head}
-                  {readable || !encrypted ? decrypted : (
+                  {readable || !encrypted ? (
+                    <>
+                      {linkify(content.text, openAttachment, mine ? 'ch-link ch-link--mine' : 'ch-link')}
+                      {content.preview && <LinkCard preview={content.preview} mine={mine} onOpen={openAttachment} />}
+                    </>
+                  ) : (
                     <span style={{
                       display: 'inline-flex', alignItems: 'center', gap: 5, fontStyle: 'italic',
                       color: mine ? 'rgba(255,255,255,0.75)' : 'var(--text-muted)',
@@ -2312,6 +2442,7 @@ export default function MemberChatsPage() {
                 )}
                 <div
                   id={`msg-${m.id}`}
+                  className={`ch-msg ${mine ? 'is-mine' : ''} ${fresh ? 'ch-msg--new' : ''}`}
                   // Referral cards are system objects: nothing to react to,
                   // reply to, forward or copy, so they get no long press.
                   {...(m.kind === 'referral' ? {} : pressProps(m))}
@@ -2329,6 +2460,9 @@ export default function MemberChatsPage() {
                   }}
                 >
                   {bubble}
+                  {burst?.id === m.id && (
+                    <span key={burst.key} className="ch-heart-burst" aria-hidden="true">❤️</span>
+                  )}
                   {/* Reaction pills sit under the bubble and kiss its bottom
                       edge, clear of the clock and receipt inside it. */}
                   {pills.length > 0 && (
@@ -2340,6 +2474,7 @@ export default function MemberChatsPage() {
                         <button
                           key={p.emoji}
                           type="button"
+                          className="ch-pill"
                           onClick={() => setMsgMenu(m.id)}
                           aria-label={`${p.count} reacted ${p.emoji}${p.mine ? ', including you' : ''} — change your reaction`}
                           style={{
@@ -2363,13 +2498,9 @@ export default function MemberChatsPage() {
           })}
 
           {peerTyping && (
-            <div style={{
-              alignSelf: 'flex-start', marginBottom: 10,
-              padding: '0.5rem 0.8rem', borderRadius: '1.1rem 1.1rem 1.1rem 0.3rem',
-              background: 'var(--bg-primary)', border: HAIRLINE,
-              fontSize: '0.84rem', fontStyle: 'italic', color: 'var(--text-muted)',
-            }} role="status">
-              {firstName} is typing…
+            <div className="ch-typing" role="status">
+              <span className="ch-typing-dot" /><span className="ch-typing-dot" /><span className="ch-typing-dot" />
+              <span className="sr-only">{firstName} is typing…</span>
             </div>
           )}
         </div>
@@ -2444,6 +2575,26 @@ export default function MemberChatsPage() {
                   >
                     <X size={16} aria-hidden="true" />
                   </button>
+                </div>
+              )}
+              {(linkPreview || previewBusy) && (
+                <div className="ch-lp-draft" role="status">
+                  {linkPreview?.image
+                    ? <img className="ch-lp-draft-img" src={linkPreview.image} alt="" referrerPolicy="no-referrer" />
+                    : <span className="ch-lp-draft-img ch-lp-draft-img--empty"><Link2 size={16} aria-hidden="true" /></span>}
+                  <span className="ch-lp-draft-body">
+                    <small>{linkPreview ? linkPreview.siteName : 'Looking up the link…'}</small>
+                    <strong>{linkPreview?.title ?? linkPreview?.url ?? ''}</strong>
+                  </span>
+                  {linkPreview && (
+                    <button
+                      type="button"
+                      aria-label="Remove link preview"
+                      onClick={() => { previewDismissedRef.current = linkPreview.url; setLinkPreview(null); }}
+                    >
+                      <X size={16} aria-hidden="true" />
+                    </button>
+                  )}
                 </div>
               )}
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, padding: '0.6rem' }}>
@@ -2554,6 +2705,8 @@ export default function MemberChatsPage() {
                   type="button"
                   onClick={() => void send()}
                   aria-label="Send message"
+                  className="ch-send"
+                  data-ready={Boolean(draft.trim()) && !sending}
                   disabled={!draft.trim() || sending}
                   style={{
                     display: 'grid', placeItems: 'center', flexShrink: 0,
@@ -2561,7 +2714,6 @@ export default function MemberChatsPage() {
                     background: 'var(--primary-700)', color: '#fff',
                     cursor: !draft.trim() || sending ? 'default' : 'pointer',
                     opacity: !draft.trim() || sending ? 0.45 : 1,
-                    transition: 'opacity 0.15s ease',
                   }}
                 >
                   <Send size={18} aria-hidden="true" />

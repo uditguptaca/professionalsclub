@@ -470,6 +470,15 @@ export interface JobPosting {
 /** 'held' (0053): saved, visible to its author and moderators, waiting for review. */
 export type CommunityContentStatus = 'active' | 'held' | 'removed';
 
+/** An Open Graph card for a link in chat, made on the sender's device (src/lib/chat-links.tsx). */
+export interface LinkPreview {
+  url: string;
+  siteName: string;
+  title?: string;
+  description?: string;
+  image?: string;
+}
+
 /** What the classifier decided, kept for moderators. */
 export interface CommunityModeration {
   decision: 'allow' | 'hold' | 'reject';

@@ -122,6 +122,8 @@ export async function sendChatMessage(
     replyTo?: string;
     forwarded?: boolean;
     thumbUrl?: string;
+    /** Plaintext fallback only: an encrypted message carries its card inside the ciphertext. */
+    linkPreview?: { url: string; siteName: string; title?: string; description?: string; image?: string };
     senderDeviceId?: string;
     keys?: { deviceId: string; memberId: string; wrappedKey: string; wrapIv: string }[];
   }
