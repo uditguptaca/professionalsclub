@@ -1,6 +1,8 @@
 'use server';
 
 import { auth } from '@/lib/auth/server';
+import { siteOrigin } from '@/server/origin';
+import { allow, clientIp, TOO_MANY } from '@/server/rate-limit';
 import { withElevated } from '@/server/db';
 import { readAuthError, authErrorMessage } from '@/lib/auth/errors';
 
@@ -29,11 +31,9 @@ export type SignUpResult =
  * without a per-environment setting.
  */
 async function verifyCallbackUrl(): Promise<string> {
-  const { headers } = await import('next/headers');
-  const h = await headers();
-  const host = h.get('x-forwarded-host') ?? h.get('host') ?? 'localhost:3000';
-  const proto = h.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https');
-  return `${proto}://${host}/portal/verify`;
+  // The configured site URL in production, never the request's Host header:
+  // a forged header would put an attacker's domain in the victim's email.
+  return `${await siteOrigin()}/portal/verify`;
 }
 
 /**
@@ -48,6 +48,11 @@ export async function resendVerificationEmail(email: string): Promise<{ ok: true
 
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(address)) {
     return { ok: false, error: 'Enter a valid email address.' };
+  }
+  // Reachable without a session and it sends mail to any address: a few per
+  // address per hour, a few dozen per caller.
+  if (!allow('resend:addr', address, 3, 60 * 60_000) || !allow('resend:ip', await clientIp(), 30, 60 * 60_000)) {
+    return { ok: false, error: TOO_MANY };
   }
 
   try {
@@ -73,6 +78,7 @@ export async function signUpMember(input: {
   profile: Record<string, unknown>;
 }): Promise<SignUpResult> {
   const email = String(input.email ?? '').trim().toLowerCase();
+  if (!allow('signup:ip', await clientIp(), 10, 60 * 60_000)) return { ok: false, error: TOO_MANY };
   const password = String(input.password ?? '');
 
   const invalid = validate(email, password);

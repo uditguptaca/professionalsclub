@@ -22,7 +22,10 @@ function fail(context: string, error: unknown): { ok: false; error: string } {
   console.error(`[events] ${context}:`, code ?? '', detail);
   // P0002 is what the coupon functions raise on purpose ("you have already
   // claimed this offer"); every other database code names internals.
-  const speakable = !code || code === 'P0002';
+  // A runtime fault carries no code and names internals; it is not speakable.
+  const fault = !(error instanceof Error) || error instanceof TypeError || error instanceof RangeError
+    || error instanceof ReferenceError || error instanceof SyntaxError || /ECONN|ENOTFOUND|fetch failed|getaddrinfo/i.test(detail);
+  const speakable = (!code && !fault) || code === 'P0002';
   return { ok: false, error: speakable ? detail : `${context} failed. Please try again.` };
 }
 

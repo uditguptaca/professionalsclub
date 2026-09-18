@@ -1,4 +1,5 @@
 import 'server-only';
+import { assertOurImage } from '@/server/media';
 import { withUser, withUserRead } from '@/server/db';
 import { insertRow, updateRow, type ColumnMap } from '@/server/query';
 // One definition of what an event is, shared with the curator screens: the
@@ -317,8 +318,12 @@ export async function updateMyBusiness(
   businessId: string,
   data: Record<string, unknown>
 ): Promise<void> {
+  // Pictures come from our own storage, like every other image members see.
+  assertOurImage(data.logo, 'logo');
+  assertOurImage(data.coverImage, 'cover image');
   await withUser(userId, async (db) => {
-    await updateRow(db, 'public.businesses', BUSINESS_OWNER_WRITABLE, businessId, data, 'id');
+    const row = await updateRow(db, 'public.businesses', BUSINESS_OWNER_WRITABLE, businessId, data, 'id');
+    if (!row) throw new Error('That business is not yours to edit.');
   });
 }
 
@@ -354,7 +359,8 @@ export async function updateOffer(
 
 export async function deleteOffer(userId: string, offerId: string): Promise<void> {
   await withUser(userId, async (db) => {
-    await db.run(`delete from public.business_offers where id = $1`, [offerId]);
+    const rows = await db.run(`delete from public.business_offers where id = $1 returning id`, [offerId]);
+    if (rows.length === 0) throw new Error('That offer is not yours to delete.');
   });
 }
 
@@ -393,7 +399,8 @@ export async function updateBusinessEvent(
 
 export async function deleteBusinessEvent(userId: string, eventId: string): Promise<void> {
   await withUser(userId, async (db) => {
-    await db.run(`delete from public.events where id = $1`, [eventId]);
+    const rows = await db.run(`delete from public.events where id = $1 returning id`, [eventId]);
+    if (rows.length === 0) throw new Error('That event is not yours to delete.');
   });
 }
 

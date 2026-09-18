@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import { dropCache } from '@/lib/swr-cache';
 import { useRouter } from 'next/navigation';
 import { Building2, ExternalLink, LogOut } from 'lucide-react';
 import { authClient } from '@/lib/auth/client';
@@ -32,6 +33,9 @@ export default function BusinessTopbar({
       // Navigate anyway: if the cookie survived, the proxy sends them back here,
       // which is a truthful outcome rather than a silent failure.
     }
+    // The in-memory cache outlives a client-side navigation: the next person
+    // to sign in on this tablet must not see this business's console first.
+    dropCache('');
     router.replace('/business/login');
     router.refresh();
     setSigningOut(false);

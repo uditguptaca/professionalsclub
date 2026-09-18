@@ -24,16 +24,44 @@ export function packContent(text: string, preview: LinkPreview | null): string {
   return preview ? ENVELOPE_MARK + JSON.stringify({ v: 1, t: text, lp: preview }) : text;
 }
 
+const httpUrl = (v: unknown, max: number): string | undefined => {
+  if (typeof v !== 'string' || v.length > max) return undefined;
+  try {
+    const u = new URL(v);
+    return u.protocol === 'http:' || u.protocol === 'https:' ? u.href : undefined;
+  } catch {
+    return undefined;
+  }
+};
+const str = (v: unknown, max: number): string | undefined =>
+  (typeof v === 'string' && v.trim() ? v.slice(0, max) : undefined);
+
+/**
+ * The sender's device wrote the card, so it is treated like any other input:
+ * every field a string of bounded length, every URL http(s). A card that fails
+ * is dropped and the text stands alone. The site name shown on the card is
+ * always the link's own host, so a card cannot claim to be somewhere it is not.
+ */
+export function sanitizePreview(lp: unknown): LinkPreview | null {
+  if (!lp || typeof lp !== 'object') return null;
+  const o = lp as Record<string, unknown>;
+  const url = httpUrl(o.url, 2000);
+  if (!url) return null;
+  return {
+    url,
+    siteName: new URL(url).hostname.replace(/^www\./, ''),
+    title: str(o.title, 160),
+    description: str(o.description, 300),
+    image: httpUrl(o.image, 1000),
+  };
+}
+
 export function unpackContent(raw: string): ChatContent {
   if (!raw.startsWith(ENVELOPE_MARK)) return { text: raw, preview: null };
   try {
     const parsed = JSON.parse(raw.slice(1)) as { v?: number; t?: unknown; lp?: unknown };
-    const text = typeof parsed.t === 'string' ? parsed.t : '';
-    const lp = parsed.lp as Partial<LinkPreview> | undefined;
-    const preview = lp && typeof lp.url === 'string' && typeof lp.siteName === 'string'
-      ? { url: lp.url, siteName: lp.siteName, title: lp.title, description: lp.description, image: lp.image }
-      : null;
-    return { text, preview };
+    const text = typeof parsed.t === 'string' ? parsed.t.slice(0, 5000) : '';
+    return { text, preview: sanitizePreview(parsed.lp) };
   } catch {
     return { text: raw, preview: null };
   }

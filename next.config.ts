@@ -22,8 +22,11 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https:",
-      "media-src 'self'",
+      // The browser talks to us and to Blob storage (client uploads). Nothing
+      // else - an injected script has nowhere to send what it reads.
+      "connect-src 'self' https://blob.vercel-storage.com https://*.blob.vercel-storage.com",
+      // Post videos and chat clips play from Blob; blob: is the composer's own preview.
+      "media-src 'self' blob: https://*.public.blob.vercel-storage.com",
       // What WE may embed. Without this clause default-src 'self' applied, and
       // it silently blanked both embeds we actually ship: the resume builder on
       // /build-resume and every video on /youtube. This is the whole list —
@@ -40,7 +43,9 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+    // camera=(self): the coupon scanner. An empty list would deny the camera to
+    // this origin too, before the browser ever asked the member.
+    value: "camera=(self), microphone=(), geolocation=(), payment=(), usb=()",
   },
   {
     key: "Strict-Transport-Security",

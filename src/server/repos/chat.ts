@@ -1,5 +1,7 @@
 import 'server-only';
 import { withUser, withUserRead, type Db } from '@/server/db';
+import { isOurUpload } from '@/server/media';
+import { sanitizePreview } from '@/lib/chat-links';
 
 /**
  * Follows + the member chat hub.
@@ -192,9 +194,7 @@ const toPerson = (r: Record<string, unknown>): ChatPerson => ({
 // Attachments must come from our own storage; anything else is refused, the
 // same rule matrimony media applies.
 function assertOurUpload(url: string): void {
-  const fromBlob = /^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/[^\s]+$/i.test(url);
-  const fromDev = /^\/uploads\/[a-z0-9]+\.(jpg|jpeg|png|webp|gif|mp4|webm|mov|pdf|doc|docx)$/.test(url);
-  if (!fromBlob && !fromDev) throw new Error('That upload was not recognised. Please try again.');
+  if (!isOurUpload(url, 'attachment')) throw new Error('That upload was not recognised. Please try again.');
 }
 
 /**
@@ -653,7 +653,7 @@ export async function pollThread(
           where m.conversation_id = $1
             and m.created_at > (select cleared_at from prefs)) as watermark,
         (select public.member_convo_is_open($1)) as open,
-        (select case when (select typing from vis) then ty.typing_at end
+        (select case when (select typing from vis) and public.member_convo_is_open($1) then ty.typing_at end
            from public.member_chat_typing ty
           where ty.conversation_id = $1 and ty.member_id <> $2
           limit 1) as peer_typing_at,
@@ -740,6 +740,10 @@ export async function sendChatMessage(
 ): Promise<ChatMessage> {
   return withUser(userId, async (db) => {
     const encrypted = Boolean(content.cipher && content.iv);
+    // U+001E opens the link-card envelope inside a sealed message
+    // (src/lib/chat-links.tsx). In a plaintext body it could only be a forged
+    // card, so it is text here, never a marker.
+    if (typeof content.body === 'string') content.body = content.body.replace(/\u001e/g, '');
     const kind = content.attachmentUrl ? (content.attachmentKind ?? 'image') : 'text';
     if (!['text', 'image', 'video', 'file'].includes(kind)) throw new Error('Unknown message kind.');
     if (content.attachmentUrl) assertOurUpload(content.attachmentUrl);
@@ -747,6 +751,16 @@ export async function sendChatMessage(
     if (encrypted && content.body) throw new Error('A message is plaintext or ciphertext, never both.');
     if (encrypted && (content.cipher!.length > 20000 || content.iv!.length > 64)) {
       throw new Error('Message too long.');
+    }
+    if (encrypted) {
+      // The device named as the sealer must be one of the sender's own: peers
+      // unwrap against its public key, so a borrowed id would point them at
+      // the wrong key.
+      const own = await db.run<{ device_id: string }>(
+        `select device_id from public.member_devices where member_id = $1 and device_id = $2`,
+        [userId, content.senderDeviceId ?? '']
+      );
+      if (own.length === 0) throw new Error('This device is not registered for chat. Reload and try again.');
     }
 
     if (content.thumbUrl) assertOurUpload(content.thumbUrl);
@@ -759,19 +773,8 @@ export async function sendChatMessage(
     if (content.forwarded) metaObj.forwarded = true;
     if (content.thumbUrl) metaObj.thumb = content.thumbUrl;
     if (kind === 'text' && !encrypted && content.linkPreview) {
-      const clean = (v: unknown, n: number) => (typeof v === 'string' && v.trim() ? v.slice(0, n) : undefined);
-      const lp = content.linkPreview;
-      const url = clean(lp.url, 2000);
-      const image = clean(lp.image, 1000);
-      if (url && /^https?:\/\//i.test(url)) {
-        metaObj.linkPreview = {
-          url,
-          siteName: clean(lp.siteName, 80) ?? new URL(url).hostname,
-          ...(clean(lp.title, 160) ? { title: clean(lp.title, 160) } : {}),
-          ...(clean(lp.description, 300) ? { description: clean(lp.description, 300) } : {}),
-          ...(image && /^https?:\/\//i.test(image) ? { image } : {}),
-        };
-      }
+      const card = sanitizePreview(content.linkPreview);
+      if (card) metaObj.linkPreview = card;
     }
     const meta = Object.keys(metaObj).length ? JSON.stringify(metaObj) : null;
 
@@ -824,15 +827,17 @@ export async function sendChatMessage(
           .filter((k) => !seen.has(k.deviceId) && seen.add(k.deviceId))
           .map((k) => ({
             device_id: k.deviceId,
-            member_id: k.memberId,
             wrapped_key: k.wrappedKey,
             wrap_iv: k.wrapIv,
           }));
+        // member_id is filled by the bind_message_key_member trigger (0055)
+        // from the device's owner; what the client says about it is ignored.
         await db.run(
           `insert into public.member_message_keys (message_id, device_id, member_id, wrapped_key, wrap_iv)
-           select $1, k.device_id, k.member_id::uuid, k.wrapped_key, k.wrap_iv
+           select $1, k.device_id, d.member_id, k.wrapped_key, k.wrap_iv
              from jsonb_to_recordset($2::jsonb)
-                  as k(device_id text, member_id text, wrapped_key text, wrap_iv text)`,
+                  as k(device_id text, wrapped_key text, wrap_iv text)
+             join public.member_devices d on d.device_id = k.device_id`,
           [message.id, JSON.stringify(rows)]
         );
         // Hand the sender back its own wrap so the message it just sent is
@@ -1360,6 +1365,22 @@ export async function saveKeyBackup(
 export async function deleteKeyBackup(userId: string): Promise<void> {
   await withUser(userId, async (db) => {
     await db.run(`delete from public.member_key_backups where member_id = $1`, [userId]);
+  });
+}
+
+/**
+ * This device could not open a wrap addressed to it (a stray or poisoned
+ * wrap). Dropping it makes missing_message_wraps report the gap again, and a
+ * device that can read the message re-wraps it. The policy limits this to
+ * wraps for the caller's own devices.
+ */
+export async function discardMessageWrap(userId: string, messageId: string, deviceId: string): Promise<void> {
+  await withUser(userId, async (db) => {
+    await db`
+      delete from public.member_message_keys
+       where message_id = ${messageId}::uuid and device_id = ${deviceId}
+         and member_id = ${userId}::uuid
+    `;
   });
 }
 

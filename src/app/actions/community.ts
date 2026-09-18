@@ -3,6 +3,7 @@
 import { requireUserId, requireAdminId } from '@/server/auth';
 import * as repo from '@/server/repos/community';
 import { moderateContent, rejectionMessage } from '@/server/moderation';
+import { sanitizeMedia } from '@/server/media';
 import type {
   CommunityGroup, CommunityPost, CommunityComment, CommunityReport,
   CommunityReportTarget, CommunityReportStatus, CommunityMedia, CommunityFeedScope,
@@ -110,28 +111,6 @@ export async function fetchCommunityStart(): Promise<ActionResult<{
   });
 }
 
-/**
- * Media pointers are validated hard: only URLs from our own storage (the
- * public Vercel Blob store or the dev uploads folder), correctly typed, and
- * at most four images or one video. A crafted payload cannot make members'
- * browsers load an attacker's origin.
- */
-function sanitizeMedia(media: unknown): CommunityMedia[] {
-  if (!Array.isArray(media) || media.length === 0) return [];
-  const items = media.slice(0, 4).map((m) => {
-    const url = typeof m?.url === 'string' ? m.url : '';
-    const type = m?.type === 'video' ? 'video' as const : 'image' as const;
-    const fromBlob = /^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\//.test(url);
-    const fromDev = /^\/uploads\/[a-z0-9]+\.(jpg|png|webp|gif|mp4|webm|mov)$/.test(url);
-    if (!fromBlob && !fromDev) throw new Error('Please keep it — that media upload was not recognised.');
-    return { url, type };
-  });
-  const videos = items.filter((m) => m.type === 'video');
-  if (videos.length > 1 || (videos.length === 1 && items.length > 1)) {
-    throw new Error('Please keep it — a post can carry up to four photos or one video.');
-  }
-  return items;
-}
 
 export async function publishPost(input: {
   body: string;

@@ -86,51 +86,52 @@ export async function drainSms(limit = 50): Promise<SmsDrainResult> {
     return { sent: 0, failed: 0, skipped: 0 };
   }
 
-  return withElevated(async (db) => {
-    const rows = (await db`
-      select o.id, o.body, o.attempts, p.phone
-        from public.sms_outbox o
-        join public.profiles p on p.id = o.recipient_id
+  // Claim -> send with NOTHING held -> write back (see drainPush and the email drain).
+  type Row = { id: string; body: string; attempts: number; phone: string | null };
+  const rows = await withElevated(async (db) => (await db`
+    with claimed as (
+      select o.id from public.sms_outbox o
        where o.status = 'pending' and o.attempts < 3
        order by o.created_at
        limit ${limit}
-    `) as unknown as { id: string; body: string; attempts: number; phone: string | null }[];
+       for update skip locked
+    )
+    update public.sms_outbox o
+       set status = 'sending', attempts = o.attempts + 1
+      from claimed
+     where o.id = claimed.id
+    returning o.id, o.body, o.attempts,
+              (select p.phone from public.profiles p where p.id = o.recipient_id) as phone
+  `) as unknown as Row[]);
 
-    let sent = 0, failed = 0, skipped = 0;
-
-    for (const row of rows) {
-      const to = toE164(row.phone);
-      if (!to) {
-        skipped += 1;
-        await db`
-          update public.sms_outbox
-             set status = 'skipped', attempts = attempts + 1,
-                 last_error = ${row.phone ? 'Phone number not recognised' : 'No phone on profile'}
-           where id = ${row.id}::uuid
-        `;
-        continue;
-      }
-
-      const outcome = await deliver(to, row.body);
-      if (outcome.ok) {
-        sent += 1;
-        await db`
-          update public.sms_outbox
-             set status = 'sent', sent_at = now(), attempts = attempts + 1, last_error = null
-           where id = ${row.id}::uuid
-        `;
-      } else {
-        failed += 1;
-        const attempts = row.attempts + 1;
-        await db`
-          update public.sms_outbox
-             set status = ${attempts >= 3 ? 'failed' : 'pending'},
-                 attempts = ${attempts}, last_error = ${outcome.error}
-           where id = ${row.id}::uuid
-        `;
-      }
+  const results: { id: string; status: 'sent' | 'skipped' | 'failed' | 'pending'; error: string | null }[] = [];
+  for (const row of rows) {
+    const to = toE164(row.phone);
+    if (!to) {
+      results.push({ id: row.id, status: 'skipped', error: row.phone ? 'Phone number not recognised' : 'No phone on profile' });
+      continue;
     }
+    const outcome = await deliver(to, row.body);
+    if (outcome.ok) results.push({ id: row.id, status: 'sent', error: null });
+    else results.push({ id: row.id, status: row.attempts >= 3 ? 'failed' : 'pending', error: outcome.error.slice(0, 500) });
+  }
 
-    return { sent, failed, skipped };
-  });
+  if (results.length > 0) {
+    await withElevated(async (db) => {
+      await db`
+        update public.sms_outbox o
+           set status = r.status,
+               sent_at = case when r.status = 'sent' then now() else o.sent_at end,
+               last_error = r.error
+          from jsonb_to_recordset(${JSON.stringify(results)}::jsonb) as r(id uuid, status text, error text)
+         where o.id = r.id
+      `;
+    });
+  }
+
+  return {
+    sent: results.filter((r) => r.status === 'sent').length,
+    failed: results.filter((r) => r.status === 'failed' || r.status === 'pending').length,
+    skipped: results.filter((r) => r.status === 'skipped').length,
+  };
 }

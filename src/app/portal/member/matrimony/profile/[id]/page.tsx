@@ -302,7 +302,13 @@ export default function CandidateProfilePage() {
     );
   }
 
-  const age = new Date().getFullYear() - new Date(profile.dob).getFullYear();
+  const age = (() => {
+    const b = new Date(profile.dob); const t = new Date();
+    let a = t.getFullYear() - b.getFullYear();
+    const m = t.getMonth() - b.getMonth();
+    if (m < 0 || (m === 0 && t.getDate() < b.getDate())) a--;
+    return a;
+  })();
   const matchScore = myPrefs ? Math.round(computeMatchScore(myPrefs, profile)) : null;
 
   const displayName = profile.display_pref === 'full_name'
@@ -313,11 +319,15 @@ export default function CandidateProfilePage() {
   const initials = profile.full_name
     .split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || 'PC';
 
-  const blurPhotos = profile.photo_visibility === 'blurred' && interestStatus !== 'accepted';
+  // Since 0055 the database sends photos only when the owner shows them to
+  // everyone or an interest between you is accepted, so nothing here needs
+  // blurring; what arrives may be shown.
+  const blurPhotos = false;
   /* The server already applied the visibility and approval rules to this list,
      so whatever arrived is safe to show. */
   const primaryPhoto = media.find(m => m.is_primary) ?? media[0];
   const isMe = profile.user_id === currentUserId;
+  const photosWithheld = !isMe && profile.photo_visibility !== 'all' && interestStatus !== 'accepted';
   const photos = media.filter((m) => m.type === 'photo');
   const shown = photos[Math.min(photoIdx, Math.max(photos.length - 1, 0))] ?? null;
 
@@ -423,6 +433,14 @@ export default function CandidateProfilePage() {
 
       {isMe && (
         <p className="mt-me"><Eye size={15} aria-hidden="true" /> This is your listing as other members see it.</p>
+      )}
+      {photosWithheld && photos.length === 0 && (
+        <p className="mt-me" style={{ display: 'flex' }}>
+          <ImageIcon size={15} aria-hidden="true" />
+          {profile.photo_visibility === 'on_request'
+            ? `${displayName} shares photos on request. They open once an interest between you is accepted.`
+            : `${displayName}'s photos open once an interest between you is accepted.`}
+        </p>
       )}
 
       {/* ---- Interest actions: fixed above the tab bar on a phone ---- */}

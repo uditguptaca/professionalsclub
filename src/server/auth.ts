@@ -63,19 +63,37 @@ async function ensureProfile(session: Session): Promise<void> {
   // invited business owner a member account on their first login. The database
   // refuses it too (profiles_reject_business_account); this just avoids
   // throwing on a perfectly normal sign-in.
-  if (await getBusinessUser()) return;
+  if (await isBusinessAccount(session.userId)) return;
 
   const [firstName = '', ...rest] = (session.name ?? '').trim().split(/\s+/);
 
-  await withElevated(async (db) => {
-    await db`
-      select public.create_profile(
-        ${session.userId}::uuid,
-        ${session.email},
-        ${JSON.stringify({ first_name: firstName, last_name: rest.join(' ') })}::jsonb
-      )
-    `;
-  });
+  try {
+    await withElevated(async (db) => {
+      await db`
+        select public.create_profile(
+          ${session.userId}::uuid,
+          ${session.email},
+          ${JSON.stringify({ first_name: firstName, last_name: rest.join(' ') })}::jsonb
+        )
+      `;
+    });
+  } catch (err) {
+    // The database said no (a business account, an auth user whose row is
+    // gone). That is "no profile", not a reason for every page to 500.
+    console.error('[auth] create_profile refused:', err instanceof Error ? err.message : err);
+  }
+}
+
+/**
+ * Is this auth user a business login at all, active or disabled? The active
+ * lookup below is what the console uses; this one exists so a DISABLED owner
+ * is still recognised as "not a member" and never back-filled as one.
+ */
+async function isBusinessAccount(userId: string): Promise<boolean> {
+  const row = await withElevated(async (db) =>
+    one<{ user_id: string }>(await db`select user_id from public.business_users where user_id = ${userId}::uuid`)
+  );
+  return Boolean(row);
 }
 
 /** A signed-in business owner: which business, and are they still enabled. */
@@ -149,12 +167,15 @@ export async function requireBusinessUserId(): Promise<string> {
  * full profile round trip to the database before doing its real work. With a
  * remote database that check alone costs three network round trips.
  *
- * A 30-second TTL is safe because this profile object is advisory UX state:
+ * A short TTL is safe because this profile object is advisory UX state:
  * the authoritative role and account-status checks happen inside Postgres on
  * every query (is_admin() / is_active_member() in the RLS policies). A
  * suspended member with a stale cache entry still gets nothing back from the
  * database. Mutations that change the profile call invalidateProfileCache().
  */
+// Five minutes, per instance: invalidateProfileCache() clears the instance
+// that served the admin's request, so another warm instance may keep a stale
+// entry until then. Advisory only - Postgres decides on every query.
 const PROFILE_TTL_MS = 300_000;
 const profileCache = new Map<string, { profile: Member; expires: number }>();
 

@@ -51,9 +51,11 @@ async function run<T>(context: string, fn: () => Promise<T>): Promise<ActionResu
 
 export async function loadPortal(): Promise<ActionResult<PortalSnapshot>> {
   return run('Loading portal data', async () => {
+    // requireUserId() is what refuses a suspended account; the profile alone did not.
+    const uid = await requireUserId();
     const profile = await getCurrentProfile();
     if (!profile) throw new Error('Not signed in.');
-    return repo.loadSnapshot(profile.id, profile.role === 'admin');
+    return repo.loadSnapshot(uid, profile.role === 'admin');
   });
 }
 

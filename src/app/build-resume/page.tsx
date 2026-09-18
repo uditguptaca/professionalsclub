@@ -41,6 +41,7 @@ export default function BuildResumePage() {
               height="100%" 
               style={{ border: 'none' }}
               title="WriteCV.io Resume Builder"
+              sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-downloads"
               allow="clipboard-write; clipboard-read"
             />
           </div>

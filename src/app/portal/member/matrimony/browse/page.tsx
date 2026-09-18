@@ -85,8 +85,9 @@ function displayName(fullName: string, pref: string): string {
 const initialsOf = (name: string) => name.split(' ').filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase() || 'PC';
 
 function photoOf(card: MatrimonyBrowseCard) {
-  if (!card.primary_photo_url || card.photo_visibility === 'on_request') return null;
-  return { url: card.primary_photo_url, blurred: card.photo_visibility === 'blurred' };
+  // The database only sends a photo the viewer may see (0055); nothing to blur.
+  if (!card.primary_photo_url) return null;
+  return { url: card.primary_photo_url, blurred: false };
 }
 
 const emptyFilters: MatrimonySearchFilters = {

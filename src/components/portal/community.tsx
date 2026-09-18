@@ -119,7 +119,7 @@ function sharedHome(groupId?: string | null): Promise<Home> {
   const live = homeInFlight && homeInFlight.expires > Date.now() ? homeInFlight : null;
   // Any live request carries the group list, so the rail never starts a second
   // one just because the feed is scoped to a group.
-  if (live && (live.key === key || groupId === undefined)) return live.promise;
+  if (live && live.key === key) return live.promise;
 
   const promise = fetchCommunityHome({ groupId }).then((r) =>
     r.ok ? r.data : { groups: [], posts: [] }

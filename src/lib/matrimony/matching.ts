@@ -56,10 +56,11 @@ function arrayMatch(prefArray: string[] | undefined, candidateValue: string | un
   );
 }
 
-function rangeMatch(min: number | undefined, max: number | undefined, value: number | undefined): number {
-  if (min === undefined && max === undefined) return 1; // "Doesn't matter"
-  if (value === undefined) return 0.5; // Unknown value, partial score
-  if (min !== undefined && max !== undefined) {
+function rangeMatch(min: number | null | undefined, max: number | null | undefined, value: number | null | undefined): number {
+  // Postgres hands back null, not undefined, for a blank bound.
+  if (min == null && max == null) return 1; // "Doesn't matter"
+  if (value == null) return 0.5; // Unknown value, partial score
+  if (min != null && max != null) {
     if (value >= min && value <= max) return 1;
     // Partial score for close matches
     const range = max - min;
@@ -68,8 +69,8 @@ function rangeMatch(min: number | undefined, max: number | undefined, value: num
     const penalty = Math.min(distance / Math.max(range * 0.5, 1), 1);
     return Math.max(0, 1 - penalty);
   }
-  if (min !== undefined) return value >= min ? 1 : 0.5;
-  if (max !== undefined) return value <= max ? 1 : 0.5;
+  if (min != null) return value >= min ? 1 : 0.5;
+  if (max != null) return value <= max ? 1 : 0.5;
   return 0.5;
 }
 

@@ -88,8 +88,9 @@ function initialsOf(name: string): string {
 
 /** What the card may show: nothing, the photo, or the photo behind glass. */
 function photoOf(card: { primary_photo_url?: string; photo_visibility: string }) {
-  if (!card.primary_photo_url || card.photo_visibility === 'on_request') return null;
-  return { url: card.primary_photo_url, blurred: card.photo_visibility === 'blurred' };
+  // The database only sends a photo the viewer may see (0055); nothing to blur.
+  if (!card.primary_photo_url) return null;
+  return { url: card.primary_photo_url, blurred: false };
 }
 
 const roundBtn = (size: number, on: boolean): React.CSSProperties => ({

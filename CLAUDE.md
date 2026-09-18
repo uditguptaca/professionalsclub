@@ -188,6 +188,21 @@ keys asks for the PIN *before* minting keys (`src/app/portal/member/chats/page.t
 registration effect); restoring makes that device the backed-up one, so every
 wrap addressed to it opens.
 
+**September 2026 audit rules (0055/0056).** Signup never grants a privilege:
+`create_profile()` does not write `is_volunteer`, and `profiles_guard_insert_privileges`
+pins it (and `role`) on every insert. Content `status`/`moderation` change only
+under an admin's or the group moderator's hand (`guard_content_moderation`);
+`moderateItem()` also excludes the author in SQL. Every read of another member's
+post carries the `can_view_member()` gate (feed, permalink, profile, comments,
+likes). Matrimony photos are a row-level rule (`matrimony_photos_visible()`),
+the visible-profiles view reduces `full_name` per `display_pref`, and
+`my_matrimony_profile_id()` is null for a suspended account. `notify_admins()`
+and `notify_group_moderators()` are trigger-only: never grant them. Definer
+helpers are granted to `app_authenticated` only, never PUBLIC. Media URLs are
+pinned to OUR Blob store (`isOurUpload` in `src/server/media.ts`, from the
+token's store id). Emailed links use `siteOrigin()`, never the Host header.
+Public forms, resends, signups and link previews go through `src/server/rate-limit.ts`.
+
 **Chat link previews are made on the sender's device and travel inside the
 ciphertext.** `src/lib/chat-links.tsx` wraps text + card in an envelope that
 `sealMessage` encrypts like any other text; `/api/link-preview` (signed-in only,

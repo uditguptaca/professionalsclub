@@ -58,8 +58,19 @@ const LEET: Record<string, string> = {
 };
 
 /** Lowercase, strip accents, undo leetspeak, collapse repeats and separators. */
+/** Cyrillic and Greek letters that render like Latin ones. */
+const CONFUSABLES: Record<string, string> = {
+  '\u0430': 'a', '\u0435': 'e', '\u043e': 'o', '\u0440': 'p', '\u0441': 'c', '\u0443': 'y', '\u0445': 'x', '\u0456': 'i',
+  '\u0455': 's', '\u0458': 'j', '\u04bb': 'h', '\u0501': 'd', '\u051b': 'q', '\u0261': 'g', '\u03bf': 'o', '\u03b1': 'a',
+  '\u03bd': 'v', '\u0442': 't', '\u043a': 'k', '\u043c': 'm', '\u043d': 'h', '\u0432': 'b',
+};
+
 export function normalizeText(input: string): string {
   const base = input
+    // Invisible format characters (zero-width space/joiner, soft hyphen, BOM)
+    // split a word for the matcher and not for the eye.
+    .replace(/[\p{Cf}\u00ad]/gu, '')
+    .replace(/[\u0430\u0435\u043e\u0440\u0441\u0443\u0445\u0456\u0455\u0458\u04bb\u0501\u051b\u0261\u03bf\u03b1\u03bd\u0442\u043a\u043c\u043d\u0432]/g, (c) => CONFUSABLES[c] ?? c)
     .normalize('NFKD')
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
@@ -280,7 +291,7 @@ export async function moderateContent(input: ModerationInput): Promise<Moderatio
   if (rules.decision === 'reject') return rules;
 
   const images = (input.media ?? []).filter((m) => m.type === 'image').map((m) => m.url);
-  const wantClaude = imageModerationEnabled() && (images.length > 0 || input.text.trim().length >= 12);
+  const wantClaude = imageModerationEnabled() && (images.length > 0 || input.text.trim().length >= (input.kind === 'comment' ? 3 : 12));
   if (!wantClaude) return rules;
 
   const scores = await classifyWithClaude({ text: input.text, imageUrls: images });

@@ -1,7 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { lookup } from 'node:dns/promises';
+import { lookup as dnsLookup, type LookupAddress } from 'node:dns';
 import { isIP } from 'node:net';
+import http from 'node:http';
+import https from 'node:https';
 import { requireUserId } from '@/server/auth';
+import { allow } from '@/server/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -12,11 +15,15 @@ export const dynamic = 'force-dynamic';
  * travels inside the end-to-end encrypted message. The server sees a URL and a
  * signed-in member, never the message; the recipient's device fetches nothing.
  *
- * This is also the one place the server fetches an arbitrary URL on a member's
- * behalf, so it is deliberately narrow: signed-in members only, http(s) only,
- * every hop resolved and refused when it lands on a private, loopback or
- * link-local address (no poking at the database host or metadata endpoints),
- * three redirects, six seconds, and the first 512 KB of HTML.
+ * This is the one place the server fetches an arbitrary URL on a member's
+ * behalf, so it is deliberately narrow: signed-in members only, sixty a
+ * minute each, http(s) only, three redirects, six seconds, the first 512 KB of
+ * HTML - and every connection is made to an address this file vetted itself.
+ * The DNS lookup that decides "public address" is the same lookup the socket
+ * connects to (node's `lookup` option), so a name cannot answer one thing to
+ * the check and another to the connection. IPv6 is admitted only as plain
+ * global unicast: every mapped, embedded, link-local or site-local form is
+ * refused rather than parsed.
  */
 
 const MAX_BYTES = 512 * 1024;
@@ -34,41 +41,123 @@ export interface LinkPreviewPayload {
 
 function privateV4(ip: string): boolean {
   const p = ip.split('.').map(Number);
-  if (p.length !== 4 || p.some((n) => Number.isNaN(n))) return true;
+  if (p.length !== 4 || p.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return true;
   return p[0] === 0 || p[0] === 10 || p[0] === 127
     || (p[0] === 100 && p[1] >= 64 && p[1] <= 127)
     || (p[0] === 169 && p[1] === 254)
     || (p[0] === 172 && p[1] >= 16 && p[1] <= 31)
     || (p[0] === 192 && p[1] === 168)
+    || (p[0] === 192 && p[1] === 0 && (p[2] === 0 || p[2] === 2))
+    || (p[0] === 198 && (p[1] === 18 || p[1] === 19))
     || p[0] >= 224;
 }
 
-function privateIp(ip: string): boolean {
-  if (isIP(ip) === 4) return privateV4(ip);
-  const v6 = ip.toLowerCase();
-  const mapped = v6.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-  if (mapped) return privateV4(mapped[1]);
-  return v6 === '::' || v6 === '::1' || v6.startsWith('fc') || v6.startsWith('fd') || v6.startsWith('fe8') || v6.startsWith('fe9') || v6.startsWith('fea') || v6.startsWith('feb');
+/** Only plain global-unicast IPv6 (2000::/3) is public. Everything else, including every IPv4 embedding, is not. */
+function privateV6(ip: string): boolean {
+  const first = ip.toLowerCase().replace(/^\[|\]$/g, '').split(':')[0];
+  if (first === '') return true; // ::, ::1, ::ffff:..., ::a.b.c.d
+  const n = parseInt(first, 16);
+  if (Number.isNaN(n)) return true;
+  return !(n >= 0x2000 && n <= 0x3fff);
 }
 
-async function hostAllowed(hostname: string): Promise<boolean> {
-  const h = hostname.replace(/^\[|\]$/g, '');
-  if (isIP(h)) return !privateIp(h);
-  if (h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.local') || h.endsWith('.internal')) return false;
-  try {
-    const addrs = await lookup(h, { all: true });
-    return addrs.length > 0 && addrs.every((a) => !privateIp(a.address));
-  } catch {
-    return false;
+function privateIp(ip: string): boolean {
+  const v = isIP(ip);
+  if (v === 4) return privateV4(ip);
+  if (v === 6) return privateV6(ip);
+  return true;
+}
+
+function hostnameLooksInternal(hostname: string): boolean {
+  const h = hostname.toLowerCase().replace(/\.$/, '');
+  return h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.local') || h.endsWith('.internal') || h.endsWith('.arpa') || !h.includes('.');
+}
+
+/**
+ * node's `lookup` hook: resolve, refuse if ANY returned address is private,
+ * and hand the socket exactly what was checked. Handles both the single
+ * answer and the `all: true` array form newer Node versions ask for.
+ */
+const guardedLookup: typeof dnsLookup = ((hostname: string, options: unknown, callback: (...args: unknown[]) => void) => {
+  const cb = typeof options === 'function' ? (options as (...a: unknown[]) => void) : callback;
+  const opts = typeof options === 'function' ? {} : (options as Record<string, unknown>);
+  dnsLookup(hostname, opts as never, ((err: NodeJS.ErrnoException | null, address: string | LookupAddress[], family?: number) => {
+    if (err) return cb(err, address, family);
+    const list = Array.isArray(address) ? address.map((a) => a.address) : [address];
+    if (list.length === 0 || list.some((a) => privateIp(a))) {
+      const e = new Error('Address not allowed') as NodeJS.ErrnoException;
+      e.code = 'EACCES';
+      return cb(e, address, family);
+    }
+    cb(null, address, family);
+  }) as never);
+}) as unknown as typeof dnsLookup;
+
+interface Fetched { status: number; headers: http.IncomingHttpHeaders; body: string; finalUrl: URL }
+
+/** One guarded request. Redirects are followed by the caller so every hop is vetted. */
+function guardedGet(url: URL): Promise<{ status: number; headers: http.IncomingHttpHeaders; res: http.IncomingMessage }> {
+  return new Promise((resolve, reject) => {
+    const mod = url.protocol === 'https:' ? https : http;
+    const req = mod.request(url, {
+      method: 'GET',
+      lookup: guardedLookup,
+      timeout: TIMEOUT_MS,
+      headers: {
+        'user-agent': UA,
+        accept: 'text/html,application/xhtml+xml;q=0.9,image/*;q=0.5,*/*;q=0.1',
+        'accept-language': 'en-CA,en;q=0.8',
+      },
+    }, (res) => resolve({ status: res.statusCode ?? 0, headers: res.headers, res }));
+    req.on('timeout', () => req.destroy(new Error('timeout')));
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+async function readCapped(res: http.IncomingMessage): Promise<string> {
+  const chunks: Buffer[] = [];
+  let total = 0;
+  for await (const chunk of res) {
+    const buf = chunk as Buffer;
+    chunks.push(buf);
+    total += buf.byteLength;
+    if (total >= MAX_BYTES) { res.destroy(); break; }
   }
+  return Buffer.concat(chunks).subarray(0, MAX_BYTES).toString('utf8');
+}
+
+async function fetchPage(start: URL): Promise<Fetched | null> {
+  let current = start;
+  for (let hop = 0; hop <= MAX_HOPS; hop++) {
+    if ((current.protocol !== 'http:' && current.protocol !== 'https:') || hostnameLooksInternal(current.hostname)) return null;
+    if (isIP(current.hostname.replace(/^\[|\]$/g, '')) && privateIp(current.hostname.replace(/^\[|\]$/g, ''))) return null;
+    const { status, headers, res } = await guardedGet(current);
+    const loc = headers.location;
+    if (status >= 300 && status < 400 && loc) {
+      res.destroy();
+      let next: URL;
+      try { next = new URL(loc, current); } catch { return null; }
+      current = next;
+      continue;
+    }
+    if (status < 200 || status >= 300) { res.destroy(); return null; }
+    const type = String(headers['content-type'] ?? '').toLowerCase();
+    if (type.startsWith('image/')) { res.destroy(); return { status, headers, body: '', finalUrl: current }; }
+    if (!type.includes('html')) { res.destroy(); return null; }
+    return { status, headers, body: await readCapped(res), finalUrl: current };
+  }
+  return null;
 }
 
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', '#39': "'" };
 function decodeEntities(s: string): string {
   return s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e: string) => {
     const k = e.toLowerCase();
-    if (k.startsWith('#x')) return String.fromCodePoint(parseInt(k.slice(2), 16)) || m;
-    if (k.startsWith('#')) return String.fromCodePoint(parseInt(k.slice(1), 10)) || m;
+    try {
+      if (k.startsWith('#x')) return String.fromCodePoint(parseInt(k.slice(2), 16)) || m;
+      if (k.startsWith('#')) return String.fromCodePoint(parseInt(k.slice(1), 10)) || m;
+    } catch { return m; }
     return ENTITIES[k] ?? m;
   }).replace(/\s+/g, ' ').trim();
 }
@@ -87,77 +176,42 @@ function metaTags(html: string): Map<string, string> {
   return out;
 }
 
-async function readCapped(res: Response): Promise<string> {
-  const reader = res.body?.getReader();
-  if (!reader) return '';
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  while (total < MAX_BYTES) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    total += value.byteLength;
-  }
-  void reader.cancel().catch(() => {});
-  const buf = new Uint8Array(total);
-  let off = 0;
-  for (const c of chunks) { buf.set(c, off); off += c.byteLength; }
-  return new TextDecoder('utf-8', { fatal: false }).decode(buf);
-}
-
 const clip = (s: string | undefined, n: number) => (s ? s.slice(0, n) : undefined);
 const siteOf = (u: URL) => u.hostname.replace(/^www\./, '');
+const refuse = (status = 400) => NextResponse.json({ ok: false }, { status });
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  try { await requireUserId(); } catch { return NextResponse.json({ ok: false }, { status: 401 }); }
+  let userId: string;
+  try { userId = await requireUserId(); } catch { return refuse(401); }
+  if (!allow('link-preview', userId, 60, 60_000)) return refuse(429);
 
   let url: URL;
-  try { url = new URL(request.nextUrl.searchParams.get('url') ?? ''); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') return NextResponse.json({ ok: false }, { status: 400 });
-  if (!(await hostAllowed(url.hostname))) return NextResponse.json({ ok: false }, { status: 400 });
+  try { url = new URL(request.nextUrl.searchParams.get('url') ?? ''); } catch { return refuse(); }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return refuse();
+  if (url.username || url.password) return refuse();
+  const bare = url.hostname.replace(/^\[|\]$/g, '');
+  if (hostnameLooksInternal(url.hostname) || (isIP(bare) && privateIp(bare))) return refuse();
 
   try {
-    let current = url;
-    let res: Response | null = null;
-    for (let hop = 0; hop <= MAX_HOPS; hop++) {
-      res = await fetch(current, {
-        redirect: 'manual',
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-        headers: { 'user-agent': UA, accept: 'text/html,application/xhtml+xml;q=0.9,image/*;q=0.5,*/*;q=0.1', 'accept-language': 'en-CA,en;q=0.8' },
-      });
-      const loc = res.headers.get('location');
-      if (res.status >= 300 && res.status < 400 && loc) {
-        const next = new URL(loc, current);
-        if ((next.protocol !== 'http:' && next.protocol !== 'https:') || !(await hostAllowed(next.hostname))) {
-          return NextResponse.json({ ok: false }, { status: 400 });
-        }
-        current = next;
-        res = null;
-        continue;
-      }
-      break;
-    }
-    if (!res || !res.ok) return NextResponse.json({ ok: false });
+    const page = await fetchPage(url);
+    if (!page) return NextResponse.json({ ok: false });
 
-    const type = (res.headers.get('content-type') ?? '').toLowerCase();
-    // A link straight to a picture is its own preview.
+    const type = String(page.headers['content-type'] ?? '').toLowerCase();
     if (type.startsWith('image/')) {
-      void res.body?.cancel().catch(() => {});
-      const preview: LinkPreviewPayload = { url: url.href, image: current.href, siteName: siteOf(current) };
+      // A link straight to a picture is its own preview.
+      const preview: LinkPreviewPayload = { url: url.href, image: page.finalUrl.href, siteName: siteOf(page.finalUrl) };
       return NextResponse.json({ ok: true, preview }, { headers: { 'cache-control': 'private, max-age=3600' } });
     }
-    if (!type.includes('html')) { void res.body?.cancel().catch(() => {}); return NextResponse.json({ ok: false }); }
 
-    const html = await readCapped(res);
-    const meta = metaTags(html);
-    const titleTag = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(html)?.[1];
+    const meta = metaTags(page.body);
+    const titleTag = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(page.body)?.[1];
     const title = clip(meta.get('og:title') ?? meta.get('twitter:title') ?? (titleTag ? decodeEntities(titleTag) : undefined), 160);
     const description = clip(meta.get('og:description') ?? meta.get('twitter:description') ?? meta.get('description'), 300);
     let image: string | undefined;
     const rawImage = meta.get('og:image') ?? meta.get('og:image:url') ?? meta.get('og:image:secure_url') ?? meta.get('twitter:image') ?? meta.get('twitter:image:src');
     if (rawImage) {
       try {
-        const img = new URL(rawImage, current);
+        const img = new URL(rawImage, page.finalUrl);
         if (img.protocol === 'https:' || img.protocol === 'http:') image = clip(img.href, 1000);
       } catch { image = undefined; }
     }
@@ -168,12 +222,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       title,
       description,
       image,
-      siteName: clip(meta.get('og:site_name'), 80) || siteOf(current),
+      siteName: clip(meta.get('og:site_name'), 80) || siteOf(page.finalUrl),
     };
     return NextResponse.json({ ok: true, preview }, { headers: { 'cache-control': 'private, max-age=3600' } });
   } catch {
-    // Timeouts, refused connections, bad TLS: no card, and never an error the
-    // composer has to show - a preview is a nicety.
+    // Timeouts, refused connections, refused addresses, bad TLS: no card, and
+    // never an error the composer has to show - a preview is a nicety.
     return NextResponse.json({ ok: false });
   }
 }

@@ -259,7 +259,10 @@ export async function createVolunteerApplication(
         ${input.agreedAdminMediated ?? false}, ${input.consentToScreening ?? false}
       )
       returning *
-    `;
+    `.catch((err: { code?: string }) => {
+      if (err?.code === '23505') throw new Error('You have already applied. We will be in touch about it.');
+      throw err;
+    });
     return toDomain<VolunteerApplication>(rows[0]);
   });
 }

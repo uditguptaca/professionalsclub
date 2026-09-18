@@ -13,8 +13,8 @@ import { useConfirm } from '@/components/portal/confirm';
 
 const PHOTO_OPTIONS: { value: 'all' | 'blurred' | 'on_request'; label: string; desc: string }[] = [
   { value: 'all',        label: 'Visible to approved members', desc: 'Anyone browsing matrimony can see your photos.' },
-  { value: 'blurred',    label: 'Blurred until you allow it',  desc: 'Photos appear blurred until you grant access.' },
-  { value: 'on_request', label: 'On request only',             desc: 'Photos stay hidden. Members have to ask you.' },
+  { value: 'blurred',    label: 'Only after a match',          desc: 'Members see that you have photos; they open once an interest between you is accepted.' },
+  { value: 'on_request', label: 'On request only',             desc: 'Photos stay hidden until you accept an interest. Members can ask you.' },
 ];
 
 export default function MatrimonySettingsPage() {

@@ -39,7 +39,7 @@ function parseTime(text: string | null): [number, number] | null {
 const pad = (n: number) => String(n).padStart(2, '0');
 
 /** RFC 5545 text escaping. */
-const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r\n|\r|\n/g, '\\n');
 
 /** Lines longer than 75 octets are folded with CRLF + space. */
 function fold(line: string): string {

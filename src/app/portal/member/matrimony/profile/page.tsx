@@ -81,7 +81,13 @@ export default function MyProfilePage() {
 
   const status = statusConfig[profile.status] ?? statusConfig.draft;
   const StatusIcon = status.icon;
-  const age = new Date().getFullYear() - new Date(profile.dob).getFullYear();
+  const age = (() => {
+    const b = new Date(profile.dob); const t = new Date();
+    let a = t.getFullYear() - b.getFullYear();
+    const m = t.getMonth() - b.getMonth();
+    if (m < 0 || (m === 0 && t.getDate() < b.getDate())) a--;
+    return a;
+  })();
   const primaryPhoto = media.find(m => m.is_primary) ?? media[0];
   const initials = profile.full_name
     .split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || 'PC';

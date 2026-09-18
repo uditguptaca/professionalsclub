@@ -1,6 +1,7 @@
 'use server';
 
 import * as repo from '@/server/repos/public-content';
+import { allow, clientIp, TOO_MANY } from '@/server/rate-limit';
 
 /**
  * Reads for the public marketing pages.
@@ -51,6 +52,11 @@ function toPublicError(context: string, error: unknown): PublicResult {
   return { ok: false, error: friendly };
 }
 
+/** Public forms take a few submissions per address per hour, not a loop's worth. */
+async function publicQuota(bucket: string): Promise<PublicResult | null> {
+  return allow(bucket, await clientIp(), 8, 60 * 60_000) ? null : { ok: false, error: TOO_MANY };
+}
+
 export async function submitContactMessage(input: {
   name: string;
   email: string;
@@ -62,6 +68,8 @@ export async function submitContactMessage(input: {
     await repo.submitInquiry({ kind: 'contact', ...input });
     return { ok: true };
   } catch (error) {
+  const limited = await publicQuota('submitContactMessage');
+  if (limited) return limited;
     return toPublicError('Sending your message', error);
   }
 }
@@ -78,6 +86,8 @@ export async function submitVolunteerHelpRequest(input: {
     await repo.submitInquiry({ kind: 'volunteer_help', ...input });
     return { ok: true };
   } catch (error) {
+  const limited = await publicQuota('submitVolunteerHelpRequest');
+  if (limited) return limited;
     return toPublicError('Sending your request', error);
   }
 }
@@ -89,6 +99,8 @@ export async function submitBusinessListing(
     await repo.submitBusinessApplication(input);
     return { ok: true };
   } catch (error) {
+  const limited = await publicQuota('submitBusinessListing');
+  if (limited) return limited;
     return toPublicError('Submitting your application', error);
   }
 }

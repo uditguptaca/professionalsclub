@@ -58,8 +58,9 @@ function initialsOf(name: string): string {
 }
 
 function photoOf(card: MatrimonyProfileCard) {
-  if (!card.primary_photo_url || card.photo_visibility === 'on_request') return null;
-  return { url: card.primary_photo_url, blurred: card.photo_visibility === 'blurred' };
+  // The database only sends a photo the viewer may see (0055); nothing to blur.
+  if (!card.primary_photo_url) return null;
+  return { url: card.primary_photo_url, blurred: false };
 }
 
 /** Chip fills are light; the text colour is the one that has to pass at 12px. */

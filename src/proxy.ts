@@ -59,7 +59,12 @@ export async function proxy(request: NextRequest) {
     // Members and admins both land on the member dashboard; the admin layout
     // moves admins on from there. Choosing the destination here would need the
     // profile role, and that lookup belongs in the layout.
-    return signedIn
+    //
+    // A signed-in member the layout just sent HERE (?error=account_inactive: a
+    // suspended account, or one with no profile row) must be allowed to read
+    // the message. Bouncing them back made a loop the browser gave up on.
+    const bounced = request.nextUrl.searchParams.has('error');
+    return signedIn && !bounced
       ? NextResponse.redirect(new URL('/portal/member/dashboard', request.url))
       : NextResponse.next();
   }

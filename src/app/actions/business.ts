@@ -6,7 +6,8 @@ import * as invites from '@/server/repos/business-invites';
 import { setEventRsvp } from '@/server/repos/home';
 import { createBusinessPost, listBusinessPosts, deletePost } from '@/server/repos/community';
 import { recommendBusinesses, type BusinessSuggestion } from '@/server/repos/recommendations';
-import { sanitizeMedia } from '@/server/media';
+import { sanitizeMedia, assertOurImage } from '@/server/media';
+import { siteOrigin } from '@/server/origin';
 import { moderateContent, rejectionMessage } from '@/server/moderation';
 import type { CommunityPost, CommunityMedia } from '@/types';
 
@@ -39,7 +40,10 @@ function fail(context: string, error: unknown): { ok: false; error: string } {
   const detail = error instanceof Error ? error.message : String(error);
   const code = (error as { code?: string } | null)?.code;
   console.error(`[business] ${context}:`, code ?? '', detail);
-  const speakable = !code || code === 'P0002';
+  // A runtime fault carries no code and names internals; it is not speakable.
+  const fault = !(error instanceof Error) || error instanceof TypeError || error instanceof RangeError
+    || error instanceof ReferenceError || error instanceof SyntaxError || /ECONN|ENOTFOUND|fetch failed|getaddrinfo/i.test(detail);
+  const speakable = (!code && !fault) || code === 'P0002';
   return { ok: false, error: speakable ? detail : `${context} failed. Please try again.` };
 }
 
@@ -285,11 +289,9 @@ export async function adminInviteBusinessAction(
   email: string
 ): Promise<ActionResult<{ link: string; invites: invites.BusinessInvite[] }>> {
   return runAdmin('Sending the invitation', async (adminId) => {
-    const { headers } = await import('next/headers');
-    const h = await headers();
-    const host = h.get('x-forwarded-host') ?? h.get('host') ?? 'localhost:3000';
-    const proto = h.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https');
-    const origin = `${proto}://${host}`;
+    // The configured site URL in production: an invitation link carries a
+    // single-use token and must not follow a forged Host header.
+    const origin = await siteOrigin();
 
     const { token } = await invites.createInvite(
       adminId, businessId, email, (t) => `${origin}/business/invite/${t}`

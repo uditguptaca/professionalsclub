@@ -25,6 +25,12 @@ type Props = Omit<ImageProps, 'src' | 'alt'> & {
 export default function ContentImage({ src, alt, label, fill, width, height, style, className, ...rest }: Props) {
   const clean = typeof src === 'string' ? src.trim() : '';
 
+  // next/image refuses a remote host that is not configured, and content
+  // editors paste hosted URLs. A plain <img> shows them instead of throwing.
+  if (/^https?:\/\//i.test(clean)) {
+    return <img src={clean} alt={alt} className={className} style={{ ...(fill ? { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' } : {}), ...style }} loading="lazy" decoding="async" />;
+  }
+
   if (clean.length > 0) {
     return (
       <Image

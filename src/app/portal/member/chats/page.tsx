@@ -8,7 +8,7 @@ import {
   pollThread, sendChatMessage, markChatRead, setTyping,
   respondReferral, registerChatDevice, fetchConversationDevices,
   fetchMissingWraps, backfillMessageWraps,
-  keyBackupStatus, fetchKeyBackup, saveKeyBackup,
+  keyBackupStatus, fetchKeyBackup, saveKeyBackup, discardMessageWrap,
   blockMember, unblockMember, listBlockedMembers, reportMember,
   muteChat, clearChat, getChatSettings, updateChatSettings, reactToMessage,
 } from '@/app/actions/chat';
@@ -514,6 +514,10 @@ export default function MemberChatsPage() {
   // ---- Motion: bubbles that arrived after the thread opened animate in; a
   // double tap hearts a message with a burst, Instagram-style.
   const seenIdsRef = useRef<Set<string> | null>(null);
+  /** Wraps this device already gave up on this session (one discard each). */
+  const discardedRef = useRef<Set<string>>(new Set());
+  /** Devices on MY account this browser has been told about. */
+  const [newDevices, setNewDevices] = useState<ChatDevice[]>([]);
   const lastTapRef = useRef<{ id: string; at: number }>({ id: '', at: 0 });
   const [burst, setBurst] = useState<{ id: string; key: number } | null>(null);
 
@@ -745,7 +749,10 @@ export default function MemberChatsPage() {
 
   const savePin = async () => {
     if (pinBusy) return;
-    if (pin.length < 6) { setPinError('Use at least 6 digits, or a short phrase you will remember.'); return; }
+    if (pin.length < 8) { setPinError('Use at least 8 characters. A short phrase with letters and numbers is much harder to guess than digits alone.'); return; }
+    if (/^(\d)\1+$/.test(pin) || /^(0123|1234|2345|3456|4567|5678|6789|9876|8765|7654|6543|5432|4321|3210)/.test(pin)) {
+      setPinError('That PIN is too easy to guess. Pick something only you would think of.'); return;
+    }
     if (pin !== pin2) { setPinError('The two entries do not match.'); return; }
     setPinBusy(true);
     setPinError('');
@@ -832,6 +839,22 @@ export default function MemberChatsPage() {
         // The device list can grow mid-conversation (the peer opens the app on
         // a new phone), and every seal from here on must include it.
         setDevices(r.data.devices);
+        // A device on MY account this browser has not seen before gets said
+        // out loud: every message from now on is sealed for it too, and if it
+        // is not mine that is the one thing I would want to know.
+        if (currentUserId) {
+          try {
+            const mine = r.data.devices.filter((d) => d.memberId === currentUserId);
+            const knownRaw = localStorage.getItem('pc-known-devices-v1');
+            const known = new Set<string>(knownRaw ? (JSON.parse(knownRaw) as string[]) : []);
+            if (!knownRaw) {
+              localStorage.setItem('pc-known-devices-v1', JSON.stringify(mine.map((d) => d.deviceId)));
+            } else {
+              const unseen = mine.filter((d) => !known.has(d.deviceId) && d.deviceId !== myDeviceId);
+              if (unseen.length) setNewDevices(unseen);
+            }
+          } catch { /* storage unavailable: no notice, no harm */ }
+        }
         // The poll is incremental: r.data.messages holds the whole thread only
         // on the first call after sinceRef was cleared, and just what is new
         // after that. So merge by id onto what we already have - which is also
@@ -882,7 +905,7 @@ export default function MemberChatsPage() {
     // come back, and every encrypted message would sit unreadable until the
     // member switched threads. Re-running clears sinceRef, so the refetch
     // brings the whole thread back WITH this device's wraps.
-  }, [openId, myDeviceId]);
+  }, [openId, myDeviceId, currentUserId]);
 
   // ---- Thread: reset per-thread state when switching threads ----------------
   useEffect(() => {
@@ -940,11 +963,18 @@ export default function MemberChatsPage() {
             senderPublicKeyJwk: byKey,
           })
           : null;
+        // A wrap addressed to this device that will not open is useless to
+        // it and blocks the backfill from writing a good one. Drop it once;
+        // the next poll asks the devices that can read the message to re-wrap.
+        if (out[m.id] === null && m.wrappedKey && byKey && myDeviceId && !discardedRef.current.has(m.id)) {
+          discardedRef.current.add(m.id);
+          void discardMessageWrap(m.id, myDeviceId);
+        }
       }
       if (alive) setPlain((p) => ({ ...p, ...out }));
     })();
     return () => { alive = false; };
-  }, [messages, devices, plain]);
+  }, [messages, devices, plain, myDeviceId]);
 
   // How many messages this device still cannot read; the poll consults it.
   useEffect(() => {
@@ -1458,7 +1488,19 @@ export default function MemberChatsPage() {
       // already holds, for that conversation's devices.
       const c = contentOf(m, text);
       const theirDevices = await fetchConversationDevices(target.id);
-      const sealed = theirDevices.ok ? await sealText(packContent(c.text, c.preview), theirDevices.data) : null;
+      if (!theirDevices.ok) {
+        setMenuError(theirDevices.error);
+        setFwdBusy(null);
+        return;
+      }
+      const sealed = await sealText(packContent(c.text, c.preview), theirDevices.data);
+      // The same rule as send(): when sealing was expected to work and did
+      // not, nothing goes out - a forwarded confidence must not land in plaintext.
+      if (!sealed && theirDevices.data.length > 0 && e2eeAvailable()) {
+        setMenuError('This device could not encrypt the message for that chat, so nothing was sent. Reload and try again.');
+        setFwdBusy(null);
+        return;
+      }
       payload = {
         ...(sealed ?? { body: c.text, ...(c.preview ? { linkPreview: c.preview } : {}) }),
         forwarded: true,
@@ -2409,7 +2451,7 @@ export default function MemberChatsPage() {
                   {readable || !encrypted ? (
                     <>
                       {linkify(content.text, openAttachment, mine ? 'ch-link ch-link--mine' : 'ch-link')}
-                      {content.preview && <LinkCard preview={content.preview} mine={mine} onOpen={openAttachment} />}
+                      {content.preview && <LinkCard preview={isRequest ? { ...content.preview, image: undefined } : content.preview} mine={mine} onOpen={openAttachment} />}
                     </>
                   ) : (
                     <span style={{
@@ -2724,7 +2766,7 @@ export default function MemberChatsPage() {
                   margin: 0, padding: '0 0.9rem 0.6rem', fontSize: '0.72rem',
                   color: 'var(--text-muted)', lineHeight: 1.4,
                 }}>
-                  Photos, videos and files are private but not end-to-end encrypted.
+                  Photos, videos and files are stored as ordinary files: not end-to-end encrypted, and readable by anyone who has their link.
                 </p>
               )}
             </>
@@ -3350,7 +3392,7 @@ export default function MemberChatsPage() {
           fontSize: '0.74rem', lineHeight: 1.45, color: 'var(--text-muted)',
         }}>
           <ShieldCheck size={15} aria-hidden="true" style={{ flexShrink: 0, marginTop: 1, color: 'var(--primary-600)' }} />
-          Messages are end-to-end encrypted. Photos, videos and files are private but not encrypted.
+          Messages are end-to-end encrypted. Photos, videos and files are stored as ordinary files and are not.
         </p>
       </div>
     </div>
@@ -3503,7 +3545,7 @@ export default function MemberChatsPage() {
               autoFocus
               value={pin}
               onChange={(e) => setPin(e.target.value)}
-              placeholder="6+ digits or a short phrase"
+              placeholder="8+ characters, e.g. a short phrase"
             />
           </div>
           {pinSheet === 'set' && (
@@ -3550,6 +3592,33 @@ export default function MemberChatsPage() {
           )}
         </form>
       </div>
+    </div>
+  );
+
+  const newDeviceNotice = newDevices.length > 0 && (
+    <div className="ch-pin-banner" role="alert" style={{ borderColor: 'rgba(240,73,35,0.35)' }}>
+      <ShieldCheck size={18} aria-hidden="true" />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <strong>{newDevices.length === 1 ? 'A new device joined your chats' : `${newDevices.length} new devices joined your chats`}</strong>
+        <small>
+          {newDevices.map((d) => d.deviceId.slice(0, 8)).join(', ')}. From here on your messages are sealed for {newDevices.length === 1 ? 'it' : 'them'} too.
+          If this was not you, change your password now and ask the club to remove the device.
+        </small>
+      </div>
+      <button
+        type="button"
+        className="cm-btn cm-btn--secondary cm-btn--sm"
+        onClick={() => {
+          try {
+            const known = new Set<string>(JSON.parse(localStorage.getItem('pc-known-devices-v1') ?? '[]') as string[]);
+            for (const d of newDevices) known.add(d.deviceId);
+            localStorage.setItem('pc-known-devices-v1', JSON.stringify([...known]));
+          } catch { /* fine */ }
+          setNewDevices([]);
+        }}
+      >
+        That was me
+      </button>
     </div>
   );
 
@@ -3646,6 +3715,7 @@ export default function MemberChatsPage() {
         </div>
       )}
 
+      {newDeviceNotice}
       {pinBanner}
       {isWide ? (
         <div

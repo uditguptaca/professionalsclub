@@ -235,7 +235,7 @@ export default function CommunityPage() {
       setPosts((prev) => {
         const seen = new Set((prev ?? []).map((p) => p.id));
         const merged = [...(prev ?? []), ...r.data.filter((p) => !seen.has(p.id))];
-        if (scopeRef.current === 'all') writeCache('community-feed', merged);
+        if (scopeRef.current === 'all') patchStart({ posts: merged });
         return merged;
       });
       if (r.data.length < PAGE) setFeedEnd(true);

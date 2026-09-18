@@ -144,13 +144,19 @@ export async function matrimonyStart(userId: string): Promise<{
           (select json_agg(md) from public.matrimony_media md
             where md.profile_id = (select id from mine)) as media,
           (select json_agg(t) from (
-            select v.*, i.id as incoming_interest_id
+            select v.*, i.id as incoming_interest_id, m.url as primary_photo_url
               from public.matrimony_visible_profiles v
               left join public.matrimony_interests i
                 on i.sender_profile_id = v.id
                and i.receiver_profile_id = (select id from mine)
                and i.status = 'pending'
+              left join lateral (
+                select url from public.matrimony_media
+                 where profile_id = v.id and type = 'photo' and is_primary = true and is_approved = true
+                 limit 1
+              ) m on true
              where v.id <> (select id from mine)
+               and v.status = 'approved' and v.is_hidden = false
                -- Gender is stored 'Male'/'Female', so compare case-insensitively.
                and lower(v.gender) is distinct from (select lower(gender) from mine)
                and not exists (select 1 from public.matrimony_passes x
@@ -217,11 +223,15 @@ export async function saveProfile(
 ): Promise<MatrimonyProfile> {
   return withUser(userId, async (db) => {
     const existing = await myProfileId(db);
-    const payload = { ...data, ...(status ? { status } : {}) };
+    const payload: Record<string, unknown> = { ...data, ...(status ? { status } : {}) };
+    if (typeof payload.gender === 'string' && payload.gender) {
+      const g = payload.gender.toLowerCase();
+      payload.gender = g.charAt(0).toUpperCase() + g.slice(1);
+    }
 
     // `status` is allowlisted, but the guard_matrimony_profile_fields trigger
-    // still refuses anything beyond draft/pending — a member cannot approve
-    // their own listing.
+    // (before insert AND update since 0055) refuses anything beyond
+    // draft/pending — a member cannot approve their own listing.
     if (existing) {
       const row = await updateRow<MatrimonyProfile>(
         db, 'public.matrimony_profiles', PROFILE_COLUMNS, existing, payload, '*'
@@ -452,9 +462,12 @@ export async function getVisibleProfile(userId: string, profileId: string) {
 
     // Recording the view is best-effort and must not fail the page.
     if (mine && mine !== profileId) {
+      // One row per viewer per day (uq_matrimony_views_daily): the counter
+      // means people, not page loads.
       await db`
         insert into public.matrimony_profile_views (viewer_profile_id, viewed_profile_id)
         values (${mine}::uuid, ${profileId}::uuid)
+        on conflict do nothing
       `;
     }
 
@@ -530,7 +543,14 @@ async function interestsOn(db: Db, mine: string) {
     const cards = new Map<string, MatrimonyProfileCard>();
     if (ids.length > 0) {
       const rows = await db`
-        select * from public.matrimony_visible_profiles where id = any(${[...new Set(ids)]}::uuid[])
+        select v.*, m.url as primary_photo_url
+          from public.matrimony_visible_profiles v
+          left join lateral (
+            select url from public.matrimony_media
+             where profile_id = v.id and type = 'photo' and is_primary = true and is_approved = true
+             limit 1
+          ) m on true
+         where v.id = any(${[...new Set(ids)]}::uuid[])
       `;
       for (const row of normAll<MatrimonyProfileCard>(rows)) cards.set(row.id, row);
     }
@@ -627,8 +647,13 @@ export async function listShortlist(userId: string): Promise<MatrimonyProfileCar
 
 async function shortlistOn(db: Db, mine: string): Promise<MatrimonyProfileCard[]> {
   const rows = await db`
-    select v.* from public.matrimony_visible_profiles v
+    select v.*, m.url as primary_photo_url from public.matrimony_visible_profiles v
       join public.matrimony_shortlists s on s.target_profile_id = v.id
+      left join lateral (
+        select url from public.matrimony_media
+         where profile_id = v.id and type = 'photo' and is_primary = true and is_approved = true
+         limit 1
+      ) m on true
      where s.owner_profile_id = ${mine}::uuid
      order by s.created_at desc
   `;
@@ -757,13 +782,19 @@ export async function deckOn(db: Db, userId: string): Promise<MatrimonyDeckCard[
   {
 
     const rows = await db`
-      select v.*, i.id as incoming_interest_id
+      select v.*, i.id as incoming_interest_id, m.url as primary_photo_url
         from public.matrimony_visible_profiles v
         left join public.matrimony_interests i
           on i.sender_profile_id = v.id
          and i.receiver_profile_id = ${mine}::uuid
          and i.status = 'pending'
+        left join lateral (
+          select url from public.matrimony_media
+           where profile_id = v.id and type = 'photo' and is_primary = true and is_approved = true
+           limit 1
+        ) m on true
        where v.id <> ${mine}::uuid
+         and v.status = 'approved' and v.is_hidden = false
          and lower(v.gender) is distinct from
              (select lower(p.gender) from public.matrimony_profiles p where p.id = ${mine}::uuid)
          and not exists (select 1 from public.matrimony_passes x
@@ -912,7 +943,7 @@ export async function dashboard(userId: string) {
           (select json_agg(t) from (
             select * from public.matrimony_visible_profiles
              where status = 'approved'
-               and gender <> (select gender from mine)
+               and lower(gender) <> (select lower(gender) from mine)
                and user_id <> ${userId}::uuid
              limit 4
           ) t) as recommendations,

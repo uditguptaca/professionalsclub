@@ -230,61 +230,57 @@ export async function drainOutbox(limit = 50): Promise<DrainResult> {
     return { sent: 0, failed: 0, skipped: 0 };
   }
 
-  return withElevated(async (db) => {
-    const rows = (await db`
-      select o.id, o.template, o.payload, o.attempts,
-             coalesce(o.to_address, p.email) as address
-        from public.email_outbox o
-        left join public.profiles p on p.id = o.recipient_id
+  // Claim -> send with NOTHING held -> write back. The provider calls take up
+  // to 15s each; holding one of eight pooled connections across them stalled
+  // every member request behind a slow mail server (see drainPush).
+  type Row = { id: string; template: string; payload: Payload; attempts: number; address: string | null };
+  const rows = await withElevated(async (db) => (await db`
+    with claimed as (
+      select o.id from public.email_outbox o
        where o.status = 'pending' and o.attempts < 3
        order by o.created_at
        limit ${limit}
-    `) as unknown as {
-      id: string; template: string; payload: Payload; attempts: number; address: string | null;
-    }[];
+       for update skip locked
+    )
+    update public.email_outbox o
+       set status = 'sending', attempts = o.attempts + 1
+      from claimed
+     where o.id = claimed.id
+    returning o.id, o.template, o.payload, o.attempts,
+              coalesce(o.to_address, (select p.email from public.profiles p where p.id = o.recipient_id)) as address
+  `) as unknown as Row[]);
 
-    let sent = 0, failed = 0, skipped = 0;
-
-    for (const row of rows) {
-      const rendered = row.address ? renderTemplate(row.template, row.payload ?? {}) : null;
-
-      if (!rendered) {
-        // No address, or a template that no longer exists. Neither is worth
-        // retrying, so park it rather than spin.
-        skipped += 1;
-        await db`
-          update public.email_outbox
-             set status = 'skipped', attempts = attempts + 1,
-                 last_error = ${row.address ? 'Unknown template' : 'No address for recipient'}
-           where id = ${row.id}::uuid
-        `;
-        continue;
-      }
-
-      const outcome = await deliver({ ...rendered, to: row.address! });
-
-      if (outcome.ok) {
-        sent += 1;
-        await db`
-          update public.email_outbox
-             set status = 'sent', sent_at = now(), attempts = attempts + 1, last_error = null
-           where id = ${row.id}::uuid
-        `;
-      } else {
-        failed += 1;
-        const attempts = row.attempts + 1;
-        await db`
-          update public.email_outbox
-             set status = ${attempts >= 3 ? 'failed' : 'pending'},
-                 attempts = ${attempts},
-                 last_error = ${outcome.error.slice(0, 500)}
-           where id = ${row.id}::uuid
-        `;
-      }
+  const results: { id: string; status: 'sent' | 'skipped' | 'failed' | 'pending'; error: string | null }[] = [];
+  for (const row of rows) {
+    const rendered = row.address ? renderTemplate(row.template, row.payload ?? {}) : null;
+    if (!rendered) {
+      // No address, or a template that no longer exists: not worth retrying.
+      results.push({ id: row.id, status: 'skipped', error: row.address ? 'Unknown template' : 'No address for recipient' });
+      continue;
     }
+    const outcome = await deliver({ ...rendered, to: row.address! });
+    if (outcome.ok) results.push({ id: row.id, status: 'sent', error: null });
+    else results.push({ id: row.id, status: row.attempts >= 3 ? 'failed' : 'pending', error: outcome.error.slice(0, 500) });
+  }
 
-    return { sent, failed, skipped };
-  });
+  if (results.length > 0) {
+    await withElevated(async (db) => {
+      await db`
+        update public.email_outbox o
+           set status = r.status,
+               sent_at = case when r.status = 'sent' then now() else o.sent_at end,
+               last_error = r.error
+          from jsonb_to_recordset(${JSON.stringify(results)}::jsonb) as r(id uuid, status text, error text)
+         where o.id = r.id
+      `;
+    });
+  }
+
+  return {
+    sent: results.filter((r) => r.status === 'sent').length,
+    failed: results.filter((r) => r.status === 'failed' || r.status === 'pending').length,
+    skipped: results.filter((r) => r.status === 'skipped').length,
+  };
 }
 
 /** True when real mail can actually go out; shown to admins so it is not a mystery. */

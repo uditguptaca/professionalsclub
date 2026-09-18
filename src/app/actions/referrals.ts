@@ -22,8 +22,13 @@ export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: string
 
 function fail(context: string, error: unknown): { ok: false; error: string } {
   const message = error instanceof Error ? error.message : 'Something went wrong.';
-  console.error(`[referrals] ${context}:`, error);
-  return { ok: false, error: message };
+  const code = (error as { code?: string } | null)?.code;
+  console.error(`[referrals] ${context}:`, code ?? '', message);
+  // A Postgres error names tables, columns and policies; a runtime fault names
+  // internals. Only sentences our own code wrote for the reader pass through.
+  const fault = !(error instanceof Error) || error instanceof TypeError || error instanceof RangeError
+    || error instanceof ReferenceError || error instanceof SyntaxError || /ECONN|ENOTFOUND|fetch failed|getaddrinfo/i.test(message);
+  return { ok: false, error: !code && !fault ? message : `${context} failed. Please try again.` };
 }
 
 async function run<T>(context: string, fn: () => Promise<T>): Promise<ActionResult<T>> {

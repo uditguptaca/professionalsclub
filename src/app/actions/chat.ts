@@ -219,6 +219,10 @@ export async function backfillMessageWraps(conversationId: string, wraps: repo.W
 
 // ---- Chat PIN backup (0054) ---------------------------------------------------
 
+export async function discardMessageWrap(messageId: string, deviceId: string) {
+  return run('Refreshing a message key', (uid) => repo.discardMessageWrap(uid, messageId, deviceId));
+}
+
 export async function keyBackupStatus() {
   return run('Checking your chat backup', (uid) => repo.keyBackupStatus(uid));
 }

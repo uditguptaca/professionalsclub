@@ -569,3 +569,105 @@ Roughly in order of value:
    that will saturate; Neon's pooled endpoint is already in use, but the
    `loadSnapshot` query set is heavy enough to be worth revisiting if the portal
    grows.
+
+---
+
+## Round 2: the September 2026 multi-agent audit
+
+Nine independent reviewers each took one area (auth and routing, RLS and
+migrations, community and moderation, chat and E2EE, matrimony, business and
+uploads, the older core modules and admin, platform and dependencies, and a
+read-only runtime sweep), confirmed each finding against the live database or
+a traced code path, and reported. Everything below was fixed in the same
+change set; the database half is migrations 0055 and 0056.
+
+### Fixed
+
+- **Signup granted curator rights (High).** `create_profile()` copied "I want
+  to volunteer" into `profiles.is_volunteer`, which 0044 had made the privilege
+  behind club events and the public job board. Two real accounts held it that
+  way. The function no longer writes the flag, a new BEFORE INSERT guard pins
+  `is_volunteer`/`role` on every profile insert, and 0056 revoked the flag from
+  the accounts that only had it because of the form.
+- **Members could forge admin notifications (High).** `notify_admins()` and
+  `notify_group_moderators()` were executable by PUBLIC (the same slip 0033
+  fixed for `notify_member`). Revoked; twelve other definer helpers are now
+  granted to `app_authenticated` only, never the anonymous role.
+- **Authors could approve their own held posts (High).** The 0053 update
+  policy admitted the author for whole rows. `moderateItem()` now excludes the
+  author and the owning business in SQL, and `guard_content_moderation` pins
+  `status`/`moderation` for anyone but an admin or the group's moderator.
+- **Private members' posts leaked through the feed and comments (High).** The
+  `can_view_member()` gate applied to the profile and permalink but not to
+  `listFeed`, `listComments` or likes. It applies to all of them now (club
+  broadcasts, group posts and business posts are exempt by design).
+- **A matrimony listing could be born approved (High).** The field guard was
+  BEFORE UPDATE only. It now runs on insert too, pins the verification flags,
+  and normalises gender casing (with a CHECK constraint behind it).
+- **Photo visibility was a CSS blur (High).** Every approved photo URL reached
+  every member. `matrimony_media_select` now requires the owner's setting to be
+  "all" or an accepted interest (`matrimony_photos_visible()`); the browse,
+  deck, likes and shortlist queries carry the primary photo through the same
+  policy; the client blur is gone.
+- **The full legal name was in every matrimony payload (Medium).**
+  `matrimony_visible_profiles` reduces `full_name` per `display_pref` unless the
+  viewer is the owner, an admin or a matched party; interest notifications use
+  the same reduced name.
+- **Link-preview SSRF (High).** IPv4-mapped IPv6 literals passed the filter, and
+  the check and the connection resolved DNS separately. The route now connects
+  through node's `lookup` hook so the address it vetted is the address it
+  dials, admits only global-unicast IPv6, refuses internal hostnames and IP
+  literals before fetching, and is rate limited per member.
+- **A forged link card (High).** A plaintext body starting with U+001E was
+  parsed as an envelope, and the card's URL had no scheme check, so a member
+  could show a card claiming to be Google that opened `javascript:` or an
+  attacker's site. `sanitizePreview()` validates every field and scheme, the
+  site name is always the link's own host, and plaintext bodies have the marker
+  stripped on the server.
+- **Chat key handling (Medium).** A device id is now unique across members; a
+  wrap's `member_id` is bound to the device's owner by trigger; a member's own
+  device may replace a wrap a peer made for it and may discard a wrap it cannot
+  open, so a poisoned wrap is repairable; the sealing device must be the
+  sender's own; forwarding refuses to downgrade to plaintext; a new device on
+  your own account is announced; the chat PIN needs eight characters.
+- **Suspended members kept the matrimony write surface (Medium).**
+  `my_matrimony_profile_id()` is null unless the account is active.
+- **Redirect loop for suspended accounts (High).** The proxy no longer bounces a
+  signed-in member who was sent to `/portal/auth?error=...` by the layout.
+- **A disabled business login 500'd every page (Medium).** `ensureProfile()`
+  recognises a business account whatever its status and never throws.
+- **Platform.** `Permissions-Policy: camera=(self)` (the coupon scanner was
+  denied by our own header); `connect-src` limited to us and Blob storage;
+  `media-src` allows Blob so post videos play; `allowBackup="false"` so the
+  chat private key never leaves the phone through Android Auto Backup;
+  `global-error.tsx`; `referrals.ts` and the other `fail()` helpers mask
+  Postgres and runtime faults; emailed links use the configured site origin,
+  never the Host header; the resume-builder iframe is sandboxed; media URLs are
+  pinned to our own Blob store; Next 16.2.3 -> 16.3.5.
+- **Business and core.** New listings notify admins (the trigger tested a value
+  the column cannot hold); member-owned businesses see their redemptions;
+  listing fields have length limits; business images must be uploads; silent
+  writers check `returning`; the client cache is dropped on sign-out; pending
+  business events no longer notify the city until approved; an RSVP queues one
+  email and one text however often it is toggled; one volunteer application
+  per member; the email and SMS drains no longer hold a pooled connection
+  across provider calls; `loadPortal` requires an active account; a held
+  business post reaches its moderators; the ICS escaper handles a bare CR.
+- **Rate limiting (F14, partly).** `src/server/rate-limit.ts` is an in-process
+  sliding window on verification resends, signups, the public forms and link
+  previews. It is per instance, so the real ceiling is limit x warm instances;
+  Neon Auth's own limits and CAPTCHA remain the proper fix for sign-in.
+
+### Open
+
+- **Transitive advisories.** `better-auth` (via the Neon auth packages) and the
+  Capacitor/xcode tooling carry advisories. The auth flows run on Neon's hosted
+  side and the tooling is dev-only, but the beta auth packages should move to
+  their next release after a sign-in/sign-up/reset regression pass.
+- **Chat attachments** are public Blob URLs, now described honestly in the UI.
+  Signed, session-checked URLs would make them private in fact.
+- **Upload accounting.** The upload token grants the video allowance on the
+  client's word and records no owner; a per-user quota needs a table.
+- **`member_devices.label`/`last_seen_at`** are readable by every member.
+- **Key transparency.** The new-device notice is the cheap step; a fingerprint
+  members can compare out of band is the real one.

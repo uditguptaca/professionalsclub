@@ -352,6 +352,7 @@ export async function listFeed(
        left join public.community_groups g on g.id = p.group_id
        where (p.status = 'active' or (p.status = 'held' and p.author_id = app.current_user_id()))
          and ${scope} ${beforeClause}
+         and ${VIEWABLE_AUTHOR}
        order by p.created_at desc
        limit $${params.length}`,
       params
@@ -359,6 +360,15 @@ export async function listFeed(
     return toDomainAll<CommunityPost>(rows);
   });
 }
+
+/**
+ * A private member's posts are for accepted followers (0051). Every read of
+ * another member's post carries this: the feed, the permalink, the profile,
+ * comments and likes. Club broadcasts, group posts (the group is the audience)
+ * and business posts are exempt.
+ */
+const VIEWABLE_AUTHOR = `(p.author_id is null or p.group_id is not null or p.audience = 'club'
+  or p.author_id = app.current_user_id() or public.can_view_member(p.author_id))`;
 
 /**
  * One member's posts for their profile page (0051). Empty unless
@@ -560,7 +570,10 @@ export async function toggleLike(
   return withUser(userId, async (db) => {
     const inserted = await db`
       insert into public.community_likes (post_id, member_id)
-      values (${postId}::uuid, ${userId}::uuid)
+      select p.id, ${userId}::uuid from public.community_posts p
+       where p.id = ${postId}::uuid and p.status = 'active'
+         and (p.author_id is null or p.group_id is not null or p.audience = 'club'
+              or p.author_id = app.current_user_id() or public.can_view_member(p.author_id))
       on conflict do nothing
       returning post_id
     `;
@@ -587,8 +600,11 @@ export async function listComments(userId: string, postId: string): Promise<Comm
              n.first_name as author_first_name, n.last_name as author_last_name
       from public.community_comments c
       join public.member_names n on n.id = c.author_id
+      join public.community_posts p on p.id = c.post_id
       where c.post_id = ${postId}::uuid
         and (c.status = 'active' or (c.status = 'held' and c.author_id = app.current_user_id()))
+        and (p.author_id is null or p.group_id is not null or p.audience = 'club'
+             or p.author_id = app.current_user_id() or public.can_view_member(p.author_id))
       order by c.created_at asc
     `;
     return toDomainAll<CommunityComment>(rows);
@@ -794,9 +810,17 @@ export async function moderateItem(
 ): Promise<void> {
   await withUser(userId, async (db) => {
     const status = input.action === 'approve' ? 'active' : 'removed';
+    // The author (or the owning business) may own the row under RLS, but they
+    // are not its moderator: the exclusion lives in the statement, not the UI.
     const rows = input.kind === 'post'
-      ? await db`update public.community_posts set status = ${status} where id = ${input.id}::uuid returning id`
-      : await db`update public.community_comments set status = ${status} where id = ${input.id}::uuid returning id`;
+      ? await db`update public.community_posts set status = ${status}
+                  where id = ${input.id}::uuid
+                    and author_id is distinct from ${userId}::uuid
+                    and (business_id is null or not public.owns_business(business_id))
+                  returning id`
+      : await db`update public.community_comments set status = ${status}
+                  where id = ${input.id}::uuid and author_id is distinct from ${userId}::uuid
+                  returning id`;
     if (rows.length === 0) throw new Error('You cannot moderate that.');
   });
 }
@@ -878,26 +902,30 @@ export async function resolveReport(
       'Report not found'
     ) as { target_type: CommunityReportTarget; target_id: string };
 
+    // RLS turns a non-moderator's update into zero rows, silently. Check.
+    const resolved = await db`
+      update public.community_reports
+      set status = ${input.action}, resolved_by = ${adminId}::uuid, resolved_at = now()
+      where id = ${input.reportId}::uuid and status = 'open'
+      returning id
+    `;
+    if (resolved.length === 0) throw new Error('You cannot resolve that report.');
+
     if (input.action === 'actioned') {
-      if (report.target_type === 'post') {
-        await db`
+      const removed = report.target_type === 'post'
+        ? await db`
           update public.community_posts
           set status = 'removed', removed_reason = 'Removed after member report'
           where id = ${report.target_id}::uuid
-        `;
-      } else {
-        await db`
+          returning id
+        `
+        : await db`
           update public.community_comments
           set status = 'removed'
           where id = ${report.target_id}::uuid
+          returning id
         `;
-      }
+      if (removed.length === 0) throw new Error('You cannot remove that content.');
     }
-
-    await db`
-      update public.community_reports
-      set status = ${input.action}, resolved_by = ${adminId}::uuid, resolved_at = now()
-      where id = ${input.reportId}::uuid
-    `;
   });
 }

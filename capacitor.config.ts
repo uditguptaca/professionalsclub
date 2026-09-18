@@ -40,8 +40,8 @@ const config: CapacitorConfig = {
     errorPath: 'error.html',
     androidScheme: 'https',
     allowNavigation: [
-      'localhost',
-      '10.0.2.2',
+      // The two dev origins ride along only in a dev build.
+      ...(process.env.CAP_SERVER_URL ? ['localhost', '10.0.2.2'] : []),
       'professionalsclub.vercel.app',
       'professionalsclub.ca',
       'www.professionalsclub.ca',
