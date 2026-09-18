@@ -249,6 +249,7 @@ export function PostComposer({
           rows={expanded ? 3 : 1}
           maxLength={5000}
           value={body}
+          aria-label={placeholder}
           placeholder={placeholder}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
@@ -320,10 +321,12 @@ export function PostComposer({
         <div className="community-attach">
           <input
             ref={imageInput} type="file" accept="image/jpeg,image/png,image/webp,image/gif"
+            aria-label="Add photos"
             multiple hidden onChange={(e) => { attach(e.target.files, 'image'); e.target.value = ''; }}
           />
           <input
             ref={videoInput} type="file" accept="video/mp4,video/webm,video/quicktime"
+            aria-label="Add a video"
             hidden onChange={(e) => { attach(e.target.files, 'video'); e.target.value = ''; }}
           />
           {/* preventDefault on pointerdown: a tap here must not blur the
@@ -645,6 +648,7 @@ function CommentThread({
           className="community-field"
           maxLength={2000}
           value={body}
+          aria-label="Add a comment"
           placeholder="Add a comment…"
           onChange={(e) => setBody(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } }}

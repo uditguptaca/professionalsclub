@@ -81,7 +81,7 @@ export default function AdminBusinesses() {
 
       {/* Filters */}
       <div className="biz-filter-bar">
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ minWidth: 140 }}>
+        <select aria-label="Filter by status" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ minWidth: 140 }}>
           <option value="">All Statuses</option>
           <option value="verified">Verified</option>
           <option value="pending_review">Pending Review</option>
@@ -89,7 +89,7 @@ export default function AdminBusinesses() {
           <option value="draft">Draft</option>
           <option value="inactive">Inactive</option>
         </select>
-        <select value={catFilter} onChange={e => setCatFilter(e.target.value)} style={{ minWidth: 160 }}>
+        <select aria-label="Filter by category" value={catFilter} onChange={e => setCatFilter(e.target.value)} style={{ minWidth: 160 }}>
           <option value="">All Categories</option>
           {[...new Set(businesses.map(b => b.category))].sort().map(c => <option key={c} value={c}>{c}</option>)}
         </select>

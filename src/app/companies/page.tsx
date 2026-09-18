@@ -52,7 +52,7 @@ export default function CompaniesPage() {
       {/* Hero */}
       <section style={{ position: 'relative', paddingTop: 140, paddingBottom: 100, background: 'var(--text-primary)', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/toronto-skyline.webp" alt="Toronto skyline" fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.2 }} />
+          <Image src="/toronto-skyline.webp" alt="Toronto skyline" priority fill sizes="100vw" style={{ objectFit: 'cover', opacity: 0.2 }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.95), rgba(232,93,4,0.15))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10, maxWidth: 900, textAlign: 'center' }}>

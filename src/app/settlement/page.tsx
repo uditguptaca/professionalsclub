@@ -192,7 +192,7 @@ export default function SettlementPage() {
       {/* Newcomer Checklist — Side-by-Side */}
       <section className="section" style={{ position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
-          <Image src="/study-bg.png" alt="Newcomer Studying Checklist" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
+          <Image src="/settlement-guide.webp" alt="Newcomer Studying Checklist" fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(12,12,14,0.95), rgba(12,12,14,0.85))' }} />
         </div>
         <div className="container" style={{ position: 'relative', zIndex: 10 }}>

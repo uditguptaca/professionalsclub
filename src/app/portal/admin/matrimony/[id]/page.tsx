@@ -305,7 +305,7 @@ export default function AdminReviewProfilePage() {
               {/* Status Select */}
               <div className="input-group">
                 <label>Profile Status</label>
-                <select className="input" value={status} onChange={e => setStatus(e.target.value as any)} required>
+                <select className="input" aria-label="Moderation decision" value={status} onChange={e => setStatus(e.target.value as any)} required>
                   <option value="pending">Pending Review</option>
                   <option value="approved">Approve & Publish</option>
                   <option value="changes_requested">Request Changes</option>
@@ -336,6 +336,7 @@ export default function AdminReviewProfilePage() {
                   className="input"
                   rows={4}
                   value={adminNotes}
+                  aria-label="Admin notes"
                   onChange={e => setAdminNotes(e.target.value)}
                   placeholder="Notes visible only to admins..."
                 />

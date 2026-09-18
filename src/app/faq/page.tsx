@@ -45,7 +45,7 @@ export default function FAQPage() {
         <div className="container" style={{ maxWidth: 1000 }}>
           
           <div style={{ textAlign: 'center', marginBottom: 40 }}>
-            <h1 style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 16 }}>
+            <h1 style={{ fontSize: 'clamp(2rem, 8vw, 3rem)', fontWeight: 900, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 16, overflowWrap: 'anywhere' }}>
               FAQ & Documentation
             </h1>
             <p style={{ fontSize: '1.15rem', color: 'var(--text-secondary)', maxWidth: 600, margin: '0 auto' }}>

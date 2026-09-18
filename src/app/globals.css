@@ -4625,3 +4625,6 @@ tr:last-child td { border-bottom: none; }
     display: none;
   }
 }
+
+/* The public header's sign-in button: a real tap target, whatever .btn-sm says. */
+.nav-cta { min-height: 40px; display: inline-flex; align-items: center; }

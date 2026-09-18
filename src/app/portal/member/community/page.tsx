@@ -7,7 +7,7 @@ import {
   fetchCommunityStart, fetchPersonalFeed, fetchGroupsExplore,
   startGroup, joinCommunityGroup, leaveCommunityGroup,
 } from '@/app/actions/community';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '@/context/app-context';
 import { searchPeople, followMember, unfollowMember, openChat } from '@/app/actions/chat';
 import type { ChatPerson, ChatPeople } from '@/server/repos/chat';
@@ -90,7 +90,14 @@ export default function CommunityPage() {
   const router = useRouter();
   const { profile } = useApp();
   const isAdmin = profile?.role === 'admin';
-  const [tab, setTab] = useState<Tab>('feed');
+  // The tab comes from the URL on the first render (the old /community/groups
+  // route redirects here with ?tab=groups), so the server and first paint
+  // already show the tab that was asked for; afterwards the URL follows the tab.
+  const params = useSearchParams();
+  const [tab, setTab] = useState<Tab>(() => {
+    const asked = params.get('tab');
+    return asked === 'groups' || asked === 'people' ? asked : 'feed';
+  });
   const [toast, setToast] = useState('');
 
   // ---- Feed ---------------------------------------------------------------

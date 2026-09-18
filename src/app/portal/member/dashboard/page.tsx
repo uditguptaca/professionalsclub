@@ -375,7 +375,11 @@ export default function MemberHomePage() {
               <div className="hf-rail">
                 {feed.businesses.map((b) => (
                   <Link key={b.id} href="/portal/member/businesses" className="hf-biz card">
-                    <span className="hf-group-badge hf-biz-badge" aria-hidden="true">{b.logo || b.name.charAt(0)}</span>
+                    <span className="hf-group-badge hf-biz-badge" aria-hidden="true">
+                      {/^(https?:\/\/|\/)/.test(b.logo ?? '')
+                        ? <img src={b.logo as string} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 'inherit', background: '#fff' }} />
+                        : (b.logo || b.name.charAt(0))}
+                    </span>
                     <strong>{b.name}</strong>
                     <small>{[b.category, b.city].filter(Boolean).join(' · ')}</small>
                     {b.memberRateText && (

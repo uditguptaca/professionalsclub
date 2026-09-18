@@ -152,7 +152,7 @@ export default function AdminRequestDetailPage() {
           <div className="card">
             <h3 className="font-bold mb-3">Update Status</h3>
             <div style={{ display: 'flex', gap: 8 }}>
-              <select className="input" style={{ flex: 1 }} value={newStatus} onChange={e => setNewStatus(e.target.value)}>
+              <select className="input" aria-label="New status" style={{ flex: 1 }} value={newStatus} onChange={e => setNewStatus(e.target.value)}>
                 <option value="">Select new status...</option>
                 {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
               </select>
@@ -164,7 +164,7 @@ export default function AdminRequestDetailPage() {
           <div className="card">
             <h3 className="font-bold mb-3" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><MessageSquare size={16} /> Message to Member</h3>
             <div style={{ display: 'flex', gap: 8 }}>
-              <textarea className="input" style={{ flex: 1 }} rows={2} placeholder="Type a message to send to the requester..." value={msgToMember} onChange={e => setMsgToMember(e.target.value)} />
+              <textarea className="input" style={{ flex: 1 }} rows={2} aria-label="Message to the requester" placeholder="Type a message to send to the requester..." value={msgToMember} onChange={e => setMsgToMember(e.target.value)} />
               <button className="btn btn-primary" onClick={handleSendToMember} disabled={!msgToMember.trim() || busy === 'member'} style={{ alignSelf: 'flex-end' }}>
                 {busy === 'member' ? 'Sending…' : <Send size={16} />}
               </button>
@@ -242,7 +242,7 @@ export default function AdminRequestDetailPage() {
               </div>
             ))}
             <div style={{ display: 'flex', gap: 6 }}>
-              <input className="input" style={{ flex: 1, fontSize: '0.82rem' }} placeholder="Add internal note..." value={noteText} onChange={e => setNoteText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') void handleAddNote(); }} />
+              <input className="input" style={{ flex: 1, fontSize: '0.82rem' }} aria-label="Internal note" placeholder="Add internal note..." value={noteText} onChange={e => setNoteText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') void handleAddNote(); }} />
               <button className="btn btn-outline btn-sm" onClick={handleAddNote} disabled={!noteText.trim() || busy === 'note'}>{busy === 'note' ? 'Adding…' : 'Add'}</button>
             </div>
           </div>

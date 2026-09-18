@@ -653,6 +653,16 @@ change set; the database half is migrations 0055 and 0056.
   per member; the email and SMS drains no longer hold a pooled connection
   across provider calls; `loadPortal` requires an active account; a held
   business post reaches its moderators; the ICS escaper handles a bare CR.
+- **Runtime sweep (every portal route, four accounts, phone and desktop).** No
+  crashes, hydration mismatches, duplicate keys, error boundaries or 404s. Fixed
+  from its list: a business logo URL printed as text on the dashboard rail, a
+  missing hero asset on `/settlement`, the portal zoom shrinking every 44px
+  button to 39px (a zoom-compensated floor on `.btn`), Community painting the
+  Feed before jumping to the tab in the URL (the tab is read from
+  `useSearchParams` on the first render), unlabelled inputs in the community
+  composer, the events booking form and three admin screens, the FAQ headline
+  overflowing on a phone, the header sign-in button under 40px, and missing
+  `priority` on five public hero images.
 - **Rate limiting (F14, partly).** `src/server/rate-limit.ts` is an in-process
   sliding window on verification resends, signups, the public forms and link
   previews. It is per instance, so the real ceiling is limit x warm instances;

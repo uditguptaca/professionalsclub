@@ -124,6 +124,10 @@
    ponytail: 16px inputs now paint at 14.1px - if iOS Safari ever auto-zooms
    them on focus, bump those two composers to calc(16px / 0.88). */
 .portal-layout { zoom: 0.88; }
+/* The zoom shrinks every authored min-height with it: a 44px button paints
+   at 39. Buttons get a floor that comes out at 44 after the zoom. !important
+   because dozens of call sites set minHeight: 44 inline, meaning 44 painted. */
+.portal-layout .btn { min-height: calc(44px / 0.88) !important; }
 
 /* The portal keeps a sans for headings. A soft serif is lovely over a hero
    photograph and actively unhelpful above a twelve-column data table. */

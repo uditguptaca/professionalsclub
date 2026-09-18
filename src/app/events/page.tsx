@@ -203,8 +203,9 @@ export default function EventsPage() {
                   <h3 style={{ fontSize: '1.4rem', fontWeight: 800, fontFamily: 'var(--font-display)', margin: 0 }}>Request a Virtual Seat</h3>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Your Name</label>
+                    <label htmlFor="book-name" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Your Name</label>
                     <input
+                      id="book-name"
                       type="text"
                       required
                       placeholder="Enter your name"
@@ -215,8 +216,9 @@ export default function EventsPage() {
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Your Email</label>
+                    <label htmlFor="book-email" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Your Email</label>
                     <input
+                      id="book-email"
                       type="email"
                       required
                       placeholder="you@example.com"
@@ -227,8 +229,9 @@ export default function EventsPage() {
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Select Workshop Topic</label>
+                    <label htmlFor="book-topic" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Select Workshop Topic</label>
                     <select
+                      id="book-topic"
                       value={bookTopic}
                       onChange={e => setBookTopic(e.target.value)}
                       style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none', cursor: 'pointer' }}
