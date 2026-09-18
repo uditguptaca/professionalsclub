@@ -382,6 +382,13 @@ export interface MatrimonyProfileCard {
   primary_photo_url?: string;
 }
 
+/** A browse card plus where I stand with this profile: saved, liked, liked by. */
+export interface MatrimonyBrowseCard extends MatrimonyProfileCard {
+  is_shortlisted?: boolean;
+  my_interest_status?: MatrimonyInterestStatus | null;
+  incoming_interest_id?: string | null;
+}
+
 // ========== SEARCH FILTERS ==========
 export interface MatrimonySearchFilters {
   gender?: MatrimonyGender;

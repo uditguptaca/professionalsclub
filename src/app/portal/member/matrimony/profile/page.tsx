@@ -5,10 +5,11 @@ import { useApp } from '@/context/app-context';
 import { getMyMatrimony } from '@/app/actions/matrimony';
 import type { MatrimonyProfile, MatrimonyPreferences, MatrimonyContact, MatrimonyMedia } from '@/types/matrimony';
 import {
-  ArrowLeft, CheckCircle2, AlertCircle, Clock, XCircle, Edit3, Shield,
-  ChevronRight, Phone, Mail, Heart, BadgeCheck,
+  CheckCircle2, AlertCircle, Clock, XCircle, Edit3, Shield,
+  ChevronRight, Phone, Mail, Heart, BadgeCheck, Eye,
 } from 'lucide-react';
 import PortalLoading from '@/components/portal/PortalLoading';
+import MatrimonyTabs from '@/components/portal/MatrimonyTabs';
 
 /** Moderation state, said plainly. Chips sit on the dark hero, so every
  *  colour here has to read against --green-950. */
@@ -60,8 +61,9 @@ export default function MyProfilePage() {
 
   if (!profile) {
     return (
-      <div className="pp2" style={{ textAlign: 'center', padding: '2.5rem 0' }}>
-        <Heart size={28} aria-hidden="true" style={{ opacity: 0.35, marginBottom: 12 }} />
+      <div className="pp2" style={{ textAlign: 'center', padding: '0 0 2.5rem' }}>
+        <MatrimonyTabs active="profile" />
+        <Heart size={28} aria-hidden="true" style={{ opacity: 0.35, margin: '2rem 0 12px' }} />
         <p style={{ margin: '0 0 1.1rem', fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
           You have not created a matrimony profile yet.
         </p>
@@ -106,18 +108,9 @@ export default function MyProfilePage() {
 
   return (
     <div className="pp2">
+      <MatrimonyTabs active="profile" />
       {/* ---- Hero ---- */}
-      <header className="pp-hero" style={{ paddingTop: 'calc(3.8rem + var(--sat))' }}>
-        <Link
-          href="/portal/member/matrimony"
-          className="pp-chip pp-chip-light"
-          style={{
-            position: 'absolute', top: 'calc(1rem + var(--sat))', left: '1rem',
-            minHeight: 36, padding: '0 0.8rem', textDecoration: 'none',
-          }}
-        >
-          <ArrowLeft size={13} aria-hidden="true" /> Matrimony
-        </Link>
+      <header className="pp-hero">
         <div className="hf-avatar" style={{ margin: '0 auto 0.6rem', overflow: 'hidden' }}>
           {primaryPhoto
             ? <img src={primaryPhoto.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
@@ -154,6 +147,16 @@ export default function MyProfilePage() {
               <span className="pp-row-body"><strong>Edit your profile</strong></span>
               <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
             </Link>
+            {profile.status === 'approved' && !profile.is_hidden && (
+              <Link href={`/portal/member/matrimony/profile/${profile.id}`} className="pp-row">
+                <span className="pp-row-icon"><Eye size={17} aria-hidden="true" /></span>
+                <span className="pp-row-body">
+                  <small>Preview</small>
+                  <strong>See your listing as others do</strong>
+                </span>
+                <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
+              </Link>
+            )}
             <Link href="/portal/member/matrimony/settings" className="pp-row">
               <span className="pp-row-icon"><Shield size={17} aria-hidden="true" /></span>
               <span className="pp-row-body">

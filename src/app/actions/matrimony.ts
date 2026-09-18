@@ -107,6 +107,11 @@ export async function listInterests() {
   return run('Loading interests', (uid) => repo.listInterests(uid));
 }
 
+/** The Likes tab in one call: my listing, interests both ways, shortlist. */
+export async function matrimonyLikesStart() {
+  return run('Loading your likes', (uid) => repo.likesStart(uid));
+}
+
 export async function sendInterest(targetProfileId: string) {
   return run('Sending interest', (uid) => repo.sendInterest(uid, targetProfileId));
 }

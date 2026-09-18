@@ -386,11 +386,23 @@ export async function browsePaged(
     // Fixed expressions chosen by an allowlist, never caller text in the SQL.
     const order = filters.sort_by === 'newest' ? 'v.created_at desc' : 'v.last_active_at desc';
 
+    // Where I stand with each card (saved, liked, liked by) rides along, so the
+    // grid can offer the right button without a call per card. RLS on the
+    // shortlist and interest tables already scopes these to my own rows.
+    values.push(await myProfileId(db));
+    const me = `$${values.length}::uuid`;
+
     // The primary photo is joined here rather than fetched separately, and only
     // when moderation has approved it. count(*) over() is evaluated before the
     // limit, so the page and its total arrive in one round trip.
     const rows = await db.run(
-      `select v.*, m.url as primary_photo_url, count(*) over() as total_count
+      `select v.*, m.url as primary_photo_url, count(*) over() as total_count,
+              exists(select 1 from public.matrimony_shortlists s
+                      where s.owner_profile_id = ${me} and s.target_profile_id = v.id) as is_shortlisted,
+              (select i.status from public.matrimony_interests i
+                where i.sender_profile_id = ${me} and i.receiver_profile_id = v.id limit 1) as my_interest_status,
+              (select i.id from public.matrimony_interests i
+                where i.sender_profile_id = v.id and i.receiver_profile_id = ${me} and i.status = 'pending' limit 1) as incoming_interest_id
          from public.matrimony_visible_profiles v
          left join lateral (
            select url from public.matrimony_media
@@ -419,6 +431,7 @@ export async function getVisibleProfile(userId: string, profileId: string) {
     if (!profile) return null;
 
     const mine = await myProfileId(db);
+    const myOwn = await mineOn(db, userId);
 
     const [prefs, media, shortlisted, interest, contact] = await Promise.all([
       db`select * from public.matrimony_preferences where profile_id = ${profileId}::uuid`,
@@ -453,6 +466,8 @@ export async function getVisibleProfile(userId: string, profileId: string) {
       interest: interest[0] ? norm<MatrimonyInterest>(interest[0]) : null,
       contact: contact[0] ? norm<MatrimonyContact>(contact[0]) : null,
       myProfileId: mine,
+      // Only what the page scores and gates with; my contact row stays out of it.
+      mine: { profile: myOwn.profile, preferences: myOwn.preferences },
     };
   });
 }
@@ -472,7 +487,32 @@ export async function listInterests(userId: string) {
   return withUserRead(userId, async (db) => {
     const mine = await myProfileId(db);
     if (!mine) return { received: [], sent: [] };
+    return interestsOn(db, mine);
+  });
+}
 
+/**
+ * The Likes tab's whole first paint in one round trip: my listing, both
+ * directions of interest, and the shortlist. It used to be three actions in a
+ * row (Next serialises them), four seconds on a phone.
+ */
+export async function likesStart(userId: string): Promise<{
+  mine: { profile: MatrimonyProfile | null; preferences: MatrimonyPreferences | null };
+  received: PopulatedInterest[];
+  sent: PopulatedInterest[];
+  shortlist: MatrimonyProfileCard[];
+}> {
+  return withUserRead(userId, async (db) => {
+    const own = await mineOn(db, userId);
+    const mine = own.profile?.id ?? null;
+    const base = { mine: { profile: own.profile, preferences: own.preferences } };
+    if (!mine) return { ...base, received: [], sent: [], shortlist: [] };
+    const [ints, shortlist] = await Promise.all([interestsOn(db, mine), shortlistOn(db, mine)]);
+    return { ...base, ...ints, shortlist };
+  });
+}
+
+async function interestsOn(db: Db, mine: string) {
     const [received, sent] = await Promise.all([
       db`select id, status, created_at, sender_profile_id, receiver_profile_id
            from public.matrimony_interests
@@ -504,7 +544,6 @@ export async function listInterests(userId: string) {
       received: populate(received, 'sender_profile_id'),
       sent: populate(sent, 'receiver_profile_id'),
     };
-  });
 }
 
 export async function sendInterest(userId: string, targetProfileId: string): Promise<boolean> {
@@ -582,15 +621,18 @@ export async function listShortlist(userId: string): Promise<MatrimonyProfileCar
   return withUserRead(userId, async (db) => {
     const mine = await myProfileId(db);
     if (!mine) return [];
-
-    const rows = await db`
-      select v.* from public.matrimony_visible_profiles v
-        join public.matrimony_shortlists s on s.target_profile_id = v.id
-       where s.owner_profile_id = ${mine}::uuid
-       order by s.created_at desc
-    `;
-    return normAll<MatrimonyProfileCard>(rows);
+    return shortlistOn(db, mine);
   });
+}
+
+async function shortlistOn(db: Db, mine: string): Promise<MatrimonyProfileCard[]> {
+  const rows = await db`
+    select v.* from public.matrimony_visible_profiles v
+      join public.matrimony_shortlists s on s.target_profile_id = v.id
+     where s.owner_profile_id = ${mine}::uuid
+     order by s.created_at desc
+  `;
+  return normAll<MatrimonyProfileCard>(rows);
 }
 
 export async function addToShortlist(userId: string, targetProfileId: string): Promise<void> {

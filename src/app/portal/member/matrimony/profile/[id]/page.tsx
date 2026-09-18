@@ -4,15 +4,16 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useApp } from '@/context/app-context';
 import {
-  getProfileDetail, getMyMatrimony, addToShortlist, removeFromShortlist,
+  getProfileDetail, addToShortlist, removeFromShortlist,
   sendInterest, respondToInterest, reportProfile, blockProfile, requestPhotoAccess,
 } from '@/app/actions/matrimony';
+import { openChat } from '@/app/actions/chat';
 import type { MatrimonyProfile, MatrimonyPreferences, MatrimonyContact, MatrimonyMedia } from '@/types/matrimony';
 import { computeMatchScore } from '@/lib/matrimony/matching';
 import {
-  User, Heart, ArrowLeft, CheckCircle2, AlertCircle, XCircle,
+  User, Heart, CheckCircle2, AlertCircle, XCircle,
   Phone, Mail, Shield, ShieldAlert, Sparkles, BadgeCheck, ChevronRight,
-  Bookmark, Send, MessageCircle, Image as ImageIcon, X, Check,
+  Bookmark, Send, MessageCircle, Image as ImageIcon, X, Check, Eye,
 } from 'lucide-react';
 import PortalLoading from '@/components/portal/PortalLoading';
 import { useConfirm } from '@/components/portal/confirm';
@@ -47,6 +48,9 @@ export default function CandidateProfilePage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [toast, setToast] = useState('');
+  const [photoIdx, setPhotoIdx] = useState(0);
+  const [zoom, setZoom] = useState(false);
+  const [opening, setOpening] = useState(false);
 
   // Photo access request
   const [photoRequesting, setPhotoRequesting] = useState(false);
@@ -69,7 +73,9 @@ export default function CandidateProfilePage() {
     // The contact row comes back only when an interest between the two reached
     // 'accepted' — that is the RLS policy on matrimony_contacts deciding, not a
     // condition in this component, so a tampered client cannot reveal it.
-    const [detail, mine] = await Promise.all([getProfileDetail(id as string), getMyMatrimony()]);
+    // One action: the listing, its media and where we stand, plus my own
+    // listing and preferences for the score and the buttons.
+    const detail = await getProfileDetail(id as string);
 
     if (!detail.ok || !detail.data) {
       if (!detail.ok) setActionError(detail.error);
@@ -84,9 +90,9 @@ export default function CandidateProfilePage() {
     setIsShortlisted(d.isShortlisted);
     setCandidateContact(d.contact);
 
-    if (mine.ok && mine.data.profile) {
-      setMyProfile(mine.data.profile);
-      setMyPrefs(mine.data.preferences);
+    if (d.mine?.profile) {
+      setMyProfile(d.mine.profile);
+      setMyPrefs(d.mine.preferences);
     }
 
     const myId = d.myProfileId;
@@ -262,6 +268,15 @@ export default function CandidateProfilePage() {
     setActionLoading(false);
   };
 
+  /** A match chats in the member hub; land IN the thread, not on the list. */
+  const openThread = async () => {
+    if (!profile || opening) return;
+    setOpening(true);
+    const r = await openChat(profile.user_id);
+    if (r.ok) router.push(`/portal/member/chats?c=${r.data}`);
+    else { setActionError(r.error); setOpening(false); }
+  };
+
   if (loading) {
     return (
       <PortalLoading label="Loading profile details" />
@@ -302,6 +317,9 @@ export default function CandidateProfilePage() {
   /* The server already applied the visibility and approval rules to this list,
      so whatever arrived is safe to show. */
   const primaryPhoto = media.find(m => m.is_primary) ?? media[0];
+  const isMe = profile.user_id === currentUserId;
+  const photos = media.filter((m) => m.type === 'photo');
+  const shown = photos[Math.min(photoIdx, Math.max(photos.length - 1, 0))] ?? null;
 
   /** One value row. Missing values are dropped rather than shown as "N/A". */
   const infoRow = (label: string, value?: string | null, capitalize = false) => {
@@ -344,27 +362,18 @@ export default function CandidateProfilePage() {
   );
 
   return (
-    <div className="pp2">
+    <div className="pp2 mt-detail">
       {/* ---- Hero ---- */}
-      <header className="pp-hero" style={{ paddingTop: 'calc(3.8rem + var(--sat))' }}>
-        <Link
-          href="/portal/member/matrimony/browse"
-          className="pp-chip pp-chip-light"
-          style={{
-            position: 'absolute', top: 'calc(1rem + var(--sat))', left: '1rem',
-            minHeight: 36, padding: '0 0.8rem', textDecoration: 'none',
-          }}
-        >
-          <ArrowLeft size={13} aria-hidden="true" /> Browse
-        </Link>
-
-        <div className="hf-avatar" style={{ margin: '0 auto 0.6rem', overflow: 'hidden' }}>
-          {blurPhotos
-            ? <span style={{ filter: 'blur(7px)', fontSize: '1.15rem', fontWeight: 800 }} aria-hidden="true">{initials}</span>
-            : primaryPhoto
-              ? <img src={primaryPhoto.url} alt={`Photo of ${displayName}`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-              : initials}
-        </div>
+      <header className="pp-hero">
+        {photos.length === 0 && (
+          <div className="hf-avatar" style={{ margin: '0 auto 0.6rem', overflow: 'hidden' }}>
+            {blurPhotos
+              ? <span style={{ filter: 'blur(7px)', fontSize: '1.15rem', fontWeight: 800 }} aria-hidden="true">{initials}</span>
+              : primaryPhoto
+                ? <img src={primaryPhoto.url} alt={`Photo of ${displayName}`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                : initials}
+          </div>
+        )}
         <h1>{displayName}</h1>
         <p>
           {age} · {[profile.city, profile.province].filter(Boolean).join(', ')}
@@ -388,8 +397,37 @@ export default function CandidateProfilePage() {
         </div>
       </header>
 
-      {/* ---- Interest actions ---- */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: '0.9rem' }}>
+      {/* ---- Photos: the thing a matrimony profile is opened for ---- */}
+      {photos.length > 0 && shown && (
+        <div className="mt-gallery">
+          <button
+            type="button"
+            className="mt-gallery-main"
+            onClick={() => { if (!blurPhotos) setZoom(true); }}
+            aria-label={blurPhotos ? 'Photos are blurred until an interest is accepted' : `Open photo ${photoIdx + 1} of ${photos.length}`}
+          >
+            <img src={shown.url} alt={`Photo of ${displayName}`} className={blurPhotos ? 'is-blurred' : ''} decoding="async" />
+            {photos.length > 1 && <span className="mt-gallery-count">{photoIdx + 1} / {photos.length}</span>}
+          </button>
+          {photos.length > 1 && (
+            <div className="mt-thumbs" role="tablist" aria-label="Photos">
+              {photos.map((p, i) => (
+                <button key={p.id} type="button" role="tab" aria-selected={i === photoIdx} aria-current={i === photoIdx} aria-label={`Photo ${i + 1}`} onClick={() => setPhotoIdx(i)}>
+                  <img src={p.url} alt="" loading="lazy" decoding="async" style={blurPhotos ? { filter: 'blur(8px)' } : undefined} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {isMe && (
+        <p className="mt-me"><Eye size={15} aria-hidden="true" /> This is your listing as other members see it.</p>
+      )}
+
+      {/* ---- Interest actions: fixed above the tab bar on a phone ---- */}
+      {!isMe && (
+      <div className="mt-actionbar">
         {interestStatus === 'none' && (
           <button
             type="button"
@@ -435,13 +473,15 @@ export default function CandidateProfilePage() {
         )}
 
         {interestStatus === 'accepted' && (
-          <Link
-            href="/portal/member/chats"
+          <button
+            type="button"
             className="btn btn-primary"
-            style={{ flex: 1, minWidth: 170, minHeight: 44, textDecoration: 'none' }}
+            onClick={() => void openThread()}
+            disabled={opening}
+            style={{ flex: 1, minWidth: 170, minHeight: 44 }}
           >
-            <MessageCircle size={16} aria-hidden="true" /> Message
-          </Link>
+            <MessageCircle size={16} aria-hidden="true" /> {opening ? 'Opening…' : 'Message'}
+          </button>
         )}
 
         {interestStatus === 'declined' && (
@@ -455,8 +495,9 @@ export default function CandidateProfilePage() {
 
         {shortlistButton}
       </div>
+      )}
 
-      {profile.photo_visibility === 'on_request' && interestStatus !== 'accepted' && (
+      {!isMe && profile.photo_visibility === 'on_request' && interestStatus !== 'accepted' && (
         <button
           type="button"
           className="btn btn-outline"
@@ -597,6 +638,7 @@ export default function CandidateProfilePage() {
         ])}
 
         {/* ---- Safety ---- */}
+        {!isMe && (
         <section className="pp-group">
           <h2>Safety</h2>
           <p className="pp-group-sub">
@@ -615,7 +657,15 @@ export default function CandidateProfilePage() {
             </button>
           </div>
         </section>
+        )}
       </div>
+
+      {zoom && shown && (
+        <div className="mt-lightbox" role="dialog" aria-modal="true" aria-label={`Photo of ${displayName}`} onClick={() => setZoom(false)}>
+          <img src={shown.url} alt={`Photo of ${displayName}`} />
+          <button type="button" aria-label="Close" onClick={() => setZoom(false)}><X size={20} aria-hidden="true" /></button>
+        </div>
+      )}
 
       {/* ---- Report sheet ---- */}
       {reportOpen && (

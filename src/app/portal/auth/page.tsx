@@ -3,7 +3,7 @@ import React, { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { authClient } from '@/lib/auth/client';
-import { Shield, LogIn, AlertCircle, MailWarning } from 'lucide-react';
+import { Shield, LogIn, AlertCircle, MailWarning, Store } from 'lucide-react';
 import ResendVerification from '@/components/portal/ResendVerification';
 import { readAuthError, authErrorMessage, isUnverifiedEmail } from '@/lib/auth/errors';
 
@@ -150,11 +150,25 @@ function AuthForm() {
               Don&apos;t have an account?{' '}
               <Link href="/portal/signup" style={{ color: 'var(--text-accent)', fontWeight: 600 }}>Sign up as Member</Link>
             </div>
-            <div style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Run a business with the club?{' '}
-              <Link href="/business/login" style={{ color: 'var(--text-accent)', fontWeight: 600 }}>Business sign-in</Link>
-            </div>
           </form>
+
+          {/* The business console has its own door. A footnote link was missed on
+              phones and desktops alike; this is a button people can see. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '18px 0 12px', color: 'var(--text-muted)', fontSize: '0.76rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <span aria-hidden="true" style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
+            or
+            <span aria-hidden="true" style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
+          </div>
+          <Link
+            href="/business/login"
+            className="btn btn-outline"
+            style={{ width: '100%', justifyContent: 'center', minHeight: 48, textDecoration: 'none' }}
+          >
+            <Store size={17} aria-hidden="true" /> Sign in as a business
+          </Link>
+          <p style={{ margin: '8px 0 0', textAlign: 'center', fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+            For businesses listed with the club: offers, events and coupon scanning.
+          </p>
         </div>
 
         <div style={{ marginTop: 32, padding: '16px 20px', borderRadius: 12, background: 'rgba(232, 93, 4, 0.05)', border: '1px solid rgba(232, 93, 4, 0.15)', textAlign: 'center' }}>

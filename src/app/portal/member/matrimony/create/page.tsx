@@ -548,8 +548,10 @@ export default function MatrimonyCreatePage() {
   }
 
   // ── Render ─────────────────────────────────────────────
+  // No fade class on this wrapper: its transform would become the containing
+  // block of the fixed footer bar and pin it to the page instead of the screen.
   return (
-    <div style={{ maxWidth: 880, margin: '0 auto', padding: '0 16px 60px' }} className="animate-fade-in">
+    <div style={{ maxWidth: 880, margin: '0 auto', padding: '0 16px 60px' }} className="mt-wizard">
       {/* ──── Header ──── */}
       <div style={{ marginBottom: 32 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
@@ -681,8 +683,8 @@ export default function MatrimonyCreatePage() {
         {step === 7 && <StepPreferences data={data} set={set} toggleMulti={toggleMulti} errors={errors} />}
       </div>
 
-      {/* ──── Navigation Footer ──── */}
-      <div style={{
+      {/* ──── Navigation Footer: fixed above the tab bar on phones (.mt-wizard-bar) ──── */}
+      <div className="mt-wizard-bar" style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         marginTop: 24, gap: 12, flexWrap: 'wrap',
       }}>

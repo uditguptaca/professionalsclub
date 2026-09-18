@@ -1,12 +1,11 @@
 'use client';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { openChat } from '@/app/actions/chat';
 import { useApp } from '@/context/app-context';
 import {
-  getMyMatrimony, listInterests, respondToInterest, listShortlist,
-  removeFromShortlist, swipeRight,
+  matrimonyLikesStart, respondToInterest, removeFromShortlist, swipeRight,
 } from '@/app/actions/matrimony';
 import type { MatrimonyProfile, MatrimonyProfileCard } from '@/types/matrimony';
 import MatrimonyTabs from '@/components/portal/MatrimonyTabs';
@@ -83,6 +82,7 @@ export default function MatrimonyLikesPage() {
   const { currentUserId } = useApp();
   const confirm = useConfirm();
   const router = useRouter();
+  const params = useSearchParams();
   const [opening, setOpening] = useState<string | null>(null);
 
   /** Matrimony matches chat in the member hub; the thread is created on demand
@@ -105,29 +105,27 @@ export default function MatrimonyLikesPage() {
   const [toast, setToast] = useState('');
   const [matched, setMatched] = useState<{ name: string; conversationId: string | null } | null>(null);
 
+  // One round trip for the whole tab (it was three, one after another).
   const reload = useCallback(async () => {
-    const [ints, saved] = [await listInterests(), await listShortlist()];
-    if (ints.ok) {
-      setReceived(ints.data.received as unknown as PopulatedInterest[]);
-      setSent(ints.data.sent as unknown as PopulatedInterest[]);
-    } else setError(ints.error);
-    if (saved.ok) setShortlist(saved.data);
-    else setError(saved.error);
+    const r = await matrimonyLikesStart();
+    if (!r.ok) { setError(r.error); return; }
+    setMine(r.data.mine.profile);
+    setReceived(r.data.received as unknown as PopulatedInterest[]);
+    setSent(r.data.sent as unknown as PopulatedInterest[]);
+    setShortlist(r.data.shortlist);
   }, []);
 
   useEffect(() => {
-    async function load() {
-      if (!currentUserId) { setLoading(false); return; }
-      const me = await getMyMatrimony();
-      if (!me.ok) { setError(me.error); setLoading(false); return; }
-      if (me.data.profile) {
-        setMine(me.data.profile);
-        await reload();
-      }
-      setLoading(false);
-    }
-    load();
+    if (!currentUserId) { setLoading(false); return; }
+    void reload().finally(() => setLoading(false));
   }, [currentUserId, reload]);
+
+  // The old Shortlist page lands here with ?lane=shortlist. Read through the
+  // router, not window.location, which lags a client-side redirect.
+  useEffect(() => {
+    const asked = params.get('lane');
+    if (asked === 'shortlist' || asked === 'sent' || asked === 'received') setLane(asked);
+  }, [params]);
 
   useEffect(() => {
     if (!toast) return;
@@ -341,7 +339,7 @@ export default function MatrimonyLikesPage() {
 
   return (
     <div className="pp2">
-      <MatrimonyTabs active="likes" />
+      <MatrimonyTabs active="likes" likes={pendingReceived.length} />
 
       <header style={{ marginBottom: '0.9rem' }}>
         <h1
@@ -536,13 +534,12 @@ export default function MatrimonyLikesPage() {
         )
       )}
 
-      {/* Matches has no tab of its own; without this it is only reachable by URL. */}
       <div className="pp-group-card" style={{ marginTop: '1.2rem' }}>
-        <Link href="/portal/member/matrimony/matches" className="pp-row">
+        <Link href="/portal/member/matrimony/browse?sort=best_match" className="pp-row">
           <span className="pp-row-icon"><Sparkles size={17} /></span>
           <span className="pp-row-body">
-            <small>Another way in</small>
-            <strong>Profiles ranked against your preferences</strong>
+            <small>Looking for more?</small>
+            <strong>Browse everyone, best match first</strong>
           </span>
           <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
         </Link>

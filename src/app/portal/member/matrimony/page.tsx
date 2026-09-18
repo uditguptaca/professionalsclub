@@ -10,7 +10,7 @@ import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
 import MatrimonyTabs from '@/components/portal/MatrimonyTabs';
 import PortalLoading from '@/components/portal/PortalLoading';
 import {
-  Heart, X, Star, RotateCcw, SlidersHorizontal, BadgeCheck, AlertCircle,
+  Heart, X, Star, RotateCcw, BadgeCheck, AlertCircle,
   Check, Sparkles, ShieldCheck, Lock, Plus, Info, Users, Search, MessageCircle,
 } from 'lucide-react';
 
@@ -350,18 +350,11 @@ export default function MatrimonyDiscoverPage() {
               ? <><strong style={{ color: 'var(--text-accent)' }}>{likesYou} already like you</strong> · {deck.length} to see</>
               : `${deck.length} ${deck.length === 1 ? 'profile' : 'profiles'} to see`}
         </p>
-        <Link
-          href="/portal/member/matrimony/browse"
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 7, flexShrink: 0,
-            minHeight: 44, padding: '0 14px', borderRadius: 999,
-            border: '1px solid rgba(27,67,50,0.08)', background: 'var(--bg-primary)',
-            color: 'var(--text-primary)', textDecoration: 'none',
-            fontSize: '0.84rem', fontWeight: 700,
-          }}
-        >
-          <SlidersHorizontal size={15} aria-hidden="true" /> Filters
-        </Link>
+        {lastPassed && (
+          <button type="button" onClick={handleUndo} disabled={busy} className="cm-btn cm-btn--ghost cm-btn--sm" style={{ flexShrink: 0 }}>
+            <RotateCcw size={14} aria-hidden="true" /> Undo
+          </button>
+        )}
       </div>
 
       {pending && (
