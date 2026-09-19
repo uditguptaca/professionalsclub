@@ -1,5 +1,6 @@
 import 'server-only';
 import { withUser, one } from '@/server/db';
+import { deleteUploads } from '@/server/media';
 import type { MatrimonyMedia } from '@/types/matrimony';
 
 /**
@@ -47,13 +48,14 @@ export async function addPhoto(userId: string, url: string): Promise<MatrimonyMe
 }
 
 export async function removePhoto(userId: string, mediaId: string): Promise<void> {
-  await withUser(userId, async (db) => {
+  const removed = await withUser(userId, async (db) => {
     // my_matrimony_profile_id() in the predicate rather than a fetched id: it is
     // what the delete policy checks anyway, and it saves a round trip.
-    await db`
+    const gone = await db<{ url: string }>`
       delete from public.matrimony_media
        where id = ${mediaId}::uuid
          and profile_id = public.my_matrimony_profile_id()
+      returning url
     `;
 
     // Browse joins the primary photo only, so a listing whose primary was just
@@ -75,5 +77,7 @@ export async function removePhoto(userId: string, mediaId: string): Promise<void
                   and type = 'photo' and is_primary
              )
     `;
+    return gone.map((r) => r.url);
   });
+  deleteUploads(removed);
 }

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { cronAuthorised } from '@/server/cron-auth';
 import { drainPush } from '@/server/push/drain';
 import { pushPendingCount } from '@/server/repos/push';
 
@@ -25,14 +26,9 @@ import { pushPendingCount } from '@/server/repos/push';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
-function authorised(request: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  return request.headers.get('authorization') === `Bearer ${secret}`;
-}
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  if (!authorised(request)) {
+  if (!cronAuthorised(request)) {
     return NextResponse.json({ error: 'Not authorised' }, { status: 401 });
   }
 

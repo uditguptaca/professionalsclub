@@ -141,7 +141,7 @@ function AskHelpForm() {
 
             {/* Right Column - Request form */}
             <div style={{ background: 'white', border: '1px solid var(--border-color)', borderRadius: 24, padding: 40, boxShadow: 'var(--shadow-sm)' }}>
-              <h2 style={{ fontSize: '1.8rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 8 }}>Ask for Help</h2>
+              <h1 style={{ fontSize: '1.8rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 8 }}>Ask for Help</h1>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 32 }}>
                 Describe your inquiry or request. The admin team receives it and routes it to a volunteer.
               </p>
@@ -249,7 +249,7 @@ function AskHelpForm() {
             <div style={{ color: '#04724d', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
               <CheckCircle2 size={64} style={{ color: 'var(--success-400)' }} />
             </div>
-            <h2 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 12 }}>Request received</h2>
+            <h1 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-display)', marginBottom: 12 }}>Request received</h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: 1.6, marginBottom: 32 }}>
               Thank you, <strong>{name}</strong>. The admin team has your request about <strong>{category}</strong> and will route it to a volunteer who can help.
               {selectedVolunteer ? <> We have noted that you asked for <strong>{selectedVolunteer.name}</strong>; the team may connect you with another volunteer with similar experience.</> : null}

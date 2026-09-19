@@ -87,7 +87,9 @@ export async function mineOn(db: Db, userId: string): Promise<MyMatrimonyData> {
           select * from public.matrimony_profiles where user_id = ${userId}::uuid
         )
         select
-          (select to_json(m) from mine m) as profile,
+          -- The reviewer's notes are about the member, not for them (F8 again,
+          -- matrimony edition). rejection_reason stays: it is owed to them.
+          (select to_jsonb(m) - 'admin_notes' - 'reviewed_by' - 'reviewed_at' from mine m) as profile,
           (select to_json(p) from public.matrimony_preferences p
             where p.profile_id = (select id from mine)) as preferences,
           (select to_json(c) from public.matrimony_contacts c
@@ -136,7 +138,7 @@ export async function matrimonyStart(userId: string): Promise<{
           select * from public.matrimony_profiles where user_id = ${userId}::uuid
         )
         select
-          (select to_json(m) from mine m) as profile,
+          (select to_jsonb(m) - 'admin_notes' - 'reviewed_by' - 'reviewed_at' from mine m) as profile,
           (select to_json(p) from public.matrimony_preferences p
             where p.profile_id = (select id from mine)) as preferences,
           (select to_json(c) from public.matrimony_contacts c
@@ -920,7 +922,7 @@ export async function dashboard(userId: string) {
           select * from public.matrimony_profiles where user_id = ${userId}::uuid
         )
         select
-          (select to_json(m) from mine m) as profile,
+          (select to_jsonb(m) - 'admin_notes' - 'reviewed_by' - 'reviewed_at' from mine m) as profile,
           json_build_object(
             'received',    (select count(*) from public.matrimony_interests where receiver_profile_id = (select id from mine)),
             'sent',        (select count(*) from public.matrimony_interests where sender_profile_id   = (select id from mine)),

@@ -540,7 +540,7 @@ export default async function Home() {
                         <h3 style={{ margin: '0.3rem 0 0.4rem' }}>{biz.name}</h3>
                         <p>{biz.descriptionShort}</p>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '0.9rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)' }}>
-                          <MapPin size={12} /> {biz.city} &middot; {biz.yearsInBusiness} yrs
+                          <MapPin size={12} /> {biz.city}{biz.yearsInBusiness != null && <> &middot; {biz.yearsInBusiness} yrs</>}
                         </span>
                       </span>
                     </Link>

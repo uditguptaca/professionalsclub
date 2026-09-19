@@ -1,5 +1,5 @@
 import 'server-only';
-import { assertOurImage } from '@/server/media';
+import { assertOurImage, assertHttpUrl, assertEventLinks, deleteUploads } from '@/server/media';
 import { withUser, withUserRead } from '@/server/db';
 import { insertRow, updateRow, type ColumnMap } from '@/server/query';
 // One definition of what an event is, shared with the curator screens: the
@@ -277,6 +277,7 @@ export async function registerBusiness(
   if (!data.name?.trim()) throw new Error('Business name is required');
   if (!data.category?.trim()) throw new Error('Pick a category');
   if (!data.city?.trim()) throw new Error('Pick a city');
+  assertHttpUrl(data.website, 'website');
 
   return withUser(userId, async (db) => {
     const existing = await db.run<{ id: string }>(
@@ -321,10 +322,21 @@ export async function updateMyBusiness(
   // Pictures come from our own storage, like every other image members see.
   assertOurImage(data.logo, 'logo');
   assertOurImage(data.coverImage, 'cover image');
-  await withUser(userId, async (db) => {
+  assertHttpUrl(data.website, 'website');
+  const replaced = await withUser(userId, async (db) => {
+    const before = await db<{ logo: string | null; cover_image: string | null }>`
+      select logo, cover_image from public.businesses where id = ${businessId}::uuid
+    `;
     const row = await updateRow(db, 'public.businesses', BUSINESS_OWNER_WRITABLE, businessId, data, 'id');
     if (!row) throw new Error('That business is not yours to edit.');
+    // A replaced picture is a file nobody references any more.
+    const old = before[0];
+    return [
+      'logo' in data && old?.logo && old.logo !== data.logo ? old.logo : null,
+      'coverImage' in data && old?.cover_image && old.cover_image !== data.coverImage ? old.cover_image : null,
+    ];
   });
+  deleteUploads(replaced);
 }
 
 // ---- Offers -----------------------------------------------------------------
@@ -377,6 +389,9 @@ export async function createBusinessEvent(
   if (data.eventType !== 'virtual' && !String(data.location ?? '').trim()) {
     throw new Error('Location is required');
   }
+  // Pictures from our store, links that are links: an event page is a place a
+  // business owner could otherwise plant a tracking pixel or a javascript: href.
+  assertEventLinks(data);
   await withUser(userId, async (db) => {
     await insertRow(
       db, 'public.events',
@@ -392,6 +407,7 @@ export async function updateBusinessEvent(
   eventId: string,
   data: Record<string, unknown>
 ): Promise<void> {
+  assertEventLinks(data);
   await withUser(userId, async (db) => {
     await updateRow(db, 'public.events', EVENT_OWNER_WRITABLE, eventId, data, 'id');
   });

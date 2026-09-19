@@ -228,11 +228,11 @@ export default function SignupPage() {
         <div className="onboarding-container">
           <div className="onboarding-card" style={{ textAlign: 'center', padding: 'clamp(24px, 7vw, 48px)' }}>
             <Mail size={48} style={{ color: 'var(--text-accent)', marginBottom: 16 }} />
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: 12 }}>Confirm your email</h2>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: 12 }}>Confirm your email</h1>
             <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440, margin: '0 auto 20px' }}>
-              We sent a confirmation link to <strong>{email}</strong>. Open it to activate your
-              account — everything you filled in has already been saved, so there is nothing to
-              redo.
+              If <strong>{email}</strong> is new to us, a confirmation link is on its way. Open it to
+              activate your account; what you filled in is kept. Already have an account with this
+              address? Sign in, or reset your password, instead of waiting for a link that will not come.
             </p>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', maxWidth: 440, margin: '0 auto 24px' }}>
               Nothing arrived? Check your spam folder first, then resend below.
@@ -315,7 +315,7 @@ export default function SignupPage() {
           {step === 1 && (
             <div className="onboarding-step-content animate-fade-in">
               <div className="step-header">
-                <h2>Create Your Account</h2>
+                <h1>Create Your Account</h1>
                 <p>Set up your login details to get started with Professionals Club.</p>
               </div>
 
@@ -372,7 +372,7 @@ export default function SignupPage() {
           {step === 2 && (
             <div className="onboarding-step-content animate-fade-in">
               <div className="step-header">
-                <h2>Your Basic Profile</h2>
+                <h1>Your Basic Profile</h1>
                 <p>Tell us a bit about yourself so we can personalize your experience.</p>
               </div>
 

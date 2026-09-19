@@ -28,18 +28,19 @@ export const auth = createNeonAuth({
     secret: required('NEON_AUTH_COOKIE_SECRET'),
     /**
      * The signed session-data cookie defaults to a 5-minute TTL, so almost
-     * every page load and Server Action asked the auth service to re-validate.
+     * every page load and Server Action asked the auth service to re-validate
+     * (it was raised to an hour once; see the ceiling note).
      * Each of those calls is a chance to fail, and a failure reads as "signed
      * out" (see the proxy) - which on a phone is a member typing their password
      * again. An hour of cache turns that from a per-request dice roll into a
      * per-hour one, and lets the app ride out short connectivity gaps.
      *
-     * Ceiling: a session revoked elsewhere stays usable here for up to an hour.
-     * That is acceptable because it only buys a stale SESSION - role and
-     * account_status are re-read from profiles on every query and enforced by
-     * RLS underneath, so a demoted or suspended member loses access immediately
-     * regardless. Lower this if revocation latency ever matters more.
+     * Ceiling: a session revoked elsewhere (sign-out, password reset, an admin
+     * killing it) stays usable here for this long. Round 3 measured the
+     * previous hour: a copied cookie pair rendered the member's dashboard 35
+     * minutes after they signed out. Two minutes is one upstream call per
+     * member per two minutes, and a stolen pair that dies with the sign-out.
      */
-    sessionDataTtl: 3600,
+    sessionDataTtl: 120,
   },
 });

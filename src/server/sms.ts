@@ -1,4 +1,5 @@
 import 'server-only';
+import { retryStatus } from '@/server/email';
 import { withElevated } from '@/server/db';
 
 /**
@@ -42,9 +43,9 @@ function configured(): { sid: string; token: string; from: string } | null {
 
 export const smsConfigured = (): boolean => configured() !== null;
 
-async function deliver(to: string, body: string): Promise<{ ok: true } | { ok: false; error: string }> {
+async function deliver(to: string, body: string): Promise<{ ok: true } | { ok: false; error: string; retry: boolean }> {
   const cfg = configured();
-  if (!cfg) return { ok: false, error: 'SMS provider not configured' };
+  if (!cfg) return { ok: false, error: 'SMS provider not configured', retry: true };
 
   const params = new URLSearchParams({ To: to, Body: body });
   // TWILIO_FROM may be a Messaging Service SID (MG...) or a number.
@@ -65,11 +66,11 @@ async function deliver(to: string, body: string): Promise<{ ok: true } | { ok: f
     );
     if (!res.ok) {
       const text = await res.text();
-      return { ok: false, error: `Twilio ${res.status}: ${text.slice(0, 200)}` };
+      return { ok: false, error: `Twilio ${res.status}: ${text.slice(0, 200)}`, retry: res.status === 429 || res.status >= 500 };
     }
     return { ok: true };
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : 'Send failed' };
+    return { ok: false, error: error instanceof Error ? error.message : 'Send failed', retry: true };
   }
 }
 
@@ -91,13 +92,16 @@ export async function drainSms(limit = 50): Promise<SmsDrainResult> {
   const rows = await withElevated(async (db) => (await db`
     with claimed as (
       select o.id from public.sms_outbox o
-       where o.status = 'pending' and o.attempts < 3
+       where (o.status = 'pending'
+              or (o.status = 'sending' and o.claimed_at < now() - interval '15 minutes'))
+         and o.attempts < 4
+         and coalesce(o.not_before, now()) <= now()
        order by o.created_at
        limit ${limit}
        for update skip locked
     )
     update public.sms_outbox o
-       set status = 'sending', attempts = o.attempts + 1
+       set status = 'sending', attempts = o.attempts + 1, claimed_at = now()
       from claimed
      where o.id = claimed.id
     returning o.id, o.body, o.attempts,
@@ -113,7 +117,7 @@ export async function drainSms(limit = 50): Promise<SmsDrainResult> {
     }
     const outcome = await deliver(to, row.body);
     if (outcome.ok) results.push({ id: row.id, status: 'sent', error: null });
-    else results.push({ id: row.id, status: row.attempts >= 3 ? 'failed' : 'pending', error: outcome.error.slice(0, 500) });
+    else results.push({ id: row.id, status: retryStatus(outcome, row.attempts), error: outcome.error.slice(0, 500) });
   }
 
   if (results.length > 0) {
@@ -122,6 +126,7 @@ export async function drainSms(limit = 50): Promise<SmsDrainResult> {
         update public.sms_outbox o
            set status = r.status,
                sent_at = case when r.status = 'sent' then now() else o.sent_at end,
+               not_before = case when r.status = 'pending' then now() + make_interval(mins => (5 * power(2, o.attempts - 1))::int) end,
                last_error = r.error
           from jsonb_to_recordset(${JSON.stringify(results)}::jsonb) as r(id uuid, status text, error text)
          where o.id = r.id

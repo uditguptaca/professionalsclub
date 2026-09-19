@@ -1,5 +1,5 @@
 import 'server-only';
-import { withAnon, one } from '@/server/db';
+import { withAnon, withAnonRead, one } from '@/server/db';
 import { toDomainAll, toDomain } from '@/server/case';
 import type {
   Business, JobPosting, NewsArticle, TeamMember, DonationCampaign,
@@ -15,16 +15,27 @@ import type {
  * this role.
  */
 
+/**
+ * What a visitor may see of a business. RLS already limits the ROWS to
+ * verified listings; this limits the COLUMNS. `submission_details` is the
+ * applicant's private note to the club from the public form, and the two id
+ * columns tie a listing to a member and an admin. None belong on the wire.
+ */
+const BUSINESS_PUBLIC_COLUMNS = `id, name, slug, logo, cover_image, category, subcategory, description_short,
+  description_full, services, contact_person, phone, email, website, social_links, address, city, province,
+  postal_code, service_area, years_in_business, business_hours, pricing_summary, member_rate_text, offer_badge,
+  member_benefits, verification_status, is_featured, has_member_rate, created_at, updated_at`;
+
 export async function listVerifiedBusinesses(): Promise<Business[]> {
-  return withAnon(async (db) => {
-    const rows = await db`select * from public.businesses order by is_featured desc, name asc`;
+  return withAnonRead(async (db) => {
+    const rows = await db.run(`select ${BUSINESS_PUBLIC_COLUMNS} from public.businesses order by is_featured desc, name asc`);
     return toDomainAll<Business>(rows);
   });
 }
 
 export async function getBusinessBySlug(slug: string): Promise<Business | null> {
-  return withAnon(async (db) => {
-    const row = await one(await db`select * from public.businesses where slug = ${slug}`);
+  return withAnonRead(async (db) => {
+    const row = await one(await db.run(`select ${BUSINESS_PUBLIC_COLUMNS} from public.businesses where slug = $1`, [slug]));
     return row ? toDomain<Business>(row) : null;
   });
 }
@@ -53,7 +64,7 @@ export interface BusinessPageEvent {
 export async function getBusinessPageExtras(
   businessId: string
 ): Promise<{ offers: BusinessPageOffer[]; events: BusinessPageEvent[] }> {
-  return withAnon(async (db) => {
+  return withAnonRead(async (db) => {
     const rows = await db`
       select json_build_object(
         'offers', coalesce((
@@ -94,7 +105,7 @@ export interface PublicEvent {
 }
 
 export async function listUpcomingEvents(): Promise<PublicEvent[]> {
-  return withAnon(async (db) => {
+  return withAnonRead(async (db) => {
     const rows = await db`
       select id, title, event_date as date, event_time as time
         from public.events
@@ -116,7 +127,7 @@ export interface PublicVideo {
 }
 
 export async function listVideos(): Promise<PublicVideo[]> {
-  return withAnon(async (db) => {
+  return withAnonRead(async (db) => {
     const rows = await db`
       select id, title, category, video_url, duration, views, recorded_date
         from public.youtube_videos
@@ -153,7 +164,7 @@ export interface PublicContentBundle {
 }
 
 export async function loadPublicContent(): Promise<PublicContentBundle> {
-  return withAnon(async (db) => {
+  return withAnonRead(async (db) => {
     // ONE statement, not eight. Promise.all over a tagged template looks
     // concurrent but a single connection serialises queries, so the old version
     // paid eight round trips (~2.7s from a dev machine) on every visit. Each
@@ -339,7 +350,7 @@ export interface PublicVolunteer {
 
 /** Approved volunteers, professional facts only — no contact details. */
 export async function listPublicVolunteers(): Promise<PublicVolunteer[]> {
-  return withAnon(async (db) => {
+  return withAnonRead(async (db) => {
     const rows = await db`
       select * from public.public_volunteers
       order by years_experience desc nulls last, name asc

@@ -1,6 +1,7 @@
 import 'server-only';
-import { withUser, withUserRead } from '@/server/db';
+import { withUser, withUserRead, withElevated } from '@/server/db';
 import { insertRow, updateRow, type ColumnMap } from '@/server/query';
+import { assertEventLinks } from '@/server/media';
 
 /**
  * Events: the member's event page, and the screens the people who post events
@@ -200,6 +201,7 @@ export async function createEvent(
   const title = String(data.title ?? '').trim();
   if (title.length < 2) throw new Error('Give the event a title.');
   if (!data.date) throw new Error('Pick the date.');
+  assertEventLinks(data);
 
   return withUser(userId, async (db) => {
     const row = await insertRow<{ id: string }>(
@@ -227,6 +229,7 @@ export async function updateEvent(
   eventId: string,
   data: Record<string, unknown>
 ): Promise<void> {
+  assertEventLinks(data);
   await withUser(userId, async (db) => {
     const row = await updateRow<{ id: string }>(
       db, 'public.events', EVENT_WRITABLE, eventId, data, 'id'
@@ -290,5 +293,25 @@ export async function setEventModeration(
       [eventId, status, trimmed || null]
     );
     if (rows.length === 0) throw new Error('That event no longer exists.');
+  });
+}
+
+/**
+ * Yesterday's events become 'past'. Elevated because the daily cron calls it
+ * with no user in the loop and it takes no caller-supplied shape; without it
+ * nothing ever wrote 'past', so every event the club had ever held stayed
+ * "upcoming" and the member Events tab grew forever.
+ */
+export async function retirePastEvents(): Promise<number> {
+  return withElevated(async (db) => {
+    const rows = await db`
+      update public.events
+         set status = 'past'
+       where status = 'upcoming'
+         and event_date is not null
+         and event_date < current_date
+      returning id
+    `;
+    return rows.length;
   });
 }

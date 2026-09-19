@@ -129,6 +129,31 @@
    because dozens of call sites set minHeight: 44 inline, meaning 44 painted. */
 .portal-layout .btn { min-height: calc(44px / 0.88) !important; }
 
+/* Round 3 measured the rest: tabs at 39, chips at 32, icon buttons at 28, the
+   business console chrome at 37, checkboxes at 11. On a phone every control a
+   thumb lands on gets the same floor; icon-only ones get it in both axes. */
+@media (max-width: 767px) {
+  .portal-layout .bz-btn, .portal-layout .bz-tab, .portal-layout .bz-upload,
+  .portal-layout .cm-btn--sm, .portal-layout .cm-btn--icon, .portal-layout .cm-tabs [role="tab"],
+  .portal-layout .nt-filter, .portal-layout .nt-action, .portal-layout .nt-bell,
+  .portal-layout .pp-toggle, .portal-layout .pp-nudge, .portal-layout .hf-city-pill,
+  .portal-layout .community-action, .portal-layout .community-tool, .portal-layout .community-avatar,
+  .portal-layout .rsvp-btn, .portal-layout .mt-quick,
+  .portal-layout button[aria-label]:not(.btn) {
+    min-height: calc(44px / 0.88);
+  }
+  .portal-layout .cm-btn--icon, .portal-layout .community-tool, .portal-layout .community-avatar,
+  .portal-layout .nt-bell, .portal-layout .mt-quick--icon,
+  .portal-layout button[aria-label]:not(.btn) {
+    min-width: calc(44px / 0.88);
+  }
+  .portal-layout input[type="checkbox"], .portal-layout input[type="radio"] {
+    width: 24px;
+    height: 24px;
+    flex: none;
+  }
+}
+
 /* The portal keeps a sans for headings. A soft serif is lovely over a hero
    photograph and actively unhelpful above a twelve-column data table. */
 .portal-layout :where(h1, h2, h3, h4, h5, h6) {

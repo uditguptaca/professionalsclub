@@ -678,6 +678,191 @@ change set; the database half is migrations 0055 and 0056.
   Signed, session-checked URLs would make them private in fact.
 - **Upload accounting.** The upload token grants the video allowance on the
   client's word and records no owner; a per-user quota needs a table.
-- **`member_devices.label`/`last_seen_at`** are readable by every member.
+- **`member_devices`** is readable in full (device id, label, public key,
+  last seen) by every active member, not only `label`/`last_seen_at` as first
+  recorded. The chat needs a peer's public keys; a policy scoped to open
+  conversations would give it those and nothing else.
 - **Key transparency.** The new-device notice is the cheap step; a fingerprint
   members can compare out of band is the real one.
+
+
+## Round 3: the September 2026 technique audit
+
+Round 2 read the code by module. Round 3 changed the method: eight reviewers
+each owned one attack technique or bug class, applied it across the whole
+app, and had to prove findings against the running production build and the
+live database rather than by reading. The live catalog was audited as it is,
+not as the migrations say; every Server Action was replayed with substituted
+ids; every sink from a typed string to a screen, header, mail or SQL text was
+driven with payloads; the state machines were pushed by ordering, repeating
+and timing; the bundle, wire payloads, production headers, git history and
+mobile shells were inspected from outside; the session lifecycle was measured
+with real cookies; the jobs, drains and triggers were traced end to end and
+their queries explained; and a QA pass walked every page as every persona.
+Everything below was fixed in the same change set; the database half is
+migrations 0057 and 0058.
+
+### Fixed
+
+**Reached from outside**
+
+- **No email or text had gone out since Round 2 (High).** The drain refactor
+  stamped claimed rows `sending`, a value neither outbox CHECK allowed; every
+  drain hit 23514 and every caller swallowed it. 0057 admits the state, adds
+  `claimed_at` so a claim a crashed drain left behind is taken back after
+  fifteen minutes, and `not_before` so retries back off. Provider faults are
+  classified: a 4xx is final, a 5xx or 429 is retried. Production has no mail
+  or SMS key yet, so nothing was lost; the queue flushes when one is added.
+- **The public-form rate limit ran only in the error path (Medium).** A
+  misplaced paste put `publicQuota()` inside `catch`; fifteen contact
+  submissions from one address all landed, and each business listing buzzed
+  every admin's phone. The limiter runs first now; the invite endpoints, which
+  are public and elevated, got one too.
+- **Every past deployment stayed public and ran pre-fix code against the live
+  database (Medium).** The per-deployment `*.vercel.app` URLs served the
+  `243c79a` build with no rate limiting at all. Vercel Authentication is now on
+  for deployment URLs and previews; only the alias is public.
+- **Anonymous visitors received a business's private review notes and its
+  owner's id (Low).** `select *` on `businesses` shipped `submission_details`,
+  `created_by` and `approved_by_admin`. The public reads name their columns;
+  the portal snapshot reduces them to the club and the owner.
+- **The admin feed detector and the job link check fetched any URL (Low).**
+  Both dialled loopback on request while `/api/link-preview` refused the same
+  address. The guard now lives once in `src/server/net-guard.ts` and every
+  server-side fetch of a typed URL goes through it, redirect hops included.
+- **The production CSP allowed `unsafe-eval`** and nothing in the bundle needs
+  it. Dropped; `X-Powered-By` dropped; `robots.txt` added.
+
+**Authentication and sessions**
+
+- **A signed-out session kept working for an hour (High).** The local
+  session-data cookie was trusted for 3600 s; a copied pair rendered the
+  member's dashboard 35 minutes after sign-out. Now 120 s.
+- **A password reset left every existing session alive (High).** Neon's reset
+  rotates the credential only. The reset page now revokes the account's
+  sessions through the reset token before the reset, so an attacker already
+  inside is put out.
+- **Sign-out did not clear the client cache (Medium).** The next member to sign
+  in on the same phone saw the previous member's chat list and notifications
+  for a moment. `dropCache('')` on member sign-out, as the business console
+  already did, and the server forgets the cached profile too.
+- **Suspension and demotion lagged five minutes in the app's gates (Medium).**
+  The profile cache is 30 s now, and a suspended account can no longer update
+  its own row under RLS (0058).
+- **Signing up with an existing address said "everything was saved" (Medium).**
+  Neon answers such a signup with an invented user id, the profiles FK refuses
+  it, and the form reported success. The confirmation screen now uses one
+  honest wording for both cases and does not enumerate addresses.
+
+**The live database**
+
+- **The matrimony display-name privacy was one query from meaningless
+  (High).** `matrimony_owner()` resolved any listing, hidden or draft, to the
+  owner's account and `member_display_name()` gave the legal name. The lookup
+  answers only for the owner, an admin or a matched pair; the name helper is
+  trigger-only.
+- **Members could write to the admin audit log (Medium).** Fifty forged
+  "Suspended by an admin" lines from a member session. `log_audit()` is
+  admin-only.
+- **The referral notifier was an unmetered email and push cannon (Medium).**
+  The seeker could call it without limit, and the email ignored notification
+  preferences and blocks. A stamp on the request makes each notice happen once,
+  and the email follows the bell's rules.
+- **The private-profile rule had no RLS backstop (Medium).** The feed, comment
+  and like policies now carry `can_view_member(author_id)`; the shared
+  attendance view carries it too.
+- **`matrimony_e2e_keys` had a policy of `true`** (a suspended account and a
+  business login could list every matrimony profile id) and `create_profile()`
+  was executable by PUBLIC. Both closed.
+
+**State machines and races**
+
+- **Three unrelated block lists (High).** Blocking from a chat thread left the
+  other person reading your posts and private profile; blocking from the feed
+  could not be undone from your profile. One block now: both buttons write
+  `member_blocks`, the shared predicate honours the old rows, a block severs the
+  follow graph both ways and refuses new follows, and going public no longer
+  accepts a blocked member's waiting request.
+- **Hiding or rejecting a matrimony listing did not hide it from anyone who had
+  shortlisted it or sent a declined interest (High).** The visible-profiles
+  view requires `approved` everywhere and shows a hidden listing only through
+  an accepted interest or an open conversation.
+- **Event capacity was displayed and never enforced, and finished events kept
+  accepting RSVPs (Medium).** A BEFORE INSERT trigger holds the events row and
+  refuses the seat that is not there; the RSVP policy checks the date; the
+  daily cron retires yesterday's events; the button says "Full".
+- **The weekly referral cap lost under concurrency (Medium).** Five parallel
+  requests put four through a cap of two. The trigger takes a per-seeker
+  advisory lock; the seeker's delete policy (which could reset the count) is
+  gone.
+- **One member could file the same report without limit (Medium),** each one
+  pushing their text to every moderator. Unique per reporter and target; the
+  moderator notice no longer carries the reporter's words.
+- **A member who owned a business could claim and spend that business's own
+  coupons (Low).** Refused at claim and at the till.
+- **An admin could suspend themselves and lock the club out (Low).** Refused in
+  the console and by a last-active-admin guard.
+
+**Injection**
+
+- **Business events accepted any remote image, any URL scheme and mail headers
+  in the contact address (High).** `assertEventLinks()` runs on the business,
+  curator and admin write paths: pictures from our store, http(s) links, a
+  plain address.
+- **No stored URL that became an href was scheme-checked (Medium).** Business
+  websites, LinkedIn links, company links and every feed-supplied apply link
+  are http(s) only now (`isHttpUrl`); a feed role with any other scheme is
+  dropped rather than stored.
+- **Prompt injection into the content classifier (Medium).** Member text sits
+  between markers it cannot contain, the instructions follow it, and a reply
+  that is not a bare object with exactly the seven numeric keys is "no answer"
+  (which holds images).
+- **Free-text profile fields had no length bound (Low)** and are the
+  notification, push and mail title. CHECK constraints (0058) and a clamp in the
+  action.
+- **Three definitions of "our upload", two admitting anyone's Blob store (Low).**
+  One now, with the extension checked for Blob URLs too.
+- Mail subjects are plain text with line breaks stripped.
+
+**Jobs and pipelines**
+
+- The refresh cron runs each stage in its own try/catch and always reports;
+  the link check flushes verdicts every twenty rows under a two-minute budget;
+  a feed that answers 200 with no roles keeps the board and records the fault;
+  a held group post that a moderator approves now reaches the group; the event
+  fan-out matches on the city column instead of a LIKE pattern from member
+  input; anonymous page views no longer schedule a push drain (`withAnonRead`);
+  the follow-up drain loop is bounded; every transaction carries a statement
+  and lock timeout and the pool a connect timeout; deleting a post, a matrimony
+  photo, a replaced business picture or an account deletes its Blobs; the
+  ICS folder counts octets; `CRON_SECRET` is compared in constant time; the
+  SMS link host, the ICS host and the mail host are one constant; the coupon
+  expiry count is right; the member events list is bounded; the home counter
+  counts the member's own RSVPs; the receipts poll is bounded by its cursor;
+  two feed indexes were added; the release Android build refuses a dev origin
+  anywhere in its allow-list; the public listing form no longer fails when
+  years in business is blank.
+
+### Open
+
+- **Reactions in a chat poll** are still re-read in full every five seconds;
+  a delta needs a per-message change stamp and a client merge.
+- **`neon_auth.session`** is never pruned by the app; expired rows accumulate
+  on Neon's side.
+- **Reset tokens** sit in the clear in `neon_auth.verification` (Neon's
+  design); `business_invites` holds itself to SHA-256.
+- **Group membership** is readable by any active member, and group posts by
+  non-members. There is no group privacy flag; the club's groups are public by
+  design, which should stay a written decision.
+- **A dead Supabase auth SDK (402 KB)** ships in the portal bundle through the
+  Neon auth-ui package; revisit when the beta packages are upgraded.
+- **Unsubscribe headers** on outbound mail (CASL) once a mail provider is
+  configured.
+- **The event fan-out** is synchronous and O(members) inside the publisher's
+  request; a queued fan-out is the upgrade past a few thousand members.
+- **`X-Forwarded-Host`** defeats Next's Server Action origin check in
+  principle; Vercel overwrites the header, so not reachable today.
+- **`img-src https:` stays.** It is an exfiltration channel given an XSS, but
+  chat link cards show the linked page's own picture and company logos are
+  admin-typed URLs; narrowing it blanked the cards. A same-origin image proxy
+  behind `net-guard` is the fix that keeps both.

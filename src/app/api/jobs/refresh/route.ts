@@ -1,9 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { cronAuthorised } from '@/server/cron-auth';
 import { syncAllCompanies } from '@/server/jobs/sync';
 import { checkJobLiveness } from '@/server/jobs/liveness';
 import { drainOutbox } from '@/server/email';
 import { expireCouponHolds } from '@/server/repos/offers';
 import { drainSms } from '@/server/sms';
+import { retirePastEvents } from '@/server/repos/events';
 
 /**
  * Scheduled refresh: pull every company's job feed, then send whatever mail is
@@ -20,15 +22,8 @@ import { drainSms } from '@/server/sms';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
-function authorised(request: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  const header = request.headers.get('authorization');
-  return header === `Bearer ${secret}`;
-}
-
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  if (!authorised(request)) {
+  if (!cronAuthorised(request)) {
     return NextResponse.json({ error: 'Not authorised' }, { status: 401 });
   }
 
@@ -44,34 +39,50 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ ok: true, ms: Date.now() - started, liveness });
   }
 
+  // Every stage runs and reports on its own. One throwing stage used to 500
+  // the whole route: the sync report an operator needed was thrown away, and
+  // the stages after it never ran at all.
+  const report: Record<string, unknown> = {};
+  let ok = true;
+  const stage = async <T,>(name: string, fn: () => Promise<T>): Promise<T | null> => {
+    try {
+      const value = await fn();
+      report[name] = value;
+      return value;
+    } catch (error) {
+      ok = false;
+      report[name] = { error: error instanceof Error ? error.message.slice(0, 300) : 'failed' };
+      console.error(`[cron:refresh] ${name} failed:`, error);
+      return null;
+    }
+  };
+
   // Coupon seats held by codes nobody showed. A member's own stale hold is
   // returned the moment they ask for the code again (0048), but a capped offer
   // would otherwise stay short a seat for everybody else until they did.
-  const couponHolds = await expireCouponHolds();
-
-  const companies = await syncAllCompanies();
+  await stage('couponHolds', expireCouponHolds);
+  // Yesterday's events stop being "upcoming"; nothing else ever wrote 'past'.
+  await stage('pastEvents', retirePastEvents);
+  const companies = await stage('companies', syncAllCompanies);
   // After the feeds, not before: sync reopens anything an employer re-listed,
   // so checking links afterwards never fights a fresher signal.
-  const liveness = await checkJobLiveness();
-  const email = await drainOutbox(200);
+  await stage('liveness', checkJobLiveness);
+  await stage('email', () => drainOutbox(200));
   // Texts queued by RSVPs (0049). Same contract as mail: sent from the request
   // that queued them when a provider is configured, swept here as the backstop.
-  const sms = await drainSms(200);
+  await stage('sms', () => drainSms(200));
 
-  const failures = companies.filter((c) => c.error);
-  return NextResponse.json({
-    ok: true,
-    ms: Date.now() - started,
-    companies: companies.length,
-    added: companies.reduce((n, c) => n + c.added, 0),
-    updated: companies.reduce((n, c) => n + c.updated, 0),
-    closed: companies.reduce((n, c) => n + c.closed, 0),
-    liveness,
-    email,
-    sms,
-    couponHolds,
-    // Named rather than counted: a feed that has been broken for a week is
-    // something an operator needs to see.
-    failures: failures.map((c) => ({ company: c.company, kind: c.kind, error: c.error })),
-  });
+  if (companies) {
+    report.companies = {
+      count: companies.length,
+      added: companies.reduce((n, c) => n + c.added, 0),
+      updated: companies.reduce((n, c) => n + c.updated, 0),
+      closed: companies.reduce((n, c) => n + c.closed, 0),
+      // Named rather than counted: a feed that has been broken for a week is
+      // something an operator needs to see.
+      failures: companies.filter((c) => c.error).map((c) => ({ company: c.company, kind: c.kind, error: c.error })),
+    };
+  }
+  return NextResponse.json({ ok, ms: Date.now() - started, ...report });
 }
+

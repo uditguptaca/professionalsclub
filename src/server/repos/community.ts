@@ -1,5 +1,6 @@
 import 'server-only';
 import { withUser, withUserRead, type Db } from '@/server/db';
+import { deleteUploads } from '@/server/media';
 import { toDomain, toDomainAll } from '@/server/case';
 // One repo reaching into another, deliberately: the people rail is the chat
 // module's follow graph, and communityStart's whole point is to read it on the
@@ -558,9 +559,10 @@ export async function listGroupMembers(userId: string, groupId: string): Promise
 
 /** Author deleting their own post (RLS also lets admins hard-delete). */
 export async function deletePost(userId: string, postId: string): Promise<void> {
-  await withUser(userId, async (db) => {
-    await db`delete from public.community_posts where id = ${postId}::uuid`;
-  });
+  const rows = await withUser(userId, async (db) =>
+    db<{ media: { url?: string }[] | null }>`delete from public.community_posts where id = ${postId}::uuid returning media`
+  );
+  deleteUploads(rows.flatMap((r) => (Array.isArray(r.media) ? r.media : []).map((m) => m.url)));
 }
 
 export async function toggleLike(
@@ -835,14 +837,23 @@ export async function reportContent(
     await db`
       insert into public.community_reports (target_type, target_id, reporter_id, reason)
       values (${input.targetType}, ${input.targetId}::uuid, ${userId}::uuid, ${input.reason})
+      on conflict (reporter_id, target_type, target_id) do nothing
     `;
   });
 }
 
+/**
+ * One block (0057). The community button and the chat button used to write
+ * two unrelated tables, so blocking from a thread left the other person
+ * reading your posts and blocking from the feed could not be undone from your
+ * profile. Both now write member_blocks; the feed, chat, follows and
+ * can_view_member() all read is_blocked_between_members(), which still
+ * honours the old community_blocks rows.
+ */
 export async function blockMember(userId: string, blockedId: string): Promise<void> {
   await withUser(userId, async (db) => {
     await db`
-      insert into public.community_blocks (blocker_id, blocked_id)
+      insert into public.member_blocks (blocker_id, blocked_id)
       values (${userId}::uuid, ${blockedId}::uuid)
       on conflict do nothing
     `;
@@ -851,10 +862,8 @@ export async function blockMember(userId: string, blockedId: string): Promise<vo
 
 export async function unblockMember(userId: string, blockedId: string): Promise<void> {
   await withUser(userId, async (db) => {
-    await db`
-      delete from public.community_blocks
-      where blocker_id = ${userId}::uuid and blocked_id = ${blockedId}::uuid
-    `;
+    await db`delete from public.member_blocks where blocker_id = ${userId}::uuid and blocked_id = ${blockedId}::uuid`;
+    await db`delete from public.community_blocks where blocker_id = ${userId}::uuid and blocked_id = ${blockedId}::uuid`;
   });
 }
 

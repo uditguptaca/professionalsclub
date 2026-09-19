@@ -86,4 +86,9 @@ if (gradle.startParameter.taskNames.any { it =~ /(?i)release/ }) {
     if (!url?.startsWith('https://') || new URI(url).host in ['localhost', '127.0.0.1', '10.0.2.2']) {
         throw new GradleException("Release build points at ${url} - run `npx cap sync android` first.")
     }
+    // The dev origins also ride in allowNavigation; a store build must not follow links to them.
+    def nav = cfg.exists() ? (new groovy.json.JsonSlurper().parse(cfg).server?.allowNavigation ?: []) : []
+    if (nav.any { it in ['localhost', '127.0.0.1', '10.0.2.2'] }) {
+        throw new GradleException("Release build allows navigation to ${nav} - run `npx cap sync android` without CAP_SERVER_URL first.")
+    }
 }

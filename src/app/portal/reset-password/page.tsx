@@ -1,5 +1,6 @@
 'use client';
 import React, { Suspense, useState } from 'react';
+import { revokeSessionsForReset } from '@/app/actions/auth';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { authClient } from '@/lib/auth/client';
@@ -38,6 +39,9 @@ function ResetForm() {
     setLoading(true);
 
     try {
+      // Every other session of this account ends with the reset. Before, not
+      // after: the token is consumed by the reset itself.
+      await revokeSessionsForReset(token).catch(() => ({ ok: false }));
       const result = await authClient.resetPassword({ newPassword: password, token });
       if (result && typeof result === 'object' && 'error' in result && result.error) {
         throw result.error;

@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { lookup as dnsLookup, type LookupAddress } from 'node:dns';
 import { isIP } from 'node:net';
 import http from 'node:http';
 import https from 'node:https';
 import { requireUserId } from '@/server/auth';
 import { allow } from '@/server/rate-limit';
+import { guardedLookup, hostnameLooksInternal, privateIp } from '@/server/net-guard';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -38,60 +38,6 @@ export interface LinkPreviewPayload {
   image?: string;
   siteName: string;
 }
-
-function privateV4(ip: string): boolean {
-  const p = ip.split('.').map(Number);
-  if (p.length !== 4 || p.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return true;
-  return p[0] === 0 || p[0] === 10 || p[0] === 127
-    || (p[0] === 100 && p[1] >= 64 && p[1] <= 127)
-    || (p[0] === 169 && p[1] === 254)
-    || (p[0] === 172 && p[1] >= 16 && p[1] <= 31)
-    || (p[0] === 192 && p[1] === 168)
-    || (p[0] === 192 && p[1] === 0 && (p[2] === 0 || p[2] === 2))
-    || (p[0] === 198 && (p[1] === 18 || p[1] === 19))
-    || p[0] >= 224;
-}
-
-/** Only plain global-unicast IPv6 (2000::/3) is public. Everything else, including every IPv4 embedding, is not. */
-function privateV6(ip: string): boolean {
-  const first = ip.toLowerCase().replace(/^\[|\]$/g, '').split(':')[0];
-  if (first === '') return true; // ::, ::1, ::ffff:..., ::a.b.c.d
-  const n = parseInt(first, 16);
-  if (Number.isNaN(n)) return true;
-  return !(n >= 0x2000 && n <= 0x3fff);
-}
-
-function privateIp(ip: string): boolean {
-  const v = isIP(ip);
-  if (v === 4) return privateV4(ip);
-  if (v === 6) return privateV6(ip);
-  return true;
-}
-
-function hostnameLooksInternal(hostname: string): boolean {
-  const h = hostname.toLowerCase().replace(/\.$/, '');
-  return h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.local') || h.endsWith('.internal') || h.endsWith('.arpa') || !h.includes('.');
-}
-
-/**
- * node's `lookup` hook: resolve, refuse if ANY returned address is private,
- * and hand the socket exactly what was checked. Handles both the single
- * answer and the `all: true` array form newer Node versions ask for.
- */
-const guardedLookup: typeof dnsLookup = ((hostname: string, options: unknown, callback: (...args: unknown[]) => void) => {
-  const cb = typeof options === 'function' ? (options as (...a: unknown[]) => void) : callback;
-  const opts = typeof options === 'function' ? {} : (options as Record<string, unknown>);
-  dnsLookup(hostname, opts as never, ((err: NodeJS.ErrnoException | null, address: string | LookupAddress[], family?: number) => {
-    if (err) return cb(err, address, family);
-    const list = Array.isArray(address) ? address.map((a) => a.address) : [address];
-    if (list.length === 0 || list.some((a) => privateIp(a))) {
-      const e = new Error('Address not allowed') as NodeJS.ErrnoException;
-      e.code = 'EACCES';
-      return cb(e, address, family);
-    }
-    cb(null, address, family);
-  }) as never);
-}) as unknown as typeof dnsLookup;
 
 interface Fetched { status: number; headers: http.IncomingHttpHeaders; body: string; finalUrl: URL }
 

@@ -173,10 +173,12 @@ export async function requireBusinessUserId(): Promise<string> {
  * suspended member with a stale cache entry still gets nothing back from the
  * database. Mutations that change the profile call invalidateProfileCache().
  */
-// Five minutes, per instance: invalidateProfileCache() clears the instance
+// Thirty seconds, per instance: invalidateProfileCache() clears the instance
 // that served the admin's request, so another warm instance may keep a stale
-// entry until then. Advisory only - Postgres decides on every query.
-const PROFILE_TTL_MS = 300_000;
+// entry until then. Advisory only - Postgres decides on every query - but for
+// those seconds a suspended member's portal still RENDERS (empty), so the
+// window is kept short. Round 3 measured the previous five minutes.
+const PROFILE_TTL_MS = 30_000;
 const profileCache = new Map<string, { profile: Member; expires: number }>();
 
 export function invalidateProfileCache(userId: string): void {

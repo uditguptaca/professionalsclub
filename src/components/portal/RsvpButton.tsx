@@ -14,6 +14,7 @@ export default function RsvpButton({
   initialGoing,
   initialMyRsvp,
   baseAttendees,
+  full = false,
   onChanged,
 }: {
   eventId: string;
@@ -22,6 +23,8 @@ export default function RsvpButton({
   initialMyRsvp: boolean;
   /** The admin-maintained offline count; display total = base + going. */
   baseAttendees: number;
+  /** No places left. The database refuses too (0057); this just says so first. */
+  full?: boolean;
   /**
    * Fired once the server has confirmed the change. The event page uses it to
    * refetch: the "you are on the list" card, the calendar links and the online
@@ -66,11 +69,11 @@ export default function RsvpButton({
         type="button"
         className={`rsvp-btn${mine ? ' is-going' : ''}`}
         onClick={toggle}
-        disabled={busy}
+        disabled={busy || (full && !mine)}
         aria-pressed={mine}
       >
         {mine ? <Check size={14} aria-hidden="true" /> : <CalendarPlus size={14} aria-hidden="true" />}
-        {mine ? 'Going' : 'RSVP'}
+        {mine ? 'Going' : full ? 'Full' : 'RSVP'}
         <span className="rsvp-count">{baseAttendees + going}</span>
       </button>
       {error && <span className="community-error" role="alert">{error}</span>}

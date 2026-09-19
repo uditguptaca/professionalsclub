@@ -136,8 +136,10 @@ export async function fetchHomeFeed(userId: string): Promise<HomeFeed> {
             and r.status not in ('resolved', 'closed', 'rejected'))::int as open_requests,
         (select count(*) from public.referral_direct_requests r
           where r.insider_id = $1 and r.status = 'pending')::int as pending_referral_asks,
-        (select count(*) from public.events e
-          where e.status = 'upcoming' and e.is_published)::int as my_upcoming_events,
+        (select count(*) from public.event_rsvps r
+          join public.events e on e.id = r.event_id
+         where r.member_id = $1
+           and e.status = 'upcoming' and e.is_published)::int as my_upcoming_events,
         (select count(*) from public.member_saved_businesses s
           where s.member_id = $1)::int as saved_businesses,
         (select count(*) from public.messages m
@@ -221,11 +223,21 @@ export async function setEventRsvp(
 ): Promise<{ going: number; myRsvp: boolean }> {
   return withUser(userId, async (db) => {
     if (going) {
-      await db.run(
-        `insert into public.event_rsvps (event_id, member_id)
-         values ($1, $2) on conflict do nothing`,
-        [eventId, userId]
-      );
+      try {
+        await db.run(
+          `insert into public.event_rsvps (event_id, member_id)
+           values ($1, $2) on conflict do nothing`,
+          [eventId, userId]
+        );
+      } catch (error) {
+        // RLS refuses an RSVP to an event that is unpublished, unapproved, not
+        // upcoming or already dated (0057). Say so; "please try again" was
+        // advice that could never work.
+        if ((error as { code?: string } | null)?.code === '42501') {
+          throw new Error('This event is no longer taking RSVPs.');
+        }
+        throw error;
+      }
     } else {
       await db.run(
         `delete from public.event_rsvps where event_id = $1 and member_id = $2`,
@@ -265,7 +277,10 @@ export async function listMemberEvents(userId: string): Promise<{ city: string |
         left join public.businesses b on b.id = e.business_id
        where e.status = 'upcoming' and e.is_published
          and e.moderation_status = 'approved'
+         -- The daily sweep marks these 'past'; until it runs, hide them here.
+         and (e.event_date is null or e.event_date >= current_date)
        order by in_city desc, e.event_date asc nulls last
+       limit 200
       `,
       [userId]
     );

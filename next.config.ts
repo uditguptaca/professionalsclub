@@ -18,8 +18,14 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      // No 'unsafe-eval': nothing in the production bundle evaluates strings,
+      // and it is the primitive that turns an injected string into code.
+      "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
+      // Any https host, deliberately: chat link cards show the linked page's
+      // own picture and company logos are admin-typed URLs. That does leave an
+      // injected script a GET it could put data into (Round 3, L4); the fix is
+      // a same-origin image proxy, not a narrower list that blanks the cards.
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
       // The browser talks to us and to Blob storage (client uploads). Nothing
@@ -54,6 +60,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
   // Dev-only: lets a phone or the Android emulator load this dev server's
   // assets. Without it, Next serves the HTML but blocks /_next/* cross-origin,
   // so nothing hydrates and every button on the page is dead. Ignored in

@@ -1,5 +1,6 @@
 import 'server-only';
-import { withUser, withUserRead, withAnon, one, type Db } from '@/server/db';
+import { withUser, withUserRead, withAnonRead, one, type Db } from '@/server/db';
+import { assertHttpUrl } from '@/server/media';
 import { toDomainAll, toDomain } from '@/server/case';
 import type { Company, CompanyJob, CompanyInsider } from '@/types';
 // The requests a member SENT live with the chat module (each one opens a chat),
@@ -32,7 +33,7 @@ import { scoreJob, isSuggestable, canMatch, type MatchProfile } from '@/lib/job-
 
 /** The public directory: every active company plus how many can help. */
 export async function listCompaniesPublic(): Promise<Company[]> {
-  return withAnon(async (db) => {
+  return withAnonRead(async (db) => {
     const rows = await db`
       select * from public.company_helper_counts
        order by helper_count desc, open_jobs_count desc, name asc
@@ -53,7 +54,7 @@ export async function listCompanies(userId: string): Promise<Company[]> {
 }
 
 export async function getCompanyPublic(slug: string): Promise<Company | null> {
-  return withAnon(async (db) => {
+  return withAnonRead(async (db) => {
     const row = await one(await db`
       select * from public.company_helper_counts where slug = ${slug}
     `);
@@ -102,6 +103,9 @@ export async function upsertCompany(
     }
     values.name = name;
     values.slug = String(values.slug ?? '').trim() || slugify(name);
+    assertHttpUrl(values.website, 'website');
+    assertHttpUrl(values.careers_url, 'careers link');
+    assertHttpUrl(values.logo, 'logo link');
 
     // source_config is jsonb and must stay an object, which the check
     // constraint also enforces one layer down.

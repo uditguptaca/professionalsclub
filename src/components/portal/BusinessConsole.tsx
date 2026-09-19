@@ -292,7 +292,7 @@ function Console({ heading, emptyState, chrome = 'embedded' }: Props) {
               )}
 
               {tab === 'page' && (
-                <EditorFrame title="Edit your page" onBack={() => go('home')}>
+                <EditorFrame title="Edit your page" onBack={() => go('home')} level={1}>
                   <PageEditor
                     business={business}
                     onSave={(data) => mutate(() => updateMyBusinessAction(business.id, data), 'Page saved')}
@@ -348,14 +348,14 @@ function StatusChip({ verified }: { verified: boolean }) {
 }
 
 /** A task screen: a way back at the top, the form below. */
-function EditorFrame({ title, onBack, children }: { title: string; onBack: () => void; children: React.ReactNode }) {
+function EditorFrame({ title, onBack, children, level }: { title: string; onBack: () => void; children: React.ReactNode; level?: 1 }) {
   return (
     <div className="bz-editor">
       <div className="bz-editor-head">
         <button type="button" className="bz-back" onClick={onBack}>
           <ChevronLeft size={20} aria-hidden="true" /> Back
         </button>
-        <strong>{title}</strong>
+        {level === 1 ? <h1 style={{ font: 'inherit', margin: 0 }}>{title}</h1> : <strong>{title}</strong>}
       </div>
       {children}
     </div>

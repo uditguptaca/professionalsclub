@@ -177,7 +177,7 @@ export default function BusinessDirectoryPage() {
                     <div className="biz-card-meta">
                       <span><MapPin size={12} /> {biz.city}</span>
                       <span>•</span>
-                      <span>{biz.yearsInBusiness} yrs in business</span>
+                      {biz.yearsInBusiness != null && <span>{biz.yearsInBusiness} yrs in business</span>}
                     </div>
                   </div>
                   <div className="biz-card-actions">

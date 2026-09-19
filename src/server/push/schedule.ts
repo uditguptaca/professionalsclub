@@ -57,7 +57,11 @@ function startDrain(): Promise<void> {
   }
   inFlight = (async () => {
     await drainNow();
-    while (again) {
+    // Bounded: under steady writes `again` is re-armed faster than a drain
+    // finishes, and an unbounded loop kept the FIRST request's after() alive
+    // for as long as traffic lasted. Whatever three passes miss, the next
+    // write's drain or the cron picks up.
+    for (let pass = 0; pass < 3 && again; pass++) {
       again = false;
       await drainNow();
     }

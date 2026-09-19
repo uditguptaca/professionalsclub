@@ -1,5 +1,6 @@
 import 'server-only';
 import { withElevated } from '@/server/db';
+import { guardedFetch } from '@/server/net-guard';
 
 /**
  * Confirming a role still exists where it was posted.
@@ -38,6 +39,16 @@ const TIMEOUT_MS = 8000;
 
 /** Courtesy gap between requests to the same run. */
 const GAP_MS = 250;
+
+/**
+ * Wall-clock budget for one run. The cron has 300s for everything; a batch of
+ * slow careers sites used to eat all of it and then lose every verdict when
+ * the function was killed before the single write at the end.
+ */
+const BUDGET_MS = 120_000;
+
+/** Verdicts are written this often, so a killed run keeps what it learned. */
+const FLUSH_EVERY = 20;
 
 /** Strikes needed before a role is closed. */
 const STRIKES_TO_CLOSE = 2;
@@ -105,9 +116,11 @@ async function probe(url: string): Promise<Verdict> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
     try {
-      const res = await fetch(url, {
+      // A curator typed this URL. guardedFetch refuses private addresses and
+      // vets every redirect hop, so the cron cannot be pointed at the network
+      // around the server (the same rule /api/link-preview applies).
+      const res = await guardedFetch(url, {
         method,
-        redirect: 'follow',
         headers: { 'user-agent': UA, accept: '*/*' },
         signal: controller.signal,
       });
@@ -159,67 +172,78 @@ export async function checkJobLiveness(limit = BATCH): Promise<LivenessResult> {
   const unknown: string[] = [];
   const toClose: string[] = [];
 
+  const flush = async () => {
+    if (gone.length + alive.length + unknown.length + toClose.length === 0) return;
+    await withElevated(async (db) => {
+      // Fixed statements rather than one per row: the pool is 8.
+      if (toClose.length > 0) {
+        const rows = await db`
+          update public.company_jobs
+             set is_open = false, close_reason = 'dead_link',
+                 check_failures = check_failures + 1, last_checked_at = now()
+           where id = any(${toClose}::uuid[])
+          returning id
+        `;
+        result.closed += rows.length;
+      }
+      if (gone.length > 0) {
+        await db`
+          update public.company_jobs
+             set check_failures = check_failures + 1, last_checked_at = now()
+           where id = any(${gone}::uuid[])
+        `;
+      }
+      // A live answer clears the record: two strikes must be CONSECUTIVE.
+      if (alive.length > 0) {
+        await db`
+          update public.company_jobs
+             set check_failures = 0, last_checked_at = now()
+           where id = any(${alive}::uuid[])
+        `;
+      }
+      // An ambiguous answer is not evidence either way. Stamp the timestamp so
+      // the row moves to the back of the queue, but leave the strikes alone.
+      if (unknown.length > 0) {
+        await db`
+          update public.company_jobs
+             set last_checked_at = now()
+           where id = any(${unknown}::uuid[])
+        `;
+      }
+    });
+    gone.length = alive.length = unknown.length = toClose.length = 0;
+  };
+
+  const started = Date.now();
+  let sinceFlush = 0;
   for (const job of jobs) {
+    if (Date.now() - started > BUDGET_MS) break;
     if (isPlaceholder(job.apply_url)) {
       result.skipped += 1;
       unknown.push(job.id);
-      continue;
-    }
-    const verdict = await probe(job.apply_url);
-    result.checked += 1;
-    if (verdict === 'gone') {
-      result.gone += 1;
-      // The strike about to be written is this one, so compare against the
-      // count already on the row.
-      if (job.check_failures + 1 >= STRIKES_TO_CLOSE) toClose.push(job.id);
-      else gone.push(job.id);
-    } else if (verdict === 'alive') {
-      alive.push(job.id);
     } else {
-      result.errors += 1;
-      unknown.push(job.id);
+      const verdict = await probe(job.apply_url);
+      result.checked += 1;
+      if (verdict === 'gone') {
+        result.gone += 1;
+        // The strike about to be written is this one, so compare against the
+        // count already on the row.
+        if (job.check_failures + 1 >= STRIKES_TO_CLOSE) toClose.push(job.id);
+        else gone.push(job.id);
+      } else if (verdict === 'alive') {
+        alive.push(job.id);
+      } else {
+        result.errors += 1;
+        unknown.push(job.id);
+      }
+      await new Promise((r) => setTimeout(r, GAP_MS));
     }
-    await new Promise((r) => setTimeout(r, GAP_MS));
+    if (++sinceFlush >= FLUSH_EVERY) {
+      await flush();
+      sinceFlush = 0;
+    }
   }
-
-  await withElevated(async (db) => {
-    // Three fixed statements rather than one per row: the batch is 120 wide and
-    // the pool is 8.
-    if (toClose.length > 0) {
-      const rows = await db`
-        update public.company_jobs
-           set is_open = false, close_reason = 'dead_link',
-               check_failures = check_failures + 1, last_checked_at = now()
-         where id = any(${toClose}::uuid[])
-        returning id
-      `;
-      result.closed = rows.length;
-    }
-    if (gone.length > 0) {
-      await db`
-        update public.company_jobs
-           set check_failures = check_failures + 1, last_checked_at = now()
-         where id = any(${gone}::uuid[])
-      `;
-    }
-    // A live answer clears the record: two strikes must be CONSECUTIVE.
-    if (alive.length > 0) {
-      await db`
-        update public.company_jobs
-           set check_failures = 0, last_checked_at = now()
-         where id = any(${alive}::uuid[])
-      `;
-    }
-    // An ambiguous answer is not evidence either way. Stamp the timestamp so
-    // the row moves to the back of the queue, but leave the strikes alone.
-    if (unknown.length > 0) {
-      await db`
-        update public.company_jobs
-           set last_checked_at = now()
-         where id = any(${unknown}::uuid[])
-      `;
-    }
-  });
+  await flush();
 
   return result;
 }

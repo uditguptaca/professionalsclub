@@ -3,6 +3,7 @@
 import { auth } from '@/lib/auth/server';
 import { readAuthError, authErrorMessage } from '@/lib/auth/errors';
 import { lookupInvite, acceptInvite } from '@/server/repos/business-invites';
+import { allow, clientIp, TOO_MANY } from '@/server/rate-limit';
 
 /**
  * Accepting a business invitation: the one way a business login is created.
@@ -28,6 +29,9 @@ export type InviteState =
   | { ok: false; error: string };
 
 export async function inspectInviteAction(token: string): Promise<InviteState> {
+  // Public and elevated: the token is 32 random bytes so guessing is not the
+  // threat, but each call is a free database round trip for anyone.
+  if (!(await allow('invite', await clientIp(), 30, 60 * 60_000))) return { ok: false, error: TOO_MANY };
   const target = await lookupInvite(token);
   if (!target) {
     return { ok: false, error: 'This invitation is not valid any more. Ask the club for a new link.' };
@@ -40,6 +44,7 @@ export async function acceptInviteAction(input: {
   password: string;
   fullName: string;
 }): Promise<{ ok: true; signedIn: boolean } | { ok: false; error: string }> {
+  if (!(await allow('invite', await clientIp(), 30, 60 * 60_000))) return { ok: false, error: TOO_MANY };
   const token = String(input.token ?? '');
   const password = String(input.password ?? '');
   const fullName = String(input.fullName ?? '').trim();

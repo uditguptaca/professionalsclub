@@ -60,11 +60,13 @@ tables, and a table owner bypasses RLS. `withUser()` exists to drop into
 `app_authenticated` and publish the caller's id for `app.current_user_id()`; a
 stray `pool.query()` runs as the owner with RLS switched off and no visible
 symptom. `withElevated()` does this deliberately and its callers are counted: creating a
-profile at signup, deleting your own account, the job-feed sync, and the email
-outbox drain. The last two are privileged because no user is in the loop — the
-cron fires them, they take no caller-supplied SQL shape, and the drain
-deliberately resolves other members' email addresses somewhere a member's own
-session cannot.
+profile at signup (and the two business-account lookups keyed on the session's
+own id), deleting your own account, the invite lookup and accept (matched on the
+token's hash), the job-feed sync and link check, the email and SMS drains, the
+push claim, coupon-hold expiry and the past-events sweep. The cron-fired ones are
+privileged because no user is in the loop — they take no caller-supplied SQL
+shape, and the drains deliberately resolve other members' addresses somewhere a
+member's own session cannot.
 
 **Every Server Action is a public HTTP endpoint.** Being exported from a
 `'use server'` file is not access control. Each action starts with
@@ -153,9 +155,9 @@ send, so a crash mid-flight drops that push rather than repeating it. For
 something already sitting in the member's inbox, a missed buzz beats a duplicate.
 Sending happens in `after()` at the end of the request whose write caused it
 (hooked once in `withUser`/`withAnon` in [src/server/db.ts](src/server/db.ts) -
-never the elevated path, or the drain would schedule itself forever). The hourly
-`/api/jobs/push` cron is a backstop for requests that died, not the delivery
-mechanism.
+never the elevated path, or the drain would schedule itself forever). The daily
+`/api/jobs/push` cron (Vercel Hobby allows one run a day) is a backstop for
+requests that died, not the delivery mechanism.
 
 **The fan-out must never hold a database connection.** `drainPush()` is
 deliberately claim (short transaction) -> HTTP with nothing held -> cleanup
@@ -202,6 +204,35 @@ helpers are granted to `app_authenticated` only, never PUBLIC. Media URLs are
 pinned to OUR Blob store (`isOurUpload` in `src/server/media.ts`, from the
 token's store id). Emailed links use `siteOrigin()`, never the Host header.
 Public forms, resends, signups and link previews go through `src/server/rate-limit.ts`.
+
+**Round 3 rules (0057).** There is ONE block: both the chat and the community
+button write `member_blocks`, `is_blocked_between_members()` is the predicate
+everything reads (it still honours the old `community_blocks` rows), a block
+severs the follow graph both ways, and `can_view_member()` is false between
+blocked members. The feed, comment and like SELECT policies carry
+`can_view_member(author_id)` so the private-profile rule has RLS behind it.
+`matrimony_visible_profiles` serves only `approved` listings; a hidden one is
+visible solely through an accepted interest or an open conversation.
+`matrimony_owner()` answers only for the owner, an admin or a matched pair, and
+`member_display_name()` is trigger-only. `log_audit()` is admin-only. Event
+capacity and past dates are enforced on `event_rsvps` by trigger and policy.
+Outbox rows are claimed as `sending` with `claimed_at` (a stranded claim is
+reclaimed after fifteen minutes) and retried with `not_before` backoff; a 4xx
+from the provider is final, a 5xx/429 is not. The refresh cron runs each stage
+in its own try/catch and always answers 200 with a per-stage report. Every
+server-side fetch of a URL a person typed goes through `src/server/net-guard.ts`.
+Deleting a row that owns a Blob deletes the Blob (`deleteUploads`).
+`setupSql()` sets `statement_timeout`, `lock_timeout` and `app.site_url` on
+every transaction; `SITE_URL` in `src/server/origin.ts` is the one configured
+origin. Public reads use `withAnonRead` so a page view schedules no push drain.
+Per-deployment Vercel URLs are behind Vercel Authentication; only the alias is
+public. Sessions: the local session-data cookie is trusted for 120 s and the
+profile cache for 30 s (a copied cookie pair used to outlive sign-out by an
+hour); member sign-out calls `dropCache('')` and `forgetMe()`; the reset page
+calls `revokeSessionsForReset(token)` before the reset, the one elevated write
+into `neon_auth`. Event links go through `assertEventLinks()`; every typed URL
+that becomes an href through `assertHttpUrl()`; every upload through
+`isOurUpload()`, the only definition of "ours".
 
 **Chat link previews are made on the sender's device and travel inside the
 ciphertext.** `src/lib/chat-links.tsx` wraps text + card in an envelope that

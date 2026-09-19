@@ -375,7 +375,7 @@ export default function BusinessSignupPage() {
             <div className="animate-fade-in">
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                 <Building2 size={22} style={{ color: 'var(--text-accent)' }} />
-                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 800 }}>Business Profile</h2>
+                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 800 }}>Business Profile</h1>
               </div>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 28 }}>Tell us about your business.</p>
 
@@ -451,7 +451,7 @@ export default function BusinessSignupPage() {
             <div className="animate-fade-in">
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                 <MapPin size={22} style={{ color: 'var(--text-accent)' }} />
-                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 800 }}>Contact & Location</h2>
+                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 800 }}>Contact & Location</h1>
               </div>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 28 }}>How can members reach you?</p>
 

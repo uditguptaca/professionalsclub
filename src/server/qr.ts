@@ -1,4 +1,5 @@
 import 'server-only';
+import { SITE_URL } from '@/server/origin';
 import QRCode from 'qrcode';
 
 /**
@@ -18,7 +19,7 @@ import QRCode from 'qrcode';
  * code is worthless without the login that owns it.
  */
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://professionalsclub.ca';
+const SITE = SITE_URL;
 
 export const redeemUrl = (code: string): string =>
   `${SITE.replace(/\/$/, '')}/portal/business/redeem/${encodeURIComponent(code)}`;

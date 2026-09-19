@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { requireUserId } from '@/server/auth';
 import { eventDetail } from '@/server/repos/events';
 import { dateOnlyParts } from '@/lib/dates';
+import { SITE_URL } from '@/server/origin';
 
 /**
  * One event as a calendar file.
@@ -41,15 +42,24 @@ const pad = (n: number) => String(n).padStart(2, '0');
 /** RFC 5545 text escaping. */
 const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r\n|\r|\n/g, '\\n');
 
-/** Lines longer than 75 octets are folded with CRLF + space. */
+/**
+ * Lines longer than 75 OCTETS are folded with CRLF + space (RFC 5545 3.1).
+ * Counted in bytes, not string length: an accented title is longer on the
+ * wire than on screen, and a cut inside a multi-byte character would make the
+ * file invalid UTF-8, so the cut only ever lands on a character boundary.
+ */
 function fold(line: string): string {
+  const bytes = Buffer.from(line, 'utf8');
+  if (bytes.length <= 75) return line;
   const out: string[] = [];
-  let rest = line;
-  while (rest.length > 74) {
-    out.push(rest.slice(0, 74));
-    rest = ' ' + rest.slice(74);
+  let start = 0;
+  while (start < bytes.length) {
+    const room = out.length === 0 ? 75 : 74;
+    let end = Math.min(start + room, bytes.length);
+    while (end < bytes.length && end > start && (bytes[end] & 0xc0) === 0x80) end--;
+    out.push((out.length === 0 ? '' : ' ') + bytes.subarray(start, end).toString('utf8'));
+    start = end;
   }
-  out.push(rest);
   return out.join('\r\n');
 }
 
@@ -96,7 +106,7 @@ export async function GET(
     end = `DTEND;VALUE=DATE:${nextDay(y, mo, d)}`;
   }
 
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://professionalsclub.vercel.app';
+  const site = SITE_URL;
   const url = `${site}/portal/member/events/${event.id}`;
   const location = event.eventType === 'virtual'
     ? (event.onlineUrl ?? 'Online')

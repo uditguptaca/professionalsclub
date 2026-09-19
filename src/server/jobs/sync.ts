@@ -1,4 +1,5 @@
 import 'server-only';
+import { isHttpUrl } from '@/server/media';
 import { withElevated } from '@/server/db';
 import { fetchJobs, FETCHABLE, type SourceKind } from '@/server/jobs/sources';
 
@@ -76,8 +77,31 @@ export async function syncCompany(companyId: string): Promise<SyncResult> {
     // Deduplicated first: a feed occasionally repeats an id across pages, and
     // "ON CONFLICT DO UPDATE command cannot affect row a second time" would
     // abort the whole sync.
-    const byId = new Map(fetched.map((j) => [j.externalId, j]));
+    // Third-party feed: a role whose apply link is not http(s) is dropped
+    // rather than stored as an href under the club's brand.
+    const byId = new Map(fetched.filter((j) => isHttpUrl(j.applyUrl)).map((j) => [j.externalId, j]));
     const jobs = [...byId.values()];
+
+    // A 200 that carries no roles is how an ATS endpoint actually degrades: a
+    // renamed key, an HTML error page served as JSON, an empty page. Treating
+    // that as "the employer closed everything" retired whole boards with
+    // close_reason = 'feed'. Keep what we have and say so on the company row.
+    if (jobs.length === 0) {
+      const open = await db`
+        select count(*)::int as n from public.company_jobs
+         where company_id = ${companyId}::uuid and is_open
+      `;
+      const n = Number((open[0] as { n: number } | undefined)?.n ?? 0);
+      if (n > 0) {
+        const message = `Feed returned no roles; kept the ${n} already listed`;
+        await db`
+          update public.companies
+             set jobs_synced_at = now(), jobs_sync_error = ${message}
+           where id = ${companyId}::uuid
+        `;
+        return { ...base, error: message };
+      }
+    }
 
     let added = 0;
     let updated = 0;

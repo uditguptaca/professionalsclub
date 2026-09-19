@@ -1,4 +1,5 @@
 import 'server-only';
+import { SITE_URL } from '@/server/origin';
 import { Pool, type PoolClient } from '@neondatabase/serverless';
 import { schedulePush } from '@/server/push/schedule';
 
@@ -37,6 +38,9 @@ function getPool(): Pool {
     connectionString: process.env.DATABASE_URL,
     idleTimeoutMillis: 300_000,
     max: 8,
+    // With all eight busy, fail the ninth request in five seconds rather than
+    // queue it forever: a fast error beats every request hanging.
+    connectionTimeoutMillis: 5_000,
   });
   return pool;
 }
@@ -95,18 +99,27 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  * makes the inlining locally, provably injection-free.
  */
 function setupSql(mode: Mode): string {
+  // Every transaction: a statement ceiling (a runaway query must not hold one
+  // of eight connections for minutes), a lock ceiling, and the site URL the
+  // SMS trigger puts in its links (app.site_url), inlined from a constant the
+  // process owns rather than anything a request sent. Elevated work (feed
+  // sync, drains) gets a longer leash; a member's request never needs it.
+  const common =
+    `set_config('statement_timeout', '${mode.kind === 'owner' ? 60_000 : 15_000}', true), ` +
+    "set_config('lock_timeout', '5000', true), " +
+    `set_config('app.site_url', '${SITE_URL.replace(/'/g, '')}', true)`;
   if (mode.kind === 'user') {
     if (!UUID_RE.test(mode.userId)) throw new Error('Invalid user id');
     return (
       'begin; ' +
       `select set_config('app.user_id', '${mode.userId}', true), ` +
-      "set_config('role', 'app_authenticated', true);"
+      "set_config('role', 'app_authenticated', true), " + common + ';'
     );
   }
   if (mode.kind === 'anonymous') {
-    return "begin; select set_config('role', 'app_anonymous', true);";
+    return "begin; select set_config('role', 'app_anonymous', true), " + common + ';';
   }
-  return 'begin;';
+  return 'begin; select ' + common + ';';
 }
 
 async function run<T>(mode: Mode, fn: (db: Db) => Promise<T>, readOnly = false): Promise<T> {
@@ -177,6 +190,16 @@ export function withUserRead<T>(userId: string, fn: (db: Db) => Promise<T>): Pro
  */
 export function withAnon<T>(fn: (db: Db) => Promise<T>): Promise<T> {
   return run({ kind: 'anonymous' }, fn);
+}
+
+/**
+ * withAnon for SELECT-only work. Besides the earlier return, a read-only
+ * transaction schedules no push drain: a public page view writes nothing, so
+ * there is nothing owed, and every marketing page render was paying for a
+ * token mint and a second pooled connection to find that out.
+ */
+export function withAnonRead<T>(fn: (db: Db) => Promise<T>): Promise<T> {
+  return run({ kind: 'anonymous' }, fn, true);
 }
 
 /**

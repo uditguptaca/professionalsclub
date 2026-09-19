@@ -84,7 +84,7 @@ export default function BusinessProfilePage() {
             <div className="biz-profile-meta-row">
               <span><Briefcase size={14} /> {biz.category}</span>
               <span><MapPin size={14} /> {biz.city}, {biz.province}</span>
-              <span><Calendar size={14} /> {biz.yearsInBusiness} years in business</span>
+              {biz.yearsInBusiness != null && <span><Calendar size={14} /> {biz.yearsInBusiness} years in business</span>}
               {biz.businessHours && <span><Clock size={14} /> {biz.businessHours}</span>}
             </div>
           </div>

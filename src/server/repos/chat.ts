@@ -644,6 +644,10 @@ export async function pollThread(
            where m.conversation_id = $1
              and m.created_at > (select cleared_at from prefs)
              and m.read_at is not null
+             -- A poll only needs receipts stamped since its cursor; the first
+             -- load (no cursor) gets them all. Re-reading the whole thread's
+             -- receipts twelve times a minute grew with history for ever.
+             and ($3::timestamptz is null or m.read_at > $3::timestamptz)
              -- Same symmetry as above: whether THEY read MY message is only
              -- visible when both sides leave receipts on.
              and not (m.sender_id = $2 and not (select receipts from vis))
@@ -1176,6 +1180,12 @@ export async function unblockMember(userId: string, targetId: string): Promise<v
   await withUser(userId, async (db) => {
     await db.run(
       `delete from public.member_blocks where blocker_id = $1 and blocked_id = $2`,
+      [userId, targetId]
+    );
+    // The community button wrote its own table before 0057; lifting a block
+    // from the profile clears that too.
+    await db.run(
+      `delete from public.community_blocks where blocker_id = $1 and blocked_id = $2`,
       [userId, targetId]
     );
   });

@@ -1,5 +1,6 @@
 'use server';
 
+import { isOurUpload } from '@/server/media';
 import { requireUserId } from '@/server/auth';
 import * as repo from '@/server/repos/matrimony-media';
 import type { MatrimonyMedia } from '@/types/matrimony';
@@ -38,9 +39,10 @@ function fail(context: string, error: unknown): { ok: false; error: string } {
  */
 function assertOurPhotoUrl(url: unknown): string {
   const value = typeof url === 'string' ? url.trim() : '';
-  const fromBlob = /^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\//.test(value);
-  const fromDev = /^\/uploads\/[a-z0-9]+\.(jpg|png|webp|gif)$/.test(value);
-  if (!fromBlob && !fromDev) throw new Error('That upload was not recognised. Please try again.');
+  // OUR store only (isOurUpload), not any Blob store: this renders to other members.
+  if (!isOurUpload(value, 'media') || /\.(mp4|webm|mov)(\?.*)?$/i.test(value)) {
+    throw new Error('That upload was not recognised. Please try again.');
+  }
   return value;
 }
 

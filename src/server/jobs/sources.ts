@@ -1,4 +1,5 @@
 import 'server-only';
+import { guardedFetch } from '@/server/net-guard';
 
 /**
  * Where open roles come from.
@@ -96,7 +97,9 @@ export const SOURCE_CONFIG_HINTS: Record<SourceKind, string> = {
 const UA = 'ProfessionalsClubBot/1.0 (+https://professionalsclub.ca; community job referrals)';
 
 async function get(url: string, init?: RequestInit): Promise<Response> {
-  const res = await fetch(url, {
+  // An admin typed the careers URL (adminDetectSource). Private addresses and
+  // every redirect hop are refused here exactly as in /api/link-preview.
+  const res = await guardedFetch(url, {
     ...init,
     headers: { 'user-agent': UA, accept: '*/*', ...(init?.headers ?? {}) },
     signal: AbortSignal.timeout(20_000),

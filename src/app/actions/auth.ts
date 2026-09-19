@@ -137,9 +137,13 @@ export async function signUpMember(input: {
 
     return { ok: true, needsVerification: !hasSession };
   } catch (err) {
-    // The account exists at this point but the profile write failed.
-    // ensureProfile() back-fills it on first sign-in, so this is recoverable.
-    console.error('[action] Profile creation after signup failed:',
+    // Two things land here. A genuine profile-write failure, which
+    // ensureProfile() back-fills on first sign-in; and Neon Auth's answer to
+    // an address that already has an account - a 200 with an invented user id
+    // that the profiles FK then refuses. The caller gets the same answer either
+    // way, so the form does not enumerate addresses; the confirmation screen's
+    // wording is written for both cases.
+    console.info('[action] Profile not created after signup (existing address or write failure):',
       err instanceof Error ? err.message : err);
     return { ok: true, needsVerification: true };
   }
@@ -173,9 +177,25 @@ export async function deleteOwnAccount(): Promise<{ ok: true } | { ok: false; er
   }
 
   try {
-    await withElevated(async (db) => {
+    const files = await withElevated(async (db) => {
+      // The cascade removes the rows; the files they pointed at are ours to
+      // remove too, and only knowable before the rows go.
+      const photos = await db<{ url: string }>`
+        select m.url from public.matrimony_media m
+          join public.matrimony_profiles p on p.id = m.profile_id
+         where p.user_id = ${userId}::uuid
+      `;
+      const posts = await db<{ media: { url?: string }[] | null }>`
+        select media from public.community_posts where author_id = ${userId}::uuid
+      `;
       await db`delete from neon_auth."user" where id = ${userId}::uuid`;
+      return [
+        ...photos.map((r) => r.url),
+        ...posts.flatMap((r) => (Array.isArray(r.media) ? r.media : []).map((m) => m.url)),
+      ];
     });
+    const { deleteUploads } = await import('@/server/media');
+    deleteUploads(files);
     const { invalidateProfileCache } = await import('@/server/auth');
     invalidateProfileCache(userId);
     return { ok: true };
@@ -183,5 +203,49 @@ export async function deleteOwnAccount(): Promise<{ ok: true } | { ok: false; er
     console.error('[action] Account deletion failed:',
       err instanceof Error ? err.message : err);
     return { ok: false, error: 'Deletion failed. Contact support@professionalsclub.ca and we will remove the account manually.' };
+  }
+}
+
+/**
+ * Called by the portal shell just before sign-out: drop this instance's cached
+ * profile so the next request for this account reloads it. Nothing to
+ * authorise beyond "you are you".
+ */
+export async function forgetMe(): Promise<void> {
+  const { requireUserId, invalidateProfileCache } = await import('@/server/auth');
+  try {
+    invalidateProfileCache(await requireUserId());
+  } catch {
+    // Already signed out: nothing cached to forget.
+  }
+}
+
+/**
+ * A password reset ends every session the account had. Neon's reset endpoint
+ * rotates the credential but leaves existing sessions alive for their full
+ * seven days, so an attacker already inside stays inside; this closes that.
+ * Authenticated by the reset token itself (the same proof the reset uses),
+ * checked against Neon Auth's own verification table; the deletion is the one
+ * elevated write into neon_auth, and it touches only rows of the account the
+ * token was issued for. Rate limited: it is public.
+ */
+export async function revokeSessionsForReset(token: string): Promise<{ ok: boolean }> {
+  const { allow, clientIp } = await import('@/server/rate-limit');
+  if (!(await allow('reset-revoke', await clientIp(), 10, 60 * 60_000))) return { ok: false };
+  const raw = String(token ?? '').trim();
+  if (!raw || raw.length > 200) return { ok: false };
+  try {
+    const rows = await withElevated(async (db) => db<{ id: string }>`
+      delete from neon_auth.session s
+       using neon_auth.verification v
+       where v.identifier = ${'reset-password:' + raw}
+         and v."expiresAt" > now()
+         and s."userId"::text = v.value
+      returning s.id
+    `);
+    return { ok: rows.length >= 0 };
+  } catch (error) {
+    console.error('[auth] session revoke on reset failed:', error instanceof Error ? error.message : error);
+    return { ok: false };
   }
 }

@@ -1,5 +1,6 @@
 import 'server-only';
 import { withUser, withUserRead, one, type Db } from '@/server/db';
+import { isOurUpload, assertHttpUrl } from '@/server/media';
 import { toDomain, toDomainAll } from '@/server/case';
 import { insertRow, updateRow, selectList } from '@/server/query';
 import { CONTENT_TABLES, type ContentEntity } from '@/server/repos/content';
@@ -19,12 +20,11 @@ const MAX_ATTACHMENTS = 8;
 
 function safeDocuments(input: unknown): string[] {
   if (!Array.isArray(input)) return [];
+  // OUR store, not any Blob store: these render to admins and volunteers.
   return input
     .filter((u): u is string => typeof u === 'string' && u.trim().length > 0)
     .map((u) => u.trim())
-    .filter((u) =>
-      /^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\//.test(u) ||
-      /^\/uploads\/[a-z0-9]+\.[a-z0-9]{2,5}$/i.test(u))
+    .filter((u) => isOurUpload(u, 'attachment'))
     .slice(0, MAX_ATTACHMENTS);
 }
 
@@ -109,7 +109,13 @@ export async function loadSnapshot(userId: string, isAdmin: boolean): Promise<Po
       slice('volunteers', 'select * from public.volunteer_applications order by created_at desc'),
       slice('assignments', 'select * from public.case_assignments order by created_at desc'),
       slice('messages', 'select * from public.messages order by created_at desc'),
-      slice('businesses', 'select * from public.businesses order by created_at desc'),
+      // The review note and the two id columns are for the club and the
+      // owner; every other member gets the listing without them.
+      slice('businesses', `select b.*,
+               case when public.is_admin() then b.submission_details else '{}'::jsonb end as submission_details,
+               case when public.is_admin() or b.created_by = app.current_user_id() then b.created_by end as created_by,
+               case when public.is_admin() then b.approved_by_admin end as approved_by_admin
+          from (select * from public.businesses) b order by b.created_at desc`),
       slice('contact_requests', 'select * from public.business_contact_requests order by created_at desc'),
       slice('ebooks', contentQuery('ebooks')),
       slice('workshops', contentQuery('workshops')),
@@ -514,6 +520,12 @@ export async function updateOwnProfile(
   userId: string,
   data: Record<string, unknown>
 ): Promise<Member> {
+  assertHttpUrl(data.linkedinUrl, 'LinkedIn link');
+  // Names become notification and push titles; a 4 KB push is refused by FCM
+  // for everyone it names. The database has the same ceilings (0058).
+  for (const [k, max] of [['firstName', 80], ['lastName', 80], ['jobTitle', 120], ['company', 120], ['professionalSummary', 5000]] as const) {
+    if (typeof data[k] === 'string' && (data[k] as string).length > max) data[k] = (data[k] as string).slice(0, max);
+  }
   return withUser(userId, async (db) => {
     const row = await updateRow(db, 'public.profiles', PROFILE_WRITABLE, userId, data, '*');
     return toDomain<Member>(row);
@@ -619,6 +631,12 @@ export async function setMemberAccountStatus(
   adminId: string,
   input: { memberId: string; status: 'active' | 'suspended' | 'archived' }
 ): Promise<Member> {
+  // Reactivation is admin-only, so an admin who suspends themselves on a
+  // one-admin club has locked everyone out. The database also refuses to
+  // retire the last active admin (0057).
+  if (input.memberId === adminId && input.status !== 'active') {
+    throw new Error('Please ask another admin to change your own account status.');
+  }
   return withUser(adminId, async (db) => {
     const rows = await db`
       update public.profiles set account_status = ${input.status}

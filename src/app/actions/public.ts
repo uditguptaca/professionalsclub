@@ -64,12 +64,12 @@ export async function submitContactMessage(input: {
   message: string;
   phone?: string;
 }): Promise<PublicResult> {
+  const limited = await publicQuota('submitContactMessage');
+  if (limited) return limited;
   try {
     await repo.submitInquiry({ kind: 'contact', ...input });
     return { ok: true };
   } catch (error) {
-  const limited = await publicQuota('submitContactMessage');
-  if (limited) return limited;
     return toPublicError('Sending your message', error);
   }
 }
@@ -82,12 +82,12 @@ export async function submitVolunteerHelpRequest(input: {
   requestedFor?: string;
   category?: string;
 }): Promise<PublicResult> {
+  const limited = await publicQuota('submitVolunteerHelpRequest');
+  if (limited) return limited;
   try {
     await repo.submitInquiry({ kind: 'volunteer_help', ...input });
     return { ok: true };
   } catch (error) {
-  const limited = await publicQuota('submitVolunteerHelpRequest');
-  if (limited) return limited;
     return toPublicError('Sending your request', error);
   }
 }
@@ -95,12 +95,12 @@ export async function submitVolunteerHelpRequest(input: {
 export async function submitBusinessListing(
   input: repo.BusinessApplicationInput
 ): Promise<PublicResult> {
+  const limited = await publicQuota('submitBusinessListing');
+  if (limited) return limited;
   try {
     await repo.submitBusinessApplication(input);
     return { ok: true };
   } catch (error) {
-  const limited = await publicQuota('submitBusinessListing');
-  if (limited) return limited;
     return toPublicError('Submitting your application', error);
   }
 }

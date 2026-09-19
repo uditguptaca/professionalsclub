@@ -1,4 +1,5 @@
 import 'server-only';
+import { SITE_URL } from '@/server/origin';
 import { withElevated } from '@/server/db';
 
 /**
@@ -19,7 +20,7 @@ import { withElevated } from '@/server/db';
  */
 
 const FROM = process.env.EMAIL_FROM ?? 'Professionals Club <noreply@professionalsclub.ca>';
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://professionalsclub.ca';
+const SITE = SITE_URL;
 
 export interface Message {
   to: string;
@@ -28,7 +29,8 @@ export interface Message {
   text: string;
 }
 
-export type SendOutcome = { ok: true } | { ok: false; error: string };
+/** `retry` is true for a provider or network fault (5xx, 429, timeout); false for a 4xx that will never succeed. */
+export type SendOutcome = { ok: true } | { ok: false; error: string; retry: boolean };
 
 /**
  * Resend when configured, otherwise a logged no-op. The console line is what a
@@ -62,11 +64,11 @@ async function deliver(message: Message): Promise<SendOutcome> {
     });
     if (!res.ok) {
       const body = await res.text();
-      return { ok: false, error: `Resend ${res.status}: ${body.slice(0, 200)}` };
+      return { ok: false, error: `Resend ${res.status}: ${body.slice(0, 200)}`, retry: res.status === 429 || res.status >= 500 };
     }
     return { ok: true };
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : 'Send failed' };
+    return { ok: false, error: error instanceof Error ? error.message : 'Send failed', retry: true };
   }
 }
 
@@ -96,8 +98,11 @@ const p = (text: string) =>
   `<p style="margin:0 0 12px;font-size:14px;line-height:1.65;color:#3a3a3a">${text}</p>`;
 
 const esc = (s: unknown): string =>
-  String(s ?? '').replace(/[&<>"']/g, (c) =>
+  String(s ?? '').replace(/[\r\n\t]+/g, ' ').replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+
+/** For a subject line: no HTML entities, no line breaks, bounded. */
+const plain = (s: unknown): string => String(s ?? '').replace(/[\r\n\t]+/g, ' ').trim().slice(0, 120);
 
 type Payload = Record<string, unknown>;
 
@@ -114,7 +119,7 @@ const TEMPLATES: Record<string, (payload: Payload) => Omit<Message, 'to'>> = {
     const roles = count === 1 ? '1 open role' : `${count} open roles`;
     const link = `${SITE}/portal/member/chats`;
     return {
-      subject: `${seeker} asked you for a referral at ${company}`,
+      subject: `${plain(d.seeker ?? 'A member')} asked you for a referral at ${plain(d.company)}`,
       html: shell(
         `${seeker} is asking about ${roles} at ${company}`,
         p(`<strong>${seeker}</strong> asked whether you can help with an application at ${company}, and picked you because you chose to be listed as open to referring there.`) +
@@ -135,7 +140,7 @@ const TEMPLATES: Record<string, (payload: Payload) => Omit<Message, 'to'>> = {
     const helper = esc(d.helper);
     const link = `${SITE}/portal/member/chats`;
     return {
-      subject: `${helper} can help with your referral at ${company}`,
+      subject: `${plain(d.helper ?? 'A member')} can help with your referral at ${plain(d.company)}`,
       html: shell(
         `Good news — someone at ${company} can help`,
         p(`<strong>${helper}</strong> works at ${company} and has agreed to help with your request.`) +
@@ -157,7 +162,7 @@ const TEMPLATES: Record<string, (payload: Payload) => Omit<Message, 'to'>> = {
     const link = `${SITE}/portal/member/events/${id}`;
     const ics = `${SITE}/api/events/${id}/calendar.ics`;
     return {
-      subject: `You are going to ${title}`,
+      subject: `You are going to ${plain(d.title)}`,
       html: shell(
         `See you at ${title}`,
         p(`<strong>${when}</strong><br>${where}`) +
@@ -181,7 +186,7 @@ Event details: ${link}
     const business = esc(d.business);
     const link = String(d.link ?? '');
     return {
-      subject: `Your Professionals Club listing for ${business} is ready`,
+      subject: `Your Professionals Club listing for ${plain(d.business)} is ready`,
       html: shell(
         `${business} is verified`,
         p(`The club has verified <strong>${business}</strong>, and this link sets up the login that manages it.`) +
@@ -212,6 +217,17 @@ export function renderTemplate(template: string, payload: Payload): Omit<Message
 
 export interface DrainResult { sent: number; failed: number; skipped: number }
 
+const MAX_ATTEMPTS = 4;
+
+/**
+ * A provider fault (5xx, 429, network) is worth another go later; a 4xx is
+ * the provider saying "never", and retrying it three times only delays the
+ * operator seeing the reason.
+ */
+export function retryStatus(outcome: { retry: boolean }, attempts: number): 'failed' | 'pending' {
+  return outcome.retry && attempts < MAX_ATTEMPTS ? 'pending' : 'failed';
+}
+
 /**
  * Send what is queued.
  *
@@ -233,17 +249,26 @@ export async function drainOutbox(limit = 50): Promise<DrainResult> {
   // Claim -> send with NOTHING held -> write back. The provider calls take up
   // to 15s each; holding one of eight pooled connections across them stalled
   // every member request behind a slow mail server (see drainPush).
+  //
+  // A row is claimed by moving it to 'sending'. A drain that dies mid-flight
+  // leaves it there, so the claim also takes back anything that has sat in
+  // 'sending' for fifteen minutes - otherwise those rows were invisible to
+  // every later drain and lost for good. not_before is the backoff a retry
+  // set (0057).
   type Row = { id: string; template: string; payload: Payload; attempts: number; address: string | null };
   const rows = await withElevated(async (db) => (await db`
     with claimed as (
       select o.id from public.email_outbox o
-       where o.status = 'pending' and o.attempts < 3
+       where (o.status = 'pending'
+              or (o.status = 'sending' and o.claimed_at < now() - interval '15 minutes'))
+         and o.attempts < ${MAX_ATTEMPTS}
+         and coalesce(o.not_before, now()) <= now()
        order by o.created_at
        limit ${limit}
        for update skip locked
     )
     update public.email_outbox o
-       set status = 'sending', attempts = o.attempts + 1
+       set status = 'sending', attempts = o.attempts + 1, claimed_at = now()
       from claimed
      where o.id = claimed.id
     returning o.id, o.template, o.payload, o.attempts,
@@ -260,7 +285,7 @@ export async function drainOutbox(limit = 50): Promise<DrainResult> {
     }
     const outcome = await deliver({ ...rendered, to: row.address! });
     if (outcome.ok) results.push({ id: row.id, status: 'sent', error: null });
-    else results.push({ id: row.id, status: row.attempts >= 3 ? 'failed' : 'pending', error: outcome.error.slice(0, 500) });
+    else results.push({ id: row.id, status: retryStatus(outcome, row.attempts), error: outcome.error.slice(0, 500) });
   }
 
   if (results.length > 0) {
@@ -269,6 +294,8 @@ export async function drainOutbox(limit = 50): Promise<DrainResult> {
         update public.email_outbox o
            set status = r.status,
                sent_at = case when r.status = 'sent' then now() else o.sent_at end,
+               -- Backoff on a retry: 5, 10, 20 minutes.
+               not_before = case when r.status = 'pending' then now() + make_interval(mins => (5 * power(2, o.attempts - 1))::int) end,
                last_error = r.error
           from jsonb_to_recordset(${JSON.stringify(results)}::jsonb) as r(id uuid, status text, error text)
          where o.id = r.id

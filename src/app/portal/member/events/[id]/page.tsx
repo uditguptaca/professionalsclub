@@ -126,7 +126,7 @@ export default function MemberEventPage() {
 
   const photos = [event.image, ...event.gallery].filter((u): u is string => Boolean(u));
   const host = event.organiser || event.businessName;
-  const past = event.status === 'past';
+  const past = event.status === 'past' || (event.date != null && event.date < new Date().toISOString().slice(0, 10));
 
   return (
     <div style={{ maxWidth: '46rem' }}>
@@ -283,6 +283,7 @@ export default function MemberEventPage() {
             initialGoing={event.going}
             initialMyRsvp={event.myRsvp}
             baseAttendees={event.attendees}
+            full={event.seatsLeft === 0}
             onChanged={() => void load()}
           />
           {event.admission === 'paid' && (

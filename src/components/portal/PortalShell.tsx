@@ -9,7 +9,8 @@ import { NotificationProvider, useNotifications } from '@/context/notification-c
 import NotificationBell from '@/components/portal/NotificationBell';
 import { stopPush, registeredToken, isNativePush } from '@/lib/push';
 import { unregisterPushDeviceAction } from '@/app/actions/push';
-import { readCache, writeCache, onIdle, CACHE_KEYS } from '@/lib/swr-cache';
+import { forgetMe } from '@/app/actions/auth';
+import { readCache, writeCache, onIdle, dropCache, CACHE_KEYS } from '@/lib/swr-cache';
 import { fetchHomeFeed } from '@/app/actions/portal';
 import { fetchCommunityStart } from '@/app/actions/community';
 import { fetchJobsBoard } from '@/app/actions/referrals';
@@ -199,6 +200,12 @@ function PortalChrome({
       }
       await stopPush();
     }
+    // The next person to sign in on this phone must not see this member's
+    // chats or notifications first: the cache keys are per module, not per
+    // member (the business console already did this). And the server forgets
+    // the cached profile while there is still a session to name it.
+    dropCache('');
+    await forgetMe().catch(() => {});
     // signOut throws on failure like the rest of the client. Navigating anyway
     // is deliberate: if the cookie survived, the proxy sends the user straight
     // back to the dashboard, which is a truthful outcome.
