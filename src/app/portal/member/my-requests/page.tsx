@@ -26,7 +26,33 @@ const statusIcon = (status: string) => {
   return <Clock size={17} />;
 };
 
+/**
+ * The member's words for the internal status. The enum leaked straight to the
+ * screen before, so the two states that mean "it is your turn" said nothing of
+ * the kind: a person whose permit expires in eleven days read "Waiting for
+ * member" and waited, because they do not think of themselves as "member".
+ */
+const MEMBER_STATUS: Record<string, string> = {
+  submitted: 'Sent. Waiting for the club to read it',
+  under_review: 'A club admin is reading it',
+  admin_reviewing: 'A club admin is reading it',
+  need_more_info: 'We need more from you — open this and read the latest note',
+  waiting_for_member: 'Waiting for your reply',
+  approved: 'Approved — we are finding someone to help',
+  assigned: 'A volunteer is helping with this',
+  in_progress: 'A volunteer is helping with this',
+  volunteer_responded: 'There is a reply for you',
+  response_sent: 'There is a reply for you',
+  resolved: 'Sorted',
+  closed: 'Closed',
+  rejected: 'We could not take this on — open it to read why',
+  escalated: 'Moved to a senior admin',
+  archived: 'Archived',
+};
+
 const sentence = (text: string) => {
+  const mapped = MEMBER_STATUS[text];
+  if (mapped) return mapped;
   const words = text.replace(/_/g, ' ');
   return words.charAt(0).toUpperCase() + words.slice(1);
 };

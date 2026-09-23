@@ -354,7 +354,7 @@ export default function EBooksPage() {
           }}>
             E-Books <span style={{ color: 'var(--text-accent)' }}>Library</span>
           </h1>
-          <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
+          <p style={{ fontSize: '1.25rem', color: 'rgba(255,255,255,0.8)', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
             Step-by-step guides to make settling in Canada simpler — free to download.
           </p>
         </div>
@@ -470,10 +470,10 @@ export default function EBooksPage() {
               background: 'radial-gradient(circle, rgba(232, 93, 4, 0.15) 0%, transparent 70%)' 
             }} />
             
-            <h3 style={{ fontWeight: 900, fontSize: '2rem', marginBottom: '16px', fontFamily: 'var(--font-display)' }}>
+            <h3 style={{ color: '#ffffff', fontWeight: 900, fontSize: '2rem', marginBottom: '16px', fontFamily: 'var(--font-display)' }}>
               Looking for something specific?
             </h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginBottom: '40px', maxWidth: '500px', margin: '0 auto 40px' }}>
+            <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1.1rem', marginBottom: '40px', maxWidth: '500px', margin: '0 auto 40px' }}>
               Tell us which topic you need covered and we will look at writing it next.
             </p>
             <a

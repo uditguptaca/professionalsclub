@@ -211,7 +211,7 @@ export default function EventsPage() {
                       placeholder="Enter your name"
                       value={bookName}
                       onChange={e => setBookName(e.target.value)}
-                      style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                      style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem' }}
                     />
                   </div>
 
@@ -224,7 +224,7 @@ export default function EventsPage() {
                       placeholder="you@example.com"
                       value={bookEmail}
                       onChange={e => setBookEmail(e.target.value)}
-                      style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                      style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem' }}
                     />
                   </div>
 
@@ -234,7 +234,7 @@ export default function EventsPage() {
                       id="book-topic"
                       value={bookTopic}
                       onChange={e => setBookTopic(e.target.value)}
-                      style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none', cursor: 'pointer' }}
+                      style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem', cursor: 'pointer' }}
                     >
                       <option value="Career Guidance">Career Guidance & Job Referrals</option>
                       <option value="Resume Review">Resume & Cover Letter Polish</option>
@@ -251,7 +251,7 @@ export default function EventsPage() {
                       placeholder="e.g. weekday evenings, or Saturday mornings"
                       value={bookTime}
                       onChange={e => setBookTime(e.target.value)}
-                      style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                      style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem' }}
                     />
                   </div>
 

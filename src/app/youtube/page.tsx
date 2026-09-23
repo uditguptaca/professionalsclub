@@ -234,7 +234,7 @@ export default function YouTubePage() {
                   boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
                 }}>
                   <iframe
-                    src={`https://www.youtube.com/embed/${featured.embedId}`}
+                    src={`https://www.youtube-nocookie.com/embed/${featured.embedId}`}
                     title={featured.video.title}
                     style={{
                       position: 'absolute',

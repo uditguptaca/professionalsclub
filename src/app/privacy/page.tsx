@@ -40,8 +40,11 @@ const SECTIONS: { heading: string; body: React.ReactNode }[] = [
           <li><strong>Matrimony</strong> — the profile you create there, visible only to signed-in, verified members and moderated by admins. Nothing from it is ever public.</li>
         </ul>
         <p>
-          We do not collect your location, contacts, photos or files beyond what
-          you attach yourself, and the app requests no device permissions.
+          We do not collect your location or your contacts, and we only hold the
+          photos and files you attach yourself. The mobile app asks for two
+          permissions, both of which you can refuse: notifications, so we can
+          tell you about a reply, and the camera, so a business can scan a
+          member coupon. Neither is required to use the club.
         </p>
       </>
     ),
@@ -62,10 +65,14 @@ const SECTIONS: { heading: string; body: React.ReactNode }[] = [
     body: (
       <p>
         Data is stored in a Neon PostgreSQL database (hosted on AWS, US East)
-        and served through Vercel. Both process data on our behalf under their
-        own security programs. All traffic is encrypted in transit (TLS), and
-        database access is restricted by row-level security so members can only
-        ever read their own records.
+        and served through Vercel. Files you upload are held in Vercel Blob
+        storage. We also use a mail provider to send you email, a Google service
+        to deliver push notifications, and Anthropic&apos;s API to check posts and
+        photos automatically before they appear — which means the text and images
+        you post pass through it. Each of these handles your data on our behalf
+        and under their own security programs; none of them sells it. All traffic
+        is encrypted in transit (TLS), and database access is restricted by
+        row-level security so members can only ever read their own records.
       </p>
     ),
   },
@@ -74,8 +81,10 @@ const SECTIONS: { heading: string; body: React.ReactNode }[] = [
     body: (
       <ul>
         <li><strong>You</strong> — your own profile, requests and messages.</li>
-        <li><strong>Admins</strong> — help requests, volunteer applications and matrimony moderation queues, in order to run the service. Members never see each other&apos;s contact details; all help-desk communication is admin-mediated.</li>
-        <li><strong>Other members</strong> — only your matrimony profile, and only if you created one and it passed moderation.</li>
+        <li><strong>Admins</strong> — help requests, volunteer applications and the matrimony and content moderation queues, in order to run the service. A volunteer assigned to your request reads that request.</li>
+        <li><strong>Other members</strong> — your name, job title, employer and city; anything you post in the community feed or a group; events you say you are attending; and your matrimony listing if you created one and it passed review. If you set your profile to private, your posts are limited to the members you accept as followers.</li>
+        <li><strong>Nobody but you</strong> — your help requests (beyond the admin and any assigned volunteer), your chats, which are end-to-end encrypted and unreadable by the club, and your chat PIN backup.</li>
+        <li><strong>Your choice</strong> — your phone number and email are shown only where you put them: on your profile if you add them, and to a matrimony match once you accept their interest.</li>
       </ul>
     ),
   },

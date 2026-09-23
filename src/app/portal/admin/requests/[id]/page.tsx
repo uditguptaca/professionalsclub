@@ -164,11 +164,14 @@ export default function AdminRequestDetailPage() {
           <div className="card">
             <h3 className="font-bold mb-3" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><MessageSquare size={16} /> Message to Member</h3>
             <div style={{ display: 'flex', gap: 8 }}>
-              <textarea className="input" style={{ flex: 1 }} rows={2} aria-label="Message to the requester" placeholder="Type a message to send to the requester..." value={msgToMember} onChange={e => setMsgToMember(e.target.value)} />
-              <button className="btn btn-primary" onClick={handleSendToMember} disabled={!msgToMember.trim() || busy === 'member'} style={{ alignSelf: 'flex-end' }}>
-                {busy === 'member' ? 'Sending…' : <Send size={16} />}
+              <textarea id="msg-to-member" className="input" style={{ flex: 1 }} rows={2} aria-label="Message to the requester" placeholder="Type a message to send to the requester..." value={msgToMember} onChange={e => setMsgToMember(e.target.value)} />
+              <button className="btn btn-primary" onClick={handleSendToMember} disabled={!msgToMember.trim() || busy === 'member'} style={{ alignSelf: 'flex-end', whiteSpace: 'nowrap' }}>
+                {busy === 'member' ? 'Sending…' : <><Send size={16} /> Send to member</>}
               </button>
             </div>
+            <p className="admin-send-note">
+              {request.memberName} sees this, and gets a notification on their phone.
+            </p>
           </div>
 
           {/* Message to Volunteer */}
@@ -177,17 +180,22 @@ export default function AdminRequestDetailPage() {
               <h3 className="font-bold mb-3" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><UserCheck size={16} /> Message to Volunteer ({request.assignedVolunteerName})</h3>
               <div style={{ display: 'flex', gap: 8 }}>
                 <textarea
+                  id="msg-to-volunteer"
+                  aria-label={`Message to ${request.assignedVolunteerName ?? 'the assigned volunteer'}`}
                   className="input" style={{ flex: 1 }} rows={2}
                   placeholder={request.assignedVolunteerId ? "Type instructions for the assigned volunteer..." : "Assign a volunteer first."}
                   value={msgToVol} onChange={e => setMsgToVol(e.target.value)}
                   disabled={!request.assignedVolunteerId}
                 />
                 <button
-                  className="btn btn-primary" onClick={handleSendToVolunteer}
+                  className="btn btn-outline" onClick={handleSendToVolunteer}
                   disabled={!msgToVol.trim() || !request.assignedVolunteerId || busy === 'volunteer'}
-                  style={{ alignSelf: 'flex-end' }}
-                >{busy === 'volunteer' ? 'Sending…' : <Send size={16} />}</button>
+                  style={{ alignSelf: 'flex-end', whiteSpace: 'nowrap' }}
+                >{busy === 'volunteer' ? 'Sending…' : <><Send size={16} /> Send to volunteer</>}</button>
               </div>
+              <p className="admin-send-note">
+                Only {request.assignedVolunteerName ?? 'the assigned volunteer'} sees this. The member does not.
+              </p>
             </div>
           )}
 

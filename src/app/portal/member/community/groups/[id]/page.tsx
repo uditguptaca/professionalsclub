@@ -324,7 +324,7 @@ export default function CommunityGroupPage() {
               <section className="mp-section">
                 <h2><Info size={14} aria-hidden="true" /> About this group</h2>
                 <div className="cm-list" style={{ padding: '0.9rem 1rem' }}>
-                  <p style={{ margin: 0, fontSize: '0.92rem', lineHeight: 1.55, color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
+                  <p style={{ margin: 0, fontSize: '0.92rem', lineHeight: 1.55, color: 'var(--text-primary)', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
                     {group.description || 'No description yet.'}
                   </p>
                 </div>

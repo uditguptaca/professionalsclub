@@ -511,6 +511,14 @@ function HomeTab({ home, verified, onGo, onStart }: {
         </button>
       </div>
 
+      {/* Nothing in the console said what any of this costs. A proprietor
+          filling in a page and publishing offers could not tell whether they
+          were accruing a bill, and that uncertainty is what stops a small
+          owner from finishing. */}
+      <p className="bz-muted" style={{ marginTop: 4 }}>
+        Listing with the club is free. There is no fee, no subscription and no commission on anything you offer members.
+      </p>
+
       {attention.length > 0 && (
         <section>
           <h2 className="bz-h2">Needs attention</h2>

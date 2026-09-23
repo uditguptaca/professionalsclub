@@ -335,7 +335,7 @@ export default function JobDetailPage() {
             margin: 0, padding: '0.85rem', border: HAIRLINE,
             borderRadius: 'var(--radius-lg)', background: 'var(--bg-primary)',
             fontSize: '0.89rem', lineHeight: 1.6, color: 'var(--text-secondary)',
-            whiteSpace: 'pre-wrap',
+            whiteSpace: 'pre-wrap', overflowWrap: 'anywhere',
           }}>
             {job.descriptionSnippet}
           </p>

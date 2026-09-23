@@ -1,4 +1,5 @@
 'use client';
+const smoothOk = () => typeof window !== 'undefined' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/app-context';
@@ -115,7 +116,7 @@ export default function ReferralsPage() {
   useEffect(() => {
     if (loading) return;
     if (new URLSearchParams(window.location.search).get('tab') !== 'work') return;
-    workRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    workRef.current?.scrollIntoView({ behavior: smoothOk() ? 'smooth' : 'auto', block: 'start' });
     workRef.current?.focus({ preventScroll: true });
   }, [loading]);
 

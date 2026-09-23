@@ -106,7 +106,7 @@ export default function ContactPage() {
                       onChange={e => setName(e.target.value)}
                       placeholder="Enter your full name"
                       aria-invalid={fieldErrors.name ? true : undefined}
-                      style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border-color)', outline: 'none', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                      style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
                     />
                     {fieldErrors.name && <p role="alert" className="community-error" style={{ marginTop: 8 }}>{fieldErrors.name}</p>}
                   </div>
@@ -121,7 +121,7 @@ export default function ContactPage() {
                       onChange={e => setEmail(e.target.value)}
                       placeholder="Enter your email address"
                       aria-invalid={fieldErrors.email ? true : undefined}
-                      style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border-color)', outline: 'none', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                      style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
                     />
                     {fieldErrors.email && <p role="alert" className="community-error" style={{ marginTop: 8 }}>{fieldErrors.email}</p>}
                   </div>
@@ -131,7 +131,7 @@ export default function ContactPage() {
                     <select id="contact-subject" 
                       value={subject}
                       onChange={e => setSubject(e.target.value)}
-                      style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border-color)', outline: 'none', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                      style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
                     >
                       <option value="General Support">General Support</option>
                       <option value="Volunteer / Mentoring">Volunteer / Mentoring</option>
@@ -151,7 +151,7 @@ export default function ContactPage() {
                       onChange={e => setMessage(e.target.value)}
                       placeholder="How can we help you?"
                       aria-invalid={fieldErrors.message ? true : undefined}
-                      style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border-color)', outline: 'none', background: 'var(--bg-secondary)', color: 'var(--text-primary)', resize: 'vertical' }}
+                      style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', resize: 'vertical' }}
                     />
                     {fieldErrors.message && <p role="alert" className="community-error" style={{ marginTop: 8 }}>{fieldErrors.message}</p>}
                   </div>

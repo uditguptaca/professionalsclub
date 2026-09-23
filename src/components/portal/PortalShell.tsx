@@ -315,9 +315,11 @@ function PortalChrome({
           { title: 'Content manager', links: adminContentLinks },
         ]
       : [
+          // Help desk first: it is why most members are here, and it used to sit
+          // below "My Business" for members who have no business.
+          { title: 'Help desk', links: pick(memberLinks, ['/request-help', '/my-requests', '/messages']) },
           { title: 'Activity', links: pick(memberLinks, ['/notifications']) },
           { title: 'Career & connections', links: pick(memberLinks, ['/referrals', '/businesses', '/business', '/matrimony']) },
-          { title: 'Help desk', links: pick(memberLinks, ['/request-help', '/my-requests', '/messages']) },
           { title: 'Volunteering', links: pick(memberLinks, ['/volunteer', '/my-volunteer']) },
         ];
 
@@ -447,7 +449,7 @@ function PortalChrome({
 
           <div className="portal-topbar-notice">
             <Shield size={14} aria-hidden="true" />
-            <span>Admin-mediated &middot; No direct contact</span>
+            <span>Community help desk &middot; Read by the club</span>
           </div>
 
           <div className="portal-topbar-user">
@@ -569,6 +571,15 @@ function PortalChrome({
         <button type="button" className="portal-sheet-logout" onClick={handleLogout} disabled={signingOut}>
           <LogOut size={17} aria-hidden="true" /> {signingOut ? 'Signing out…' : 'Log out'}
         </button>
+
+        {/* Signup makes members agree to both of these, and the portal renders
+            no footer, so until now a signed-in member had no way to read either
+            one. Consent you cannot re-read is not much of a consent. */}
+        <p className="portal-sheet-legal">
+          <Link href="/privacy">Privacy</Link>
+          <span aria-hidden="true"> · </span>
+          <Link href="/terms">Terms</Link>
+        </p>
       </div>
     </div>
     </ConfirmProvider>

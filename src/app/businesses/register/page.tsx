@@ -926,7 +926,7 @@ const labelStyle: React.CSSProperties = {
 const reqStyle: React.CSSProperties = { color: 'var(--text-accent)', fontWeight: 700 };
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid var(--gray-200)',
-  fontSize: '0.85rem', outline: 'none', fontFamily: 'var(--font-sans)', background: 'var(--bg-primary)',
+  fontSize: '0.85rem', fontFamily: 'var(--font-sans)', background: 'var(--bg-primary)',
   transition: 'border-color 0.2s',
 };
 const hintStyle: React.CSSProperties = {

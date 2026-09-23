@@ -160,7 +160,7 @@ export default function RequestDetailPage() {
               </h1>
               <p style={{
                 margin: 0, fontSize: '0.9rem', lineHeight: 1.7,
-                color: 'var(--text-secondary)', whiteSpace: 'pre-wrap',
+                color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere',
               }}>
                 {request.description}
               </p>
@@ -273,7 +273,7 @@ export default function RequestDetailPage() {
                               {new Date(msg.createdAt).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}
                             </span>
                           </div>
-                          <div style={{ fontSize: '0.88rem', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                          <div style={{ fontSize: '0.88rem', lineHeight: 1.6, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
                             {msg.body}
                           </div>
                         </div>

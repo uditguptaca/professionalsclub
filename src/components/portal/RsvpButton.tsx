@@ -77,6 +77,9 @@ export default function RsvpButton({
         <span className="rsvp-count">{baseAttendees + going}</span>
       </button>
       {error && <span className="community-error" role="alert">{error}</span>}
+      {mine && (
+        <span className="rsvp-note">Members who can see your profile will see you are going.</span>
+      )}
     </span>
   );
 }

@@ -493,12 +493,26 @@ export default function MatrimonyBrowsePage() {
       ) : visible.length === 0 && !error ? (
         <div className="cm-empty">
           <Search size={26} aria-hidden="true" />
-          <p><strong>Nobody matches these filters right now.</strong></p>
-          <p>Loosen one or two and the grid fills back up.</p>
-          {activeFilterCount > 0 && (
-            <button type="button" className="cm-btn cm-btn--secondary" onClick={resetFilters}>
-              <RotateCcw size={14} aria-hidden="true" /> Reset filters
-            </button>
+          {mineLoaded && !myProfileId ? (
+            // The grid is empty because they have no listing, not because of
+            // filters they never set. Discover already says this well.
+            <>
+              <p><strong>Create your listing to see other people.</strong></p>
+              <p>Matrimony is member-to-member: once your listing is in, you can browse and be browsed. It is reviewed by an admin and private by default.</p>
+              <Link href="/portal/member/matrimony/create" className="cm-btn cm-btn--primary">
+                Create your listing
+              </Link>
+            </>
+          ) : (
+            <>
+              <p><strong>Nobody matches these filters right now.</strong></p>
+              <p>Loosen one or two and the grid fills back up.</p>
+              {activeFilterCount > 0 && (
+                <button type="button" className="cm-btn cm-btn--secondary" onClick={resetFilters}>
+                  <RotateCcw size={14} aria-hidden="true" /> Reset filters
+                </button>
+              )}
+            </>
           )}
         </div>
       ) : (

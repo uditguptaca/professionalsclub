@@ -69,7 +69,6 @@ export default function RecruitFirmsPage() {
                   border: '1px solid var(--border-color)',
                   background: 'var(--bg-primary)',
                   fontSize: '1rem',
-                  outline: 'none',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
                 }}
               />

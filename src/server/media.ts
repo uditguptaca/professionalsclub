@@ -1,4 +1,5 @@
 import 'server-only';
+import { MemberFacingError } from '@/server/errors';
 import type { CommunityMedia } from '@/types';
 
 /**
@@ -56,14 +57,14 @@ export function isHttpUrl(value: unknown): value is string {
 /** Empty clears the field; anything else must be an http(s) URL. */
 export function assertHttpUrl(value: unknown, label = 'link'): void {
   if (value == null || value === '') return;
-  if (!isHttpUrl(value)) throw new Error(`Please keep it — the ${label} must start with http:// or https://.`);
+  if (!isHttpUrl(value)) throw new MemberFacingError(`That ${label} must start with http:// or https://`);
 }
 
 /** A plain address: one @, no whitespace, no header separators, bounded. */
 export function assertEmailAddress(value: unknown, label = 'email address'): void {
   if (value == null || value === '') return;
   if (typeof value !== 'string' || value.length > 254 || !/^[^\s@?&,;:<>"'()]+@[^\s@?&,;:<>"'()]+\.[a-z0-9-]{2,}$/i.test(value)) {
-    throw new Error(`Please keep it — that ${label} does not look like an address.`);
+    throw new MemberFacingError(`That ${label} does not look like an email address.`);
   }
 }
 
@@ -80,7 +81,7 @@ export function assertEventLinks(data: Record<string, unknown>): void {
 export function assertOurImage(url: unknown, label = 'image'): void {
   if (url == null || url === '') return;
   if (typeof url !== 'string' || !isOurUpload(url, 'media')) {
-    throw new Error(`Please keep it — that ${label} must be uploaded here, not linked from another site.`);
+    throw new MemberFacingError(`Upload that ${label} here rather than linking it from another site.`);
   }
 }
 
@@ -89,12 +90,12 @@ export function sanitizeMedia(media: unknown): CommunityMedia[] {
   const items = media.slice(0, 4).map((m) => {
     const url = typeof m?.url === 'string' ? m.url : '';
     const type = m?.type === 'video' ? 'video' as const : 'image' as const;
-    if (!isOurUpload(url, 'media')) throw new Error('Please keep it — that media upload was not recognised.');
+    if (!isOurUpload(url, 'media')) throw new MemberFacingError('That upload was not recognised. Try adding the photo again.');
     return { url, type };
   });
   const videos = items.filter((m) => m.type === 'video');
   if (videos.length > 1 || (videos.length === 1 && items.length > 1)) {
-    throw new Error('Please keep it — a post can carry up to four photos or one video.');
+    throw new MemberFacingError('A post can carry up to four photos, or one video.');
   }
   return items;
 }

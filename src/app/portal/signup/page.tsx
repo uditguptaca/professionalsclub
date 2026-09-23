@@ -1,4 +1,5 @@
 'use client';
+const smoothOk = () => typeof window !== 'undefined' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -142,10 +143,10 @@ export default function SignupPage() {
     }
     setSubmitError('');
     if (step < 7) setStep(step + 1);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: smoothOk() ? 'smooth' : 'auto' });
   };
 
-  const prev = () => { if (step > 1) setStep(step - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const prev = () => { if (step > 1) setStep(step - 1); window.scrollTo({ top: 0, behavior: smoothOk() ? 'smooth' : 'auto' }); };
 
   const handleSubmit = async () => {
     if (submitting) return;
@@ -428,7 +429,7 @@ export default function SignupPage() {
                   <input id="su-postalCode" type="text" className="form-input" placeholder="e.g. M5V 3L9" value={postalCode} onChange={e => setPostalCode(e.target.value)} />
                 </div>
                 <div className="form-field">
-                  <label htmlFor="su-currentStatus">Current Status</label>
+                  <label htmlFor="su-currentStatus">Where are you right now?</label>
                   <div className="select-wrapper">
                     <select id="su-currentStatus" className="form-input" value={currentStatus} onChange={e => setCurrentStatus(e.target.value)}>
                       <option value="">Select your status</option>
@@ -469,7 +470,8 @@ export default function SignupPage() {
           {step === 4 && (
             <div className="onboarding-step-content animate-fade-in">
               <div className="step-header">
-                <h2>Professional & Education Profile</h2>
+                <h2>Professional &amp; Education Profile</h2>
+                <p className="onboarding-step-note">Every field here is optional. Skip it and add it later from your profile whenever you like.</p>
                 <p>Help us understand your background to match you with the right resources.</p>
               </div>
 
@@ -571,7 +573,7 @@ export default function SignupPage() {
                 <label htmlFor="su-linkedinUrl"><Link2 size={14} style={{ display: 'inline', verticalAlign: '-2px', marginRight: 6, color: '#0077b5' }} />LinkedIn Profile URL</label>
                 <input id="su-linkedinUrl" type="url" className="form-input" placeholder="https://linkedin.com/in/yourprofile" value={linkedinUrl} onChange={e => setLinkedinUrl(e.target.value)} />
                 <div className="field-hint">
-                  <Shield size={12} /> We verify your profile through LinkedIn to maintain authenticity and trust within the community.
+                  <Shield size={12} /> Optional. A LinkedIn link helps admins and volunteers see you are a real professional — we do not post anything or check it automatically.
                 </div>
               </div>
 
@@ -731,10 +733,10 @@ export default function SignupPage() {
                 {[
                   { val: consentRegister, set: setConsentRegister, label: 'I consent to register as a member of Professionals Club.', required: true },
                   { val: consentAdminReview, set: setConsentAdminReview, label: 'I agree that my information will be reviewed by the platform for onboarding.', required: true },
-                  { val: consentNoDirectContact, set: setConsentNoDirectContact, label: 'I understand that no direct member-to-member contact is allowed by default.', required: true },
+                  { val: consentNoDirectContact, set: setConsentNoDirectContact, label: 'I understand that other members can message me, and that I can block or report anyone.', required: true },
                   { val: consentNoMisuse, set: setConsentNoMisuse, label: 'I agree not to misuse any community or member information.', required: true },
                   { val: consentUpdates, set: setConsentUpdates, label: 'I allow Professionals Club to send me updates and community communications.', required: false },
-                  { val: consentTerms, set: setConsentTerms, label: 'I have read and agree to the Terms & Conditions and Privacy Policy.', required: true },
+                  { val: consentTerms, set: setConsentTerms, label: 'I have read and agree to the Terms of Use and Privacy Policy.', required: true, links: true },
                 ].map((item, i) => (
                   <label key={i} className={`consent-item ${item.val ? 'checked' : ''}`}>
                     <input
@@ -747,7 +749,17 @@ export default function SignupPage() {
                       {item.val && <Check size={12} />}
                     </div>
                     <span className="consent-text">
-                      {item.label}
+                      {/* The two documents this tick affirms have to be openable
+                          from the tick itself; it was plain text before. */}
+                      {'links' in item && item.links ? (
+                        <>
+                          I have read and agree to the{' '}
+                          <a href="/terms" target="_blank" rel="noopener noreferrer"
+                             onClick={(e) => e.stopPropagation()}>Terms of Use</a>{' '}and{' '}
+                          <a href="/privacy" target="_blank" rel="noopener noreferrer"
+                             onClick={(e) => e.stopPropagation()}>Privacy Policy</a>.
+                        </>
+                      ) : item.label}
                       {item.required && <span className="required"> *</span>}
                     </span>
                   </label>
@@ -756,7 +768,14 @@ export default function SignupPage() {
 
               <div className="consent-note">
                 <Shield size={16} />
-                <p>Your data is secure and will only be used for Professionals Club onboarding and community purposes. We never share your information with third parties.</p>
+                <p>
+                  We only use what you type here to run the club. We do not sell it and we
+                  do not use it for advertising. A few companies help us run the service —
+                  our database, hosting, email, and the automatic check that screens posts —
+                  and they handle it on our behalf. The{' '}
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer">privacy policy</a>{' '}
+                  names them.
+                </p>
               </div>
             </div>
           )}

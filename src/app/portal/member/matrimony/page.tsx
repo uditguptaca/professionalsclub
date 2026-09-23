@@ -379,9 +379,9 @@ export default function MatrimonyDiscoverPage() {
           style={{ padding: '2.6rem 1.2rem', textAlign: 'center' }}
         >
           <Sparkles size={30} aria-hidden="true" style={{ opacity: 0.4, marginBottom: 12 }} />
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 800, margin: '0 0 6px' }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 800, margin: '0 0 6px' }}>
             You are all caught up
-          </h2>
+          </h1>
           <p style={{ margin: '0 auto 18px', maxWidth: '22rem', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
             {pending
               ? 'New profiles land here as our team approves them — yours included.'

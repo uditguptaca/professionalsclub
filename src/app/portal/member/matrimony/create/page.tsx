@@ -79,7 +79,7 @@ const LABEL: Record<string, string> = {
   never_married: 'Never Married', divorced: 'Divorced', widowed: 'Widowed',
   awaiting_divorce: 'Awaiting Divorce', separated: 'Separated',
   yes_living_together: 'Yes, living together', yes_not_living_together: 'Yes, not living together', no: 'No',
-  normal: 'Normal', differently_abled: 'Differently Abled',
+  normal: 'No disability', differently_abled: 'I have a disability',
   self: 'Self', parent: 'Parent', sibling: 'Sibling', relative: 'Relative', friend: 'Friend', guardian: 'Guardian',
   citizen: 'Citizen', pr: 'Permanent Resident', work_permit: 'Work Permit',
   study_permit: 'Study Permit', visitor: 'Visitor',
@@ -92,11 +92,41 @@ const LABEL: Record<string, string> = {
   traditional: 'Traditional', moderate: 'Moderate', liberal: 'Liberal',
   veg: 'Vegetarian', non_veg: 'Non-Vegetarian', eggetarian: 'Eggetarian', vegan: 'Vegan', jain: 'Jain',
   occasionally: 'Occasionally',
-  all: 'Visible to All', on_request: 'On Request Only', blurred: 'Show Blurred',
+  all: 'Everyone browsing matrimony', on_request: 'Only if you ask me', blurred: 'Only after a match',
   email: 'Email', phone: 'Phone', whatsapp: 'WhatsApp',
 };
 
 function labelFor(val: string): string { return LABEL[val] || val; }
+
+/**
+ * Labels back to values.
+ *
+ * Every listing in the database stores the DISPLAYED label ("Female",
+ * "Never Married", "Full Name"), not the value the wizard's step schemas
+ * validate ("female", ...). So loading an existing listing into the wizard put
+ * a label into an enum field and step 1 could never be passed: nobody could
+ * edit a listing at all, and the name-privacy control was unreachable. Match on
+ * the label first, then on a normalised form, so both shapes load.
+ */
+const VALUE_FOR_LABEL: Record<string, string> = Object.fromEntries(
+  Object.entries(LABEL).map(([value, label]) => [label.toLowerCase(), value])
+);
+function valueFor<T extends string>(stored: string | null | undefined, fallback = '' as T): T {
+  const raw = (stored ?? '').trim();
+  if (!raw) return fallback;
+  if (raw in LABEL) return raw as T;                             // already a value
+  const byLabel = VALUE_FOR_LABEL[raw.toLowerCase()];
+  if (byLabel) return byLabel as T;
+  const normalised = raw.toLowerCase().replace(/[\s-]+/g, '_');
+  if (normalised in LABEL) return normalised as T;
+  // "Initials Only" -> "initials_only": take the longest value that prefixes it,
+  // so a label that gained a word still resolves instead of silently falling
+  // through to the default.
+  const prefix = Object.keys(LABEL)
+    .filter((v) => normalised === v || normalised.startsWith(v + '_'))
+    .sort((a, b) => b.length - a.length)[0];
+  return (prefix as T | undefined) ?? fallback;
+}
 
 /**
  * Reverse of LABEL, used to repair preferences saved by an earlier version of
@@ -226,17 +256,17 @@ export default function MatrimonyCreatePage() {
 
           const loadedData: MatrimonyWizardData = {
             ...DEFAULT_DATA,
-            created_by: profile.created_by || 'self',
+            created_by: valueFor(profile.created_by, 'self'),
             full_name: profile.full_name || '',
-            display_pref: profile.display_pref || 'full_name',
-            gender: profile.gender || 'male',
+            display_pref: valueFor(profile.display_pref, 'full_name'),
+            gender: valueFor(profile.gender, 'male'),
             dob: profile.dob || '',
             height_cm: profile.height_cm || 0,
             weight_kg: profile.weight_kg ?? undefined,
-            body_type: profile.body_type ?? undefined,
-            marital_status: profile.marital_status || 'never_married',
-            have_children: profile.have_children || 'no',
-            physical_status: profile.physical_status ?? undefined,
+            body_type: profile.body_type ? (valueFor(profile.body_type) as MatrimonyWizardData['body_type']) || undefined : undefined,
+            marital_status: valueFor(profile.marital_status, 'never_married'),
+            have_children: valueFor(profile.have_children, 'no'),
+            physical_status: profile.physical_status ? (valueFor(profile.physical_status) as MatrimonyWizardData['physical_status']) || undefined : undefined,
             religion: profile.religion || '',
             denomination: profile.denomination ?? undefined,
             community: profile.community ?? undefined,
@@ -540,7 +570,7 @@ export default function MatrimonyCreatePage() {
             <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>Your Privacy is Protected</span>
           </div>
           <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-            Your contact details are never shared publicly. Profile introductions happen only with mutual consent through our secure admin-mediated system.
+            Your contact details are never shown publicly, and nothing is shared until you accept someone's interest. After that you talk in an end-to-end encrypted chat that the club cannot read.
           </p>
         </div>
       </div>

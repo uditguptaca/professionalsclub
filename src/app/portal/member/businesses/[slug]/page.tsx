@@ -243,7 +243,7 @@ export default function MemberBusinessPage() {
                       <summary style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', cursor: 'pointer' }}>
                         Conditions
                       </summary>
-                      <p style={{ margin: '0.4rem 0 0', fontSize: '0.82rem', lineHeight: 1.6, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
+                      <p style={{ margin: '0.4rem 0 0', fontSize: '0.82rem', lineHeight: 1.6, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
                         {c.terms}
                       </p>
                     </details>
@@ -358,7 +358,7 @@ export default function MemberBusinessPage() {
           </div>
 
           {page.descriptionFull && (
-            <p style={{ margin: '1rem 0 0', fontSize: '0.9rem', lineHeight: 1.7, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
+            <p style={{ margin: '1rem 0 0', fontSize: '0.9rem', lineHeight: 1.7, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
               {page.descriptionFull}
             </p>
           )}

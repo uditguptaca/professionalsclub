@@ -33,7 +33,7 @@ function fail(context: string, error: unknown): { ok: false; error: string } {
 
   const expected =
     detail.startsWith('Not signed in') ||
-    detail.startsWith('Administrator access required') ||
+    detail.startsWith('That page is for club admins') ||
     detail.startsWith('This account is not active');
 
   return { ok: false, error: expected ? detail : `${context} failed. Please try again.` };

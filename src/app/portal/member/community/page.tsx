@@ -553,7 +553,7 @@ export default function CommunityPage() {
         placeholder="Share something with the club…"
         onPosted={(post) => {
           commitPosts((ps) => [{ ...post, source: 'mine' as const }, ...ps]);
-          if (post.status === 'held') setToast('Posted - a moderator will check it before others see it');
+          if (post.status === 'held') setToast('Sent for a quick check. Only you can see it until a moderator approves it, usually within a day.');
         }}
       />
 

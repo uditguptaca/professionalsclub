@@ -1,5 +1,7 @@
 'use server';
 
+import { isMemberFacing, MemberFacingError } from '@/server/errors';
+
 import { requireUserId, requireAdminId } from '@/server/auth';
 import * as repo from '@/server/repos/community';
 import { moderateContent, rejectionMessage } from '@/server/moderation';
@@ -23,12 +25,14 @@ export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: string
 function fail(context: string, error: unknown): { ok: false; error: string } {
   const detail = error instanceof Error ? error.message : String(error);
   console.error(`[action] ${context}:`, detail);
+  // Show the member what was written for them; mask everything else, because a
+  // raw fault names internals.
   const expected =
+    isMemberFacing(error) ||
     detail.startsWith('Not signed in') ||
-    detail.startsWith('Administrator access required') ||
+    detail.startsWith('That page is for club admins') ||
     detail.startsWith('This account is not active') ||
-    detail.startsWith('That group name is taken') ||
-    detail.startsWith('Please keep it');
+    detail.startsWith('That group name is taken');
   return { ok: false, error: expected ? detail : `${context} failed. Please try again.` };
 }
 
@@ -71,9 +75,9 @@ export async function fetchPersonalFeed(
 export async function fetchPost(postId: string): Promise<ActionResult<CommunityPost>> {
   return run('Loading the post', async () => {
     const uid = await requireUserId();
-    if (typeof postId !== 'string' || postId.length !== 36) throw new Error('Please keep it — that post could not be found.');
+    if (typeof postId !== 'string' || postId.length !== 36) throw new MemberFacingError('We could not find that post.');
     const post = await repo.getPost(uid, postId);
-    if (!post) throw new Error('Please keep it — that post is not available. It may have been removed, or its author\u2019s profile is private.');
+    if (!post) throw new MemberFacingError('That post is not available. It may have been removed, or its author\u2019s profile is private.');
     return post;
   });
 }
@@ -125,10 +129,10 @@ export async function publishPost(input: {
     const uid = await requireUserId();
     const body = input.body.trim();
     const media = sanitizeMedia(input.media);
-    if (!body && media.length === 0) throw new Error('Please keep it — write something or add a photo first.');
+    if (!body && media.length === 0) throw new MemberFacingError('Write something, or add a photo, first.');
     // The classifier (0053): reject and say why, hold for a moderator, or let it through.
     const verdict = await moderateContent({ text: body, media, kind: 'post' });
-    if (verdict.decision === 'reject') throw new Error(rejectionMessage(verdict));
+    if (verdict.decision === 'reject') throw new MemberFacingError(rejectionMessage(verdict));
     const audience = input.audience === 'club' ? 'club' : 'normal';
     const topic = audience === 'club' && typeof input.topic === 'string' ? input.topic : null;
     return repo.createPost(uid, {
@@ -172,9 +176,9 @@ export async function publishComment(input: {
   return run('Commenting', async () => {
     const uid = await requireUserId();
     const body = input.body.trim();
-    if (!body) throw new Error('Please keep it — write something first.');
+    if (!body) throw new MemberFacingError('Write something first.');
     const verdict = await moderateContent({ text: body, kind: 'comment' });
-    if (verdict.decision === 'reject') throw new Error(rejectionMessage(verdict));
+    if (verdict.decision === 'reject') throw new MemberFacingError(rejectionMessage(verdict));
     return repo.addComment(uid, {
       postId: input.postId, body,
       status: verdict.decision === 'hold' ? 'held' : 'active',
@@ -235,9 +239,9 @@ export async function startGroup(input: {
     const uid = await requireAdminId();
     const name = input.name.trim();
     const description = input.description.trim();
-    if (name.length < 3) throw new Error('Please keep it — the name needs at least 3 characters.');
+    if (name.length < 3) throw new MemberFacingError('The name needs at least 3 characters.');
     const verdict = await moderateContent({ text: `${name}\n${description}`, kind: 'group' });
-    if (verdict.decision !== 'allow') throw new Error(rejectionMessage(verdict));
+    if (verdict.decision !== 'allow') throw new MemberFacingError(rejectionMessage(verdict));
     // A group is a place, a shared activity, or a topic (0049). Anything else
     // sent here is treated as a topic - the CHECK constraint would refuse it
     // anyway, but with a message nobody should have to read.
@@ -270,7 +274,7 @@ export async function setGroupRole(input: {
 }): Promise<ActionResult<null>> {
   return run('Updating the role', async () => {
     const uid = await requireAdminId();
-    if (input.role !== 'admin' && input.role !== 'member') throw new Error('Please keep it — unknown role.');
+    if (input.role !== 'admin' && input.role !== 'member') throw new MemberFacingError('That is not a role we recognise.');
     await repo.setGroupMemberRole(uid, input.groupId, input.memberId, input.role);
     return null;
   });
@@ -290,8 +294,8 @@ export async function moderateContentItem(input: {
 }): Promise<ActionResult<null>> {
   return run('Moderating', async () => {
     const uid = await requireUserId();
-    if (input.kind !== 'post' && input.kind !== 'comment') throw new Error('Please keep it — unknown item.');
-    if (input.action !== 'approve' && input.action !== 'remove') throw new Error('Please keep it — unknown action.');
+    if (input.kind !== 'post' && input.kind !== 'comment') throw new MemberFacingError('That is not something we can moderate.');
+    if (input.action !== 'approve' && input.action !== 'remove') throw new MemberFacingError('That is not an action we recognise.');
     await repo.moderateItem(uid, input);
     return null;
   });
@@ -326,7 +330,7 @@ export async function reportCommunityContent(input: {
   return run('Sending the report', async () => {
     const uid = await requireUserId();
     const reason = input.reason.trim();
-    if (reason.length < 3) throw new Error('Please keep it — tell us briefly what is wrong.');
+    if (reason.length < 3) throw new MemberFacingError('Tell us briefly what is wrong, so a moderator knows what to look at.');
     await repo.reportContent(uid, { ...input, reason });
     return null;
   });
@@ -335,7 +339,7 @@ export async function reportCommunityContent(input: {
 export async function blockCommunityMember(blockedId: string): Promise<ActionResult<null>> {
   return run('Blocking the member', async () => {
     const uid = await requireUserId();
-    if (blockedId === uid) throw new Error('Please keep it — you cannot block yourself.');
+    if (blockedId === uid) throw new MemberFacingError('You cannot block yourself.');
     await repo.blockMember(uid, blockedId);
     return null;
   });

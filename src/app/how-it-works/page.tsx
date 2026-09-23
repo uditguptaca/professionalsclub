@@ -39,9 +39,9 @@ export default function HowItWorksPage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {[
-              { step: 1, icon: <HelpCircle size={28} />, title: 'Submit a Help Request', desc: 'Describe your need across 10 support categories.', details: ['Full request form with category selection', 'Priority level (low, medium, high)', 'Consent to our secure process', 'Anonymous to volunteers until matched'], color: 'var(--text-accent)', rgb: '194, 65, 12' },
-              { step: 2, icon: <Shield size={28} />, title: 'Platform Matches You', desc: 'The platform securely matches you with the right volunteer.', details: ['Request validated for completeness', 'Matched against volunteer expertise areas', 'We may ask clarifying questions', 'No direct contact — all verified through the platform'], color: 'var(--text-primary)', rgb: '12, 12, 14' },
-              { step: 3, icon: <HandHeart size={28} />, title: 'Volunteer Assigned', desc: 'An assigned volunteer receives anonymized details. All communication is routed through our secure relay.', details: ['Volunteer sees only relevant case details', 'Volunteer responds securely', 'Platform relays volunteer response to you', 'Your contact info is never shared'], color: 'var(--text-accent)', rgb: '194, 65, 12' },
+              { step: 1, icon: <HelpCircle size={28} />, title: 'Submit a Help Request', desc: 'Describe your need across 10 support categories.', details: ['Full request form with category selection', 'Priority level (low, medium, high)', 'You say who may read it', 'Read by an admin, then by one assigned volunteer'], color: 'var(--text-accent)', rgb: '194, 65, 12' },
+              { step: 2, icon: <Shield size={28} />, title: 'An admin reads it', desc: 'A club admin reads your request and, if a volunteer fits, assigns one by hand.', details: ['Checked for anything missing', 'Matched by hand to the areas a volunteer chose', 'We may ask you a clarifying question', 'Only the admin and the assigned volunteer read it'], color: 'var(--text-primary)', rgb: '12, 12, 14' },
+              { step: 3, icon: <HandHeart size={28} />, title: 'Volunteer Assigned', desc: 'One volunteer is assigned and reads your request, including your name and what you wrote. You talk through the club.', details: ['The assigned volunteer sees your name and your request', 'No other member sees it', 'They reply through the club', 'Your phone number and email are never shown'], color: 'var(--text-accent)', rgb: '194, 65, 12' },
             ].map(item => (
               <div key={item.step} className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 24, alignItems: 'start' }}>
                 <div style={{ width: 72, height: 72, borderRadius: '50%', background: `rgba(${item.rgb}, 0.07)`, border: `2px solid rgba(${item.rgb}, 0.19)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, position: 'relative' }}>
@@ -75,8 +75,8 @@ export default function HowItWorksPage() {
           <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {[
               { step: 1, icon: <ClipboardList size={32} />, title: 'Apply & Get Verified', desc: 'Submit your background and expertise for verification.', color: 'var(--text-accent)' },
-              { step: 2, icon: <MessageSquare size={32} />, title: 'Receive Case Assignments', desc: 'Receive anonymized case details matched to your expertise.', color: 'var(--text-primary)' },
-              { step: 3, icon: <CheckCircle size={32} />, title: 'Provide Guidance', desc: 'Respond securely through the platform. Your contact info is never shared.', color: 'var(--text-accent)' },
+              { step: 2, icon: <MessageSquare size={32} />, title: 'Receive Case Assignments', desc: 'An admin assigns you a case that matches the areas you chose. You see the member\u2019s name and what they wrote.', color: 'var(--text-primary)' },
+              { step: 3, icon: <CheckCircle size={32} />, title: 'Provide Guidance', desc: 'Reply through the club. Your phone number and email are never shown to the member.', color: 'var(--text-accent)' },
             ].map(item => (
               <div key={item.step} style={{ textAlign: 'center', padding: '40px 28px', borderRadius: 20, background: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
                 <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(232, 93, 4, 0.08)', border: '1px solid rgba(232, 93, 4, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, margin: '0 auto 20px' }}>

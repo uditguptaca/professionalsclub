@@ -227,7 +227,7 @@ export default function MemberOffersPage() {
                     <summary style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', cursor: 'pointer' }}>
                       Conditions
                     </summary>
-                    <p style={{ margin: '0.4rem 0 0', fontSize: '0.82rem', lineHeight: 1.6, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
+                    <p style={{ margin: '0.4rem 0 0', fontSize: '0.82rem', lineHeight: 1.6, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
                       {c.terms}
                     </p>
                   </details>

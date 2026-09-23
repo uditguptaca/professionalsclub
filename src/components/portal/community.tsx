@@ -1,4 +1,10 @@
 'use client';
+// A soft keyboard has no Shift, so `!shiftKey` is always true on a phone and
+// Enter sent the message mid-sentence. Send on Enter only where a real keyboard
+// can also produce Shift+Enter; on touch, Enter makes a new line and the 44px
+// send button does the sending.
+const sendsOnEnter = () =>
+  typeof navigator !== 'undefined' && !navigator.maxTouchPoints;
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { upload } from '@vercel/blob/client';
@@ -251,11 +257,22 @@ export function PostComposer({
           value={body}
           aria-label={placeholder}
           placeholder={placeholder}
+          aria-describedby="composer-audience"
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           onChange={(e) => setBody(e.target.value)}
         />
       </div>
+
+      {/* Nobody was ever told who can see a post. Several of these members have
+          reason to be careful about being seen looking for work or housing. */}
+      <p id="composer-audience" className="community-audience-note">
+        {business
+          ? 'Posted as your business. Visible to signed-in members.'
+          : groupId
+            ? 'Visible to members of this group. Not public, and not on search engines.'
+            : 'Visible to signed-in members. Not public, and not on search engines.'}
+      </p>
 
       {(drafts.length > 0 || uploading > 0) && (
         <div className="community-drafts">
@@ -651,7 +668,7 @@ function CommentThread({
           aria-label="Add a comment"
           placeholder="Add a comment…"
           onChange={(e) => setBody(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } }}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && sendsOnEnter()) { e.preventDefault(); submit(); } }}
         />
         <button
           className="community-comment-send"
@@ -799,7 +816,7 @@ export function PostCard({
     if (!post.authorId) return;
     const ok = await confirm({
       title: `Block ${post.authorFirstName}?`,
-      message: 'Neither of you will see the other\u2019s posts or comments. You can undo this from your profile.',
+      message: `They are not told. Neither of you will see the other\u2019s posts, comments or messages, and you will both stop following each other \u2014 if you unblock later you each have to follow again. This does not change your matrimony listing. To undo it, open ${post.authorFirstName}\u2019s profile, or Chats \u2192 settings \u2192 Blocked.`,
       confirmLabel: 'Block',
     });
     if (!ok) return;

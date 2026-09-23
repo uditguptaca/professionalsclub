@@ -422,6 +422,20 @@ export default function AdminMatrimonyPage() {
           </div>
           {loading ? (
             <div style={{ padding: '0 20px' }}>{[...Array(5)].map((_, i) => <SkeletonRow key={i} />)}</div>
+          ) : fetchError ? (
+            // Never say "all caught up" off a failed fetch: a volunteer checking
+            // on the bus saw a green tick and closed the tab while a profile
+            // somebody spent an hour on sat unreviewed.
+            <div style={{ padding: 48, textAlign: 'center' }} role="alert">
+              <AlertTriangle size={40} style={{ color: 'var(--error-500)', margin: '0 auto 12px' }} />
+              <p style={{ fontWeight: 700, fontSize: 'var(--text-lg)', marginBottom: 4 }}>We could not load the queue</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', marginBottom: 16 }}>
+                This does not mean the queue is empty. {fetchError}
+              </p>
+              <button type="button" className="btn btn-outline btn-sm" onClick={() => void fetchData()}>
+                Try again
+              </button>
+            </div>
           ) : pendingProfiles.length === 0 ? (
             <div style={{ padding: 60, textAlign: 'center' }}>
               <CheckCircle size={48} style={{ color: 'var(--success-400)', margin: '0 auto 12px' }} />

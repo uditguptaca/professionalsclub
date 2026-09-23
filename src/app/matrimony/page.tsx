@@ -24,8 +24,8 @@ const howItWorks = [
   {
     step: 2,
     icon: ShieldCheck,
-    title: 'Admin Reviews & Verifies',
-    desc: 'Our team manually reviews every profile before it goes live. We verify authenticity, check for completeness, and ensure a safe, genuine community.',
+    title: 'An admin reads every listing',
+    desc: 'Someone from the club reads every listing before it goes live and checks it is complete and appropriate. We cannot verify that a person is who they say they are, so take the same care you would anywhere else.',
     color: 'var(--text-accent)',
     bg: 'var(--primary-50)',
   },
@@ -33,7 +33,7 @@ const howItWorks = [
     step: 3,
     icon: HeartHandshake,
     title: 'Connect Privately',
-    desc: 'Browse verified profiles, express interest, and connect privately through our admin-mediated process. Your contact details stay hidden until mutual consent.',
+    desc: 'Browse listings and send an interest. Nothing of yours is shared until the other person accepts; once you both agree, you talk in an end-to-end encrypted chat that the club cannot read.',
     color: 'var(--text-accent)',
     bg: 'var(--primary-50)',
   },
@@ -99,7 +99,7 @@ const visibilityRules = [
   {
     icon: Eye,
     title: 'Photos are a separate decision',
-    desc: 'Each photo you upload carries its own visibility setting: all members, on request only, or private. Photos are also reviewed before they appear, and you can change your mind at any time.',
+    desc: 'You choose one visibility setting and it covers all of your photos: every member browsing matrimony, only after a match, or only if you ask. Photos are reviewed before they appear, and you can change the setting whenever you like.',
   },
   {
     icon: Send,
@@ -174,14 +174,14 @@ export default function MatrimonyLandingPage() {
               Find Your{' '}
               <span style={{
                 background: 'linear-gradient(135deg, var(--primary-600), var(--primary-400))',
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                color: 'var(--primary-400)',
                 backgroundClip: 'text',
               }}>Life Partner</span>
             </h1>
 
             {/* Subtext */}
             <p className="animate-fade-in-up" style={{
-              fontSize: 'clamp(1rem, 2.5vw, 1.25rem)', color: 'var(--gray-400)',
+              fontSize: 'clamp(1rem, 2.5vw, 1.25rem)', color: 'rgba(255,255,255,0.8)',
               lineHeight: 1.7, maxWidth: 620, margin: '0 auto 40px',
             }}>
               Admin-verified profiles, full privacy, built for our community in Canada — a safe space for meaningful connections.
@@ -190,9 +190,9 @@ export default function MatrimonyLandingPage() {
             {/* CTA buttons */}
             <div className="animate-fade-in-up" style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
               <Link href="/portal/member/matrimony/create" className="btn btn-lg" style={{
-                background: 'linear-gradient(135deg, var(--primary-600), var(--primary-500))', color: 'white',
-                fontWeight: 700, padding: '16px 36px', fontSize: '1rem', borderRadius: 14,
-                boxShadow: '0 8px 30px rgba(232,93,4,0.35)', border: 'none',
+                background: 'var(--primary-700)', color: 'white',
+                fontWeight: 700, padding: '16px 36px', fontSize: '1rem', borderRadius: 8,
+                boxShadow: 'var(--shadow-warm-md)', border: 'none',
                 textDecoration: 'none',
               }}>
                 <Heart size={20} /> Create Your Profile
@@ -217,7 +217,7 @@ export default function MatrimonyLandingPage() {
                   <div style={{
                     fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 800, color: 'white',
                   }}>{a.value}</div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--gray-400)', marginTop: 4 }}>
+                  <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', marginTop: 4 }}>
                     {a.label}
                   </div>
                 </div>
@@ -573,7 +573,7 @@ export default function MatrimonyLandingPage() {
       {/* ═══════ ASSURANCES BANNER ═══════ */}
       <section style={{
         padding: '80px 0',
-        background: 'linear-gradient(135deg, var(--primary-600), var(--primary-500))',
+        background: 'var(--primary-700)',
         color: 'white',
       }}>
         <div className="container" style={{ maxWidth: 1280 }}>
@@ -666,7 +666,7 @@ export default function MatrimonyLandingPage() {
             Ready to Find Your Life Partner?
           </h2>
           <p style={{
-            fontSize: '1.1rem', color: 'var(--gray-400)',
+            fontSize: '1.1rem', color: 'rgba(255,255,255,0.8)',
             maxWidth: 500, margin: '0 auto 36px', lineHeight: 1.7,
           }}>
             Create your listing, and the only people who will ever see it are members with

@@ -148,7 +148,7 @@ function AskHelpForm() {
 
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div>
-                  <label htmlFor="ah-your-full-name" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Your Full Name</label>
+                  <label htmlFor="ah-your-full-name" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, letterSpacing: '0.01em' }}>Your Full Name</label>
                   <div style={{ position: 'relative' }}>
                     <User size={16} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                     <input
@@ -158,13 +158,13 @@ function AskHelpForm() {
                       placeholder="Enter your name"
                       value={name}
                       onChange={e => setName(e.target.value)}
-                      style={{ width: '100%', padding: '14px 16px 14px 44px', borderRadius: 12, border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.92rem', outline: 'none' }}
+                      style={{ width: '100%', padding: '14px 16px 14px 44px', borderRadius: 12, border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.92rem' }}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="ah-your-email-address" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Your Email Address</label>
+                  <label htmlFor="ah-your-email-address" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, letterSpacing: '0.01em' }}>Your Email Address</label>
                   <div style={{ position: 'relative' }}>
                     <Mail size={16} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                     <input
@@ -174,19 +174,19 @@ function AskHelpForm() {
                       placeholder="you@example.com"
                       value={email}
                       onChange={e => setEmail(e.target.value)}
-                      style={{ width: '100%', padding: '14px 16px 14px 44px', borderRadius: 12, border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.92rem', outline: 'none' }}
+                      style={{ width: '100%', padding: '14px 16px 14px 44px', borderRadius: 12, border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.92rem' }}
                     />
                   </div>
                 </div>
 
                 {volunteers && volunteers.length > 0 && (
                   <div>
-                    <label htmlFor="ah-volunteer-you-would-like-to-" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Volunteer you would like to reach</label>
+                    <label htmlFor="ah-volunteer-you-would-like-to-" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, letterSpacing: '0.01em' }}>Volunteer you would like to reach</label>
                     <select
                       id="ah-volunteer-you-would-like-to-"
                       value={selectedId}
                       onChange={e => setSelectedId(e.target.value)}
-                      style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.92rem', outline: 'none', cursor: 'pointer' }}
+                      style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.92rem', cursor: 'pointer' }}
                     >
                       <option value="">No preference - route to any volunteer</option>
                       {volunteers.map(v => (
@@ -199,12 +199,12 @@ function AskHelpForm() {
                 )}
 
                 <div>
-                  <label htmlFor="ah-what-do-you-need-help-with" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>What do you need help with?</label>
+                  <label htmlFor="ah-what-do-you-need-help-with" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, letterSpacing: '0.01em' }}>What do you need help with?</label>
                   <select
                       id="ah-what-do-you-need-help-with"
                     value={category}
                     onChange={e => setCategory(e.target.value)}
-                    style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.92rem', outline: 'none', cursor: 'pointer' }}
+                    style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.92rem', cursor: 'pointer' }}
                   >
                     <option value="Career Support">Career Support &amp; Referrals</option>
                     <option value="Housing Support">Housing &amp; Rentals</option>
@@ -216,7 +216,7 @@ function AskHelpForm() {
                 </div>
 
                 <div>
-                  <label htmlFor="ah-message-details" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Message / Details</label>
+                  <label htmlFor="ah-message-details" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, letterSpacing: '0.01em' }}>Message / Details</label>
                   <textarea
                       id="ah-message-details"
                     required
@@ -226,7 +226,7 @@ function AskHelpForm() {
                       : 'Introduce yourself and explain what you need help with...'}
                     value={message}
                     onChange={e => setMessage(e.target.value)}
-                    style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.92rem', outline: 'none', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5 }}
+                    style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.92rem', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5 }}
                   />
                 </div>
 

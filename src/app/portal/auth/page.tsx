@@ -19,6 +19,9 @@ function AuthForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(ERROR_MESSAGES[searchParams.get('error') ?? ''] ?? '');
+  // Someone who tapped "Request help" on the landing page arrives here needing
+  // to be told why there is a password form in front of them.
+  const wantsHelp = searchParams.get('intent') === 'help';
   // Tracked separately from `error`: this one is not a failure the user can fix
   // by retyping, so it gets its own message and a resend button.
   const [unverified, setUnverified] = useState(false);
@@ -122,6 +125,14 @@ function AuthForm() {
               />
             </div>
 
+            {wantsHelp && (
+              <div style={{ padding: '12px 14px', background: 'rgba(232, 93, 4, 0.06)', border: '1px solid rgba(232, 93, 4, 0.18)', borderRadius: 10, fontSize: '0.85rem', lineHeight: 1.6, color: 'var(--text-secondary)' }}>
+                <strong style={{ color: 'var(--text-primary)' }}>To send a help request, you need a free account.</strong>{' '}
+                A club admin reads every request. Sign in below, or{' '}
+                <Link href="/portal/signup?intent=help" style={{ color: 'var(--text-accent)', fontWeight: 700 }}>create an account</Link>.
+              </div>
+            )}
+
             {error && (
               <div role="alert" style={{ color: 'var(--error-600)', fontSize: '0.85rem', fontWeight: 500, padding: '10px 12px', background: 'rgba(240, 73, 35, 0.1)', borderRadius: 8, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                 <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
@@ -146,10 +157,15 @@ function AuthForm() {
               {loading ? 'Signing in…' : 'Sign In'}
             </button>
 
-            <div style={{ marginTop: 12, textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-              Don&apos;t have an account?{' '}
-              <Link href="/portal/signup" style={{ color: 'var(--text-accent)', fontWeight: 600 }}>Sign up as Member</Link>
-            </div>
+            {/* Almost everyone arriving here is a newcomer who needs an account,
+                not a catering company. The visual weight now matches the traffic. */}
+            <Link
+              href={wantsHelp ? '/portal/signup?intent=help' : '/portal/signup'}
+              className="btn btn-outline"
+              style={{ width: '100%', justifyContent: 'center', minHeight: 48, marginTop: 12, textDecoration: 'none' }}
+            >
+              Create a free account
+            </Link>
           </form>
 
           {/* The business console has its own door. A footnote link was missed on
@@ -159,22 +175,21 @@ function AuthForm() {
             or
             <span aria-hidden="true" style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
           </div>
-          <Link
-            href="/business/login"
-            className="btn btn-outline"
-            style={{ width: '100%', justifyContent: 'center', minHeight: 48, textDecoration: 'none' }}
-          >
-            <Store size={17} aria-hidden="true" /> Sign in as a business
-          </Link>
-          <p style={{ margin: '8px 0 0', textAlign: 'center', fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-            For businesses listed with the club: offers, events and coupon scanning.
+          <p style={{ margin: 0, textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            <Link href="/business/login" style={{ color: 'var(--text-accent)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 44, padding: '0 12px' }}>
+              <Store size={15} aria-hidden="true" /> Sign in as a business
+            </Link>
+            <br />
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              For businesses listed with the club: offers, events and coupon scanning.
+            </span>
           </p>
         </div>
 
         <div style={{ marginTop: 32, padding: '16px 20px', borderRadius: 12, background: 'rgba(232, 93, 4, 0.05)', border: '1px solid rgba(232, 93, 4, 0.15)', textAlign: 'center' }}>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
             <Shield size={12} style={{ display: 'inline', verticalAlign: '-2px', marginRight: 4 }} />
-            <strong>No direct member contact.</strong> All interactions are securely routed for safety and privacy.
+            <strong>A real person answers.</strong> Help requests are read by the club, and you choose who can message you.
           </p>
         </div>
       </div>

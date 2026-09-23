@@ -344,7 +344,7 @@ export default function MemberEventPage() {
           </h2>
           <p style={{
             margin: 0, fontSize: '0.95rem', lineHeight: 1.7,
-            color: 'var(--text-secondary)', whiteSpace: 'pre-wrap',
+            color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere',
           }}>
             {event.description}
           </p>

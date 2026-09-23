@@ -53,9 +53,9 @@ export default function ResourcesPage() {
             <span style={{ color: 'var(--primary-200)', fontWeight: 700, fontSize: '0.82rem' }}>Resource Center</span>
           </div>
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
-            Learn. Settle. <span style={{ background: 'linear-gradient(135deg, var(--primary-600), var(--primary-400))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Succeed.</span>
+            Learn. Settle. <span style={{ background: 'linear-gradient(135deg, var(--primary-600), var(--primary-400))', color: 'var(--primary-400)', backgroundClip: 'text' }}>Succeed.</span>
           </h1>
-          <p style={{ fontSize: '1.15rem', color: 'var(--gray-400)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
+          <p style={{ fontSize: '1.15rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
             Free guides, templates, and video workshops to help you build your future in Canada.
           </p>
         </div>
@@ -81,7 +81,9 @@ export default function ResourcesPage() {
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24 }}>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
                     <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'white', padding: '4px 10px', background: 'var(--primary-700)', borderRadius: 6, letterSpacing: '0.05em' }}>{book.type}</span>
-                    <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'white', padding: '4px 10px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)', borderRadius: 6 }}>{book.size}</span>
+                    {hasUrl(book.downloadUrl) && (
+                      <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'white', padding: '4px 10px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)', borderRadius: 6 }}>{book.size}</span>
+                    )}
                   </div>
                   <h3 style={{ fontWeight: 800, fontSize: '1.2rem', marginBottom: 8, color: 'white', lineHeight: 1.3, fontFamily: 'var(--font-display)' }}>{book.title}</h3>
                   <p style={{ fontSize: '0.8rem', color: 'var(--gray-400)', marginBottom: 20 }}>By {book.author}</p>
@@ -101,7 +103,7 @@ export default function ResourcesPage() {
                       aria-disabled="true"
                       style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.12)', fontSize: '0.85rem', padding: '12px 0', cursor: 'not-allowed' }}
                     >
-                      <Download size={16} /> File coming soon
+                      <Download size={16} /> We are still writing this one
                     </span>
                   )}
                 </div>
@@ -150,7 +152,7 @@ export default function ResourcesPage() {
                         Watch Session <ExternalLink size={16} />
                       </a>
                     ) : (
-                      <span style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.9rem' }}>Recording coming soon</span>
+                      <span style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.9rem' }}>Recording not published yet</span>
                     )}
                   </div>
                 </div>
@@ -182,7 +184,7 @@ export default function ResourcesPage() {
                     Access Template <ArrowRight size={16} />
                   </a>
                   ) : (
-                    <span style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.9rem' }}>File coming soon</span>
+                    <span style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.9rem' }}>We are still writing this one</span>
                   )}
                 </div>
               </div>

@@ -51,7 +51,7 @@ export default async function Home() {
 
             <Reveal delay={0.6} y={20}>
               <div className="hero-stage-actions">
-                <Link href="/portal/auth" className="btn btn-primary btn-lg">
+                <Link href="/portal/signup?intent=help" className="btn btn-primary btn-lg">
                   Request help <ArrowRight size={18} aria-hidden="true" />
                 </Link>
                 <Link href="/volunteers" className="btn btn-outline btn-lg">
@@ -65,12 +65,15 @@ export default async function Home() {
             <HeroStopMotion alt="Members of the club talking and laughing together" />
 
             {/* Glass badges scattered over the crowd; each drifts with the
-                cursor at its own depth. */}
+                cursor at its own depth. Below the desktop layout they reflow
+                into a plain strip (editorial.css) rather than being hidden -
+                they are the only proof on the fold that this is real. */}
+            <div className="hero-chips-row">
             <Reveal delay={0.9} className="hero-chip-pos hero-chip-a" y={26}>
               <Parallax depth={26}>
                 <span className="hero-chip glass">
                   <span className="hero-chip-icon"><ShieldCheck size={16} /></span>
-                  <span>Verified volunteers<small>Background-checked helpers</small></span>
+                  <span>Real people answer<small>An admin reads every request</small></span>
                 </span>
               </Parallax>
             </Reveal>
@@ -90,6 +93,7 @@ export default async function Home() {
                 </span>
               </Parallax>
             </Reveal>
+            </div>
           </div>
         </section>
 
@@ -134,7 +138,7 @@ export default async function Home() {
               <Stagger className="stat-cards">
                 {[
                   { figure: SITE_STATS.members, label: 'Community members', sub: 'Across ten provinces' },
-                  { figure: SITE_STATS.volunteers, label: 'Active volunteers', sub: 'Background-checked' },
+                  { figure: SITE_STATS.volunteers, label: 'Active volunteers', sub: 'Members helping members' },
                   { figure: '89', label: 'Cases resolved', sub: 'Help requests closed' },
                   { figure: 'Free', label: 'Cost to join', sub: 'Forever, for everyone' },
                 ].map((s) => (
@@ -412,7 +416,7 @@ export default async function Home() {
                       { label: 'Choose expertise', icon: <Users size={17} /> },
                       { label: 'Set case limit', icon: <Calendar size={17} /> },
                       { label: 'Strict privacy', icon: <Shield size={17} /> },
-                      { label: 'Background check', icon: <ShieldCheck size={17} /> },
+                      { label: 'Every application read by an admin', icon: <ShieldCheck size={17} /> },
                       { label: 'Support newcomers', icon: <HandHeart size={17} /> },
                       { label: 'Track impact', icon: <FileText size={17} /> },
                     ].map((item) => (

@@ -117,7 +117,7 @@ const SEARCH_INPUT: React.CSSProperties = {
   width: '100%', minHeight: 48, padding: '0 16px 0 42px',
   border: HAIRLINE, borderRadius: 999,
   background: 'var(--bg-primary)', color: 'var(--text-primary)',
-  font: 'inherit', fontSize: '1rem', outline: 'none',
+  font: 'inherit', fontSize: '1rem',
 };
 
 /** Segmented pill group — the filter language across the portal. Scrolls sideways. */

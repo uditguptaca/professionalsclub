@@ -191,6 +191,20 @@ export default function MemberHomePage() {
 
       {feed && (
         <div className="hf-body">
+          {/* ============ Ask for help ============
+              The hero asks "What would you like to do today?" and used to answer
+              it with a form-filling nag. The help desk - the reason most people
+              join - was the sixth item inside a hidden sheet. */}
+          <section className="hf-ask card">
+            <div className="hf-ask-text">
+              <h2>Need a hand with something?</h2>
+              <p>Tell the club what you are stuck on. A real person reads every request, and it is free.</p>
+            </div>
+            <Link href="/portal/member/request-help" className="btn btn-primary btn-sm">
+              Ask for help
+            </Link>
+          </section>
+
           {/* ============ Profile completeness ============ */}
           {feed.completenessPct < 100 && (
             <section className="hf-complete card">

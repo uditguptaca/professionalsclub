@@ -98,6 +98,9 @@ body {
   /* Orange TEXT needs the 700 step: #e85d04 is 3.5:1 on white and fails
      for anything under 24px. The brand orange is unchanged for fills. */
   --text-accent: #c2410c;
+  /* Orange ON DARK. --text-accent is the light-ground orange and measures
+     3.2-3.8:1 on the near-black and forest grounds, which fails AA. */
+  --text-accent-inverse: var(--primary-400);
   --border-color: rgba(12, 12, 14, 0.08);
   --border-hover: rgba(232, 93, 4, 0.2);
   --shadow-sm: 0 1px 2px rgba(12,12,14,0.02);
@@ -567,7 +570,7 @@ input, textarea, select { font-family: inherit; }
   color: var(--text-primary);
   font-size: var(--text-sm);
   transition: all var(--transition-fast);
-  outline: none;
+  /* outline reset removed: it hid the keyboard focus ring (SC 2.4.7). */
   width: 100%;
 }
 .input:focus {
@@ -2043,7 +2046,7 @@ tr:last-child td { border-bottom: none; }
   font-size: 0.88rem;
   color: var(--text-primary);
   background: var(--gray-50);
-  outline: none;
+  /* outline reset removed: it hid the keyboard focus ring (SC 2.4.7). */
   transition: all var(--transition-fast);
   width: 100%;
   font-family: var(--font-sans);
@@ -2504,7 +2507,7 @@ tr:last-child td { border-bottom: none; }
   padding: 16px 20px;
   border: none;
   font-size: 0.95rem;
-  outline: none;
+  /* outline reset removed: it hid the keyboard focus ring (SC 2.4.7). */
   font-family: var(--font-sans);
 }
 .biz-hero-search button {
@@ -2557,7 +2560,7 @@ tr:last-child td { border-bottom: none; }
   background: white;
   color: var(--text-primary);
   font-family: var(--font-sans);
-  outline: none;
+  /* outline reset removed: it hid the keyboard focus ring (SC 2.4.7). */
   min-width: 140px;
 }
 .biz-filter-bar select:focus,
@@ -3188,7 +3191,7 @@ tr:last-child td { border-bottom: none; }
   background: var(--bg-primary);
   color: var(--text-primary);
   transition: all var(--transition-fast);
-  outline: none;
+  /* outline reset removed: it hid the keyboard focus ring (SC 2.4.7). */
 }
 
 .matrimony-form-group input:focus,
@@ -3556,7 +3559,7 @@ tr:last-child td { border-bottom: none; }
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-full);
-  outline: none;
+  /* outline reset removed: it hid the keyboard focus ring (SC 2.4.7). */
   font-size: var(--text-sm);
 }
 

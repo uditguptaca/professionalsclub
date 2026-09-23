@@ -83,8 +83,8 @@ export default function MatrimonySettingsPage() {
     // One dialog that states the full consequence beats two stacked ones: the
     // second "are you REALLY sure" teaches people to click through warnings.
     const ok = await confirmAction({
-      title: 'Delete your matrimony profile?',
-      message: 'Your preferences, interests, shortlist and chat messages are deleted with it. This cannot be undone.',
+      title: 'Delete your matrimony listing?',
+      message: 'Your listing, preferences, interests and shortlist go, and your photos are removed from the club. Messages you have already sent stay in the other person\u2019s chat, and copies anyone saved of your photos are not ours to take back. This cannot be undone.',
       confirmLabel: 'Delete profile',
     });
     if (!ok) return;

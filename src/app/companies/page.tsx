@@ -83,7 +83,7 @@ export default function CompaniesPage() {
                 aria-label="Search employers"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                style={{ width: '100%', padding: '14px 16px 14px 44px', borderRadius: 12, border: '1px solid var(--border-color)', fontSize: '0.92rem', outline: 'none', background: 'var(--bg-secondary)' }}
+                style={{ width: '100%', padding: '14px 16px 14px 44px', borderRadius: 12, border: '1px solid var(--border-color)', fontSize: '0.92rem', background: 'var(--bg-secondary)' }}
               />
             </div>
             <select

@@ -122,15 +122,15 @@ export default function FAQPage() {
                     },
                     {
                       q: 'How does the Help Desk process work?',
-                      a: 'Newcomers can submit a help request detailing what they need (e.g. career advice, housing support, tax guidance). The platform securely matches the request with a verified volunteer mentor who has the relevant expertise. All interactions are routed safely to protect your privacy.'
+                      a: 'You submit a help request saying what you need, for example career advice, housing support or tax guidance. A club admin reads it and, if a volunteer is the right fit, assigns one by hand. Volunteers are members who have been here longer, not licensed professionals, so nothing they tell you is legal, immigration or tax advice.'
                     },
                     {
                       q: 'How can I volunteer or become a mentor?',
-                      a: 'You can apply to volunteer by creating an account and completing the volunteer profile form. Once your background and professional status are verified by our admin team, you can begin receiving case assignments based on your availability and chosen case limit.'
+                      a: 'You can apply to volunteer by creating an account and completing the volunteer profile form. An admin reads every application. Once yours is approved you start receiving case assignments, based on the availability and case limit you chose.'
                     },
                     {
                       q: 'Is my personal information kept secure?',
-                      a: 'Absolutely. We take your privacy very seriously. Your contact information is never shared with volunteers or third parties without your explicit consent. All communications are mediated through our secure administrative desk.'
+                      a: 'Your help request is read by a club admin, and by the volunteer they assign to it if they assign one. No other member sees it. Member-to-member chats are end-to-end encrypted, which means the club cannot read them either. Your email address is never shown to another member; your phone number is shown only if you put it on your profile, or to a matrimony match after you accept their interest. The privacy policy lists the companies that host the service on our behalf.'
                     }
                   ].map((item, idx) => (
                     <div key={idx} style={{ paddingBottom: 20, borderBottom: '1px solid var(--border-color)' }}>
@@ -176,7 +176,7 @@ export default function FAQPage() {
                   <p>We collect information you provide voluntarily during registration (such as name, email, LinkedIn URL, and professional background) and case details you submit when requesting support.</p>
 
                   <h4 style={{ color: 'var(--text-primary)', fontWeight: 800, margin: '12px 0 6px 0' }}>2. How We Use Your Data</h4>
-                  <p>Your case details are shared with verified volunteers exclusively to facilitate case matching and support. Your email address and personal contact information are kept private and are never shared without your permission.</p>
+                  <p>Your request is read by a club admin, and by the volunteer they assign to it. Your email address is not shown to volunteers, and your phone number is shown only if you chose to put it on your profile.</p>
 
                   <h4 style={{ color: 'var(--text-primary)', fontWeight: 800, margin: '12px 0 6px 0' }}>3. Data Security</h4>
                   <p>We implement standard encryption and access control measures to protect your account data. We do not sell or monetize your personal information to third parties.</p>

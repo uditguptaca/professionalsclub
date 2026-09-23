@@ -205,9 +205,9 @@ export default function JobsPage() {
           {/* Left */}
           <div>
             <h1 style={{ fontSize: '3.2rem', fontWeight: 900, color: 'white', lineHeight: 1.1, marginBottom: 20, fontFamily: 'var(--font-display)' }}>
-              Find Your Next <span style={{ color: 'var(--text-accent)' }}>Role</span><br />in Canada
+              Find Your Next <span style={{ color: 'var(--text-accent)' }}>Role</span> in Canada
             </h1>
-            <p style={{ fontSize: '1.1rem', color: 'var(--text-accent)', fontWeight: 600, marginBottom: 16 }}>
+            <p style={{ fontSize: '1.1rem', color: 'var(--text-accent-inverse)', fontWeight: 600, marginBottom: 16 }}>
               Jobs, referrals, and real help building your career here.
             </p>
             <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.82)', lineHeight: 1.7, marginBottom: 32, maxWidth: 480 }}>
@@ -220,7 +220,7 @@ export default function JobsPage() {
 
           {/* Right — Search Panel */}
           <div style={{ background: 'var(--bg-primary)', borderRadius: 16, padding: '32px 28px', boxShadow: '0 25px 50px rgba(0,0,0,0.25)' }}>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'var(--font-display)' }}>FIND YOUR JOB!</h2>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'var(--font-display)' }}>Find a job</h2>
             <div style={{ width: 40, height: 3, background: 'var(--primary-700)', borderRadius: 2, marginBottom: 24 }} />
 
             <form onSubmit={handleSearch} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -231,7 +231,7 @@ export default function JobsPage() {
                   placeholder="What are you looking for?" aria-label="Search jobs by title or keyword"
                   value={keyword}
                   onChange={e => setKeyword(e.target.value)}
-                  style={{ width: '100%', padding: '12px 14px 12px 40px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-secondary)' }}
+                  style={{ width: '100%', padding: '12px 14px 12px 40px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', background: 'var(--bg-secondary)' }}
                 />
               </div>
 
@@ -242,7 +242,7 @@ export default function JobsPage() {
                   placeholder="Location" aria-label="Filter by location"
                   value={location}
                   onChange={e => setLocation(e.target.value)}
-                  style={{ width: '100%', padding: '12px 14px 12px 40px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-secondary)' }}
+                  style={{ width: '100%', padding: '12px 14px 12px 40px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', background: 'var(--bg-secondary)' }}
                 />
               </div>
 
@@ -252,7 +252,7 @@ export default function JobsPage() {
                   aria-label="Filter by job type"
                   value={typeFilter}
                   onChange={e => setTypeFilter(e.target.value)}
-                  style={{ width: '100%', padding: '12px 36px 12px 40px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-secondary)', color: typeFilter ? 'var(--text-primary)' : 'var(--text-muted)', appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none' }}
+                  style={{ width: '100%', padding: '12px 36px 12px 40px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', background: 'var(--bg-secondary)', color: typeFilter ? 'var(--text-primary)' : 'var(--text-muted)', appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none' }}
                 >
                   <option value="">All Types</option>
                   <option value="full_time">Full Time</option>
@@ -270,7 +270,7 @@ export default function JobsPage() {
                   aria-label="Filter by category"
                   value={categoryFilter}
                   onChange={e => setCategoryFilter(e.target.value)}
-                  style={{ width: '100%', padding: '12px 36px 12px 40px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', outline: 'none', background: 'var(--bg-secondary)', color: categoryFilter ? 'var(--text-primary)' : 'var(--text-muted)', appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none' }}
+                  style={{ width: '100%', padding: '12px 36px 12px 40px', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: '0.9rem', background: 'var(--bg-secondary)', color: categoryFilter ? 'var(--text-primary)' : 'var(--text-muted)', appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none' }}
                 >
                   <option value="">Choose a category...</option>
                   {Object.keys(CATEGORY_ICONS).map(cat => (
@@ -304,7 +304,7 @@ export default function JobsPage() {
       <section style={{ padding: '40px 0', background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <h2 style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 12 }}>Dive Into Your Ideal Category!</h2>
+            <h2 style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 12 }}>Browse by category</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>Browse Top Fields</p>
           </div>
 
@@ -348,7 +348,7 @@ export default function JobsPage() {
                 </div>
                 <div>
                   <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: 4 }}>{cat}</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 500 }}>{categoryCounts[cat] || 0} Jobs Available</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 500 }}>{categoryCounts[cat] || 0} {(categoryCounts[cat] || 0) === 1 ? 'job' : 'jobs'} listed</div>
                 </div>
               </button>
               );
@@ -367,8 +367,8 @@ export default function JobsPage() {
       <section style={{ padding: '40px 0', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ maxWidth: 1200 }}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <h2 style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 12 }}>Explore Top Job Cities!</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>Unlock Opportunities</p>
+            <h2 style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', marginBottom: 12 }}>Browse by city</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>Roles members have shared, by city</p>
           </div>
 
           <div className="mobile-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
@@ -567,7 +567,7 @@ export default function JobsPage() {
                 <div style={{ background: 'var(--text-primary)', width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-accent)' }}>
                   <Briefcase size={20} />
                 </div>
-                <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>Get Referred Now!</span>
+                <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>Ask for a referral</span>
               </div>
             </div>
 

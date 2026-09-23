@@ -45,7 +45,7 @@ export default function AdminBusinesses() {
   const pendingRequests = businessContactRequests.filter(r => r.status === 'pending').length;
 
   const statusColors: Record<string, string> = {
-    verified: 'var(--success-600)', featured: 'var(--accent-600)', pending_review: 'var(--primary-600)', rejected: 'var(--error-500)', draft: 'var(--text-muted)', inactive: 'var(--text-secondary)',
+    verified: 'var(--success-600)', featured: 'var(--accent-600)', pending_review: 'var(--text-accent)', rejected: 'var(--error-500)', draft: 'var(--text-muted)', inactive: 'var(--text-secondary)',
   };
 
   return (

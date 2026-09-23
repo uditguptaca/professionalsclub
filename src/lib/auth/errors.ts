@@ -74,16 +74,18 @@ export function authErrorMessage(failure: AuthFailure, context: 'sign-in' | 'sig
 
     case 'USER_BANNED':
     case 'BANNED_USER':
-      return 'This account has been suspended. Contact an administrator.';
+      return 'This account is suspended. Email support@professionalsclub.ca and we will tell you why.';
 
     default:
       break;
   }
 
   if (context === 'sign-in') {
-    // Anything unrecognised on sign-in collapses to the same vague message; the
-    // real code is logged server-side or to the console for diagnosis.
-    return 'Incorrect email or password.';
+    // NOT "incorrect password" any more. An unrecognised code usually means the
+    // auth service had a problem, and telling the member their password was
+    // wrong sends them to reset a password that was never wrong - and the reset
+    // then fails the same way. Say what we actually know.
+    return 'We could not sign you in just now. It is not your password — try again in a minute, or email support@professionalsclub.ca if it keeps happening.';
   }
 
   // On signup the upstream wording is usually actionable ("Password too weak"),

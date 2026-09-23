@@ -37,13 +37,13 @@ export default function PricingPage() {
               </div>
               {[
                 'Submit unlimited help requests',
-                'Job referrals & placement support',
-                'Resume & cover letter reviews',
-                'Settlement guidance',
-                'Tax consultation connections',
-                'Career mentorship matching',
-                'Secure messaging',
-                'Full request lifecycle tracking',
+                'Ask a member who works there for a referral',
+                'Resume and cover letter reviews',
+                'Settlement guidance from members who have done it',
+                'Member offers from local businesses',
+                'Community feed, groups and events',
+                'End-to-end encrypted member chat',
+                'See where your request has got to',
               ].map((f, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < 7 ? '1px solid var(--border-color)' : 'none' }}>
                   <CheckCircle size={16} style={{ color: 'var(--text-accent)', flexShrink: 0 }} />
@@ -64,14 +64,14 @@ export default function PricingPage() {
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Always free</div>
               </div>
               {[
-                'Receive curated cases',
+                'An admin sends you cases that match what you offered',
                 'Set your own monthly case limit',
-                'Choose expertise areas (10 types)',
-                'Secure platform messaging',
-                'Background screening & compliance',
-                'Community recognition badges',
-                'Impact dashboard & metrics',
-                'Flexible availability settings',
+                'Choose your areas (10 types)',
+                'End-to-end encrypted member chat',
+                'An admin reads every application before you are given a case',
+                'Post club events and job listings once approved',
+                'See the requests you have helped with',
+                'Set when you are available, and pause any time',
               ].map((f, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < 7 ? '1px solid var(--border-color)' : 'none' }}>
                   <CheckCircle size={16} style={{ color: 'var(--text-accent)', flexShrink: 0 }} />

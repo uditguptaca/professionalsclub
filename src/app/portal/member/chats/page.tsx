@@ -1,4 +1,10 @@
 'use client';
+// A soft keyboard has no Shift, so `!shiftKey` is always true on a phone and
+// Enter sent the message mid-sentence. Send on Enter only where a real keyboard
+// can also produce Shift+Enter; on touch, Enter makes a new line and the 44px
+// send button does the sending.
+const sendsOnEnter = () =>
+  typeof navigator !== 'undefined' && !navigator.maxTouchPoints;
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { upload } from '@vercel/blob/client';
@@ -765,7 +771,7 @@ export default function MemberChatsPage() {
     setPinSheet(null);
     setPin('');
     setPin2('');
-    setToast('Chat PIN set. Your messages will follow you to a new phone.');
+    setToast('Chat PIN set. Keep it safe — nobody at the club can reset it.');
     setPinBusy(false);
   };
 
@@ -2050,9 +2056,18 @@ export default function MemberChatsPage() {
           </button>
         </div>
 
-        {/* Messages */}
+        {/* Messages.
+            role="log" + polite: the thread polls every five seconds, and
+            without a live region a blind member sitting in a conversation got
+            total silence when the other person replied. "log" announces only
+            additions, in order, without interrupting - which is exactly the
+            behaviour a chat wants. */}
         <div
           ref={scrollRef}
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions"
+          aria-label={`Messages with ${partnerName}`}
           onScroll={(e) => {
             const el = e.currentTarget;
             nearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 140;
@@ -2071,8 +2086,9 @@ export default function MemberChatsPage() {
               <Info size={14} aria-hidden="true" style={{ color: 'var(--success-600)', flexShrink: 0, marginTop: 2 }} />
               <p style={{ margin: 0, flex: 1, fontSize: '0.76rem', lineHeight: 1.45, color: 'var(--text-secondary)' }}>
                 Messages you type are locked to your devices. No one else — not even
-                Professionals Club — can read them. Photos, videos and files are
-                private, but not encrypted.
+                Professionals Club — can read them. Photos, videos and files are not
+                locked this way: anyone who gets the link can open them, so do not
+                send documents you would mind being copied.
               </p>
               <button
                 type="button"
@@ -2732,7 +2748,7 @@ export default function MemberChatsPage() {
                     el.style.height = `${Math.min(el.scrollHeight, 112)}px`; // ~4 lines
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); }
+                    if (e.key === 'Enter' && !e.shiftKey && sendsOnEnter()) { e.preventDefault(); void send(); }
                   }}
                   style={{
                     flex: 1, minWidth: 0, minHeight: 44, maxHeight: 112, resize: 'none',
@@ -3531,6 +3547,14 @@ export default function MemberChatsPage() {
           {pinSheet === 'restore'
             ? 'This device is new to your chats. Enter the chat PIN you set before and your conversations open here, like they do on a new phone with WhatsApp.'
             : 'Your chat keys live on this device. A PIN seals a copy the club cannot read, so a new phone or a cleared browser can pick your messages back up.'}
+        </p>
+        {/* The one thing a member must know BEFORE choosing a PIN: there is no
+            reset. Every other string about the PIN was upside. */}
+        <p className="hf-sheet-sub" style={{ marginTop: -4 }}>
+          <strong>Nobody at the club can reset this PIN.</strong>{' '}
+          {pinSheet === 'restore'
+            ? 'If you cannot remember it, your older messages stay locked on your old device. New messages will work normally.'
+            : 'If you forget it, the messages sealed with it cannot be opened on a new phone. Write it down somewhere safe.'}
         </p>
 
         <form onSubmit={(e) => { e.preventDefault(); void (pinSheet === 'restore' ? restoreWithPin() : savePin()); }}>

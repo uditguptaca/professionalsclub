@@ -26,7 +26,18 @@ export type Session = { userId: string; email: string; name: string | null };
  */
 export const getSession = cache(async (): Promise<Session | null> => {
   try {
-    const { data } = await auth.getSession();
+    let data = (await auth.getSession()).data;
+    // One retry before giving up. A transient upstream failure (a rate limit,
+    // a slow hop, a dropped connection) used to read as "signed out", which
+    // surfaced to members as "Not signed in." on a half-written help request,
+    // to volunteers as an empty moderation queue, and to a shop owner as a
+    // failed coupon scan with a customer waiting. Most of those recover on the
+    // second ask, and the cost of asking is one round trip on a path that
+    // would otherwise have ejected the person.
+    if (!data?.user?.id) {
+      await new Promise((r) => setTimeout(r, 150));
+      data = (await auth.getSession()).data;
+    }
     if (!data?.user?.id) return null;
 
     return {
@@ -254,13 +265,13 @@ export async function requireUserId(): Promise<string> {
   // account it existed to stop.
   const cached = profileCache.get(session.userId);
   if (cached && cached.expires > Date.now()) {
-    if (cached.profile.accountStatus !== 'active') throw new Error('This account is not active.');
+    if (cached.profile.accountStatus !== 'active') throw new Error('This account is not active. Email support@professionalsclub.ca and we will tell you why.');
     return session.userId;
   }
 
   const profile = await getCurrentProfile();
   if (!profile || profile.accountStatus !== 'active') {
-    throw new Error('This account is not active.');
+    throw new Error('This account is not active. Email support@professionalsclub.ca and we will tell you why.');
   }
   return session.userId;
 }
@@ -271,8 +282,8 @@ export async function requireAdminId(): Promise<string> {
   // throw for their error message, and admin traffic is a rounding error.
   const profile = await getCurrentProfile();
   if (!profile) throw new Error('Not signed in.');
-  if (profile.accountStatus !== 'active') throw new Error('This account is not active.');
-  if (profile.role !== 'admin') throw new Error('Administrator access required.');
+  if (profile.accountStatus !== 'active') throw new Error('This account is not active. Email support@professionalsclub.ca and we will tell you why.');
+  if (profile.role !== 'admin') throw new Error('That page is for club admins.');
   return profile.id;
 }
 
@@ -288,7 +299,7 @@ export async function requireAdminId(): Promise<string> {
 export async function requireCuratorId(): Promise<string> {
   const profile = await getCurrentProfile();
   if (!profile) throw new Error('Not signed in.');
-  if (profile.accountStatus !== 'active') throw new Error('This account is not active.');
+  if (profile.accountStatus !== 'active') throw new Error('This account is not active. Email support@professionalsclub.ca and we will tell you why.');
   if (profile.role !== 'admin' && !profile.isVolunteer) {
     throw new Error('Only admins and volunteers can add jobs.');
   }

@@ -125,7 +125,7 @@ export default function DonatePage() {
                     inputMode="decimal"
                     value={amount}
                     onChange={e => setAmount(e.target.value)}
-                    style={{ border: 'none', background: 'transparent', fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', width: '100%', outline: 'none' }}
+                    style={{ border: 'none', background: 'transparent', fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', width: '100%' }}
                   />
                 </div>
 

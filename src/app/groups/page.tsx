@@ -3,13 +3,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
+import { SITE_STATS } from '@/lib/site-stats';
 import { ArrowRight, Users, ExternalLink, Shield, MessageCircle, Wallet, Globe, Building2, BookOpen, Home, Dumbbell, Briefcase, TrendingUp, TrendingDown, DollarSign, Coins, MapPin, Landmark, Code, Banknote, BarChart3, ShieldCheck, FileText, GraduationCap, PenSquare, Plane, Baby, Mountain, BrickWall, Scale, Megaphone, ShoppingBag, BookOpenCheck, Truck, UsersRound, HardHat, TreePine, Tent, Palette, Snowflake, Heart, Star, CircleDot, Wallet2 } from 'lucide-react';
 import React from 'react';
 
 /* ─── DATA ─── */
 const MAIN_COMMUNITY = {
   link: 'https://chat.whatsapp.com/LZQxOHMI7tx3vrrXCGXit4',
-  members: '5,000+',
+  members: SITE_STATS.whatsappParticipants,
 };
 
 interface WhatsAppGroup {
@@ -196,13 +197,13 @@ export default function GroupsPage() {
               <h1 style={{ fontSize: '3.6rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16, lineHeight: 1.1 }}>
                 Canada&apos;s Biggest <br /><span style={{ color: 'var(--text-accent)' }}>Professional</span> Community
               </h1>
-              <p style={{ fontSize: '1.15rem', color: 'var(--gray-400)', lineHeight: 1.7, maxWidth: 680, margin: '0 0 40px 0' }}>
+              <p style={{ fontSize: '1.15rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, maxWidth: 680, margin: '0 0 40px 0' }}>
                 Join thousands of newcomers and professionals helping each other settle, find jobs, and grow.
               </p>
 
               <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 40, marginTop: 24 }}>
                 {[
-                  { val: '5,000+', label: 'Participants' },
+                  { val: SITE_STATS.whatsappParticipants, label: 'Participants' },
                   { val: '6', label: 'Communities' },
                   { val: '50+', label: 'WhatsApp Groups' },
                 ].map((s, i) => (
@@ -221,7 +222,7 @@ export default function GroupsPage() {
                   <MessageCircle size={32} />
                 </div>
                 <div style={{ fontWeight: 900, fontSize: '1.3rem', color: 'white', marginBottom: 8, fontFamily: 'var(--font-display)', textAlign: 'center' }}>Main Community Channel</div>
-                <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: 24, textAlign: 'center' }}>{MAIN_COMMUNITY.members} participants • All groups in one place</div>
+                <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.8)', marginBottom: 24, textAlign: 'center' }}>{MAIN_COMMUNITY.members} participants • All groups in one place</div>
                 <a href={MAIN_COMMUNITY.link} target="_blank" rel="noopener noreferrer" style={{
                   background: 'linear-gradient(135deg, var(--primary-600), var(--primary-500))',
                   color: 'white',
@@ -401,7 +402,7 @@ export default function GroupsPage() {
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16, lineHeight: 1.15 }}>
             Register as a Member
           </h2>
-          <p style={{ fontSize: '1.1rem', color: 'var(--gray-400)', marginBottom: 12, lineHeight: 1.7 }}>
+          <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.8)', marginBottom: 12, lineHeight: 1.7 }}>
             Register to get your group links — every group is admin-managed for safety and quality.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 32, fontSize: '0.85rem', color: 'var(--primary-300)' }}>

@@ -34,7 +34,7 @@ const OUTCOME: Record<RedeemOutcome['outcome'], { good: boolean; line: string }>
   already_used: { good: false, line: 'This code was already used.' },
   expired:      { good: false, line: 'This code ran out before it was used. Ask them to show it again.' },
   void:         { good: false, line: 'This code is no longer valid.' },
-  not_found:    { good: false, line: 'No code like that. Check the letters and try again.' },
+  not_found:    { good: false, line: 'Not a code for this business. Check the letters, or it may be from another shop.' },
   wrong_day:    { good: false, line: 'This offer does not run today.' },
   paused:       { good: false, line: 'This offer is paused, so it cannot be accepted.' },
 };
@@ -212,7 +212,7 @@ export default function CouponScanner({ initialCode = '', intro = true }: { init
         </p>
       )}
 
-      <details style={{ marginTop: 14 }}>
+      <details open style={{ marginTop: 14 }}>
         <summary style={{ cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
           <Keyboard size={13} aria-hidden="true" style={{ verticalAlign: '-2px', marginRight: 6 }} />
           Type the code instead
@@ -268,18 +268,20 @@ function ScanResult({ result }: { result: RedeemOutcome }) {
 
   return (
     <div
-      role="status"
+      // A refusal is announced, not merely rendered: there is a customer
+      // waiting and the owner is looking at them, not at the phone.
+      role={copy.good ? 'status' : 'alert'}
       style={{
         marginTop: 14, padding: '1rem', borderRadius: '0.9rem',
-        background: copy.good ? 'var(--green-50)' : 'var(--bg-secondary)',
-        border: `1px solid ${copy.good ? 'rgba(45,122,79,0.32)' : 'var(--border-color)'}`,
+        background: copy.good ? 'var(--green-50)' : 'rgba(240,73,35,0.08)',
+        border: `2px solid ${copy.good ? 'rgba(45,122,79,0.45)' : 'rgba(240,73,35,0.35)'}`,
       }}
     >
       <strong style={{
-        display: 'flex', alignItems: 'center', gap: 8, fontSize: '1.02rem',
-        color: copy.good ? 'var(--success-600)' : 'var(--text-primary)',
+        display: 'flex', alignItems: 'center', gap: 8, fontSize: '1.15rem', lineHeight: 1.35,
+        color: copy.good ? 'var(--success-600)' : 'var(--error-600)',
       }}>
-        {copy.good ? <Check size={18} aria-hidden="true" /> : <AlertCircle size={18} aria-hidden="true" />}
+        {copy.good ? <Check size={22} aria-hidden="true" /> : <AlertCircle size={22} aria-hidden="true" />}
         {copy.line}
       </strong>
 

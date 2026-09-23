@@ -350,5 +350,8 @@ export function rejectionMessage(result: ModerationResult): string {
         : r.includes('nudity') ? 'nudity'
           : r.includes('sexual content') ? 'sexual content'
             : 'abusive language';
-  return `Please keep it respectful — this cannot be posted because it appears to contain ${what}. Edit it and try again.`;
+  // Names the check that refused, and offers a way out: an automated classifier
+  // judging a second-language writer will sometimes be wrong, and the member
+  // needs somewhere to go when it is.
+  return `We could not post this. Our automatic check flagged it as ${what}. If that is wrong, edit it and try again, or email support@professionalsclub.ca.`;
 }

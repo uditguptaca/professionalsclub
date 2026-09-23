@@ -40,8 +40,19 @@
 /* One focus treatment for everything. There were eight :focus mentions across
    4,300 lines, so keyboard users were largely flying blind. :focus-visible
    keeps the ring off mouse clicks. */
-:where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
-  outline: 2px solid var(--primary-600);
+/* NOT :where(). That has zero specificity, so a single `outline: none` on a
+   field beat it, and 27 fields across eight public pages - including every
+   field of "Ask for help" - showed nothing at all on keyboard focus. Measured
+   at 0.00% changed pixels. --primary-700 so the ring itself clears 3:1
+   against what it sits on (SC 1.4.11). */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--primary-700);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
@@ -499,7 +510,7 @@ textarea:focus-visible {
 /* Mouse focus keeps the quieter treatment: the border alone is enough when the
    user just clicked the field they meant to click. */
 .input:focus,
-.form-input:focus {
+.form-input:focus:not(:focus-visible) {
   outline: none;
   border-color: var(--primary-700);
 }
@@ -1511,6 +1522,10 @@ textarea:focus-visible {
   justify-content: center;
   gap: 0.85rem;
   margin-top: 1.75rem;
+  /* Above the floating hero chips: one of them used to paint over the right
+     edge of "Become a volunteer" and take its taps with it. */
+  position: relative;
+  z-index: 3;
 }
 
 /* The living photograph: background-removed cutouts of the group, sitting
@@ -1601,7 +1616,27 @@ textarea:focus-visible {
   flex-shrink: 0;
 }
 .hero-chip small { display: block; font-weight: 500; color: var(--text-secondary); font-size: 0.72rem; }
-@media (max-width: 1180px) { .hero-chip-pos { display: none; } }
+/* The wrapper is inert on desktop so the chips keep floating over the image. */
+.hero-chips-row { display: contents; }
+
+/* Below the desktop layout the chips cannot float over the image, but hiding
+   them threw away every proof point for the audience that most needs it -
+   "is this legit?" is a newcomer's first question. Re-flow them into a plain
+   strip under the buttons instead of deleting them. */
+@media (max-width: 1180px) {
+  .hero-chip-pos { position: static; transform: none; display: block; }
+  .hero-chip-pos > * { transform: none !important; }
+  .hero-chips-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .hero-chips-row .hero-chip {
+    flex: 1 1 100%;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    backdrop-filter: none;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+  }
+  .hero-chips-row .hero-chip small { font-size: 0.7rem; }
+}
 
 /* ---------------------------------------------------------------------------
    Accent marquee
@@ -1635,7 +1670,7 @@ textarea:focus-visible {
   color: var(--green-300);
   font-variation-settings: "SOFT" 100, "WONK" 1;
 }
-.marquee-sep { color: var(--text-accent); font-size: 0.9rem; }
+.marquee-sep { color: var(--text-accent-inverse); font-size: 0.9rem; }
 @keyframes marquee-scroll {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
@@ -1885,7 +1920,7 @@ textarea:focus-visible {
    chips sit in the empty air beside the group. */
 .hero-chip-a { left: 6%; top: clamp(-15rem, -24vh, -9rem); }
 .hero-chip-b { right: 5%; top: clamp(-19rem, -30vh, -12rem); }
-.hero-chip-c { right: 16%; top: clamp(-7rem, -11vh, -4rem); }
+.hero-chip-c { right: 6%; top: clamp(-5rem, -8vh, -2.5rem); }
 
 @keyframes chip-float {
   from { translate: 0 0; }
@@ -2326,27 +2361,34 @@ a.portal-sheet-user:active { background: var(--green-900, #14532d); }
   padding: 0.5rem clamp(0.5rem, 2vw, 1rem) 0.15rem;
   background: transparent;
 }
+/* The button is styled at EVERY width. It used to be styled only inside the
+   phone media query while the bar itself showed everywhere, so above 1024px
+   this painted as a raw browser-default button - grey, bevelled, 22px tall -
+   at the top of nearly every portal page. */
+.portal-back button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  min-height: 44px;
+  padding: 0 0.7rem 0 0.35rem;
+  border: 0;
+  border-radius: 99px;
+  background: none;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  appearance: none;
+}
+.portal-back button:hover { color: var(--text-primary); }
+.portal-back button:active { background: rgba(27, 67, 50, 0.07); }
+
 @media (max-width: 1023px) {
   .portal-back {
     padding-top: calc(0.4rem + var(--sat));
     background: var(--bg-secondary);
   }
-  .portal-back button {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.15rem;
-    min-height: 44px;
-    padding: 0 0.7rem 0 0.35rem;
-    border: 0;
-    border-radius: 99px;
-    background: none;
-    color: var(--text-secondary);
-    font: inherit;
-    font-size: 0.9rem;
-    font-weight: 700;
-    cursor: pointer;
-  }
-  .portal-back button:active { background: rgba(27, 67, 50, 0.07); }
   /* The bar now carries the status-bar inset, so the content below must not
      add it a second time. */
   .portal-content-area.has-back { padding-top: 0.35rem; }
@@ -2508,7 +2550,7 @@ a.portal-sheet-user:active { background: var(--green-900, #14532d); }
   transition: border-color 0.15s var(--ease-out), background 0.15s var(--ease-out);
 }
 .community-field::placeholder { color: #6d6d7a; }
-.community-field:focus {
+.community-field:focus:not(:focus-visible) {
   outline: none;
   border-color: var(--green-600);
   background: var(--bg-primary);
@@ -2637,7 +2679,7 @@ a.portal-sheet-user:active { background: var(--green-900, #14532d); }
   font-size: 0.85rem;
   resize: none;
 }
-.community-report-form textarea:focus { outline: none; border-color: var(--green-600); }
+.community-report-form textarea:focus:not(:focus-visible) { outline: none; border-color: var(--green-600); }
 .community-report-form > div { display: flex; justify-content: flex-end; gap: 0.4rem; }
 
 /* Media grid: bleeds to the panel edge */
@@ -3835,6 +3877,10 @@ a.portal-sheet-user:active { background: var(--green-900, #14532d); }
 
 /* --- City hero -------------------------------------------------------------- */
 .hf-hero {
+  /* Until the photo paints (or if it 404s) the white greeting sat on cream
+     at 1.06:1. The ground is the fallback. */
+  background: var(--green-900);
+
   position: relative;
   margin: calc(-1 * (clamp(1.25rem, 3vw, 2.5rem) + var(--sat))) calc(-1 * clamp(1rem, 3vw, 2.5rem)) 0;
   padding: calc(clamp(2.2rem, 6vw, 3.5rem) + var(--sat)) clamp(1rem, 3vw, 2.5rem) 4.2rem;
@@ -4850,7 +4896,7 @@ a.portal-sheet-user:active { background: var(--green-900, #14532d); }
   flex: 1; min-width: 0; min-height: 44px; border: 0; background: none;
   font: inherit; font-size: 16px; color: var(--text-primary);
 }
-.cm-search input:focus { outline: none; }
+.cm-search input:focus:not(:focus-visible) { outline: none; }
 .cm-search input::placeholder { color: var(--text-muted); }
 
 /* --- People rows and lists ------------------------------------------------------------ */
@@ -5095,7 +5141,7 @@ a.portal-sheet-user:active { background: var(--green-900, #14532d); }
   flex: 1; min-width: 0; min-height: 36px; padding: 0 0.7rem;
   border: 1px solid rgba(27, 67, 50, 0.16); border-radius: 0.55rem; font: inherit; font-size: 0.84rem;
 }
-.community-comment-report input:focus { outline: none; border-color: var(--green-600); }
+.community-comment-report input:focus:not(:focus-visible) { outline: none; border-color: var(--green-600); }
 
 /* --- Moderation queue (0053) ------------------------------------------------ */
 .md-list { display: flex; flex-direction: column; gap: 0.75rem; }
@@ -5132,7 +5178,7 @@ a.portal-sheet-user:active { background: var(--green-900, #14532d); }
   width: 100%; min-height: 52px; padding: 0 1rem; font-size: 1.3rem; letter-spacing: 0.25em; text-align: center;
   border: 1px solid rgba(27, 67, 50, 0.16); border-radius: 12px; background: var(--bg-primary); color: var(--text-primary);
 }
-.ch-pin-input:focus { outline: none; border-color: var(--green-700); }
+.ch-pin-input:focus:not(:focus-visible) { outline: none; border-color: var(--green-700); }
 
 /* ===== CHAT: links, cards and motion (Instagram-grade, reduced-motion aware) ===== */
 .ch-msg { position: relative; }
@@ -5248,4 +5294,168 @@ a.portal-sheet-user:active { background: var(--green-900, #14532d); }
   .mt-wizard-bar { position: fixed; left: 0; right: 0; bottom: calc(3.5rem + var(--sab)); z-index: var(--z-drawer); margin: 0 !important; padding: 0.6rem 0.75rem; flex-wrap: nowrap !important; background: rgba(255,247,237,0.94); backdrop-filter: blur(8px); border-top: 1px solid rgba(27,67,50,0.08); }
   .mt-wizard-bar .btn { min-height: 46px; }
   .mt-wizard-bar .community-error { position: absolute; left: 0.75rem; right: 0.75rem; bottom: calc(100% + 6px); }
+}
+
+
+/* Who can see this post. The composer never said, and "Share something with
+   the club" does not answer "will my employer see this?". */
+.community-audience-note {
+  margin: 6px 0 0;
+  padding-left: 2px;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+
+/* The help desk, on the member home rather than six taps inside a sheet. */
+.hf-ask {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 18px;
+}
+.hf-ask-text h2 { margin: 0 0 4px; font-size: 1.02rem; }
+.hf-ask-text p { margin: 0; font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); }
+.hf-ask .btn { flex-shrink: 0; }
+@media (max-width: 480px) {
+  .hf-ask { flex-direction: column; align-items: stretch; }
+  .hf-ask .btn { width: 100%; justify-content: center; }
+}
+
+
+/* Who learns you are going. The button read like a private reservation. */
+.rsvp-note {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+
+/* The legal documents, reachable from inside the portal. */
+.portal-sheet-legal {
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.portal-sheet-legal a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 8px 6px;
+  display: inline-block;
+}
+.portal-sheet-legal a:hover { color: var(--text-accent); }
+
+
+/* ===========================================================================
+   PHONE CRAFT (UX round 1)
+   Measured on a 390x844 Android after `.portal-layout { zoom: 0.88 }`, which
+   shrinks every authored dimension by 12%. Round 3 put 44px floors on the
+   button classes; this covers what it missed, plus pressed states, since
+   `-webkit-tap-highlight-color: transparent` means a control with no :active
+   gives a finger no feedback at all.
+   =========================================================================== */
+
+@media (max-width: 767px) {
+  /* Targets measured at 17-39px: the only route into comments, coupon terms,
+     member profiles and half the destinations in the product. */
+  .portal-layout .community-comments-line,
+  .portal-layout .hf-section-head a,
+  .portal-layout .hf-section-head button,
+  .portal-layout .cm-rail-name,
+  .portal-layout .cm-tag,
+  .portal-layout .community-post-meta a,
+  .portal-layout .cm-scope button,
+  .portal-layout .cm-btn,
+  .portal-layout .mt-tabs a,
+  .portal-layout .portal-sheet-links a,
+  .portal-layout details > summary {
+    min-height: calc(44px / 0.88);
+    display: inline-flex;
+    align-items: center;
+  }
+  .portal-layout .portal-sheet-links a,
+  .portal-layout details > summary { display: flex; }
+
+  .portal-layout .hf-member-avatar,
+  .portal-layout .hf-section-head button,
+  .portal-layout .cm-person-avatar {
+    min-width: calc(44px / 0.88);
+    min-height: calc(44px / 0.88);
+  }
+
+  /* Type that painted at 8.7-11.3px after the zoom. The floor here is about
+     12.5px painted, which is the Material caption minimum. */
+  .portal-layout .tabbar-item span { font-size: 0.78rem; }
+  .portal-layout .cm-tag,
+  .portal-layout .hf-section-head a,
+  .portal-layout .cm-scope button { font-size: 0.88rem; }
+  .portal-layout .community-comments-line { font-size: 0.95rem; }
+  .portal-layout .community-post-body { font-size: 1rem; }
+
+  /* iOS zooms the whole page when a focused field computes under 16px. The
+     existing rule only reached `.input`; these are bare elements. */
+  .portal-main input:not([type='checkbox']):not([type='radio']),
+  .portal-main select,
+  .portal-main textarea { font-size: 16px; }
+}
+
+/* A finger fires :active, never :hover. Without these the member taps a
+   notification row, a business card or a photo and nothing happens until the
+   next screen paints. */
+@media (hover: none) {
+  .portal-layout :is(.hf-tile, .hf-job, .hf-group, .hf-biz, .hf-event, .nt-row,
+                     .cm-person-avatar, .community-avatar, .community-media-cell,
+                     .cm-rail-card, .hf-member-avatar, a.card):active {
+    background: var(--bg-secondary);
+    transform: scale(0.99);
+  }
+  .portal-layout :is(.hf-section-head a, .hf-section-head button, .cm-rail-name,
+                     .cm-tag, .cm-scope button, .nt-filter, .nt-action,
+                     .community-comments-line, .portal-sheet-links a,
+                     details > summary):active {
+    opacity: 0.55;
+  }
+}
+
+/* At 200% zoom the viewport is ~195px and the six tab items were squeezed to
+   27-56px each, pushing "More" - the only route to matrimony, referrals, the
+   help desk and volunteering - off the screen entirely. Older members and
+   second-language readers are exactly the people who turn zoom up. */
+@media (max-width: 360px) {
+  .portal-layout .tabbar-item span {
+    font-size: 0.7rem;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+@media (max-width: 300px) {
+  .portal-layout .tabbar-item span { display: none; }
+  .portal-layout .tabbar-item { min-width: 0; }
+}
+
+
+/* Who reads this box. Three near-identical cards on the request screen, and
+   only the private one carried a note, which taught the wrong lesson. */
+.admin-send-note {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+
+/* A focused control must not land under the fixed tab bar. The browser scrolls
+   into the LAYOUT viewport, which includes the strip the bar covers, so a
+   keyboard user on a phone pressed Tab and the focus ring vanished. */
+html {
+  scroll-padding-bottom: calc(4.5rem + var(--sab, 0px));
+  scroll-padding-top: calc(3.5rem + var(--sat, 0px));
 }

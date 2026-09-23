@@ -264,7 +264,7 @@ export default function MyVolunteerPage() {
                 fontSize: '0.78rem', lineHeight: 1.5, color: 'var(--text-secondary)',
               }}>
                 <Shield size={14} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2, color: 'var(--primary-600)' }} />
-                The requester&apos;s details are redacted. Reply only through the club.
+                You can see who asked and what they wrote, because you were assigned to help them. Keep it in the club, and keep it to yourself.
               </p>
             </div>
           </div>

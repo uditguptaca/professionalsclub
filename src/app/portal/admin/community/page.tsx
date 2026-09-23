@@ -89,7 +89,7 @@ export default function CommunityModerationPage() {
                 onClick={async () => {
                   const ok = await confirmAction({
                     title: 'Remove this content?',
-                    message: 'The post or comment is hidden from every member. The author is not notified.',
+                    message: 'The post or comment is hidden from every member, and the author is told a moderator removed it \u2014 their phone buzzes within seconds. If you want to explain first, message them before you remove it.',
                     confirmLabel: 'Remove content',
                   });
                   if (ok) resolve(report.id, 'actioned');

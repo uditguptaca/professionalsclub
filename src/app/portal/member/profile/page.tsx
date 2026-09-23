@@ -105,6 +105,17 @@ export default function MemberProfilePage() {
 
   const togglePrivacy = async () => {
     if (privacyBusy) return;
+    // Going public runs a trigger that accepts every pending follow request,
+    // and going private again does not take them back. The most natural way to
+    // explore a privacy switch - flip it and look - was the irreversible one.
+    if (isPrivate) {
+      const ok = await confirm({
+        title: 'Make your profile public?',
+        message: 'Anyone with an account will be able to see your posts, work history and skills. Anyone already waiting to follow you is accepted straight away, and turning this back on later does not remove them.',
+        confirmLabel: 'Make public',
+      });
+      if (!ok) return;
+    }
     setPrivacyBusy(true);
     setError('');
     const result = await updateOwnProfile({ isPrivate: !isPrivate });
@@ -209,7 +220,7 @@ export default function MemberProfilePage() {
     // App Store 5.1.1(v) / Play User Data: deletion must be real and in-app.
     const ok = await confirm({
       title: 'Delete your account permanently?',
-      message: 'This erases your profile, help requests, volunteer history, matrimony data and messages, then signs you out. It cannot be undone.',
+      message: 'This erases your profile, posts, help requests, volunteer history, matrimony listing and messages \u2014 including the other person\u2019s copy of your chats \u2014 and signs you out. Files you uploaded are removed from the club; copies anyone already saved are not. A record that an account was deleted stays in the club\u2019s admin log. It cannot be undone.',
       confirmLabel: 'Delete my account',
       tone: 'danger',
     });
@@ -313,8 +324,9 @@ export default function MemberProfilePage() {
         <section className="pp-group">
           <h2>Where I work</h2>
           <p className="pp-group-sub">
-            Employers you can refer at. Job seekers only ever see an anonymous
-            count until you accept a request.
+            Employers you can refer at. If you turn referring on for one,
+            members looking at that employer&rsquo;s jobs see your name and job
+            title, and a button to ask you. Turn it off and you are not listed.
           </p>
           {rolesError && (
             <div role="alert" className="community-error" style={{ marginBottom: 8 }}>
@@ -390,6 +402,14 @@ export default function MemberProfilePage() {
                     ? 'Only people you accept see your posts and details'
                     : 'Any member can see your posts and details'}
                 </strong>
+                {/* Two things this switch does NOT do, both of which members
+                    read into it: it does not cover posts made inside a group,
+                    and it never removes you from the member directory. */}
+                <small style={{ display: 'block', marginTop: 4, whiteSpace: 'normal', lineHeight: 1.5 }}>
+                  Your name, job title, employer and city stay in the member
+                  directory either way. Anything you post inside a group can be
+                  read by any member, even with this on.
+                </small>
               </span>
               <button
                 type="button"

@@ -81,8 +81,8 @@ export default function TeamManagementPage() {
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{member.role}</div>
               </div>
               <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 4, zIndex: 5 }}>
-                <button onClick={() => openEdit(member)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: 6, cursor: 'pointer', backdropFilter: 'blur(4px)' }}><Pencil size={14} color="white" /></button>
-                <button onClick={() => handleDelete(member.id)} disabled={deletingId === member.id} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: 6, cursor: deletingId === member.id ? 'not-allowed' : 'pointer', backdropFilter: 'blur(4px)' }}><Trash2 size={14} color="var(--error-400)" /></button>
+                <button aria-label={`Edit ${member.name}`} onClick={() => openEdit(member)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: 6, cursor: 'pointer', backdropFilter: 'blur(4px)' }}><Pencil size={14} color="white" aria-hidden="true" /></button>
+                <button aria-label={`Delete ${member.name}`} onClick={() => handleDelete(member.id)} disabled={deletingId === member.id} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6, padding: 6, cursor: deletingId === member.id ? 'not-allowed' : 'pointer', backdropFilter: 'blur(4px)' }}><Trash2 size={14} color="var(--error-400)" aria-hidden="true" /></button>
               </div>
             </div>
             <div style={{ padding: '16px 20px' }}>

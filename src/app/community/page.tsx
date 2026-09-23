@@ -28,7 +28,7 @@ export default function CommunityPage() {
           <h1 style={{ fontSize: '3.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 20, lineHeight: 1.15 }}>
             Community & <span style={{ color: 'var(--text-accent)' }}>Media</span>
           </h1>
-          <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
+          <p style={{ fontSize: '1.15rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, maxWidth: 650, margin: '0 auto' }}>
             Free content to help you settle in and build your future in Canada.
           </p>
         </div>
@@ -72,7 +72,7 @@ export default function CommunityPage() {
               </div>
               <div style={{ position: 'absolute', bottom: 20, left: 24, right: 24, zIndex: 2 }}>
                 <div style={{ color: 'white', fontWeight: 800, fontSize: '1.1rem' }}>Watch the recorded sessions</div>
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: 4 }}>Workshops, tax clinics and licensing walkthroughs</div>
+                <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.82rem', marginTop: 4 }}>Workshops, tax clinics and licensing walkthroughs</div>
               </div>
             </Link>
           </div>
@@ -114,7 +114,7 @@ export default function CommunityPage() {
         <div className="container" style={{ maxWidth: 700 }}>
           <MessageSquare size={40} style={{ color: 'var(--text-accent)', margin: '0 auto 20px' }} />
           <h2 style={{ fontSize: '2.4rem', fontWeight: 900, color: 'white', fontFamily: 'var(--font-display)', marginBottom: 16 }}>Have Questions About Settling In?</h2>
-          <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.7 }}>
+          <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.8)', marginBottom: 20, lineHeight: 1.7 }}>
             Ask for personalized guidance tailored to your background — a real person will help.
           </p>
           <Link href="/portal/auth" className="btn btn-primary btn-lg" style={{ padding: '16px 36px', background: 'var(--primary-700)', border: 'none', boxShadow: '0 8px 24px rgba(232,93,4,0.3)' }}>

@@ -24,7 +24,7 @@ function fail(context: string, error: unknown): { ok: false; error: string } {
   // be a database error carrying column or constraint names.
   const safe =
     detail.startsWith('Not signed in') ||
-    detail.startsWith('Administrator access required') ||
+    detail.startsWith('That page is for club admins') ||
     detail.startsWith('This account is not active') ||
     detail.startsWith('Create your profile first') ||
     detail.startsWith('only the recipient');

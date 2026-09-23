@@ -142,7 +142,7 @@ export default function JobBoard({ roles }: { roles: BoardRole[] }) {
             width: '100%', minHeight: 48, padding: '0 16px',
             border: '1px solid rgba(27, 67, 50, 0.08)', borderRadius: 999,
             background: 'var(--bg-primary)', color: 'var(--text-primary)',
-            font: 'inherit', fontSize: '1rem', outline: 'none',
+            font: 'inherit', fontSize: '1rem',
           }}
         />
       </div>

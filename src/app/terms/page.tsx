@@ -53,12 +53,14 @@ const SECTIONS: { heading: string; body: React.ReactNode }[] = [
     ),
   },
   {
-    heading: 'Volunteers and mediation',
+    heading: 'Volunteers and the help desk',
     body: (
       <p>
-        Help is provided by vetted volunteers through an admin-mediated help
-        desk — members do not get each other&apos;s contact details through the
-        service. The club is not a party to, and not responsible for, private
+        Help is provided by member volunteers through a club-run help desk.
+        Volunteers are members who have been here longer; they are not licensed
+        lawyers, immigration consultants or accountants, and an admin reads every
+        volunteer application but the club does not run background checks. The
+        club is not a party to, and not responsible for, private
         arrangements members make with each other outside the service.
       </p>
     ),

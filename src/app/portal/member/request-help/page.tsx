@@ -212,7 +212,7 @@ export default function RequestHelpPage() {
               <div className="pp-group-card">
                 {infoRow(<Mail size={17} />, 'Email', profile?.email ?? '')}
                 {infoRow(<Phone size={17} />, 'Phone', profile?.phone ?? '')}
-                {infoRow(<BadgeCheck size={17} />, 'Member number', profile?.pcNumber ?? '')}
+                {profile?.pcNumber ? infoRow(<BadgeCheck size={17} />, 'Member number', profile.pcNumber) : null}
                 {infoRow(<MapPin size={17} />, 'City', profile?.city ?? '')}
                 <Link href="/portal/member/profile" className="pp-row">
                   <span className="pp-row-icon"><User size={17} /></span>
@@ -441,9 +441,13 @@ export default function RequestHelpPage() {
             }}>
               <ShieldCheck size={17} aria-hidden="true" style={{ color: 'var(--accent-700)', flexShrink: 0, marginTop: 2 }} />
               <p style={{ margin: 0, fontSize: '0.82rem', lineHeight: 1.6, color: 'var(--text-secondary)' }}>
-                Your request goes to a secure review, and a volunteer may be assigned
-                to help. Everything is routed through the club — nobody will contact
-                you directly outside the platform.
+                <strong>Who reads this.</strong> A club admin reads your request. If
+                they assign a volunteer, that volunteer reads it too. No other member
+                sees it.<br />
+                <strong>What you get.</strong> Volunteers are members who have been here
+                longer. They are not lawyers, immigration consultants or accountants, so
+                nothing you are told here is legal, immigration or tax advice. If you
+                have a deadline, get professional advice as well.
               </p>
             </div>
 
@@ -461,9 +465,7 @@ export default function RequestHelpPage() {
                 style={{ width: 18, height: 18, flexShrink: 0, marginTop: 2, accentColor: 'var(--primary-700)' }}
               />
               <span>
-                I agree to the platform terms. I understand support is community-based,
-                securely routed, and is not professional advice, and I consent to the
-                club reviewing my request and assigning a volunteer if appropriate.
+                I have read the above and I want the club to read my request.
               </span>
             </label>
 

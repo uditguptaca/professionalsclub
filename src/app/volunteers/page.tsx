@@ -61,7 +61,6 @@ const SELECT: React.CSSProperties = {
   color: 'var(--text-primary)',
   fontSize: '0.9rem',
   cursor: 'pointer',
-  outline: 'none',
 };
 
 /** Stable identity while loading, so the facet memos do not rerun every render. */
@@ -298,7 +297,7 @@ export default function VolunteerDirectoryPage() {
                   aria-label="Search volunteers"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  style={{ width: '100%', padding: '12px 16px 12px 42px', borderRadius: 99, border: '1.5px solid var(--border-color)', background: 'white', color: 'var(--text-primary)', outline: 'none', fontSize: '0.9rem' }}
+                  style={{ width: '100%', padding: '12px 16px 12px 42px', borderRadius: 99, border: '1.5px solid var(--border-color)', background: 'white', color: 'var(--text-primary)', fontSize: '0.9rem' }}
                 />
               </div>
 
@@ -326,7 +325,7 @@ export default function VolunteerDirectoryPage() {
               {hasFilters && (
                 <button
                   onClick={resetFilters}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 20px', borderRadius: 99, border: '1.5px solid var(--primary-600)', background: 'rgba(232, 93, 4, 0.05)', color: 'var(--text-accent)', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', outline: 'none' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 20px', borderRadius: 99, border: '1.5px solid var(--primary-600)', background: 'rgba(232, 93, 4, 0.05)', color: 'var(--text-accent)', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer' }}
                 >
                   Reset
                 </button>
