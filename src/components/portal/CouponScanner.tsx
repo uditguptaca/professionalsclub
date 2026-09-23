@@ -3,8 +3,10 @@ import React from 'react';
 import {
   ScanLine, Camera, CameraOff, Check, AlertCircle, Loader2, Keyboard, X,
 } from 'lucide-react';
-import { redeemCodeAction } from '@/app/actions/business';
 import type { RedeemOutcome } from '@/server/repos/business';
+import * as businessActions from '@/app/actions/business';
+import { guardActions } from '@/lib/actions-client';
+const { redeemCodeAction } = guardActions(businessActions);
 
 /**
  * The till: point the camera at the member's QR, and the offer is spent.

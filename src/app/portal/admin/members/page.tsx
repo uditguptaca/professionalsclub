@@ -1,11 +1,13 @@
 'use client';
 import React, { useState } from 'react';
 import { usePortal } from '@/context/portal-context';
-import { updateMemberVerification, updateMemberAccountStatus } from '@/app/actions/portal';
-import type { ActionResult } from '@/app/actions/portal';
 import type { Member } from '@/types';
 import { Search, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { useConfirm } from '@/components/portal/confirm';
+import * as portalActions from '@/app/actions/portal';
+import type { ActionResult } from '@/app/actions/portal';
+import { guardActions } from '@/lib/actions-client';
+const { updateMemberVerification, updateMemberAccountStatus } = guardActions(portalActions);
 
 /**
  * The three values profiles.verification_status accepts (see the check

@@ -128,7 +128,9 @@ body {
      same-specificity collision between :root and next/font's class. */
   --font-sans: var(--font-sans-src), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-display: var(--font-display-src), Georgia, 'Times New Roman', serif;
-  --font-mono: var(--font-mono-src), ui-monospace, 'SF Mono', Menlo, monospace;
+  /* System stack on purpose: a webfont here cost every route 40 KB for a
+     handful of coupon codes and case references. */
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;

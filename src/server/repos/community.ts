@@ -48,9 +48,9 @@ const POST_SELECT = `
   bz.slug      as business_slug,
   bz.logo      as business_logo,
   g.name       as group_name,
-  (select count(*)::int from public.community_likes l where l.post_id = p.id) as like_count,
-  (select count(*)::int from public.community_comments c
-     where c.post_id = p.id and c.status = 'active') as comment_count,
+  -- Kept by triggers (0060). Counting community_likes here re-evaluated its
+  -- SELECT policy - can_view_member() and all - once per like row per post.
+  p.like_count, p.comment_count,
   exists(select 1 from public.community_likes l
      where l.post_id = p.id and l.member_id = app.current_user_id()) as liked_by_me,
   (select coalesce(json_agg(x.first_name), '[]'::json) from (
@@ -585,8 +585,10 @@ export async function toggleLike(
         where post_id = ${postId}::uuid and member_id = ${userId}::uuid
       `;
     }
+    // The trigger has already moved the column (0060); read it back rather
+    // than counting the rows again.
     const count = first<{ n: number }>(
-      await db`select count(*)::int as n from public.community_likes where post_id = ${postId}::uuid`,
+      await db`select like_count as n from public.community_posts where id = ${postId}::uuid`,
       'Count failed'
     );
     return { liked: inserted.length > 0, likeCount: count.n };

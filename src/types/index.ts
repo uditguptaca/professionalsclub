@@ -159,6 +159,8 @@ export interface VolunteerApplication {
   consentToScreening: boolean;
   // Status
   status: VolunteerStatus;
+  /** Null: taking new cases. A future ISO timestamp: not until then (0059). */
+  pausedUntil?: string | null;
   reviewedByAdminId?: string;
   reviewedAt?: string;
   adminNotes?: string;

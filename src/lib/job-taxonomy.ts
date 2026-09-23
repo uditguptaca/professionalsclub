@@ -154,6 +154,39 @@ export function languagesOf(title: string): string[] {
   return LANGUAGES.filter((l) => l.re.test(title)).map((l) => l.key);
 }
 
+// ---------------------------------------------------------------- country
+
+export type Country = 'Canada' | 'Outside Canada';
+
+/** Province codes as a comma-separated token, and the names in full. */
+const CA_CODES = /(?:^|,)\s*(AB|BC|MB|NB|NL|NS|NT|NU|ON|PE|PEI|QC|SK|YT)\b/;
+const CA_NAMES = /\b(canada|alberta|british columbia|manitoba|new brunswick|newfoundland|nova scotia|ontario|prince edward island|qu[eé]bec|saskatchewan|yukon|nunavut|northwest territories)\b/i;
+/**
+ * US state codes as a comma-separated token. CA (California) is deliberately
+ * absent: feeds write "Toronto, ON, CA" for Canada, and California is caught by
+ * name below.
+ */
+const US_CODES = /(?:^|,)\s*(AL|AK|AZ|AR|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC)\b/;
+const OTHER_NAMES = /\b(united states|usa|u\.s\.a?\.?|united kingdom|\buk\b|england|scotland|wales|ireland|india|australia|new zealand|germany|france|spain|italy|netherlands|poland|romania|mexico|brazil|argentina|colombia|singapore|philippines|japan|china|hong kong|south africa|uae|dubai|pakistan|bangladesh|sri lanka|nepal|malaysia|indonesia|california|texas|new york|florida|illinois|wisconsin|georgia|massachusetts|new jersey|pennsylvania|virginia|arizona|colorado|michigan|ohio)\b/i;
+
+/**
+ * Where a role is, as far as its location string says.
+ *
+ * Canada wins any tie ("London, ON" is Ontario, not England). Null means the
+ * string does not say ("Remote", "2 Locations", a bare city): those are left
+ * suggestable and pass the Canada filter, because the feeds are Canadian
+ * employers' own career sites and a bare "Toronto" is the common case.
+ *
+ * ponytail: word lists, not a geocoder. Good enough for the feed as synced;
+ * add a name here when a new one shows up in "Suggested for you".
+ */
+export function countryOf(location: string | null | undefined): Country | null {
+  if (!location) return null;
+  if (CA_CODES.test(location) || CA_NAMES.test(location)) return 'Canada';
+  if (US_CODES.test(location) || OTHER_NAMES.test(location)) return 'Outside Canada';
+  return null;
+}
+
 /** Everything derivable about one role, computed once per row. */
 export interface JobFacets {
   seniority: Seniority;
@@ -251,6 +284,8 @@ export interface MatchResult {
   strong: boolean;
   /** Same field AND a level that fits - the weaker way in. */
   fieldAndLevel: boolean;
+  /** The posting says it is outside Canada. Never suggested; still listed. */
+  outsideCanada: boolean;
 }
 
 /**
@@ -354,6 +389,7 @@ export function scoreJob(job: JobLike, profile: MatchProfile): MatchResult {
     strong: strongHits.length > 0 || skillHits.length > 0
       || reasons.some((r) => r.startsWith('Close to your past work')),
     fieldAndLevel: Boolean(sharedFamily) && levelFits,
+    outsideCanada: countryOf(job.location) === 'Outside Canada',
   };
 }
 
@@ -365,7 +401,10 @@ export function scoreJob(job: JobLike, profile: MatchProfile): MatchResult {
  * worse than showing nothing.
  */
 export function isSuggestable(m: MatchResult): boolean {
-  return m.score >= 0.3 && (m.strong || m.fieldAndLevel);
+  // A role in New York can match a Toronto analyst's title word for word and
+  // still be useless to someone whose work authorisation is Canadian. It
+  // stays in "All roles"; it never leads.
+  return !m.outsideCanada && m.score >= 0.3 && (m.strong || m.fieldAndLevel);
 }
 
 /** True when a profile carries enough to match on at all. */

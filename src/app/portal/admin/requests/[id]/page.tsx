@@ -5,6 +5,7 @@ import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
 import { ArrowLeft, Clock, CheckCircle, Send, MessageSquare, StickyNote, UserCheck, FileText } from 'lucide-react';
 import Link from 'next/link';
+import PortalLoading from '@/components/portal/PortalLoading';
 import type { RequestStatus } from '@/types';
 
 const STATUS_OPTIONS: RequestStatus[] = ['submitted', 'under_review', 'need_more_info', 'waiting_for_member', 'approved', 'assigned', 'volunteer_responded', 'admin_reviewing', 'response_sent', 'in_progress', 'resolved', 'closed', 'rejected', 'escalated', 'archived'];
@@ -12,7 +13,7 @@ const STATUS_OPTIONS: RequestStatus[] = ['submitted', 'under_review', 'need_more
 export default function AdminRequestDetailPage() {
   const params = useParams();
   const requestId = params.id as string;
-  const { helpRequests, messages, updateRequestStatus, addInternalNote, sendMessage, volunteerApps, createAssignment } = usePortal();
+  const { helpRequests, messages, updateRequestStatus, addInternalNote, sendMessage, volunteerApps, createAssignment, settled } = usePortal();
   const [noteText, setNoteText] = useState('');
   const [assigning, setAssigning] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -26,12 +27,18 @@ export default function AdminRequestDetailPage() {
 
   const request = helpRequests.find(r => r.id === requestId);
   const caseMessages = messages.filter(m => m.caseId === requestId);
-  const approvedVolunteers = volunteerApps.filter(a => a.status === 'approved');
+  // Approved AND taking cases: a volunteer who paused (0059) is not offered.
+  const approvedVolunteers = volunteerApps.filter(a =>
+    a.status === 'approved' && !(a.pausedUntil && new Date(a.pausedUntil) > new Date()));
   const shownVolunteers = volFilter.trim()
     ? approvedVolunteers.filter(v => v.memberName.toLowerCase().includes(volFilter.trim().toLowerCase()))
     : approvedVolunteers;
 
   if (!request) {
+    // This is the page a "New help request" notification opens, so the first
+    // thing an admin saw of a member in trouble was an error while the
+    // snapshot was still on its way. Wait for it before saying "not found".
+    if (!settled) return <PortalLoading label="Loading this request" />;
     return <div style={{ textAlign: 'center', padding: 80 }}><h2>Request not found</h2><Link href="/portal/admin/requests" className="btn btn-outline">Back</Link></div>;
   }
 

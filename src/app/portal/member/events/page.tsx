@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Calendar, Users, MapPin, Ticket, Plus, ChevronRight } from 'lucide-react';
+import type { CSSProperties } from 'react';
+import { Calendar, Users, MapPin, Ticket, Plus, ChevronRight, Check } from 'lucide-react';
 import { requireProfile } from '@/server/auth';
 import { listMemberEvents } from '@/server/repos/home';
 import { parseDateOnly } from '@/lib/dates';
@@ -28,12 +29,29 @@ const money = (cents: number, currency: string) =>
   new Intl.NumberFormat('en-CA', { style: 'currency', currency, minimumFractionDigits: 0 })
     .format(cents / 100);
 
-export default async function MemberEventsPage() {
+export default async function MemberEventsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ going?: string }>;
+}) {
   const profile = await requireProfile();
-  const { city, events } = await listMemberEvents(profile.id);
+  // A URL param rather than client state: this is a server component, and a
+  // bookmarkable "my events" is worth having anyway.
+  const goingOnly = (await searchParams).going === '1';
+  const { city, events: all } = await listMemberEvents(profile.id);
+  const goingCount = all.filter((e) => e.myRsvp).length;
+  const events = goingOnly ? all.filter((e) => e.myRsvp) : all;
   const inCity = events.filter((e) => e.inCity);
   const elsewhere = events.filter((e) => !e.inCity);
   const canCurate = profile.role === 'admin' || profile.isVolunteer;
+
+  const pill = (on: boolean): CSSProperties => ({
+    display: 'inline-flex', alignItems: 'center', gap: 5, minHeight: 40, padding: '0 14px',
+    borderRadius: 999, textDecoration: 'none', fontSize: '0.84rem', whiteSpace: 'nowrap',
+    ...(on
+      ? { background: 'var(--green-950)', color: '#fff', fontWeight: 700 }
+      : { background: 'none', color: 'var(--text-secondary)', fontWeight: 600 }),
+  });
 
   const card = (e: (typeof events)[number]) => (
     <Link key={e.id} href={`/portal/member/events/${e.id}`} className="hf-event card">
@@ -42,6 +60,12 @@ export default async function MemberEventsPage() {
           ? <img src={e.image} alt="" aria-hidden="true" loading="lazy" decoding="async" />
           : <span className="hf-event-fallback" aria-hidden="true"><Calendar size={28} /></span>}
         {e.inCity && city && <span className="hf-chip">{city}</span>}
+        {/* The one thing the row never said: that you already RSVP'd. */}
+        {e.myRsvp && (
+          <span className="hf-chip" style={{ left: 'auto', right: '0.7rem', background: 'var(--green-950)', color: '#fff' }}>
+            <Check size={11} aria-hidden="true" style={{ verticalAlign: '-1px' }} /> You&rsquo;re going
+          </span>
+        )}
       </span>
       <span className="hf-event-body">
         <strong>{e.title}</strong>
@@ -78,6 +102,22 @@ export default async function MemberEventsPage() {
           <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
             {city ? `Everything coming up, ${city} first.` : 'Everything coming up across the club.'}
           </p>
+          {(goingCount > 0 || goingOnly) && (
+            <nav
+              aria-label="Which events"
+              style={{
+                display: 'flex', gap: 4, padding: 4, marginTop: 8, background: 'var(--bg-primary)',
+                borderRadius: 999, border: '1px solid rgba(27,67,50,0.08)', width: 'fit-content', maxWidth: '100%',
+              }}
+            >
+              <Link href="/portal/member/events" style={pill(!goingOnly)} aria-current={!goingOnly ? 'page' : undefined}>
+                Upcoming ({all.length})
+              </Link>
+              <Link href="/portal/member/events?going=1" style={pill(goingOnly)} aria-current={goingOnly ? 'page' : undefined}>
+                <Check size={13} aria-hidden="true" /> Going ({goingCount})
+              </Link>
+            </nav>
+          )}
           {canCurate && (
             <Link
               href="/portal/member/events/manage"
@@ -96,10 +136,12 @@ export default async function MemberEventsPage() {
             <div className="card" style={{ padding: '2.25rem 1.25rem', textAlign: 'center' }}>
               <Calendar size={28} aria-hidden="true" style={{ opacity: 0.35 }} />
               <p style={{ margin: '0.7rem 0 1rem', color: 'var(--text-secondary)' }}>
-                No upcoming events yet. New ones land here as soon as they are announced.
+                {goingOnly
+                  ? 'You have not said you are going to anything yet. Open an event and tap "I\u2019m going".'
+                  : 'No upcoming events yet. New ones land here as soon as they are announced.'}
               </p>
-              <Link href="/portal/member/community" className="btn btn-outline">
-                Explore the community
+              <Link href={goingOnly ? '/portal/member/events' : '/portal/member/community'} className="btn btn-outline">
+                {goingOnly ? 'See all upcoming events' : 'Explore the community'}
               </Link>
             </div>
           </section>

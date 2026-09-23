@@ -102,8 +102,12 @@ export async function jobsBoard(userId: string): Promise<{
           select j.id, j.title, j.location, j.department, j.posted_at, j.apply_url,
                  j.is_featured,
                  co.id as company_id, co.name as company_name, co.logo as company_logo,
-                 (select count(*) from public.company_insiders i
-                   where i.company_id = co.id and i.can_refer)::int as helper_count,
+                 -- Through the view, never a direct count: company_insiders is
+                 -- RLS-restricted to your own row, so a count here saw at most
+                 -- one insider (yourself) and told every member nobody could
+                 -- refer them. The view runs as its owner and counts them all.
+                 coalesce((select h.helper_count from public.company_helper_counts h
+                            where h.id = co.id), 0)::int as helper_count,
                  exists (select 1 from public.job_applications a
                           where a.job_id = j.id and a.member_id = ${userId}::uuid) as applied
             from public.company_jobs j
@@ -178,8 +182,9 @@ export async function jobDetail(userId: string, jobId: string): Promise<JobDetai
              co.id as company_id, co.name as company_name, co.logo as company_logo,
              co.slug as company_slug, co.industry as company_industry,
              co.city as company_city, co.careers_url,
-             (select count(*) from public.company_insiders i
-               where i.company_id = co.id and i.can_refer)::int as helper_count,
+             -- See jobsBoard: the view, not company_insiders, or the count is 0.
+             coalesce((select h.helper_count from public.company_helper_counts h
+                        where h.id = co.id), 0)::int as helper_count,
              exists (select 1 from public.job_applications a
                       where a.job_id = j.id and a.member_id = ${userId}::uuid) as applied,
              (select row_to_json(me) from me) as match_profile

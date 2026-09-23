@@ -1,10 +1,8 @@
 'use client';
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { upload } from '@vercel/blob/client';
+import { uploadToBlob } from '@/lib/upload-client';
 import { useApp } from '@/context/app-context';
 import { useRouter } from 'next/navigation';
-import { getMyMatrimony, saveMatrimonyProfile, saveMatrimonyPreferences, saveMatrimonyContact } from '@/app/actions/matrimony';
-import { addMatrimonyPhoto, removeMatrimonyPhoto } from '@/app/actions/matrimony-media';
 import type { MatrimonyMedia, MatrimonyWizardData } from '@/types/matrimony';
 import {
   RELIGIONS, DENOMINATIONS, COMMUNITIES, MOTHER_TONGUES, LANGUAGES,
@@ -23,6 +21,11 @@ import {
   ChevronLeft, ChevronRight, Save, CheckCircle2, AlertCircle,
   Sparkles, Shield, ChevronDown, ChevronUp, X, Plus, Loader2, ImagePlus,
 } from 'lucide-react';
+import * as matrimonyActions from '@/app/actions/matrimony';
+import * as matrimonyMediaActions from '@/app/actions/matrimony-media';
+import { guardActions } from '@/lib/actions-client';
+const { getMyMatrimony, saveMatrimonyProfile, saveMatrimonyPreferences, saveMatrimonyContact } = guardActions(matrimonyActions);
+const { addMatrimonyPhoto, removeMatrimonyPhoto } = guardActions(matrimonyMediaActions);
 
 // ── Icon map for wizard steps ──────────────────────────────
 const STEP_ICONS: Record<string, React.ReactNode> = {
@@ -159,25 +162,7 @@ const MAX_PHOTOS = 6;
  * against pulling the whole community module into the matrimony bundle; if a
  * third caller appears, move it to a shared client helper.
  */
-async function uploadPhoto(file: File): Promise<string> {
-  try {
-    const blob = await upload(file.name, file, {
-      access: 'public',
-      handleUploadUrl: '/api/community/upload',
-      clientPayload: 'image',
-    });
-    return blob.url;
-  } catch (error) {
-    const form = new FormData();
-    form.append('file', file);
-    const res = await fetch('/api/community/upload-dev', { method: 'POST', body: form });
-    // The dev endpoint 404s in production, where the Blob error is the truth.
-    if (res.status === 404) throw error;
-    if (!res.ok) throw new Error('Upload failed');
-    const data = (await res.json()) as { url: string };
-    return data.url;
-  }
-}
+const uploadPhoto = (file: File) => uploadToBlob(file, 'image');
 
 // ── Calculate completeness ─────────────────────────────────
 function calcCompleteness(d: MatrimonyWizardData, hasPhoto: boolean): number {

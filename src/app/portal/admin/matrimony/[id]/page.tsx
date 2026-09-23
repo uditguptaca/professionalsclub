@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useApp } from '@/context/app-context';
-import { adminGetMatrimonyProfile, adminModerateProfile } from '@/app/actions/matrimony';
 import type { MatrimonyProfile, MatrimonyPreferences, MatrimonyContact, MatrimonyMedia } from '@/types/matrimony';
 import {
   User, CheckCircle2, XCircle, AlertCircle, ArrowLeft, Shield,
@@ -11,6 +10,9 @@ import {
   Star, Sparkles, Smile, RefreshCw, FileText, Ban
 } from 'lucide-react';
 import PortalLoading from '@/components/portal/PortalLoading';
+import * as matrimonyActions from '@/app/actions/matrimony';
+import { guardActions } from '@/lib/actions-client';
+const { adminGetMatrimonyProfile, adminModerateProfile } = guardActions(matrimonyActions);
 
 const statusConfig: Record<string, { color: string; bg: string; label: string }> = {
   draft: { color: 'var(--text-secondary)', bg: 'rgba(100,116,139,0.1)', label: 'Draft' },

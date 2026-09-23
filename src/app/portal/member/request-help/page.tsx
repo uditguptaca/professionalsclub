@@ -4,13 +4,16 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
-import { submitHelpRequest } from '@/app/actions/portal';
 import { AttachmentField, type Attachment } from '@/components/portal/AttachmentField';
 import { SUPPORT_CATEGORIES } from '@/types';
+import { FIRST_REPLY_PROMISE, categoryLabel } from '@/lib/help-desk';
 import {
   AlertCircle, ArrowLeft, ArrowRight, BadgeCheck, Check, ChevronRight, Clock,
   Mail, MapPin, Paperclip, Phone, Repeat, ShieldCheck, Tag, User, Users, FileText,
 } from 'lucide-react';
+import * as portalActions from '@/app/actions/portal';
+import { guardActions } from '@/lib/actions-client';
+const { submitHelpRequest } = guardActions(portalActions);
 
 /**
  * Request help, restyled to the portal's row-and-sheet language: one question
@@ -148,7 +151,25 @@ export default function RequestHelpPage() {
         </h1>
         <p style={{ margin: 0, fontSize: '0.88rem', lineHeight: 1.55, color: 'var(--text-secondary)' }}>
           Tell us what you need. An admin reads every request and routes it to the
-          right volunteer.
+          right volunteer. {FIRST_REPLY_PROMISE}
+        </p>
+        {/* Standing, on every step: someone with a removal date or an eviction
+            notice needs the fast door named before they start typing. */}
+        <p
+          role="note"
+          style={{
+            display: 'flex', gap: 8, alignItems: 'flex-start', margin: '12px 0 0',
+            padding: '0.7rem 0.85rem', borderRadius: '0.85rem',
+            background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.22)',
+            fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--text-secondary)',
+          }}
+        >
+          <Phone size={15} aria-hidden="true" style={{ color: 'var(--accent-700)', flexShrink: 0, marginTop: 2 }} />
+          <span>
+            This is not an emergency service. For urgent help{' '}
+            <a href="tel:211" style={{ color: 'var(--accent-700)', fontWeight: 800 }}>call 211</a>
+            {' '}(free, 24/7, many languages).
+          </span>
         </p>
       </header>
 
@@ -274,7 +295,7 @@ export default function RequestHelpPage() {
                       }}>
                         <Check size={13} aria-hidden="true" />
                       </span>
-                      <span>{cat}</span>
+                      <span>{categoryLabel(cat)}</span>
                     </button>
                   );
                 })}
@@ -422,10 +443,10 @@ export default function RequestHelpPage() {
           <>
             <section className="pp-group">
               <h2>Check and submit</h2>
-              <p className="pp-group-sub">One last look before this goes to the review queue.</p>
+              <p className="pp-group-sub">One last look before this goes to the review queue. {FIRST_REPLY_PROMISE}</p>
               <div className="pp-group-card">
                 {infoRow(<User size={17} />, 'From', `${firstName} ${lastName}`.trim())}
-                {infoRow(<Tag size={17} />, 'Category', category)}
+                {infoRow(<Tag size={17} />, 'Category', categoryLabel(category))}
                 {infoRow(<FileText size={17} />, 'Title', title)}
                 {infoRow(<AlertCircle size={17} />, 'Urgency', urgency.charAt(0).toUpperCase() + urgency.slice(1))}
                 {infoRow(<Repeat size={17} />, 'Support type', supportType === 'one_time' ? 'One-time help' : 'Ongoing mentorship')}

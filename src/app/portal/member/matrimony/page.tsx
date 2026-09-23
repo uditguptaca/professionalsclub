@@ -2,9 +2,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/app-context';
-import {
-  matrimonyStart, listDeck, swipeRight, passProfile, undoPass, addToShortlist,
-} from '@/app/actions/matrimony';
 import type { MatrimonyDeckCard, MatrimonyProfile } from '@/types/matrimony';
 import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
 import MatrimonyTabs from '@/components/portal/MatrimonyTabs';
@@ -13,6 +10,9 @@ import {
   Heart, X, Star, RotateCcw, BadgeCheck, AlertCircle,
   Check, Sparkles, ShieldCheck, Lock, Plus, Info, Users, Search, MessageCircle,
 } from 'lucide-react';
+import * as matrimonyActions from '@/app/actions/matrimony';
+import { guardActions } from '@/lib/actions-client';
+const { matrimonyStart, listDeck, swipeRight, passProfile, undoPass, addToShortlist } = guardActions(matrimonyActions);
 
 /**
  * Discover — the matrimony deck. This page used to be a dashboard of counters;

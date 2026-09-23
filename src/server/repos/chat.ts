@@ -125,17 +125,29 @@ export interface ThreadPoll {
   watermark: string | null;
   open: boolean;
   peerTypingAt: string | null;
-  referrals: ThreadReferral[];
-  reactions: MessageReaction[];
+  /**
+   * The three slices with no cursor of their own. Each comes back as `null`
+   * when its content matches the stamp the client sent in `known`, so an idle
+   * thread re-sends none of them. The perf audit measured 4 KB of device keys
+   * going out twelve times a minute, unchanged; a chat left open cost ~50
+   * KB/min, most of it these three.
+   */
+  referrals: ThreadReferral[] | null;
+  reactions: MessageReaction[] | null;
   /**
    * Every device belonging to either participant, so the composer can seal a
    * message for all of them without a second round trip.
-   *
-   * ponytail: re-sent on every 5s poll. Capped at 10 devices per member (0042),
-   * so worst case ~20 keys of ~120 bytes - about 3 KB, next to nothing beside
-   * one photo. If it ever matters, send a hash and only re-send on change.
    */
-  devices: ChatDevice[];
+  devices: ChatDevice[] | null;
+  /** Hand straight back as the next poll's `known`. */
+  stamps: PollStamps;
+}
+
+/** Content hashes of the cursor-less slices, as the server last sent them. */
+export interface PollStamps {
+  devices?: string | null;
+  referrals?: string | null;
+  reactions?: string | null;
 }
 
 export interface CompanyInsiderEntry {
@@ -586,9 +598,11 @@ export async function declineChatRequest(userId: string, conversationId: string)
  * `since` makes it incremental. Without it this re-sent every message body,
  * cipher and attachment in the conversation every five seconds — the single
  * heaviest repeating request the app makes. With it, an idle thread costs a
- * few hundred bytes. The parts that CHANGE without a new row (read receipts,
- * reactions, referral status, typing) are still sent in full each time, which
- * is why they are all narrow.
+ * few hundred bytes. Read receipts and typing change without a new row and
+ * are still sent each time, but they are narrow. Reactions, devices and
+ * referrals have no cursor either; they travel with a content hash, and the
+ * client hands the hashes back in `known` so an unchanged slice comes back as
+ * null instead of in full.
  */
 export async function pollThread(
   userId: string,
@@ -599,7 +613,8 @@ export async function pollThread(
    * device rather than all of them. Omitted (no crypto support) simply means
    * no wraps come back and encrypted bodies render as unreadable.
    */
-  deviceId?: string | null
+  deviceId?: string | null,
+  known: PollStamps = {}
 ): Promise<ThreadPoll> {
   return withUserRead(userId, async (db) => {
     const rows = await db.run<Record<string, unknown>>(
@@ -620,6 +635,42 @@ export async function pollThread(
                 and public.chat_read_receipts_enabled((select peer_id from convo))) as receipts,
                coalesce((select typing_indicator from public.member_chat_settings
                           where member_id = $2), true) as typing
+      ),
+      -- The cursor-less slices, each with a hash of its content. The hash is
+      -- compared with what the client already holds ($5..$7); a match sends
+      -- null in place of the rows.
+      reactions as (
+        select coalesce(json_agg(t), '[]'::json) as j,
+               md5(coalesce(string_agg(t.message_id::text || t.member_id::text || t.emoji, ',' order by t.message_id, t.member_id), '')) as stamp
+          from (
+            select x.message_id, x.member_id, x.emoji
+              from public.member_message_reactions x
+              join public.member_messages mm on mm.id = x.message_id
+             where mm.conversation_id = $1
+          ) t
+      ),
+      -- Both participants' device keys, for sealing the next message.
+      devices as (
+        select coalesce(json_agg(t), '[]'::json) as j,
+               md5(coalesce(string_agg(t.member_id::text || t.device_id || t.public_key_jwk, ',' order by t.member_id, t.device_id), '')) as stamp
+          from (
+            select d.member_id, d.device_id, d.public_key_jwk
+              from public.member_devices d
+              join convo c on d.member_id in (c.member_a_id, c.member_b_id)
+          ) t
+      ),
+      referrals as (
+        select coalesce(json_agg(t), '[]'::json) as j,
+               md5(coalesce(string_agg(t.id::text || t.status || coalesce(t.note, '') || t.job_titles::text, ',' order by t.id), '')) as stamp
+          from (
+            select r.id, r.seeker_id, r.insider_id, r.note, r.status,
+                   co.name as company_name,
+                   coalesce((select json_agg(j.title order by j.title)
+                               from public.company_jobs j where j.id = any(r.job_ids)), '[]'::json) as job_titles
+              from public.referral_direct_requests r
+              join public.companies co on co.id = r.company_id
+              join convo c on (r.seeker_id, r.insider_id) in ((c.member_a_id, c.member_b_id), (c.member_b_id, c.member_a_id))
+          ) t
       )
       select
         (select coalesce(json_agg(t order by t.created_at), '[]'::json) from (
@@ -661,31 +712,21 @@ export async function pollThread(
            from public.member_chat_typing ty
           where ty.conversation_id = $1 and ty.member_id <> $2
           limit 1) as peer_typing_at,
-        (select coalesce(json_agg(t), '[]'::json) from (
-          select x.message_id, x.member_id, x.emoji
-            from public.member_message_reactions x
-            join public.member_messages mm on mm.id = x.message_id
-           where mm.conversation_id = $1
-        ) t) as reactions,
-        -- Both participants' device keys, for sealing the next message.
-        (select coalesce(json_agg(t), '[]'::json) from (
-          select d.member_id, d.device_id, d.public_key_jwk
-            from public.member_devices d
-            join convo c on d.member_id in (c.member_a_id, c.member_b_id)
-        ) t) as devices,
-        (select coalesce(json_agg(t), '[]'::json) from (
-          select r.id, r.seeker_id, r.insider_id, r.note, r.status,
-                 co.name as company_name,
-                 coalesce((select json_agg(j.title order by j.title)
-                             from public.company_jobs j where j.id = any(r.job_ids)), '[]'::json) as job_titles
-            from public.referral_direct_requests r
-            join public.companies co on co.id = r.company_id
-            join convo c on (r.seeker_id, r.insider_id) in ((c.member_a_id, c.member_b_id), (c.member_b_id, c.member_a_id))
-        ) t) as referrals
+        (select case when stamp = $5::text then null else j end from reactions) as reactions,
+        (select stamp from reactions) as reactions_stamp,
+        (select case when stamp = $6::text then null else j end from devices) as devices,
+        (select stamp from devices) as devices_stamp,
+        (select case when stamp = $7::text then null else j end from referrals) as referrals,
+        (select stamp from referrals) as referrals_stamp
       `,
-      [conversationId, userId, since ?? null, deviceId ?? null]
+      [
+        conversationId, userId, since ?? null, deviceId ?? null,
+        known.reactions ?? null, known.devices ?? null, known.referrals ?? null,
+      ]
     );
     const row = rows[0] ?? {};
+    const slice = <T,>(v: unknown, map: (r: Record<string, unknown>) => T): T[] | null =>
+      v == null ? null : (v as Record<string, unknown>[]).map(map);
     return {
       messages: ((row.messages ?? []) as Record<string, unknown>[]).map(toMessage),
       receipts: ((row.receipts ?? []) as Record<string, unknown>[]).map((r) => ({
@@ -695,17 +736,17 @@ export async function pollThread(
       watermark: iso(row.watermark),
       open: Boolean(row.open),
       peerTypingAt: iso(row.peer_typing_at),
-      reactions: ((row.reactions ?? []) as Record<string, unknown>[]).map((r) => ({
+      reactions: slice(row.reactions, (r) => ({
         messageId: r.message_id as string,
         memberId: r.member_id as string,
         emoji: r.emoji as string,
       })),
-      devices: ((row.devices ?? []) as Record<string, unknown>[]).map((d) => ({
+      devices: slice(row.devices, (d) => ({
         memberId: d.member_id as string,
         deviceId: d.device_id as string,
         publicKeyJwk: d.public_key_jwk as string,
       })),
-      referrals: ((row.referrals ?? []) as Record<string, unknown>[]).map((r) => ({
+      referrals: slice(row.referrals, (r) => ({
         id: r.id as string,
         seekerId: r.seeker_id as string,
         insiderId: r.insider_id as string,
@@ -714,6 +755,11 @@ export async function pollThread(
         note: (r.note as string | null) ?? null,
         status: r.status as ThreadReferral['status'],
       })),
+      stamps: {
+        reactions: (row.reactions_stamp as string | null) ?? null,
+        devices: (row.devices_stamp as string | null) ?? null,
+        referrals: (row.referrals_stamp as string | null) ?? null,
+      },
     };
   });
 }

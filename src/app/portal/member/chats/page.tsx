@@ -7,20 +7,10 @@ const sendsOnEnter = () =>
   typeof navigator !== 'undefined' && !navigator.maxTouchPoints;
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { upload } from '@vercel/blob/client';
-import {
-  listPeople, followMember, unfollowMember,
-  chatStart, listChats, openChat, acceptChatRequest, declineChatRequest,
-  pollThread, sendChatMessage, markChatRead, setTyping,
-  respondReferral, registerChatDevice, fetchConversationDevices,
-  fetchMissingWraps, backfillMessageWraps,
-  keyBackupStatus, fetchKeyBackup, saveKeyBackup, discardMessageWrap,
-  blockMember, unblockMember, listBlockedMembers, reportMember,
-  muteChat, clearChat, getChatSettings, updateChatSettings, reactToMessage,
-} from '@/app/actions/chat';
+import { uploadToBlob, type UploadKind } from '@/lib/upload-client';
 import type {
   ChatPerson, ChatThread, ChatMessage, ThreadReferral, BlockedMember, ChatSettings,
-  MessageReaction, ChatDevice,
+  MessageReaction, ChatDevice, PollStamps,
 } from '@/server/repos/chat';
 import {
   e2eeAvailable, ensureDeviceKeys, sealMessage, openMessage, rewrapContentKey,
@@ -41,6 +31,9 @@ import {
   type LucideIcon,
   Download,
 } from 'lucide-react';
+import * as chatActions from '@/app/actions/chat';
+import { guardActions } from '@/lib/actions-client';
+const { listPeople, followMember, unfollowMember, chatStart, listChats, openChat, acceptChatRequest, declineChatRequest, pollThread, sendChatMessage, markChatRead, setTyping, respondReferral, registerChatDevice, fetchConversationDevices, fetchMissingWraps, backfillMessageWraps, keyBackupStatus, fetchKeyBackup, saveKeyBackup, discardMessageWrap, blockMember, unblockMember, listBlockedMembers, reportMember, muteChat, clearChat, getChatSettings, updateChatSettings, reactToMessage } = guardActions(chatActions);
 
 /**
  * Member chat. On phones this is a native-feeling full-height messenger: the
@@ -139,7 +132,7 @@ type AttachKind = 'photo' | 'video' | 'document';
 const ATTACH: Record<AttachKind, {
   label: string;
   accept: string;
-  payload?: string;
+  payload: UploadKind;
   kind: 'image' | 'video' | 'file';
   maxMb: number;
   tooBig: string;
@@ -149,7 +142,7 @@ const ATTACH: Record<AttachKind, {
   photo: {
     label: 'Photo',
     accept: 'image/jpeg,image/png,image/webp,image/gif',
-    payload: undefined,
+    payload: 'image',
     kind: 'image',
     maxMb: 8,
     tooBig: 'Photos can be up to 8 MB.',
@@ -426,29 +419,8 @@ const clockTime = (iso: string) =>
  * sign the token for ('video', 'document', or images by default). Progress only
  * exists on the Blob path; the dev fallback posts in one shot.
  */
-async function uploadAttachment(
-  file: File,
-  clientPayload: string | undefined,
-  onPct: (pct: number) => void
-): Promise<string> {
-  try {
-    const blob = await upload(file.name, file, {
-      access: 'public',
-      handleUploadUrl: '/api/community/upload',
-      clientPayload,
-      onUploadProgress: (e) => onPct(Math.min(99, Math.round(e.percentage))),
-    });
-    return blob.url;
-  } catch (error) {
-    const form = new FormData();
-    form.append('file', file);
-    const res = await fetch('/api/community/upload-dev', { method: 'POST', body: form });
-    if (res.status === 404) throw error;
-    if (!res.ok) throw new Error('Upload failed');
-    const data = (await res.json()) as { url: string };
-    return data.url;
-  }
-}
+const uploadAttachment = (file: File, kind: UploadKind, onPct: (pct: number) => void) =>
+  uploadToBlob(file, kind, { onPct });
 
 /** KB below a megabyte, one decimal MB above it. */
 const humanSize = (bytes: number) =>
@@ -618,6 +590,21 @@ export default function MemberChatsPage() {
    * body and cipher in the conversation. Null means "send me everything".
    */
   const sinceRef = useRef<string | null>(null);
+  /**
+   * Content hashes of the poll's cursor-less slices (reactions, devices,
+   * referrals) as last received. Sent back so an unchanged slice comes back
+   * null: 4 KB of device keys used to go out twelve times a minute, unchanged.
+   */
+  const stampsRef = useRef<PollStamps>({});
+  /**
+   * Consecutive polls that brought nothing new. After a minute of quiet the
+   * poll slows from 5s to 15s; anything the member does (typing, sending) or
+   * anything that arrives snaps it back.
+   */
+  const quietRef = useRef(0);
+  /** The newest message id the poll has handed over; a different one is news. */
+  const newestIdRef = useRef<string | null>(null);
+  const rescheduleRef = useRef<(() => void) | null>(null);
   /** Long-press bookkeeping: the timer, where the finger landed, whether it fired. */
   const pressRef = useRef<{ timer: number | null; x: number; y: number; fired: boolean }>({
     timer: null, x: 0, y: 0, fired: false,
@@ -794,7 +781,13 @@ export default function MemberChatsPage() {
 
   // ---- Chat list: keep previews and unread counts current -------------------
   useEffect(() => {
+    let tick = 0;
     const timer = setInterval(() => {
+      tick += 1;
+      // Once the open thread has been quiet for a minute (quietRef, below),
+      // the list slows with it: every 30s instead of 10s. With no thread open
+      // quietRef stays at 0 and the list keeps its 10s.
+      if (quietRef.current >= 12 && tick % 3 !== 0) return;
       if (document.visibilityState === 'visible') void refreshChats();
     }, 10000);
     return () => clearInterval(timer);
@@ -813,7 +806,10 @@ export default function MemberChatsPage() {
     // poll of a new thread would otherwise still be carrying the previous
     // thread's watermark and come back with only a fragment of the new one.
     sinceRef.current = null;
-    if (!openId) { setMessages([]); pollRef.current = null; return; }
+    stampsRef.current = {};
+    quietRef.current = 0;
+    newestIdRef.current = null;
+    if (!openId) { setMessages([]); pollRef.current = null; rescheduleRef.current = null; return; }
     let alive = true;
     setThreadLoading(true);
     setSendError('');
@@ -825,10 +821,24 @@ export default function MemberChatsPage() {
       // revisits old messages, so every sixth tick asks for the whole thread.
       tickRef.current += 1;
       const full = blindRef.current > 0 && tickRef.current % 6 === 0;
-      const r = await pollThread(openId, full ? null : sinceRef.current, myDeviceId);
+      const r = await pollThread(openId, full ? null : sinceRef.current, myDeviceId, stampsRef.current);
       if (!alive) return;
       if (r.ok) {
         sinceRef.current = r.data.watermark;
+        stampsRef.current = r.data.stamps;
+        // "Quiet" means no new message and no fresh typing heartbeat. The
+        // watermark trails the newest message by five seconds on purpose, so
+        // that message comes back on EVERY poll: a non-empty list is not
+        // news, a newest id this device has not seen is. The heartbeat is a
+        // timestamp that stays on the row for ever, so it counts only while
+        // it is recent, as the indicator itself does.
+        const newest = r.data.messages.reduce<ChatMessage | null>(
+          (a, m) => (!a || m.createdAt > a.createdAt ? m : a), null);
+        const gotNew = newest != null && newest.id !== newestIdRef.current;
+        if (newest) newestIdRef.current = newest.id;
+        const peerTypingNow = r.data.peerTypingAt != null
+          && Date.now() - new Date(r.data.peerTypingAt).getTime() < TYPING_FRESH_MS;
+        quietRef.current = gotNew || peerTypingNow ? 0 : quietRef.current + 1;
         // A message that now carries a wrap for this device, after an earlier
         // pass cached it as unreadable, must be decrypted afresh. That covers
         // the first poll racing this device's own registration as well as a
@@ -843,14 +853,16 @@ export default function MemberChatsPage() {
           });
         }
         // The device list can grow mid-conversation (the peer opens the app on
-        // a new phone), and every seal from here on must include it.
-        setDevices(r.data.devices);
+        // a new phone), and every seal from here on must include it. Null
+        // means unchanged since the last poll.
+        const polledDevices = r.data.devices;
+        if (polledDevices) setDevices(polledDevices);
         // A device on MY account this browser has not seen before gets said
         // out loud: every message from now on is sealed for it too, and if it
         // is not mine that is the one thing I would want to know.
-        if (currentUserId) {
+        if (currentUserId && polledDevices) {
           try {
-            const mine = r.data.devices.filter((d) => d.memberId === currentUserId);
+            const mine = polledDevices.filter((d) => d.memberId === currentUserId);
             const knownRaw = localStorage.getItem('pc-known-devices-v1');
             const known = new Set<string>(knownRaw ? (JSON.parse(knownRaw) as string[]) : []);
             if (!knownRaw) {
@@ -888,10 +900,10 @@ export default function MemberChatsPage() {
         });
         setPollOpen(r.data.open);
         setPeerTypingAt(r.data.peerTypingAt);
-        setReferrals(r.data.referrals);
+        if (r.data.referrals) setReferrals(r.data.referrals);
         // Server truth replaces the optimistic reaction outright — one tap is
         // never in flight long enough for the swap to be visible.
-        setReactions(r.data.reactions);
+        if (r.data.reactions) setReactions(r.data.reactions);
       } else {
         setError(r.error);
       }
@@ -901,10 +913,21 @@ export default function MemberChatsPage() {
     pollRef.current = load;
     tickRef.current = 0;
     void load();
-    const timer = setInterval(() => {
-      if (document.visibilityState === 'visible') void load();
-    }, 5000);
-    return () => { alive = false; clearInterval(timer); };
+    // 5s while the thread is live; 15s once a minute has passed with nothing
+    // new. reschedule() is also called from send() and the typing heartbeat
+    // (with quietRef reset) so the member's own activity brings it back to 5s
+    // at once rather than after the slow tick.
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const reschedule = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(async () => {
+        if (document.visibilityState === 'visible') await load();
+        if (alive) reschedule();
+      }, quietRef.current >= 12 ? 15000 : 5000);
+    };
+    rescheduleRef.current = reschedule;
+    reschedule();
+    return () => { alive = false; if (timer) clearTimeout(timer); rescheduleRef.current = null; };
     // myDeviceId belongs here, not just for lint's sake: it is null on the
     // first render and arrives once the keypair is registered. Without it in
     // the deps the thread would keep polling with no device id, no wraps would
@@ -1633,7 +1656,15 @@ export default function MemberChatsPage() {
     const now = Date.now();
     if (now - typingAtRef.current < TYPING_EVERY_MS) return;
     typingAtRef.current = now;
+    wake();
     void setTyping(openId);
+  }
+
+  /** The member is active: poll at full speed again. */
+  function wake() {
+    if (quietRef.current === 0) return;
+    quietRef.current = 0;
+    rescheduleRef.current?.();
   }
 
   /**
@@ -1661,6 +1692,7 @@ export default function MemberChatsPage() {
     if (!text || !openId || sending) return;
     setSending(true);
     setSendError('');
+    wake();
 
     // The link card travels inside the ciphertext (src/lib/chat-links.tsx);
     // only the plaintext fallback puts it in meta, where the text is readable anyway.
@@ -1734,7 +1766,7 @@ export default function MemberChatsPage() {
       if (a.kind === 'file' && file.type === 'application/pdf') {
         try {
           const thumb = await pdfFirstPageJpeg(file);
-          if (thumb) thumbUrl = await uploadAttachment(thumb, undefined, () => {});
+          if (thumb) thumbUrl = await uploadAttachment(thumb, 'image', () => {});
         } catch { thumbUrl = undefined; }
       }
       const res = await sendChatMessage(openId, {

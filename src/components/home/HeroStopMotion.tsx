@@ -13,26 +13,39 @@ import React, { useEffect, useState } from 'react';
  * not painted yet — that was visible as a blink on first load. Until then
  * the first frame holds still. Respects prefers-reduced-motion by never
  * starting the cycle at all.
+ *
+ * Only the first frame is in the server HTML. It is the page's LCP element,
+ * and when all eight carried a `src` the browser started them together and
+ * they shared the connection - 1.2 MB above the fold, LCP 3.6 s on 4G. The
+ * other seven are fetched after frame 1 has landed and mount once decoded.
+ * Each frame ships at two widths: 1100 px for phones, the 2206 px original
+ * for wide screens (srcset lets the browser pick; sizes matches .hero-loop).
  */
 
-const FRAMES = Array.from({ length: 8 }, (_, i) => `/img/hero-loop/crowd-${i + 1}.webp`);
+const FRAMES = Array.from({ length: 8 }, (_, i) => `/img/hero-loop/crowd-${i + 1}`);
+const SIZES = '100vw';
+const srcSetFor = (base: string) => `${base}-1100.webp 1100w, ${base}.webp 2206w`;
 
 export default function HeroStopMotion({ alt }: { alt: string }) {
   const [on, setOn] = useState(0);
   const [ready, setReady] = useState(false);
 
-  // Decode every frame up front; flip `ready` only when all are paintable.
+  // Frame 1 first (already in flight from the HTML; this is a cache hit),
+  // then the other seven, then flip `ready` once all are paintable.
   useEffect(() => {
     let alive = true;
-    Promise.all(
-      FRAMES.map((src) => {
-        const im = new window.Image();
-        im.src = src;
-        return im.decode().catch(() => {});
-      })
-    ).then(() => {
-      if (alive) setReady(true);
-    });
+    const decode = (base: string) => {
+      const im = new window.Image();
+      im.srcset = srcSetFor(base);
+      im.sizes = SIZES;
+      im.src = `${base}.webp`;
+      return im.decode().catch(() => {});
+    };
+    decode(FRAMES[0])
+      .then(() => Promise.all(FRAMES.slice(1).map(decode)))
+      .then(() => {
+        if (alive) setReady(true);
+      });
     return () => {
       alive = false;
     };
@@ -47,10 +60,12 @@ export default function HeroStopMotion({ alt }: { alt: string }) {
 
   return (
     <div className="hero-loop" role="img" aria-label={alt}>
-      {FRAMES.map((src, i) => (
+      {FRAMES.map((base, i) => (i === 0 || ready) && (
         <img
-          key={src}
-          src={src}
+          key={base}
+          src={`${base}.webp`}
+          srcSet={srcSetFor(base)}
+          sizes={SIZES}
           alt=""
           aria-hidden="true"
           className={i === on ? 'is-on' : undefined}

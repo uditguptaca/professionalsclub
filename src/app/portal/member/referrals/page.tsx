@@ -3,7 +3,6 @@ const smoothOk = () => typeof window !== 'undefined' && !window.matchMedia('(pre
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/app-context';
-import { fetchReferralHome, saveWhereIWork, removeWhereIWork } from '@/app/actions/referrals';
 import type { Company, CompanyInsider } from '@/types';
 import type { MyDirectReferral } from '@/server/repos/chat';
 import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
@@ -13,6 +12,9 @@ import {
 } from 'lucide-react';
 import { useConfirm } from '@/components/portal/confirm';
 import PortalLoading from '@/components/portal/PortalLoading';
+import * as referralsActions from '@/app/actions/referrals';
+import { guardActions } from '@/lib/actions-client';
+const { fetchReferralHome, saveWhereIWork, removeWhereIWork } = guardActions(referralsActions);
 
 /**
  * Referrals, overview only.

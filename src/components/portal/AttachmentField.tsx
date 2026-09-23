@@ -1,6 +1,6 @@
 'use client';
 import React, { useRef, useState } from 'react';
-import { upload } from '@vercel/blob/client';
+import { uploadToBlob } from '@/lib/upload-client';
 import { Upload, X, FileText, Loader2 } from 'lucide-react';
 
 /**
@@ -30,25 +30,7 @@ const ACCEPT = [
 /** Only the url is persisted; the name is kept locally so the chip can be read. */
 export type Attachment = { url: string; name: string };
 
-async function uploadAttachment(file: File): Promise<string> {
-  try {
-    const blob = await upload(file.name, file, {
-      access: 'public',
-      handleUploadUrl: '/api/community/upload',
-      clientPayload: 'document',
-    });
-    return blob.url;
-  } catch (error) {
-    const form = new FormData();
-    form.append('file', file);
-    const res = await fetch('/api/community/upload-dev', { method: 'POST', body: form });
-    // The dev endpoint 404s in production, where the Blob error is the truth.
-    if (res.status === 404) throw error;
-    if (!res.ok) throw new Error('Upload failed');
-    const data = (await res.json()) as { url: string };
-    return data.url;
-  }
-}
+const uploadAttachment = (file: File) => uploadToBlob(file, 'document');
 
 export function AttachmentField({
   label,

@@ -3,9 +3,10 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
+import ContentImage from '@/components/shared/ContentImage';
 import { Search, ShieldCheck, Star, Tag, MapPin, Clock, CheckCircle, ArrowRight, Building2 } from 'lucide-react';
-import { getVerifiedBusinesses } from '@/app/actions/public';
 import { BUSINESS_CATEGORIES, type Business } from '@/types';
+import { getVerifiedBusinesses } from '@/app/actions/public';
 
 export default function BusinessDirectoryPage() {
   const [search, setSearch] = useState('');
@@ -160,7 +161,7 @@ export default function BusinessDirectoryPage() {
               <Link key={biz.id} href={`/businesses/${biz.slug}`} style={{ textDecoration: 'none' }}>
                 <div className="biz-card">
                   <div className="biz-card-image">
-                    {biz.coverImage && <img src={biz.coverImage} alt={biz.name} loading="lazy" decoding="async" />}
+                    {biz.coverImage && <ContentImage src={biz.coverImage} alt={biz.name} width={640} height={360} sizes="(max-width: 720px) 100vw, 400px" />}
                     <div className="biz-card-badges">
                       {biz.verificationStatus === 'verified' && <span className="biz-badge biz-badge-verified"><ShieldCheck size={10} /> Verified</span>}
                       {biz.isFeatured && <span className="biz-badge biz-badge-featured"><Star size={10} /> Featured</span>}

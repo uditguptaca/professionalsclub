@@ -1,7 +1,7 @@
 'use client';
 import React, { Suspense } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { upload } from '@vercel/blob/client';
+import { uploadToBlob } from '@/lib/upload-client';
 import {
   Calendar, Ticket, CheckCircle2, Clock, Plus, Pencil, Trash2,
   Upload, X, AlertCircle, ScanLine, MessageSquareText, Home, ChevronLeft, ChevronRight,
@@ -15,17 +15,13 @@ import { PostComposer, PostCard } from '@/components/portal/community';
 import { COMMUNITY_CITIES } from '@/lib/cities';
 import { parseDateOnly } from '@/lib/dates';
 import { readCache, writeCache } from '@/lib/swr-cache';
-import {
-  fetchBusinessHomeAction, updateMyBusinessAction,
-  createOfferAction, updateOfferAction, deleteOfferAction,
-  createCouponAction, updateCouponAction, deleteCouponAction,
-  createBusinessEventAction, updateBusinessEventAction, deleteBusinessEventAction,
-  fetchBusinessPostsAction,
-} from '@/app/actions/business';
 import type {
   BusinessHome, BusinessOffer, BusinessEvent, BusinessCoupon,
 } from '@/server/repos/business';
 import type { CommunityPost } from '@/types';
+import * as businessActions from '@/app/actions/business';
+import { guardActions } from '@/lib/actions-client';
+const { fetchBusinessHomeAction, updateMyBusinessAction, createOfferAction, updateOfferAction, deleteOfferAction, createCouponAction, updateCouponAction, deleteCouponAction, createBusinessEventAction, updateBusinessEventAction, deleteBusinessEventAction, fetchBusinessPostsAction } = guardActions(businessActions);
 
 /**
  * The whole business console, in one component mounted from two routes.
@@ -375,11 +371,7 @@ function useImagePicker() {
       if (!file) return;
       setBusy(true);
       try {
-        const blob = await upload(`${prefix}/${file.name}`, file, {
-          access: 'public',
-          handleUploadUrl: '/api/community/upload',
-        });
-        onDone(blob.url);
+        onDone(await uploadToBlob(file, 'image', { prefix }));
       } catch {
         // The caller surfaces save failures; this covers the upload leg only.
       }

@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
 import PortalLoading from '@/components/portal/PortalLoading';
-import { FileText, ChevronRight, Clock, CheckCircle, AlertTriangle, XCircle, Plus } from 'lucide-react';
+import { FIRST_REPLY_PROMISE, categoryLabel } from '@/lib/help-desk';
+import { FileText, ChevronRight, Clock, CheckCircle, AlertTriangle, XCircle, Plus, MailOpen } from 'lucide-react';
 
 /**
  * My requests: one glanceable row per case — status chip, reference, title —
@@ -33,7 +34,7 @@ const statusIcon = (status: string) => {
  * member" and waited, because they do not think of themselves as "member".
  */
 const MEMBER_STATUS: Record<string, string> = {
-  submitted: 'Sent. Waiting for the club to read it',
+  submitted: `Sent. ${FIRST_REPLY_PROMISE}`,
   under_review: 'A club admin is reading it',
   admin_reviewing: 'A club admin is reading it',
   need_more_info: 'We need more from you — open this and read the latest note',
@@ -58,11 +59,24 @@ const sentence = (text: string) => {
 };
 
 export default function MyRequestsPage() {
-  const { helpRequests, loading } = usePortal();
+  const { helpRequests, messages, settled } = usePortal();
   const { currentUserId } = useApp();
   const myRequests = helpRequests.filter(r => r.memberId === currentUserId);
 
-  if (loading && helpRequests.length === 0) return <PortalLoading label="Loading your requests" />;
+  /**
+   * Replies the member has not opened yet, per case. The status column says
+   * where the CLUB thinks the case is; an admin who answers without moving it
+   * left the row reading "waiting for the club to read it" with three answers
+   * sitting in the thread. The messages slice arrives in the same snapshot as
+   * the list, so this costs no extra round trip.
+   */
+  const unreadByCase = new Map<string, number>();
+  for (const m of messages) {
+    if (m.read || m.senderRole === 'member' || m.recipientUserId !== currentUserId) continue;
+    unreadByCase.set(m.caseId, (unreadByCase.get(m.caseId) ?? 0) + 1);
+  }
+
+  if (!settled && helpRequests.length === 0) return <PortalLoading label="Loading your requests" />;
 
   return (
     <div className="pp2 animate-fade-in">
@@ -97,11 +111,14 @@ export default function MyRequestsPage() {
               </Link>
 
               {myRequests.map(req => {
-                const tone = statusTone(req.status);
+                const unread = unreadByCase.get(req.id) ?? 0;
+                const tone = unread > 0
+                  ? { bg: 'rgba(232,93,4,0.09)', fg: 'var(--primary-800)' }
+                  : statusTone(req.status);
                 return (
                   <Link key={req.id} href={`/portal/member/my-requests/${req.id}`} className="pp-row">
                     <span className="pp-row-icon" style={{ background: tone.bg, color: tone.fg }}>
-                      {statusIcon(req.status)}
+                      {unread > 0 ? <MailOpen size={17} /> : statusIcon(req.status)}
                     </span>
                     <span className="pp-row-body">
                       <small style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -110,16 +127,21 @@ export default function MyRequestsPage() {
                       <strong>{req.title}</strong>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, minWidth: 0 }}>
                         <span className="pp-chip" style={{ background: tone.bg, color: tone.fg, flexShrink: 0 }}>
-                          {sentence(req.status)}
+                          {unread > 0
+                            ? (unread === 1 ? 'New reply from the club' : `${unread} new replies from the club`)
+                            : sentence(req.status)}
                         </span>
                         <span style={{
                           fontSize: '0.74rem', color: 'var(--text-muted)',
                           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                         }}>
-                          {sentence(req.urgency)} priority · {req.category}
+                          {sentence(req.urgency)} priority · {categoryLabel(req.category)}
                         </span>
                       </span>
                     </span>
+                    {unread > 0 && (
+                      <span className="nt-row-count" aria-label={`${unread} unread`}>{unread > 9 ? '9+' : unread}</span>
+                    )}
                     <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
                   </Link>
                 );

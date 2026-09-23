@@ -2,13 +2,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/app-context';
-import {
-  fetchCompanies, curatorAddEmployer, curatorAddRole,
-} from '@/app/actions/referrals';
 import type { Company, CompanyJob } from '@/types';
 import {
   AlertCircle, ArrowRight, Building2, Check, ChevronRight, Loader2, Star,
 } from 'lucide-react';
+import * as referralsActions from '@/app/actions/referrals';
+import { guardActions } from '@/lib/actions-client';
+const { fetchCompanies, curatorAddEmployer, curatorAddRole } = guardActions(referralsActions);
 
 /**
  * Adding an employer or a role, for admins and approved volunteers (0044).

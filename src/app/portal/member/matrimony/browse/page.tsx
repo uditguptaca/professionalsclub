@@ -3,9 +3,6 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useApp } from '@/context/app-context';
-import {
-  getMyMatrimony, browseProfilesPaged, saveSearch, swipeRight, addToShortlist, removeFromShortlist,
-} from '@/app/actions/matrimony';
 import type { MatrimonyBrowseCard, MatrimonyPreferences, MatrimonySearchFilters } from '@/types/matrimony';
 import { computeMatchScore } from '@/lib/matrimony/matching';
 import {
@@ -18,6 +15,10 @@ import {
   Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, RotateCcw,
   Save, BadgeCheck, Camera, Clock, Check, AlertCircle, Heart, Star, Sparkles, MessageCircle,
 } from 'lucide-react';
+import { useDismissOnBack } from '@/lib/use-dismiss-on-back';
+import * as matrimonyActions from '@/app/actions/matrimony';
+import { guardActions } from '@/lib/actions-client';
+const { getMyMatrimony, browseProfilesPaged, saveSearch, swipeRight, addToShortlist, removeFromShortlist } = guardActions(matrimonyActions);
 
 /**
  * Browse: everyone the member can see, in the grammar of the matrimony apps
@@ -244,6 +245,9 @@ export default function MatrimonyBrowsePage() {
   }, [toast]);
 
   const sheetOpen = drawerOpen || showSaveModal;
+  // Back closes the topmost sheet instead of leaving the deck and its filters.
+  useDismissOnBack(drawerOpen, () => setDrawerOpen(false));
+  useDismissOnBack(showSaveModal, () => setShowSaveModal(false));
   useEffect(() => {
     if (!sheetOpen) return;
     const prev = document.body.style.overflow;

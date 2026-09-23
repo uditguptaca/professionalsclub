@@ -8,8 +8,9 @@ import {
   ShieldCheck, Star, Tag, MapPin, Phone, Mail, Globe, Clock, Briefcase,
   ArrowLeft, CheckCircle, ExternalLink, User, Calendar, Target,
 } from 'lucide-react';
-import { getBusinessBySlug, getBusinessPageExtras } from '@/app/actions/public';
 import type { Business } from '@/types';
+import { telHref } from '@/lib/phone';
+import { getBusinessBySlug, getBusinessPageExtras } from '@/app/actions/public';
 
 export default function BusinessProfilePage() {
   const params = useParams();
@@ -89,7 +90,7 @@ export default function BusinessProfilePage() {
             </div>
           </div>
           <div className="biz-profile-ctas">
-            <a href={`tel:${biz.phone}`} className="btn btn-primary" style={{ fontSize: '0.82rem' }}><Phone size={14} /> Call Now</a>
+            <a href={telHref(biz.phone)} className="btn btn-primary" style={{ fontSize: '0.82rem' }}><Phone size={14} /> Call Now</a>
             <a href={`mailto:${biz.email}`} className="btn btn-ghost" style={{ fontSize: '0.82rem' }}><Mail size={14} /> Email</a>
             {biz.website && (
               <a href={biz.website} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '0.82rem' }}><Globe size={14} /> Website</a>
@@ -190,7 +191,7 @@ export default function BusinessProfilePage() {
             <h3><Phone size={16} /> Contact Information</h3>
             <div className="biz-contact-list">
               <div className="biz-contact-item"><User size={16} /> {biz.contactPerson}</div>
-              <div className="biz-contact-item"><Phone size={16} /> <a href={`tel:${biz.phone}`}>{biz.phone}</a></div>
+              <div className="biz-contact-item"><Phone size={16} /> <a href={telHref(biz.phone)}>{biz.phone}</a></div>
               <div className="biz-contact-item"><Mail size={16} /> <a href={`mailto:${biz.email}`}>{biz.email}</a></div>
               {biz.website && <div className="biz-contact-item"><Globe size={16} /> <a href={biz.website} target="_blank" rel="noopener noreferrer">{biz.website.replace('https://', '')} <ExternalLink size={11} /></a></div>}
               <div className="biz-contact-item"><MapPin size={16} /> {biz.address}, {biz.city}, {biz.province} {biz.postalCode}</div>

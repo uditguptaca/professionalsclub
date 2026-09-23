@@ -1,14 +1,13 @@
 'use client';
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  adminFetchCompanies, adminSaveCompany, adminSyncCompany,
-  adminDetectSource, adminAddManualJob, adminDrainEmail,
-} from '@/app/actions/referrals';
 import type { Company, JobSourceKind } from '@/types';
 import {
   Building2, Plus, RefreshCw, Search, Loader2, Check, X, AlertTriangle,
   Wand2, Users, Briefcase, Mail, ExternalLink, Clock,
 } from 'lucide-react';
+import * as referralsActions from '@/app/actions/referrals';
+import { guardActions } from '@/lib/actions-client';
+const { adminFetchCompanies, adminSaveCompany, adminSyncCompany, adminDetectSource, adminAddManualJob, adminDrainEmail } = guardActions(referralsActions);
 
 /**
  * Companies and their job feeds.

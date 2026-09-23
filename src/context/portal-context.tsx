@@ -7,9 +7,14 @@ import type {
   BusinessContactRequest, BusinessStatus, EBook, VideoWorkshop, ContentTemplate,
   CommunityEvent, TeamMember, NewsArticle, DonationCampaign, JobPosting,
 } from '@/types';
-import * as actions from '@/app/actions/portal';
+import * as portalActions from '@/app/actions/portal';
 import type { ActionResult } from '@/app/actions/portal';
 import { useApp } from '@/context/app-context';
+import { guardActions } from '@/lib/actions-client';
+
+// A dropped connection comes back as { ok: false } like any other failure,
+// so the busy flags below always clear and the error line always shows.
+const actions = guardActions(portalActions);
 
 /**
  * Portal state for client components.
@@ -40,6 +45,13 @@ const EMPTY_STATS: HelpDeskStats = {
  */
 interface HelpDeskContextType {
   loading: boolean;
+  /**
+   * True once the first snapshot has come back (or failed). `loading` starts
+   * false and only flips on in an effect, so a deep link's first render sees
+   * an empty list and `loading === false` - which is how "Request not found"
+   * flashed at every admin opening a notification. Branch on this instead.
+   */
+  settled: boolean;
   error: string | null;
   refresh: () => Promise<void>;
 
@@ -115,6 +127,7 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useApp();
 
   const [loading, setLoading] = useState(false);
+  const [settled, setSettled] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [members, setMembers] = useState<Member[]>([]);
@@ -181,6 +194,7 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
     }
 
     setLoading(false);
+    setSettled(true);
   }, [isAuthenticated, track]);
 
   // The snapshot is heavy (every help-desk slice in one query). Load it only
@@ -340,7 +354,7 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
   return (
     <HelpDeskContext.Provider
       value={{
-        loading, error, refresh,
+        loading, settled, error, refresh,
         members, helpRequests, volunteerApps, assignments, messages, auditLog, stats,
         businesses, businessContactRequests,
         addHelpRequest, updateRequestStatus, addInternalNote,

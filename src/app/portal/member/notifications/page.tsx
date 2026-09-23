@@ -1,22 +1,21 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useDismissOnBack } from '@/lib/use-dismiss-on-back';
 import {
   Bell, MessageCircle, UserPlus, Send, Heart, UsersRound, HelpCircle,
   HandHeart, Calendar, Shield, CheckCheck, Settings2, X, Inbox,
 } from 'lucide-react';
 import PortalLoading from '@/components/portal/PortalLoading';
 import { useNotifications } from '@/context/notification-context';
-import {
-  notificationsStartAction,
-  listNotificationsAction,
-  updateNotificationPrefsAction,
-} from '@/app/actions/notifications';
 import type {
   AppNotification, NotificationCounts, NotificationPrefs,
 } from '@/server/repos/notifications';
 import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
+import * as notificationsActions from '@/app/actions/notifications';
+import { guardActions } from '@/lib/actions-client';
+const { notificationsStartAction, listNotificationsAction, updateNotificationPrefsAction } = guardActions(notificationsActions);
 
 /**
  * The notification inbox.
@@ -43,12 +42,12 @@ const MODULES: {
   pref: keyof NotificationPrefs | null;
   blurb: string;
 }[] = [
-  { key: 'chat', label: 'Messages', icon: MessageCircle, pref: 'chat', blurb: 'New messages in your chats' },
+  { key: 'chat', label: 'Chats', icon: MessageCircle, pref: 'chat', blurb: 'New messages in your chats' },
   { key: 'social', label: 'Follows', icon: UserPlus, pref: 'social', blurb: 'Follow requests and acceptances' },
   { key: 'referral', label: 'Referrals', icon: Send, pref: 'referral', blurb: 'Referral asks and answers' },
   { key: 'matrimony', label: 'Matrimony', icon: Heart, pref: 'matrimony', blurb: 'Interests, matches and profile reviews' },
   { key: 'community', label: 'Community', icon: UsersRound, pref: 'community', blurb: 'Likes, comments and group activity' },
-  { key: 'help', label: 'Help desk', icon: HelpCircle, pref: 'help', blurb: 'Updates on your requests and admin replies' },
+  { key: 'help', label: 'Help desk', icon: HelpCircle, pref: 'help', blurb: 'Updates on your requests and club messages' },
   { key: 'volunteer', label: 'Volunteering', icon: HandHeart, pref: null, blurb: 'Applications and case assignments' },
   { key: 'event', label: 'Events', icon: Calendar, pref: 'event', blurb: 'New events in your city' },
   { key: 'admin', label: 'Admin', icon: Shield, pref: null, blurb: 'Work waiting in the admin queues' },
@@ -84,8 +83,9 @@ type NotificationsStart = {
 };
 
 export default function NotificationsPage() {
-  const router = useRouter();
   const { counts, applyCounts, markRead, markAllRead } = useNotifications();
+  // My Profile's "How we reach you" sheet links straight to the switches.
+  const wantsSettings = useSearchParams().get('settings') === '1';
 
   const cached = readCache<NotificationsStart>(CACHE_KEYS.notifications);
   const [filter, setFilter] = React.useState<string>('');
@@ -95,7 +95,8 @@ export default function NotificationsPage() {
   const [paging, setPaging] = React.useState(false);
   const [error, setError] = React.useState('');
 
-  const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const [settingsOpen, setSettingsOpen] = React.useState(wantsSettings);
+  useDismissOnBack(settingsOpen, () => setSettingsOpen(false));
   const [prefs, setPrefs] = React.useState<NotificationPrefs | null>(cached?.prefs ?? null);
   const [savingPref, setSavingPref] = React.useState<string>('');
 
@@ -146,10 +147,6 @@ export default function NotificationsPage() {
   };
 
   /**
-   * Open it. Marking read happens optimistically so the row settles before
-   * navigation rather than after coming back, and the badge drops immediately.
-   */
-  /**
    * Keep the cached copy in step with an optimistic change. Without this,
    * coming back to this tab repainted a row as unread until the background
    * refresh landed.
@@ -159,16 +156,19 @@ export default function NotificationsPage() {
     if (cur) writeCache<NotificationsStart>(CACHE_KEYS.notifications, { ...cur, ...patch });
   };
 
-  const open = (n: AppNotification) => {
-    if (!n.isRead) {
-      setItems((prev) => {
-        const next = prev.map((x) => (x.id === n.id ? { ...x, isRead: true } : x));
-        if (!filter) patchCache({ page: { items: next, hasMore } });
-        return next;
-      });
-      void markRead(n.id);
-    }
-    if (n.link) router.push(n.link);
+  /**
+   * The row is a real link (see below), so navigation is the browser's. This
+   * only marks it read, optimistically, so the badge drops before the page
+   * changes rather than after coming back.
+   */
+  const markOpened = (n: AppNotification) => {
+    if (n.isRead) return;
+    setItems((prev) => {
+      const next = prev.map((x) => (x.id === n.id ? { ...x, isRead: true } : x));
+      if (!filter) patchCache({ page: { items: next, hasMore } });
+      return next;
+    });
+    void markRead(n.id);
   };
 
   const clearAll = async () => {
@@ -289,10 +289,15 @@ export default function NotificationsPage() {
                   const hasFace = Boolean(n.actorFirstName || n.actorLastName);
                   return (
                     <li key={n.id}>
-                      <button
-                        type="button"
+                      {/* An anchor carrying the href, not a button that pushes
+                          a route: long-press, open-in-new-tab and a screen
+                          reader's link list all work, and the destination is
+                          visible before the tap. */}
+                      <Link
+                        href={n.link || '/portal/member/notifications'}
                         className={`nt-row${n.isRead ? '' : ' is-unread'}`}
-                        onClick={() => open(n)}
+                        style={{ textDecoration: 'none', color: 'inherit' }}
+                        onClick={() => markOpened(n)}
                       >
                         <span className={`nt-avatar cat-${mod.key}`} aria-hidden="true">
                           {hasFace
@@ -314,7 +319,7 @@ export default function NotificationsPage() {
                           </span>
                         </span>
                         {!n.isRead && <span className="nt-dot" aria-label="Unread" />}
-                      </button>
+                      </Link>
                     </li>
                   );
                 })}

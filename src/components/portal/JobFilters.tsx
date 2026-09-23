@@ -1,7 +1,10 @@
 'use client';
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { facetsOf, SENIORITY_LABELS, EMPLOYMENT_LABELS, ARRANGEMENT_LABELS, familyLabel, languageLabel } from '@/lib/job-taxonomy';
+import {
+  facetsOf, countryOf, SENIORITY_LABELS, EMPLOYMENT_LABELS, ARRANGEMENT_LABELS, familyLabel, languageLabel,
+} from '@/lib/job-taxonomy';
+import { useDismissOnBack } from '@/lib/use-dismiss-on-back';
 import { SlidersHorizontal, X } from 'lucide-react';
 
 /**
@@ -45,11 +48,19 @@ export interface JobFilterState {
   arrangement: string;
   language: string;
   city: string;
+  /** 'Canada' by default: this audience is work-authorised in Canada only. */
+  country: string;
 }
 
+/**
+ * The resting state. Not every value is 'all': the country facet rests on
+ * Canada, because a feed that lists New York and Milwaukee next to Toronto
+ * is not "no filter" for a newcomer who can only work here. "Active" means
+ * different from THIS, so the default shows no chip and no count.
+ */
 export const NO_FILTERS: JobFilterState = {
   seniority: 'all', family: 'all', employment: 'all',
-  arrangement: 'all', language: 'all', city: 'all',
+  arrangement: 'all', language: 'all', city: 'all', country: 'Canada',
 };
 
 /** Minimum a role needs for the filters to read it. */
@@ -72,8 +83,11 @@ export function cityOf(location: string | null): string | null {
 }
 
 export function activeFilterCount(state: JobFilterState): number {
-  return Object.values(state).filter((v) => v !== 'all').length;
+  return (Object.keys(NO_FILTERS) as GroupKey[]).filter((k) => state[k] !== NO_FILTERS[k]).length;
 }
+
+/** A location we cannot place is treated as Canada: the feeds are Canadian employers' own sites. */
+const countryBucket = (location: string | null) => countryOf(location) ?? 'Canada';
 
 /** One predicate, so every screen filters identically. */
 export function matchesJobFilters(job: FilterableJob, state: JobFilterState): boolean {
@@ -83,7 +97,8 @@ export function matchesJobFilters(job: FilterableJob, state: JobFilterState): bo
     && (state.employment === 'all' || f.employment === state.employment)
     && (state.arrangement === 'all' || f.arrangement === state.arrangement)
     && (state.language === 'all' || f.languages.includes(state.language))
-    && (state.city === 'all' || cityOf(job.location) === state.city);
+    && (state.city === 'all' || cityOf(job.location) === state.city)
+    && (state.country === 'all' || countryBucket(job.location) === state.country);
 }
 
 type GroupKey = keyof JobFilterState;
@@ -91,6 +106,7 @@ type GroupKey = keyof JobFilterState;
 const GROUPS: { key: GroupKey; label: string; labelOf: (k: string) => string }[] = [
   { key: 'seniority', label: 'Level', labelOf: (k) => SENIORITY_LABELS[k as keyof typeof SENIORITY_LABELS] ?? k },
   { key: 'family', label: 'Function', labelOf: familyLabel },
+  { key: 'country', label: 'Country', labelOf: (k) => (k === 'all' ? 'Anywhere' : k) },
   { key: 'city', label: 'City', labelOf: (k) => k },
   { key: 'employment', label: 'Type', labelOf: (k) => EMPLOYMENT_LABELS[k as keyof typeof EMPLOYMENT_LABELS] ?? k },
   { key: 'arrangement', label: 'Setting', labelOf: (k) => ARRANGEMENT_LABELS[k as keyof typeof ARRANGEMENT_LABELS] ?? k },
@@ -118,6 +134,7 @@ export default function JobFilters({
   resultCount: number;
 }) {
   const [open, setOpen] = useState(false);
+  useDismissOnBack(open, () => setOpen(false));
 
   // A sheet locks the page behind it and closes on Escape, like every other
   // sheet in the portal.
@@ -151,6 +168,7 @@ export default function JobFilters({
     out.seniority = tally((j) => [facetsOf(j.title, j.location).seniority]);
     out.family = tally((j) => facetsOf(j.title, j.location).families);
     out.city = tally((j) => [cityOf(j.location)]);
+    out.country = tally((j) => [countryBucket(j.location)]);
     out.employment = tally((j) => [facetsOf(j.title, j.location).employment]);
     out.arrangement = tally((j) => [facetsOf(j.title, j.location).arrangement]);
     out.language = tally((j) => facetsOf(j.title, j.location).languages);
@@ -198,11 +216,11 @@ export default function JobFilters({
           see an active filter was to reopen the sheet. */}
       {active > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-          {GROUPS.filter((g) => value[g.key] !== 'all').map((g) => (
+          {GROUPS.filter((g) => value[g.key] !== NO_FILTERS[g.key]).map((g) => (
             <button
               key={g.key}
               type="button"
-              onClick={() => onChange({ ...value, [g.key]: 'all' })}
+              onClick={() => onChange({ ...value, [g.key]: NO_FILTERS[g.key] })}
               aria-label={`Remove the ${g.label.toLowerCase()} filter`}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 5,

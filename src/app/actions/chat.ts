@@ -107,9 +107,11 @@ export async function declineChatRequest(conversationId: string) {
 export async function pollThread(
   conversationId: string,
   since?: string | null,
-  deviceId?: string | null
+  deviceId?: string | null,
+  /** The previous poll's `stamps`; slices that still match come back null. */
+  known?: repo.PollStamps
 ) {
-  return run('Loading messages', (uid) => repo.pollThread(uid, conversationId, since, deviceId));
+  return run('Loading messages', (uid) => repo.pollThread(uid, conversationId, since, deviceId, known));
 }
 
 export async function sendChatMessage(

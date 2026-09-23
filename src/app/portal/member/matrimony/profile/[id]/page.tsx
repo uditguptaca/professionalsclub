@@ -3,11 +3,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useApp } from '@/context/app-context';
-import {
-  getProfileDetail, addToShortlist, removeFromShortlist,
-  sendInterest, respondToInterest, reportProfile, blockProfile, requestPhotoAccess,
-} from '@/app/actions/matrimony';
-import { openChat } from '@/app/actions/chat';
 import type { MatrimonyProfile, MatrimonyPreferences, MatrimonyContact, MatrimonyMedia } from '@/types/matrimony';
 import { computeMatchScore } from '@/lib/matrimony/matching';
 import {
@@ -17,6 +12,11 @@ import {
 } from 'lucide-react';
 import PortalLoading from '@/components/portal/PortalLoading';
 import { useConfirm } from '@/components/portal/confirm';
+import * as matrimonyActions from '@/app/actions/matrimony';
+import * as chatActions from '@/app/actions/chat';
+import { guardActions } from '@/lib/actions-client';
+const { getProfileDetail, addToShortlist, removeFromShortlist, sendInterest, respondToInterest, reportProfile, blockProfile, requestPhotoAccess } = guardActions(matrimonyActions);
+const { openChat } = guardActions(chatActions);
 
 const REPORT_REASONS: { value: string; label: string }[] = [
   { value: 'fake_profile', label: 'Fake profile or stolen identity' },

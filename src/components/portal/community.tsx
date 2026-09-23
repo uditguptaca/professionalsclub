@@ -7,24 +7,22 @@ const sendsOnEnter = () =>
   typeof navigator !== 'undefined' && !navigator.maxTouchPoints;
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { upload } from '@vercel/blob/client';
+import { uploadToBlob } from '@/lib/upload-client';
+import ContentImage from '@/components/shared/ContentImage';
 import { useApp } from '@/context/app-context';
 import type { CommunityPost, CommunityComment, CommunityGroup, CommunityMedia } from '@/types';
 import { COMMUNITY_TOPICS, type CommunityTopic } from '@/types';
-import {
-  fetchFeed, publishPost, removeOwnPost, likePost,
-  fetchComments, publishComment, removeOwnComment,
-  reportCommunityContent, blockCommunityMember, fetchGroups,
-  joinCommunityGroup, fetchCommunityHome,
-} from '@/app/actions/community';
-import { createBusinessPostAction, deleteBusinessPostAction } from '@/app/actions/business';
-import { moderateContentItem } from '@/app/actions/community';
 import {
   Heart, MessageCircle, Send, Trash2, Flag, UserX, Loader2,
   MoreHorizontal, ImagePlus, Clapperboard, X, ChevronLeft, ChevronRight,
   Link2, Check, Plus, Users, ShieldCheck, Store,
 } from 'lucide-react';
 import { useConfirm } from '@/components/portal/confirm';
+import * as communityActions from '@/app/actions/community';
+import * as businessActions from '@/app/actions/business';
+import { guardActions } from '@/lib/actions-client';
+const { fetchFeed, publishPost, removeOwnPost, likePost, fetchComments, publishComment, removeOwnComment, reportCommunityContent, blockCommunityMember, fetchGroups, joinCommunityGroup, fetchCommunityHome, moderateContentItem } = guardActions(communityActions);
+const { createBusinessPostAction, deleteBusinessPostAction } = guardActions(businessActions);
 
 /**
  * Community surfaces. The grammar is the familiar social one — byline,
@@ -67,8 +65,8 @@ const isImageUrl = (v: string | null) => Boolean(v && /^(https?:\/\/|\/)/.test(v
 function BusinessAvatar({ name, logo, className = '' }: { name: string; logo: string | null; className?: string }) {
   if (isImageUrl(logo)) {
     return (
-      <img
-        src={logo as string} alt="" aria-hidden="true"
+      <ContentImage
+        src={logo as string} alt="" aria-hidden="true" width={40} height={40}
         className={`community-avatar ${className}`}
         style={{ objectFit: 'contain', background: '#fff', border: '1px solid var(--border-color)' }}
       />
@@ -79,30 +77,6 @@ function BusinessAvatar({ name, logo, className = '' }: { name: string; logo: st
       {(logo?.trim() || name.charAt(0) || '?').slice(0, 2).toUpperCase()}
     </span>
   );
-}
-
-// ============================================================ Upload
-
-async function uploadMedia(file: File, kind: 'image' | 'video'): Promise<string> {
-  try {
-    const blob = await upload(file.name, file, {
-      access: 'public',
-      handleUploadUrl: '/api/community/upload',
-      clientPayload: kind,
-    });
-    return blob.url;
-  } catch (error) {
-    // Blob failed — most commonly because no Blob store is configured in dev.
-    // Try the dev-only local-disk endpoint; it 404s in production, in which
-    // case the original Blob error is the truth worth surfacing.
-    const form = new FormData();
-    form.append('file', file);
-    const res = await fetch('/api/community/upload-dev', { method: 'POST', body: form });
-    if (res.status === 404) throw error;
-    if (!res.ok) throw new Error('Upload failed');
-    const data = (await res.json()) as { url: string };
-    return data.url;
-  }
 }
 
 type Draft = { media: CommunityMedia; previewUrl: string };
@@ -203,7 +177,7 @@ export function PostComposer({
     await Promise.all(
       chosen.map(async (file) => {
         try {
-          const url = await uploadMedia(file, kind);
+          const url = await uploadToBlob(file, kind);
           setDrafts((d) => [...d, { media: { url, type: kind }, previewUrl: URL.createObjectURL(file) }]);
         } catch {
           setError('Upload failed. Please check your connection and try again.');
@@ -424,7 +398,7 @@ function Lightbox({
       )}
       <div className="community-lightbox-stage" onClick={(e) => e.stopPropagation()}>
         {item.type === 'image'
-          ? <img src={item.url} alt="" fetchPriority="high" decoding="async" />
+          ? <ContentImage src={item.url} alt="" width={1600} height={1600} sizes="100vw" priority style={{ width: 'auto', height: 'auto' }} />
           : <video src={item.url} controls autoPlay playsInline />}
       </div>
       {index < media.length - 1 && (
@@ -489,7 +463,7 @@ function PostMedia({
             }
           >
             {m.type === 'image'
-              ? <img src={m.url} alt="" loading="lazy" />
+              ? <ContentImage src={m.url} alt="" width={800} height={800} sizes={media.length > 1 ? '(max-width: 720px) 50vw, 300px' : '(max-width: 720px) 100vw, 600px'} />
               : <video src={m.url} muted playsInline preload="metadata" />}
             {m.type === 'video' && (
               <span className="community-media-play" aria-hidden="true">

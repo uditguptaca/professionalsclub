@@ -2,8 +2,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { fetchMemberProfile, fetchMemberPosts } from '@/app/actions/people';
-import { followMember, unfollowMember, openChat, unblockMember } from '@/app/actions/chat';
 import type { MemberProfile } from '@/server/repos/people';
 import type { CommunityPost } from '@/types';
 import PortalLoading from '@/components/portal/PortalLoading';
@@ -14,6 +12,11 @@ import {
   Clock, ExternalLink, GraduationCap, Heart, Lock, MapPin, MessageCircle, Newspaper,
   UserPlus, UserRoundCheck, Loader2,
 } from 'lucide-react';
+import * as peopleActions from '@/app/actions/people';
+import * as chatActions from '@/app/actions/chat';
+import { guardActions } from '@/lib/actions-client';
+const { fetchMemberProfile, fetchMemberPosts } = guardActions(peopleActions);
+const { followMember, unfollowMember, openChat, unblockMember } = guardActions(chatActions);
 
 /**
  * One member's profile, as another member sees it.

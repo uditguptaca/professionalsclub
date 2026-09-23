@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import RegisterSW from '@/components/RegisterSW';
 import InstallPrompt from '@/components/InstallPrompt';
-import { Fraunces, Manrope, JetBrains_Mono } from "next/font/google";
+import { Fraunces, Manrope } from "next/font/google";
 import "./globals.css";
 // Loaded after globals.css on purpose: the editorial layer redefines the shared
 // primitives and needs to win at equal specificity. See the header of that file.
@@ -20,12 +20,17 @@ import CapacitorBridge from "@/components/shared/CapacitorBridge";
  * character, so this is an editorial pairing instead:
  *
  *   Fraunces  — variable soft serif for display. Warm, slightly quirky, and it
- *               reads as a considered publication rather than a template. Only
- *               used on marketing surfaces; the portal keeps a sans for headings
- *               because a serif fights dense tabular UI.
+ *               reads as a considered publication rather than a template. It
+ *               was meant for marketing surfaces only, but the portal's own
+ *               headings (.hf-hero h1, .pp-group h2, .bz-title, ~50 inline
+ *               uses) took it up, so it ships on every route; the SOFT/WONK
+ *               axes are in use in editorial.css and cannot be dropped.
  *   Manrope   — humanist geometric sans for body copy. Warmer than Inter at the
  *               same legibility.
- *   JetBrains — tabular figures for case references, counts and money.
+ *
+ * Monospace (coupon codes, case references) is the system stack, set in
+ * globals.css. JetBrains Mono used to be loaded here for five call sites and
+ * cost every route 40 KB.
  */
 const fraunces = Fraunces({
   subsets: ['latin'],
@@ -38,12 +43,6 @@ const manrope = Manrope({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-sans-src',
-});
-
-const mono = JetBrains_Mono({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-mono-src',
 });
 
 /**
@@ -135,7 +134,7 @@ export default async function RootLayout({
   const profile = await getCurrentProfile();
 
   return (
-    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning className={`${fraunces.variable} ${manrope.variable} ${mono.variable}`}>
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning className={`${fraunces.variable} ${manrope.variable}`}>
       {/* suppressHydrationWarning (html + body): inside the native shell,
           Capacitor writes the device's real safe-area insets onto <html> as
           inline CSS variables BEFORE React hydrates (--safe-area-inset-top:

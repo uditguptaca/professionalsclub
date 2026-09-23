@@ -8,9 +8,11 @@ import {
 } from 'lucide-react';
 import PortalLoading from '@/components/portal/PortalLoading';
 import RsvpButton from '@/components/portal/RsvpButton';
-import { fetchEventAction } from '@/app/actions/events';
 import type { EventDetail } from '@/server/repos/events';
 import { parseDateOnly } from '@/lib/dates';
+import * as eventsActions from '@/app/actions/events';
+import { guardActions } from '@/lib/actions-client';
+const { fetchEventAction } = guardActions(eventsActions);
 
 /**
  * One event, everything about it.
@@ -217,7 +219,9 @@ export default function MemberEventPage() {
               <small style={{ display: 'block', color: 'var(--text-secondary)' }}>
                 {[event.venueName ? event.location : null, event.city].filter(Boolean).join(', ')}
               </small>
-              {event.location && (
+              {/* Only a place you can travel to: an online event's "location"
+                  is the platform name, and maps.google.com/?q=Zoom is nonsense. */}
+              {event.location && event.eventType !== 'virtual' && (
                 <a
                   href={`https://maps.google.com/?q=${encodeURIComponent([event.venueName, event.location, event.city].filter(Boolean).join(', '))}`}
                   target="_blank"
@@ -255,10 +259,10 @@ export default function MemberEventPage() {
               <strong style={{ display: 'block', fontSize: '0.92rem' }}>Hosted by {host}</strong>
               {event.businessSlug && (
                 <Link
-                  href={`/businesses/${event.businessSlug}`}
+                  href={`/portal/member/businesses/${event.businessSlug}`}
                   style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-accent)', textDecoration: 'none' }}
                 >
-                  See their page
+                  See their page and offers
                 </Link>
               )}
             </span>

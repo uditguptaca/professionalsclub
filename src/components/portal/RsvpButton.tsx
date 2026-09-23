@@ -1,7 +1,9 @@
 'use client';
 import React from 'react';
 import { Check, CalendarPlus } from 'lucide-react';
-import { rsvpEventAction } from '@/app/actions/business';
+import * as businessActions from '@/app/actions/business';
+import { guardActions } from '@/lib/actions-client';
+const { rsvpEventAction } = guardActions(businessActions);
 
 /**
  * The RSVP toggle on an event card. Optimistic: the button flips and the count

@@ -1,6 +1,7 @@
 'use server';
 
 import { requireUserId, requireAdminId, getCurrentProfile, invalidateProfileCache } from '@/server/auth';
+import { isMemberFacing } from '@/server/errors';
 import * as repo from '@/server/repos/portal';
 import type { ContentEntity } from '@/server/repos/content';
 import type {
@@ -32,6 +33,7 @@ function fail(context: string, error: unknown): { ok: false; error: string } {
   console.error(`[action] ${context}:`, detail);
 
   const expected =
+    isMemberFacing(error) ||
     detail.startsWith('Not signed in') ||
     detail.startsWith('That page is for club admins') ||
     detail.startsWith('This account is not active');
@@ -110,6 +112,23 @@ export async function updateVolunteerStatus(
   return run('Updating volunteer application', async () =>
     repo.setVolunteerStatus(await requireAdminId(), id, status, notes)
   );
+}
+
+/**
+ * The volunteer's own controls (0059): pause, change the load or the areas,
+ * stop, or come back. Always the caller's own row; the guard trigger decides
+ * which columns a member may touch.
+ */
+export async function updateMyVolunteering(
+  patch: repo.VolunteeringPatch
+): Promise<ActionResult<VolunteerApplication>> {
+  return run('Updating your volunteering', async () => {
+    const uid = await requireUserId();
+    const app = await repo.updateMyVolunteering(uid, patch);
+    // Withdrawing takes the curator flag away; the cached profile must follow.
+    if (patch.status) invalidateProfileCache(uid);
+    return app;
+  });
 }
 
 // ========== ASSIGNMENTS ==========

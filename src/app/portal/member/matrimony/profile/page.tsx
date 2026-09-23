@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/app-context';
-import { getMyMatrimony } from '@/app/actions/matrimony';
 import type { MatrimonyProfile, MatrimonyPreferences, MatrimonyContact, MatrimonyMedia } from '@/types/matrimony';
 import {
   CheckCircle2, AlertCircle, Clock, XCircle, Edit3, Shield,
@@ -10,6 +9,9 @@ import {
 } from 'lucide-react';
 import PortalLoading from '@/components/portal/PortalLoading';
 import MatrimonyTabs from '@/components/portal/MatrimonyTabs';
+import * as matrimonyActions from '@/app/actions/matrimony';
+import { guardActions } from '@/lib/actions-client';
+const { getMyMatrimony } = guardActions(matrimonyActions);
 
 /** Moderation state, said plainly. Chips sit on the dark hero, so every
  *  colour here has to read against --green-950. */

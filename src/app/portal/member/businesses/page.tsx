@@ -4,16 +4,19 @@ import Link from 'next/link';
 import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
 import PortalLoading from '@/components/portal/PortalLoading';
-import {
-  submitBusinessContactRequest, fetchSavedBusinessIds, toggleSaveBusiness,
-} from '@/app/actions/portal';
-import { fetchBusinessSuggestionsAction } from '@/app/actions/business';
+import ContentImage from '@/components/shared/ContentImage';
 import type { BusinessSuggestion } from '@/server/repos/recommendations';
 import {
   Search, Tag, MapPin, Phone, Mail, Globe, X, Building2, Bookmark,
   Check, Star, ChevronRight, Send, AlertCircle, ArrowDownAZ, Sparkles, Users,
 } from 'lucide-react';
 import { BUSINESS_CATEGORIES, type BusinessContactHelpType } from '@/types';
+import { telHref } from '@/lib/phone';
+import * as portalActions from '@/app/actions/portal';
+import * as businessActions from '@/app/actions/business';
+import { guardActions } from '@/lib/actions-client';
+const { submitBusinessContactRequest, fetchSavedBusinessIds, toggleSaveBusiness } = guardActions(portalActions);
+const { fetchBusinessSuggestionsAction } = guardActions(businessActions);
 
 /**
  * The member business directory. Image-led cards in the home-feed language,
@@ -377,7 +380,7 @@ export default function MemberBusinessDirectory() {
                   <div key={biz.id} className="hf-event card">
                     <span className="hf-event-media">
                       {biz.coverImage
-                        ? <img src={biz.coverImage} alt="" aria-hidden="true" loading="lazy" decoding="async" />
+                        ? <ContentImage src={biz.coverImage} alt="" aria-hidden="true" width={640} height={360} sizes="(max-width: 720px) 100vw, 400px" />
                         : <span className="hf-event-fallback" aria-hidden="true"><Building2 size={28} /></span>}
                       <span className="hf-chip">{biz.category}</span>
                       <button
@@ -467,7 +470,7 @@ export default function MemberBusinessDirectory() {
                 <h2>Contact directly</h2>
                 <div className="pp-group-card">
                   {sheetBiz.phone && (
-                    <a href={`tel:${sheetBiz.phone}`} className="pp-row">
+                    <a href={telHref(sheetBiz.phone)} className="pp-row">
                       <span className="pp-row-icon"><Phone size={17} /></span>
                       <span className="pp-row-body"><small>Call</small><strong>{sheetBiz.phone}</strong></span>
                       <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />

@@ -3,13 +3,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link';
 import type { CommunityGroup, CommunityPost, CommunityFeedScope } from '@/types';
 import { COMMUNITY_GROUP_KINDS, type CommunityGroupKind } from '@/types';
-import {
-  fetchCommunityStart, fetchPersonalFeed, fetchGroupsExplore,
-  startGroup, joinCommunityGroup, leaveCommunityGroup,
-} from '@/app/actions/community';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '@/context/app-context';
-import { searchPeople, followMember, unfollowMember, openChat } from '@/app/actions/chat';
 import type { ChatPerson, ChatPeople } from '@/server/repos/chat';
 import { PostCard, PostComposer, CommunityAside } from '@/components/portal/community';
 import PortalLoading from '@/components/portal/PortalLoading';
@@ -19,6 +14,11 @@ import {
   Newspaper, UsersRound, Search, Plus, Users, Check, ChevronRight, X,
   AlertCircle, UserPlus, MessageCircle, Sparkles, Clock, UserRoundCheck,
 } from 'lucide-react';
+import * as communityActions from '@/app/actions/community';
+import * as chatActions from '@/app/actions/chat';
+import { guardActions } from '@/lib/actions-client';
+const { fetchCommunityStart, fetchPersonalFeed, fetchGroupsExplore, startGroup, joinCommunityGroup, leaveCommunityGroup } = guardActions(communityActions);
+const { searchPeople, followMember, unfollowMember, openChat } = guardActions(chatActions);
 
 /**
  * Community, three tabs deep:

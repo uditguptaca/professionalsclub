@@ -4,7 +4,10 @@ import React, { useState } from 'react';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { Send, Mail, MapPin, Shield, CheckCircle } from 'lucide-react';
-import { submitContactMessage } from '@/app/actions/public';
+import * as publicActions from '@/app/actions/public';
+import { guardActions } from '@/lib/actions-client';
+// Only the write is guarded: this module's reads return plain data, not a result.
+const { submitContactMessage } = guardActions(publicActions);
 
 type FieldErrors = { name?: string; email?: string; message?: string };
 

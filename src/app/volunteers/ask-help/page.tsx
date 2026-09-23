@@ -4,8 +4,12 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
-import { getPublicVolunteers, submitVolunteerHelpRequest } from '@/app/actions/public';
 import { ArrowLeft, CheckCircle2, ShieldAlert, Mail, User, Building2, MapPin, Send, Users } from 'lucide-react';
+import { getPublicVolunteers } from '@/app/actions/public';
+import * as publicActions from '@/app/actions/public';
+import { guardActions } from '@/lib/actions-client';
+// Only the write is guarded: this module's reads return plain data, not a result.
+const { submitVolunteerHelpRequest } = guardActions(publicActions);
 
 // The row type lives in a server-only module, so derive it from the action
 // rather than importing it into the browser bundle.

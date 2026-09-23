@@ -1,6 +1,7 @@
 'use client';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Loader2 } from 'lucide-react';
+import { useDismissOnBack } from '@/lib/use-dismiss-on-back';
 
 /**
  * In-app confirmation for destructive actions.
@@ -86,6 +87,9 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
   const onClose = useCallback(() => {
     if (resolveRef.current) settle(false);
   }, [settle]);
+
+  // Android Back is a cancel, not "leave the page with the question unanswered".
+  useDismissOnBack(options !== null, onClose);
 
   const tone: Tone = options?.tone ?? 'danger';
 

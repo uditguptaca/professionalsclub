@@ -1,14 +1,16 @@
 'use client';
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { CommunityReport } from '@/types';
 import type { ModerationItem } from '@/server/repos/community';
-import {
-  fetchModerationQueue, moderateContentItem, fetchModeratorReports, resolveReportAsModerator,
-} from '@/app/actions/community';
+import { useApp } from '@/context/app-context';
 import PortalLoading from '@/components/portal/PortalLoading';
 import { useConfirm } from '@/components/portal/confirm';
 import { AlertCircle, Check, Flag, ShieldCheck, ShieldOff, Trash2, UsersRound, Sparkles } from 'lucide-react';
+import * as communityActions from '@/app/actions/community';
+import { guardActions } from '@/lib/actions-client';
+const { fetchModerationQueue, moderateContentItem, fetchModeratorReports, resolveReportAsModerator, fetchGroups } = guardActions(communityActions);
 
 /**
  * The moderators' queue (0053).
@@ -24,6 +26,8 @@ const when = (iso: string) => new Date(iso).toLocaleString('en-CA', { month: 'sh
 
 export default function ModerationQueuePage() {
   const confirm = useConfirm();
+  const router = useRouter();
+  const { profile } = useApp();
   const [items, setItems] = useState<ModerationItem[] | null>(null);
   const [reports, setReports] = useState<CommunityReport[] | null>(null);
   const [tab, setTab] = useState<'held' | 'reported'>('held');
@@ -38,6 +42,20 @@ export default function ModerationQueuePage() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  // Anyone can type this URL. A member who moderates nothing was told they had
+  // a job they do not have; send them to the feed instead. RLS already keeps
+  // the queue empty for them, so this is about the words, not the data.
+  useEffect(() => {
+    if (!profile || profile.role === 'admin') return;
+    let alive = true;
+    void fetchGroups().then((g) => {
+      if (!alive || !g.ok) return;
+      const moderates = g.data.some((x) => x.myRole === 'owner' || x.myRole === 'admin');
+      if (!moderates) router.replace('/portal/member/community');
+    });
+    return () => { alive = false; };
+  }, [profile, router]);
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(''), 2400);

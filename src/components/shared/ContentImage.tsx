@@ -22,12 +22,33 @@ type Props = Omit<ImageProps, 'src' | 'alt'> & {
   label?: string;
 };
 
+/**
+ * Our Blob store's hostname, inlined at build time by next.config.ts from the
+ * store token - the one remote host the image optimiser is allowed to fetch.
+ * Uploads (logos, covers, post photos, matrimony photos) all live there and
+ * used to be served at their uploaded size: a 2.7 MB logo into a 42 px badge.
+ */
+const BLOB_HOST = process.env.NEXT_PUBLIC_BLOB_HOST;
+
+/** True only for a URL on OUR store; anything else must not reach next/image. */
+export function isOurBlobUrl(url: string): boolean {
+  if (!BLOB_HOST) return false;
+  try {
+    const u = new URL(url);
+    return u.protocol === 'https:' && u.hostname === BLOB_HOST;
+  } catch {
+    return false;
+  }
+}
+
 export default function ContentImage({ src, alt, label, fill, width, height, style, className, ...rest }: Props) {
   const clean = typeof src === 'string' ? src.trim() : '';
 
   // next/image refuses a remote host that is not configured, and content
   // editors paste hosted URLs. A plain <img> shows them instead of throwing.
-  if (/^https?:\/\//i.test(clean)) {
+  // Our own Blob store IS configured, so its files fall through to <Image>
+  // below and come back resized, AVIF/WebP, and cached for a year.
+  if (/^https?:\/\//i.test(clean) && !isOurBlobUrl(clean)) {
     return <img src={clean} alt={alt} className={className} style={{ ...(fill ? { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' } : {}), ...style }} loading="lazy" decoding="async" />;
   }
 

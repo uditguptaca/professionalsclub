@@ -3,13 +3,16 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
-import { submitVolunteerApplication } from '@/app/actions/portal';
 import { AttachmentField, type Attachment } from '@/components/portal/AttachmentField';
 import { SUPPORT_CATEGORIES } from '@/types';
+import { categoryLabel } from '@/lib/help-desk';
 import {
   CheckCircle2, ArrowLeft, ArrowRight, Shield, HandHeart, Check,
   AlertCircle, Sparkles, User,
 } from 'lucide-react';
+import * as portalActions from '@/app/actions/portal';
+import { guardActions } from '@/lib/actions-client';
+const { submitVolunteerApplication } = guardActions(portalActions);
 
 /**
  * Volunteer application, restyled to the profile-hub language: a slim step bar
@@ -299,7 +302,7 @@ export default function VolunteerApplicationPage() {
                       border: on ? '1px solid var(--green-950)' : '1px solid rgba(27,67,50,0.08)',
                     }}
                   >
-                    {on && <Check size={14} aria-hidden="true" style={{ flexShrink: 0 }} />}{cat}
+                    {on && <Check size={14} aria-hidden="true" style={{ flexShrink: 0 }} />}{categoryLabel(cat)}
                   </button>
                 );
               })}

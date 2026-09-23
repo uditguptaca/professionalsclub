@@ -30,7 +30,16 @@ const securityHeaders = [
       "font-src 'self' data:",
       // The browser talks to us and to Blob storage (client uploads). Nothing
       // else - an injected script has nowhere to send what it reads.
-      "connect-src 'self' https://blob.vercel-storage.com https://*.blob.vercel-storage.com",
+      //
+      // @vercel/blob/client 2.x does not PUT to *.blob.vercel-storage.com: it
+      // PUTs to https://vercel.com/api/blob/ with the token our route signs,
+      // and the stored file then lives on the storage host. Without that path
+      // here every browser upload (post photos, matrimony photos, business
+      // logos, chat attachments, help-desk documents) was refused by our own
+      // header - the store's last upload is dated two days before this list
+      // was introduced. The path is a prefix match, so /api/blob/mpu (multipart)
+      // is covered and the rest of vercel.com is not.
+      "connect-src 'self' https://blob.vercel-storage.com https://*.blob.vercel-storage.com https://vercel.com/api/blob/",
       // Post videos and chat clips play from Blob; blob: is the composer's own preview.
       "media-src 'self' blob: https://*.public.blob.vercel-storage.com",
       // What WE may embed. Without this clause default-src 'self' applied, and
@@ -59,8 +68,44 @@ const securityHeaders = [
   },
 ];
 
+/**
+ * Our Blob store's hostname, read off the token the same way isOurUpload() in
+ * src/server/media.ts does (vercel_blob_rw_<STOREID>_<secret>). Every upload
+ * a member or business can make lands on this one host, so it is the only
+ * remote host the image optimiser may fetch from. The same value is inlined
+ * for the client (it is public already: it is in every image URL we store) so
+ * BlobImage knows which URLs may go through next/image without a runtime
+ * "hostname is not configured" throw for anything else.
+ */
+const BLOB_STORE_ID = process.env.BLOB_READ_WRITE_TOKEN?.match(/^vercel_blob_rw_([A-Za-z0-9]+)_/)?.[1]?.toLowerCase();
+const BLOB_HOST = BLOB_STORE_ID ? `${BLOB_STORE_ID}.public.blob.vercel-storage.com` : null;
+
+/**
+ * /public images are not content-hashed (a re-exported /logo.png keeps its
+ * name), so they must never be `immutable`: a week fresh, then a month of
+ * stale-while-revalidate. Before this they went out as `max-age=0` and a
+ * repeat visit was 37 conditional requests for pictures that had not changed.
+ * _next/static is excluded because Next owns its (hashed, immutable) headers.
+ */
+const PUBLIC_IMAGE_SOURCE = '/:path((?!_next/).*\\.(?:png|webp|jpe?g|gif|svg|ico))';
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  env: BLOB_HOST ? { NEXT_PUBLIC_BLOB_HOST: BLOB_HOST } : {},
+
+  /**
+   * Uploaded images used to be served at their original size: a 4000x3000
+   * business logo (2.7 MB) rendered in a 42px badge. With no `images` block
+   * next/image had no remote host to work with, so every Blob URL fell back
+   * to a plain <img>. AVIF first, WebP second, and a year in the optimiser's
+   * cache - Blob filenames carry a random suffix, so a URL never changes
+   * content.
+   */
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    remotePatterns: BLOB_HOST ? [{ protocol: 'https', hostname: BLOB_HOST }] : [],
+    minimumCacheTTL: 31536000,
+  },
   // Dev-only: lets a phone or the Android emulator load this dev server's
   // assets. Without it, Next serves the HTML but blocks /_next/* cross-origin,
   // so nothing hydrates and every button on the page is dead. Ignored in
@@ -91,7 +136,13 @@ const nextConfig: NextConfig = {
   },
 
   async headers() {
-    return [{ source: "/(.*)", headers: securityHeaders }];
+    return [
+      { source: "/(.*)", headers: securityHeaders },
+      {
+        source: PUBLIC_IMAGE_SOURCE,
+        headers: [{ key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=2592000" }],
+      },
+    ];
   },
 };
 

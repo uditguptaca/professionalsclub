@@ -3,10 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/app-context';
-import { updateOwnProfile } from '@/app/actions/portal';
 import { deleteOwnAccount } from '@/app/actions/auth';
-import { fetchMyInsiderRoles, saveWhereIWork, removeWhereIWork } from '@/app/actions/referrals';
-import { getMyMatrimony } from '@/app/actions/matrimony';
 import { authClient } from '@/lib/auth/client';
 import { readAuthError } from '@/lib/auth/errors';
 import { useConfirm } from '@/components/portal/confirm';
@@ -22,6 +19,13 @@ import {
   Trash2, AlertCircle, ChevronRight, Save, X, BadgeCheck, Plus, Check,
   GraduationCap, Link2, Mail, Lock,
 } from 'lucide-react';
+import * as portalActions from '@/app/actions/portal';
+import * as referralsActions from '@/app/actions/referrals';
+import * as matrimonyActions from '@/app/actions/matrimony';
+import { guardActions } from '@/lib/actions-client';
+const { updateOwnProfile } = guardActions(portalActions);
+const { fetchMyInsiderRoles, saveWhereIWork, removeWhereIWork } = guardActions(referralsActions);
+const { getMyMatrimony } = guardActions(matrimonyActions);
 
 /**
  * The profile hub, second pass. The page is a glanceable summary — identity
@@ -518,6 +522,23 @@ export default function MemberProfilePage() {
                 );
               })}
             </div>
+
+            {/* The per-topic switches live on the notifications screen behind
+                a gear nobody found. This sheet is where people look for them. */}
+            {sheet === 'prefs' && (
+              <Link
+                href="/portal/member/notifications?settings=1"
+                className="pp-row"
+                style={{ textDecoration: 'none', margin: '0 0 10px', border: '1px solid rgba(27,67,50,0.08)', borderRadius: '0.85rem' }}
+              >
+                <span className="pp-row-icon"><Bell size={17} /></span>
+                <span className="pp-row-body">
+                  <strong>Notification switches</strong>
+                  <small style={{ whiteSpace: 'normal' }}>Turn chats, referrals, community and the rest on or off, one at a time.</small>
+                </span>
+                <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
+              </Link>
+            )}
 
             {sheetError && (
               <div role="alert" className="community-error" style={{ marginTop: 4 }}>

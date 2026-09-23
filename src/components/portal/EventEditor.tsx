@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { upload } from '@vercel/blob/client';
+import { uploadToBlob } from '@/lib/upload-client';
 import { Plus, Upload, X } from 'lucide-react';
 import { COMMUNITY_CITIES } from '@/lib/cities';
 
@@ -49,11 +49,7 @@ function useImagePicker() {
       if (!file) return;
       setBusy(true);
       try {
-        const blob = await upload(`${prefix}/${file.name}`, file, {
-          access: 'public',
-          handleUploadUrl: '/api/community/upload',
-        });
-        onDone(blob.url);
+        onDone(await uploadToBlob(file, 'image', { prefix }));
       } catch {
         // The caller surfaces save failures; this covers the upload leg only.
       }

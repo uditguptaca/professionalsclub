@@ -5,10 +5,6 @@ import { useParams } from 'next/navigation';
 import { useApp } from '@/context/app-context';
 import type { CommunityGroup } from '@/types';
 import { COMMUNITY_GROUP_KINDS } from '@/types';
-import {
-  fetchGroup, joinCommunityGroup, leaveCommunityGroup, fetchGroupMembers, setGroupRole,
-} from '@/app/actions/community';
-import { followMember, unfollowMember } from '@/app/actions/chat';
 import type { GroupMember } from '@/server/repos/community';
 import { CommunityFeed } from '@/components/portal/community';
 import PortalLoading from '@/components/portal/PortalLoading';
@@ -17,6 +13,11 @@ import {
   ArrowLeft, Users, Check, Plus, AlertCircle, Newspaper, Info, Clock, UserPlus, UserRoundCheck,
   MapPin, Activity, Sparkles, CalendarDays, Crown, ShieldCheck, Shield,
 } from 'lucide-react';
+import * as communityActions from '@/app/actions/community';
+import * as chatActions from '@/app/actions/chat';
+import { guardActions } from '@/lib/actions-client';
+const { fetchGroup, joinCommunityGroup, leaveCommunityGroup, fetchGroupMembers, setGroupRole } = guardActions(communityActions);
+const { followMember, unfollowMember } = guardActions(chatActions);
 
 /**
  * One group, the way Facebook Groups, Discord and Meetup taught people to read

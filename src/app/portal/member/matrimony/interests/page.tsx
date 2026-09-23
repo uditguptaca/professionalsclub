@@ -2,11 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { openChat } from '@/app/actions/chat';
 import { useApp } from '@/context/app-context';
-import {
-  matrimonyLikesStart, respondToInterest, removeFromShortlist, swipeRight,
-} from '@/app/actions/matrimony';
 import type { MatrimonyProfile, MatrimonyProfileCard } from '@/types/matrimony';
 import MatrimonyTabs from '@/components/portal/MatrimonyTabs';
 import PortalLoading from '@/components/portal/PortalLoading';
@@ -15,6 +11,11 @@ import {
   Heart, X, Star, BadgeCheck, Clock, CheckCircle2, XCircle, AlertCircle,
   Check, MessageCircle, Inbox, Trash2, User, ChevronRight, Sparkles,
 } from 'lucide-react';
+import * as chatActions from '@/app/actions/chat';
+import * as matrimonyActions from '@/app/actions/matrimony';
+import { guardActions } from '@/lib/actions-client';
+const { openChat } = guardActions(chatActions);
+const { matrimonyLikesStart, respondToInterest, removeFromShortlist, swipeRight } = guardActions(matrimonyActions);
 
 /**
  * Likes — the other half of the deck. Three lanes:

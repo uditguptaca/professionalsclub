@@ -1,10 +1,12 @@
 'use client';
 import React, { useCallback, useEffect, useState } from 'react';
 import type { PublicInquiry } from '@/server/repos/portal';
-import { fetchInquiries, updateInquiryStatus } from '@/app/actions/portal';
 import {
   Inbox, Mail, HandHeart, Loader2, Check, Clock, Archive, ExternalLink,
 } from 'lucide-react';
+import * as portalActions from '@/app/actions/portal';
+import { guardActions } from '@/lib/actions-client';
+const { fetchInquiries, updateInquiryStatus } = guardActions(portalActions);
 
 type Status = 'new' | 'in_progress' | 'closed';
 

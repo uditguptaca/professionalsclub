@@ -8,11 +8,11 @@ import PortalLoading from '@/components/portal/PortalLoading';
 import EventEditor from '@/components/portal/EventEditor';
 import { useConfirm } from '@/components/portal/confirm';
 import { useApp } from '@/context/app-context';
-import {
-  fetchMyEventsAction, createClubEventAction, updateClubEventAction, deleteClubEventAction,
-} from '@/app/actions/events';
 import type { EventDetail } from '@/server/repos/events';
 import { parseDateOnly } from '@/lib/dates';
+import * as eventsActions from '@/app/actions/events';
+import { guardActions } from '@/lib/actions-client';
+const { fetchMyEventsAction, createClubEventAction, updateClubEventAction, deleteClubEventAction } = guardActions(eventsActions);
 
 /**
  * Club events, posted by the people who run them: admins and approved

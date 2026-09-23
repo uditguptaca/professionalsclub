@@ -22,7 +22,8 @@ export interface HomeFeed {
   city: string | null;
   completenessPct: number;
   newMembers: { id: string; firstName: string; lastName: string; jobTitle: string | null; city: string | null; createdAt: string; followState: 'none' | 'pending' | 'accepted' }[];
-  events: { id: string; title: string; date: string | null; time: string | null; location: string | null; eventType: string; attendees: number; image: string | null; rsvpUrl: string | null; inCity: boolean }[];
+  /** Display total is `attendees + going`, exactly as the Events tab shows it. */
+  events: { id: string; title: string; date: string | null; time: string | null; location: string | null; eventType: string; attendees: number; going: number; image: string | null; rsvpUrl: string | null; inCity: boolean }[];
   groups: { id: string; slug: string; name: string; description: string; memberCount: number; isMember: boolean; inCity: boolean }[];
   jobs: { companyId: string; companyName: string; companyLogo: string | null; companySlug: string; helperCount: number; cityJobs: number; sample: string | null }[];
   businesses: { id: string; name: string; slug: string; logo: string | null; category: string; city: string | null; memberRateText: string | null; offerBadge: string | null }[];
@@ -71,15 +72,20 @@ export async function fetchHomeFeed(userId: string): Promise<HomeFeed> {
            limit 6
         ) t) as new_members,
 
-        -- Upcoming events: city matches first, then the rest.
+        -- Upcoming events: city matches first, then the rest. attendees is
+        -- the organiser's offline baseline; going is the live RSVP count.
+        -- The dashboard showed the baseline alone, so a member who had just
+        -- RSVP'd read "0 attending" on the screen they land on.
         (select coalesce(json_agg(t), '[]'::json) from (
-          select id, title, event_date as date, event_time as time, location,
-                 event_type, attendees, image, rsvp_url,
+          select e.id, e.title, e.event_date as date, e.event_time as time, e.location,
+                 e.event_type, e.attendees, coalesce(a.going, 0)::int as going,
+                 e.image, e.rsvp_url,
                  (coalesce((select city from me), '') <> '' and
-                  location ilike '%' || (select city from me) || '%') as in_city
-            from public.events
-           where status = 'upcoming' and is_published
-           order by in_city desc, event_date asc nulls last
+                  e.location ilike '%' || (select city from me) || '%') as in_city
+            from public.events e
+            left join public.event_attendance a on a.event_id = e.id
+           where e.status = 'upcoming' and e.is_published
+           order by in_city desc, e.event_date asc nulls last
            limit 4
         ) t) as events,
 
@@ -162,7 +168,7 @@ export async function fetchHomeFeed(userId: string): Promise<HomeFeed> {
       events: j(row?.events).map((e: Record<string, unknown>) => ({
         id: e.id as string, title: e.title as string, date: iso(e.date), time: (e.time as string | null) ?? null,
         location: (e.location as string | null) ?? null, eventType: e.event_type as string,
-        attendees: Number(e.attendees ?? 0), image: (e.image as string | null) ?? null,
+        attendees: Number(e.attendees ?? 0), going: Number(e.going ?? 0), image: (e.image as string | null) ?? null,
         rsvpUrl: (e.rsvp_url as string | null) ?? null, inCity: Boolean(e.in_city),
       })),
       groups: j(row?.groups).map((g: Record<string, unknown>) => ({

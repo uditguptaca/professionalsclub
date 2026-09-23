@@ -5,8 +5,10 @@ import {
   CalendarCheck, Check, X, AlertCircle, Building2, MapPin, Ticket, Clock, ExternalLink,
 } from 'lucide-react';
 import PortalLoading from '@/components/portal/PortalLoading';
-import { fetchModerationQueueAction, moderateEventAction } from '@/app/actions/events';
 import type { PendingEvent } from '@/server/repos/events';
+import * as eventsActions from '@/app/actions/events';
+import { guardActions } from '@/lib/actions-client';
+const { fetchModerationQueueAction, moderateEventAction } = guardActions(eventsActions);
 
 /**
  * Business events, before members see them.

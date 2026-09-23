@@ -5,9 +5,12 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import { usePublicContent } from '@/context/public-content';
 import { Calendar, MapPin, Clock, ArrowRight, CheckCircle2, Sparkles, CalendarOff } from 'lucide-react';
-import { submitContactMessage } from '@/app/actions/public';
 import MeetupEventVideo from '@/components/events/MeetupEventVideo';
 import type { CommunityEvent } from '@/types';
+import * as publicActions from '@/app/actions/public';
+import { guardActions } from '@/lib/actions-client';
+// Only the write is guarded: this module's reads return plain data, not a result.
+const { submitContactMessage } = guardActions(publicActions);
 
 const CONTACT_EMAIL = 'support@professionalsclub.ca';
 

@@ -133,8 +133,8 @@ export default function CompaniesPage() {
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99, background: 'rgba(27,67,50,0.09)', color: 'var(--green-800)', fontSize: '0.74rem', fontWeight: 700 }}>
                         <ShieldCheck size={13} />
                         {company.helperCount === 1
-                          ? '1 member here can help'
-                          : `${company.helperCount} members here can help`}
+                          ? '1 member here can refer you'
+                          : `${company.helperCount} members here can refer you`}
                       </span>
                     ) : (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99, background: 'rgba(0,0,0,0.045)', color: 'var(--text-muted)', fontSize: '0.74rem', fontWeight: 600 }}>

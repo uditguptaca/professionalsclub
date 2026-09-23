@@ -2,12 +2,19 @@
 import React, { useEffect, useState } from 'react';
 import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
+import { useConfirm } from '@/components/portal/confirm';
+import { useDismissOnBack } from '@/lib/use-dismiss-on-back';
+import { categoryLabel } from '@/lib/help-desk';
 import {
   ClipboardList, CheckCircle, Clock, XCircle, Shield, HandHeart,
-  ChevronRight, CalendarClock, Layers, Gauge, X,
+  ChevronRight, CalendarClock, Layers, Gauge, X, PauseCircle, PlayCircle,
+  Check, AlertCircle, LogOut,
 } from 'lucide-react';
 import Link from 'next/link';
-import type { CaseAssignment } from '@/types';
+import { SUPPORT_CATEGORIES, type CaseAssignment, type VolunteerApplication } from '@/types';
+import * as portalActions from '@/app/actions/portal';
+import { guardActions } from '@/lib/actions-client';
+const { updateMyVolunteering } = guardActions(portalActions);
 
 /**
  * Volunteer status, restyled to the profile-hub language: the application is a
@@ -22,6 +29,21 @@ const APP_STATUS: Record<string, { color: string; bg: string; icon: React.ReactN
   new_application: { color: 'var(--text-accent)', bg: 'rgba(232,93,4,0.1)', icon: <ClipboardList size={17} />, label: 'Submitted for review' },
   rejected: { color: 'var(--error-600)', bg: 'var(--error-50)', icon: <XCircle size={17} />, label: 'Not accepted' },
   on_hold: { color: 'var(--text-muted)', bg: 'var(--bg-secondary)', icon: <Clock size={17} />, label: 'On hold' },
+  inactive: { color: 'var(--text-muted)', bg: 'var(--bg-secondary)', icon: <PauseCircle size={17} />, label: 'Stopped' },
+};
+
+const longDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('en-CA', { day: 'numeric', month: 'long', year: 'numeric' });
+
+/** A pause set in the past has expired: treat it as no pause. */
+const isPaused = (app: VolunteerApplication) =>
+  Boolean(app.pausedUntil && new Date(app.pausedUntil).getTime() > Date.now());
+
+/** Default pause: a month from today, as a yyyy-mm-dd for <input type="date">. */
+const monthAhead = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 30);
+  return d.toISOString().slice(0, 10);
 };
 
 const ACTIVE_STATUSES = ['pending', 'accepted', 'in_progress'];
@@ -34,10 +56,50 @@ function chipStyle(status: string): React.CSSProperties {
 }
 
 export default function MyVolunteerPage() {
-  const { volunteerApps, assignments } = usePortal();
-  const { currentUserId } = useApp();
+  const { volunteerApps, assignments, refresh } = usePortal();
+  const { currentUserId, refreshProfile } = useApp();
+  const confirm = useConfirm();
   const [tab, setTab] = useState<'all' | 'active' | 'done'>('all');
   const [open, setOpen] = useState<CaseAssignment | null>(null);
+  useDismissOnBack(open !== null, () => setOpen(null));
+
+  // ---- Your availability (0059) ------------------------------------------
+  // Each control saves on its own; one `busy` key so two saves never race.
+  const [busy, setBusy] = useState<'' | 'pause' | 'cap' | 'areas' | 'stop'>('');
+  const [availError, setAvailError] = useState('');
+  const [toast, setToast] = useState('');
+  const [pausePicker, setPausePicker] = useState(false);
+  const [pauseUntil, setPauseUntil] = useState(monthAhead);
+  const [capDraft, setCapDraft] = useState<number | null>(null);
+  const [areasDraft, setAreasDraft] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(''), 2600);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  const save = async (
+    key: 'pause' | 'cap' | 'areas' | 'stop',
+    patch: Parameters<typeof updateMyVolunteering>[0],
+    done: string,
+  ) => {
+    if (busy) return false;
+    setBusy(key);
+    setAvailError('');
+    const r = await updateMyVolunteering(patch);
+    if (r.ok) {
+      // The page renders from the portal snapshot, so re-read it; withdrawing
+      // also changes is_volunteer on the profile, which the shell reads.
+      await refresh();
+      if (patch.status) await refreshProfile();
+      setToast(done);
+    } else {
+      setAvailError(r.error);
+    }
+    setBusy('');
+    return r.ok;
+  };
 
   // The detail sheet locks background scroll and closes on Escape, same as
   // every other sheet in the portal.
@@ -70,6 +132,42 @@ export default function MyVolunteerPage() {
 
   const sc = APP_STATUS[myApp.status] || APP_STATUS.new_application;
   const approved = myApp.status === 'approved';
+  const stopped = myApp.status === 'inactive';
+  const paused = isPaused(myApp);
+  const openCases = myAssignments.filter(a => ACTIVE_STATUSES.includes(a.status)).length;
+
+  const stopVolunteering = async () => {
+    const ok = await confirm({
+      title: 'Stop volunteering?',
+      message: openCases > 0
+        ? `Your application is marked stopped and the club is told. Your ${openCases === 1 ? 'open case stays' : `${openCases} open cases stay`} assigned to you until an admin moves ${openCases === 1 ? 'it' : 'them'}, so finish or hand back what you can. You can apply again any time.`
+        : 'Your application is marked stopped and the club is told. You get no new cases. You can apply again any time.',
+      confirmLabel: 'Stop volunteering',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    await save('stop', { status: 'withdraw' }, 'You have stopped volunteering');
+  };
+
+  const areaChip = (cat: string, on: boolean, onToggle: () => void) => (
+    <button
+      key={cat}
+      type="button"
+      onClick={onToggle}
+      aria-pressed={on}
+      className="pp-chip"
+      style={{
+        minHeight: 44, maxWidth: '100%', padding: '0.5rem 0.95rem',
+        borderRadius: 99, cursor: 'pointer', textAlign: 'left',
+        fontSize: '0.82rem', lineHeight: 1.35, fontWeight: on ? 750 : 650,
+        background: on ? 'var(--green-950)' : 'var(--bg-secondary)',
+        color: on ? '#fff' : 'var(--text-secondary)',
+        border: on ? '1px solid var(--green-950)' : '1px solid rgba(27,67,50,0.08)',
+      }}
+    >
+      {on && <Check size={14} aria-hidden="true" style={{ flexShrink: 0 }} />}{categoryLabel(cat)}
+    </button>
+  );
 
   const activeCount = myAssignments.filter(a => ACTIVE_STATUSES.includes(a.status)).length;
   const doneCount = myAssignments.filter(a => a.status === 'completed').length;
@@ -115,7 +213,7 @@ export default function MyVolunteerPage() {
               <span className="pp-row-icon"><Layers size={17} /></span>
               <span className="pp-row-body">
                 <small>Areas you cover</small>
-                <strong>{myApp.expertiseAreas.length > 0 ? myApp.expertiseAreas.join(' · ') : 'None selected'}</strong>
+                <strong>{myApp.expertiseAreas.length > 0 ? myApp.expertiseAreas.map(categoryLabel).join(' · ') : 'None selected'}</strong>
               </span>
             </div>
             <div className="pp-row pp-row-static">
@@ -126,12 +224,189 @@ export default function MyVolunteerPage() {
               </span>
             </div>
           </div>
-          {!approved && (
+          {!approved && !stopped && (
             <p className="pp-group-sub" style={{ margin: '0.6rem 0 0' }}>
               The team reviews every application by hand. You will be able to see assigned cases here once you are approved.
             </p>
           )}
+          {stopped && (
+            <div style={{ marginTop: 10 }}>
+              <p className="pp-group-sub" style={{ margin: '0 0 10px' }}>
+                You stopped volunteering. The club assigns you nothing new. Apply again and the team reviews it like a new application.
+              </p>
+              <button
+                type="button"
+                className="btn btn-outline"
+                disabled={busy !== ''}
+                onClick={() => void save('stop', { status: 'reapply' }, 'Application sent for review again')}
+              >
+                <HandHeart size={15} aria-hidden="true" /> Volunteer again
+              </button>
+            </div>
+          )}
         </section>
+
+        {/* ---- Your availability (0059) ----
+            Before this card the page had no controls at all: a volunteer who
+            got a job, or hit a crisis of their own, could only go silent or
+            delete their account. */}
+        {approved && (
+          <section className="pp-group">
+            <h2>Your availability</h2>
+            <p className="pp-group-sub">Pause when life gets busy, change how much you take on, or stop. Nothing here needs the club's approval.</p>
+            <div className="pp-group-card">
+              <div className="pp-row pp-row-static" style={{ alignItems: 'center' }}>
+                <span
+                  className="pp-row-icon"
+                  style={paused ? { background: 'rgba(245,158,11,0.12)', color: 'var(--accent-700)' } : undefined}
+                >
+                  {paused ? <PauseCircle size={17} /> : <PlayCircle size={17} />}
+                </span>
+                <span className="pp-row-body">
+                  <small>New cases</small>
+                  <strong style={{ whiteSpace: 'normal' }}>
+                    {paused ? `Paused until ${longDate(myApp.pausedUntil as string)}` : 'Taking new cases'}
+                  </strong>
+                </span>
+                {paused ? (
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    disabled={busy !== ''}
+                    onClick={() => void save('pause', { pausedUntil: null }, 'Taking new cases again')}
+                  >
+                    {busy === 'pause' ? 'Saving…' : 'Resume'}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    aria-expanded={pausePicker}
+                    aria-controls="mv-pause"
+                    onClick={() => setPausePicker(v => !v)}
+                  >
+                    Pause
+                  </button>
+                )}
+              </div>
+
+              {pausePicker && !paused && (
+                <form
+                  id="mv-pause"
+                  onSubmit={e => {
+                    e.preventDefault();
+                    void save('pause', { pausedUntil: new Date(`${pauseUntil}T23:59:59`).toISOString() }, 'Paused. The club assigns you nothing until then')
+                      .then(ok => { if (ok) setPausePicker(false); });
+                  }}
+                  style={{ padding: '0 1rem 0.95rem 3.9rem', display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}
+                >
+                  <div className="pp-field" style={{ flex: '1 1 10rem', margin: 0 }}>
+                    <label htmlFor="mv-pause-until">Pause new cases until</label>
+                    <input
+                      id="mv-pause-until"
+                      type="date"
+                      value={pauseUntil}
+                      min={new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)}
+                      onChange={e => setPauseUntil(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <button type="submit" className="btn btn-primary" disabled={busy !== '' || !pauseUntil} style={{ minHeight: 44 }}>
+                    {busy === 'pause' ? 'Saving…' : 'Pause until then'}
+                  </button>
+                  <p style={{ flexBasis: '100%', margin: 0, fontSize: '0.76rem', lineHeight: 1.5, color: 'var(--text-muted)' }}>
+                    Cases already assigned to you stay yours. You can resume any day.
+                  </p>
+                </form>
+              )}
+
+              <div className="pp-row pp-row-static" style={{ alignItems: 'center' }}>
+                <span className="pp-row-icon"><Gauge size={17} /></span>
+                <span className="pp-row-body">
+                  <label htmlFor="mv-cap" style={{ display: 'block', fontSize: '0.72rem', fontWeight: 650, color: 'var(--text-muted)' }}>
+                    Cases per month at most
+                  </label>
+                  <input
+                    id="mv-cap"
+                    type="number"
+                    min={1}
+                    max={100}
+                    inputMode="numeric"
+                    value={capDraft ?? myApp.maxCasesPerMonth}
+                    onChange={e => setCapDraft(Number(e.target.value))}
+                    style={{
+                      width: '5.5rem', minHeight: 40, padding: '0 0.6rem', marginTop: 2,
+                      border: '1px solid rgba(27,67,50,0.14)', borderRadius: '0.6rem',
+                      font: 'inherit', fontSize: '0.95rem', fontWeight: 700,
+                    }}
+                  />
+                </span>
+                {capDraft !== null && capDraft !== myApp.maxCasesPerMonth && (
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    disabled={busy !== '' || !(capDraft >= 1 && capDraft <= 100)}
+                    onClick={() => void save('cap', { maxCasesPerMonth: capDraft }, 'Monthly cap saved').then(ok => { if (ok) setCapDraft(null); })}
+                  >
+                    {busy === 'cap' ? 'Saving…' : 'Save'}
+                  </button>
+                )}
+              </div>
+
+              <div style={{ padding: '0.85rem 1rem 1rem' }}>
+                <p style={{ margin: '0 0 8px', fontSize: '0.72rem', fontWeight: 650, color: 'var(--text-muted)' }}>
+                  Areas you cover
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }} role="group" aria-label="Areas you cover">
+                  {SUPPORT_CATEGORIES.filter(c => c !== 'Other').map(cat => {
+                    const current = areasDraft ?? myApp.expertiseAreas;
+                    const on = current.includes(cat);
+                    return areaChip(cat, on, () =>
+                      setAreasDraft(on ? current.filter(c => c !== cat) : [...current, cat]));
+                  })}
+                </div>
+                {areasDraft !== null && (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      disabled={busy !== '' || areasDraft.length === 0}
+                      onClick={() => void save('areas', { expertiseAreas: areasDraft }, 'Areas saved').then(ok => { if (ok) setAreasDraft(null); })}
+                    >
+                      {busy === 'areas' ? 'Saving…' : 'Save areas'}
+                    </button>
+                    <button type="button" className="btn btn-ghost btn-sm" disabled={busy !== ''} onClick={() => setAreasDraft(null)}>
+                      Cancel
+                    </button>
+                    {areasDraft.length === 0 && (
+                      <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>Keep at least one area, or stop volunteering below.</span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                className="pp-row pp-row-danger"
+                onClick={() => void stopVolunteering()}
+                disabled={busy !== ''}
+              >
+                <span className="pp-row-icon"><LogOut size={17} /></span>
+                <span className="pp-row-body">
+                  <strong>{busy === 'stop' ? 'Stopping…' : 'Stop volunteering'}</strong>
+                  <small style={{ whiteSpace: 'normal' }}>No new cases. Open ones stay yours until the club moves them.</small>
+                </span>
+                <ChevronRight size={16} aria-hidden="true" className="pp-row-go" />
+              </button>
+            </div>
+
+            {availError && (
+              <div role="alert" className="community-error" style={{ marginTop: 10 }}>
+                <AlertCircle size={15} aria-hidden="true" /> {availError}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* ---- Note from the team ---- */}
         {myApp.adminNotes && approved && (
@@ -143,8 +418,11 @@ export default function MyVolunteerPage() {
           </section>
         )}
 
-        {/* ---- Work queue ---- */}
-        {approved && (
+        {/* ---- Work queue ----
+            Also shown to a volunteer who stopped while still holding cases: the
+            confirm dialog told them those stay theirs until the club moves them,
+            so they must stay visible. */}
+        {(approved || myAssignments.length > 0) && (
           <section className="pp-group">
             <h2>Your cases</h2>
             <p className="pp-group-sub">Tap a case to read the full brief and respond through the club.</p>
@@ -224,6 +502,10 @@ export default function MyVolunteerPage() {
           </section>
         )}
       </div>
+
+      {toast && (
+        <div role="status" className="pp-toast">{toast}</div>
+      )}
 
       {/* ---- Case detail sheet ---- */}
       {open && (

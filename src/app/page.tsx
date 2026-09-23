@@ -5,8 +5,8 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import HeroStopMotion from '@/components/home/HeroStopMotion';
 import { Reveal, WordReveal, Stagger, StaggerItem, CountUp, Marquee, Parallax } from '@/components/motion/primitives';
-import { getVerifiedBusinesses } from '@/app/actions/public';
 import { SITE_STATS } from '@/lib/site-stats';
+import { getVerifiedBusinesses } from '@/app/actions/public';
 
 /**
  * Homepage.

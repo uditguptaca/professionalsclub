@@ -3,8 +3,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
-import { getPublicVolunteers } from '@/app/actions/public';
 import { Search, MapPin, Building2, Users, UserCheck, ShieldCheck, Clock, Languages } from 'lucide-react';
+import { getPublicVolunteers } from '@/app/actions/public';
 
 /** Derived from the action so the page never imports the server repository. */
 type Volunteer = Awaited<ReturnType<typeof getPublicVolunteers>>[number];

@@ -9,11 +9,15 @@ import {
 import PortalLoading from '@/components/portal/PortalLoading';
 import CouponCode from '@/components/portal/CouponCode';
 import { PostCard } from '@/components/portal/community';
-import { fetchBusinessPageAction, claimCouponAction } from '@/app/actions/events';
-import { fetchBusinessPostsAction } from '@/app/actions/business';
 import type { MemberBusinessPage, MemberCoupon } from '@/server/repos/offers';
 import type { CommunityPost } from '@/types';
 import { parseDateOnly } from '@/lib/dates';
+import { telHref } from '@/lib/phone';
+import * as eventsActions from '@/app/actions/events';
+import * as businessActions from '@/app/actions/business';
+import { guardActions } from '@/lib/actions-client';
+const { fetchBusinessPageAction, claimCouponAction } = guardActions(eventsActions);
+const { fetchBusinessPostsAction } = guardActions(businessActions);
 
 /**
  * A business, for a member standing in front of it.
@@ -331,7 +335,7 @@ export default function MemberBusinessPage() {
               </a>
             )}
             {page.phone && (
-              <a href={`tel:${page.phone}`} style={ROW}>
+              <a href={telHref(page.phone)} style={ROW}>
                 <Phone size={16} aria-hidden="true" style={{ color: 'var(--primary-600)' }} />
                 <span style={{ flex: 1 }}>{page.phone}</span>
               </a>

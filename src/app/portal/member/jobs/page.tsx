@@ -3,13 +3,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '@/context/app-context';
-import { fetchJobsBoard, fetchCompanyJobs } from '@/app/actions/referrals';
 import JobBoard from '@/components/portal/JobBoard';
 import JobFilters, {
   NO_FILTERS, matchesJobFilters, activeFilterCount, type JobFilterState,
 } from '@/components/portal/JobFilters';
 import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
-import { companyPeople, requestReferral, referralQuota } from '@/app/actions/chat';
 import type { Company } from '@/types';
 import type { CompanyInsiderEntry } from '@/server/repos/chat';
 import type { ScoredJob } from '@/server/repos/referrals';
@@ -18,6 +16,11 @@ import {
   Search, Building2, Users, Briefcase, ArrowLeft, ArrowRight, ExternalLink,
   Check, Loader2, ShieldCheck, Send, AlertCircle, BadgeCheck, UserPlus, X, Plus,
 } from 'lucide-react';
+import * as referralsActions from '@/app/actions/referrals';
+import * as chatActions from '@/app/actions/chat';
+import { guardActions } from '@/lib/actions-client';
+const { fetchJobsBoard, fetchCompanyJobs } = guardActions(referralsActions);
+const { companyPeople, requestReferral, referralQuota } = guardActions(chatActions);
 
 /**
  * Jobs, by company. Three steps: pick an employer, pick the roles, pick who you
@@ -550,8 +553,9 @@ export default function MemberJobsPage() {
         <header style={{ marginBottom: 12 }}>
           <h1 style={TITLE}>Jobs</h1>
           <p style={SUB}>
-            Every open role our employers are advertising. Open one to apply
-            yourself, or to ask a member who works there to refer you.
+            Pulled automatically from employer career sites, not checked by the
+            club. Open one to apply yourself, or to ask a member who works there
+            to refer you.
           </p>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
             <Link href="/portal/member/referrals" style={QUIET_LINK}>
@@ -698,7 +702,7 @@ export default function MemberJobsPage() {
                       {c.openJobsCount > 0 ? `${c.openJobsCount} open` : 'Careers'}
                     </span>
                     {c.helperCount > 0 && (
-                      <span className="pp-chip" style={CHIP_GREEN}>{c.helperCount} can refer</span>
+                      <span className="pp-chip" style={CHIP_GREEN}>{c.helperCount} can refer you</span>
                     )}
                   </span>
                 </button>
@@ -756,7 +760,7 @@ export default function MemberJobsPage() {
             }}
           >
             <ShieldCheck size={15} aria-hidden="true" style={{ flexShrink: 0 }} />
-            You can send {quota.limit - quota.used} of {quota.limit} referral requests this week.
+            You have {quota.limit - quota.used} referral {quota.limit - quota.used === 1 ? 'request' : 'requests'} left this week ({quota.limit} per week).
           </p>
         )}
 

@@ -1,9 +1,11 @@
 'use client';
 import React, { useCallback, useEffect, useState } from 'react';
 import type { CommunityReport, CommunityReportStatus } from '@/types';
-import { fetchCommunityReports, resolveCommunityReport } from '@/app/actions/community';
 import { Flag, ShieldOff, ShieldCheck, Loader2 } from 'lucide-react';
 import { useConfirm } from '@/components/portal/confirm';
+import * as communityActions from '@/app/actions/community';
+import { guardActions } from '@/lib/actions-client';
+const { fetchCommunityReports, resolveCommunityReport } = guardActions(communityActions);
 
 /**
  * Moderation queue for community content. Reports arrive from members

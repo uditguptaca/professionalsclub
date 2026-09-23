@@ -1,10 +1,5 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
-import { adminMatrimonyOverview } from '@/app/actions/matrimony';
-import {
-  fetchPendingMatrimonyPhotos, updateMatrimonyPhotoApproval,
-  resolveMatrimonyReport, resolveMatrimonyVerification,
-} from '@/app/actions/portal';
 import { useApp } from '@/context/app-context';
 import Link from 'next/link';
 import {
@@ -21,6 +16,11 @@ import type {
   MatrimonyAdminAudit,
   MatrimonyProfileStatus,
 } from '@/types/matrimony';
+import * as matrimonyActions from '@/app/actions/matrimony';
+import * as portalActions from '@/app/actions/portal';
+import { guardActions } from '@/lib/actions-client';
+const { adminMatrimonyOverview } = guardActions(matrimonyActions);
+const { fetchPendingMatrimonyPhotos, updateMatrimonyPhotoApproval, resolveMatrimonyReport, resolveMatrimonyVerification } = guardActions(portalActions);
 
 // ========== HELPERS ==========
 const STATUS_COLORS: Record<MatrimonyProfileStatus, { bg: string; color: string; label: string }> = {

@@ -4,8 +4,8 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import Image from 'next/image';
 import { Briefcase, DollarSign, ShieldCheck, Globe, PlayCircle, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
-import { getPublicVideos } from '@/app/actions/public';
 import type { PublicVideo } from '@/server/repos/public-content';
+import { getPublicVideos } from '@/app/actions/public';
 
 const CATEGORY_CONFIG: Record<string, { icon: React.ReactNode; color: string; bgColor: string; borderColor: string; description: string }> = {
   'Career & Job Search': {

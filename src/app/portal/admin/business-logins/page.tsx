@@ -7,11 +7,10 @@ import {
 import PortalLoading from '@/components/portal/PortalLoading';
 import { useConfirm } from '@/components/portal/confirm';
 import { usePortal } from '@/context/portal-context';
-import {
-  adminListInvitesAction, adminInviteBusinessAction, adminRevokeInviteAction,
-  adminSetBusinessLoginStatusAction,
-} from '@/app/actions/business';
 import type { BusinessInvite, BusinessLogin } from '@/server/repos/business-invites';
+import * as businessActions from '@/app/actions/business';
+import { guardActions } from '@/lib/actions-client';
+const { adminListInvitesAction, adminInviteBusinessAction, adminRevokeInviteAction, adminSetBusinessLoginStatusAction } = guardActions(businessActions);
 
 /**
  * Who can sign in as a business.

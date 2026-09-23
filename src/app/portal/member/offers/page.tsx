@@ -7,8 +7,10 @@ import {
 import PortalLoading from '@/components/portal/PortalLoading';
 import CouponCode from '@/components/portal/CouponCode';
 import { readCache, writeCache } from '@/lib/swr-cache';
-import { fetchOffersAction, claimCouponAction } from '@/app/actions/events';
 import type { OffersHome, MemberCoupon } from '@/server/repos/offers';
+import * as eventsActions from '@/app/actions/events';
+import { guardActions } from '@/lib/actions-client';
+const { fetchOffersAction, claimCouponAction } = guardActions(eventsActions);
 
 /**
  * Member offers: what the club's businesses are giving members, and the codes

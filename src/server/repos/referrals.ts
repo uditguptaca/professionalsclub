@@ -215,8 +215,10 @@ export async function listCompanyJobs(userId: string, companyId: string): Promis
       )
       select j.*,
              (select row_to_json(me) from me) as match_profile,
-             (select count(*) from public.company_insiders i
-               where i.company_id = j.company_id and i.can_refer)::int as helper_count
+             -- company_insiders is RLS-restricted to the caller's own row, so a
+             -- count on it is 0 or 1 for a member. The view counts as its owner.
+             coalesce((select h.helper_count from public.company_helper_counts h
+                        where h.id = j.company_id), 0)::int as helper_count
         from public.company_jobs j
        where j.company_id = ${companyId}::uuid and j.is_open
        order by j.posted_at desc nulls last, j.title asc
@@ -325,8 +327,8 @@ export async function suggestedRolesOn(
         select j.id as job_id, j.title, j.location, j.apply_url, j.posted_at,
                c.id as company_id, c.name as company_name, c.logo as company_logo,
                c.slug as company_slug,
-               (select count(*) from public.company_insiders i
-                 where i.company_id = c.id and i.can_refer)::int as helper_count
+               coalesce((select h.helper_count from public.company_helper_counts h
+                          where h.id = c.id), 0)::int as helper_count
           from public.company_jobs j
           join public.companies c on c.id = j.company_id
          where j.is_open and c.is_active

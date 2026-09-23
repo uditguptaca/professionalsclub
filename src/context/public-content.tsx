@@ -1,10 +1,10 @@
 'use client';
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { getPublicContent } from '@/app/actions/public';
 import type {
   JobPosting, NewsArticle, TeamMember, DonationCampaign,
   EBook, VideoWorkshop, ContentTemplate, CommunityEvent, Company,
 } from '@/types';
+import { getPublicContent } from '@/app/actions/public';
 
 /**
  * Admin-managed content for the PUBLIC pages.

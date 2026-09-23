@@ -62,6 +62,13 @@ export async function proxy(request: NextRequest) {
     .getAll()
     .some((c) => c.name.endsWith('session_token') && Boolean(c.value));
 
+  // A marketing page from a browser with no session token: there is nobody to
+  // identify and nothing for the SDK to re-issue, so the upstream call below
+  // would only be thrown away. It cost every anonymous /, /about, /jobs and
+  // /events about 700 ms of TTFB. Portal paths still go through the check so
+  // a signed-out visitor is turned away before the page starts rendering.
+  if (!pathname.startsWith('/portal') && !hasSessionCookie) return NextResponse.next();
+
   let session: Awaited<ReturnType<typeof auth.getSession>>['data'] = null;
   let checkFailed = false;
   try {

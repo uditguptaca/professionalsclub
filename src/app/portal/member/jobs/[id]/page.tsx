@@ -2,7 +2,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { fetchJobDetail, setJobApplied, curatorUpdateRole } from '@/app/actions/referrals';
 import type { JobDetail } from '@/server/repos/job-board';
 import PortalLoading from '@/components/portal/PortalLoading';
 import { useApp } from '@/context/app-context';
@@ -14,6 +13,9 @@ import {
   AlertCircle, BadgeCheck, Building2, CalendarDays, Check, ExternalLink,
   MapPin, Send, Star, Users, XCircle,
 } from 'lucide-react';
+import * as referralsActions from '@/app/actions/referrals';
+import { guardActions } from '@/lib/actions-client';
+const { fetchJobDetail, setJobApplied, curatorUpdateRole } = guardActions(referralsActions);
 
 /**
  * One role, and the two things a member can do about it.
@@ -31,6 +33,11 @@ import {
  */
 
 const HAIRLINE = '1px solid rgba(27, 67, 50, 0.08)';
+
+const ACTION: React.CSSProperties = {
+  minHeight: 52, justifyContent: 'center', gap: 8,
+  fontSize: '0.95rem', fontWeight: 800,
+};
 
 const CHIP: React.CSSProperties = {
   display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -144,6 +151,34 @@ export default function JobDetailPage() {
   const facets = facetsOf(job.title, job.location);
   const posted = relative(job.postedAt);
   const logo = job.companyLogo?.trim() || '';
+  const hasReferrers = job.helperCount > 0;
+
+  const applyButton = (
+    <a
+      key="apply"
+      href={job.applyUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={() => { if (!job.applied) void markApplied(true); }}
+      className={hasReferrers ? 'btn btn-outline' : 'btn btn-primary'}
+      style={ACTION}
+    >
+      <ExternalLink size={17} aria-hidden="true" /> Apply on your own
+    </a>
+  );
+  const askButton = (
+    <button
+      key="ask"
+      type="button"
+      className={hasReferrers ? 'btn btn-primary' : 'btn btn-outline'}
+      onClick={() => router.push(
+        `/portal/member/jobs?company=${job.companyId}&role=${job.id}&ask=1`
+      )}
+      style={ACTION}
+    >
+      <Send size={17} aria-hidden="true" /> Ask for a referral
+    </button>
+  );
 
   return (
     <div style={{ maxWidth: '44rem' }}>
@@ -254,46 +289,23 @@ export default function JobDetailPage() {
         </div>
       ) : (
         <>
-          {/* THE choice. Two actions, equal weight, nothing else competing. */}
+          {/* THE choice. Two actions, and the one that is actually open to
+              this member leads: a referral when someone here has offered one,
+              a cold application otherwise. Referrals are the club's reason to
+              exist, so they are never the second button when they are real. */}
           <div style={{ display: 'grid', gap: 10, marginBottom: 14 }}>
-            <a
-              href={job.applyUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => { if (!job.applied) void markApplied(true); }}
-              className="btn btn-primary"
-              style={{
-                minHeight: 52, justifyContent: 'center', gap: 8,
-                fontSize: '0.95rem', fontWeight: 800,
-              }}
-            >
-              <ExternalLink size={17} aria-hidden="true" /> Apply on your own
-            </a>
-
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={() => router.push(
-                `/portal/member/jobs?company=${job.companyId}&role=${job.id}&ask=1`
-              )}
-              style={{
-                minHeight: 52, justifyContent: 'center', gap: 8,
-                fontSize: '0.95rem', fontWeight: 800,
-              }}
-            >
-              <Send size={17} aria-hidden="true" /> Ask for a referral
-            </button>
+            {/* DOM order follows visual order, so the tab order matches. */}
+            {hasReferrers ? <>{askButton}{applyButton}</> : <>{applyButton}{askButton}</>}
           </div>
 
-          {job.helperCount === 0 && (
-            <p style={{
-              margin: '0 0 14px', fontSize: '0.8rem', lineHeight: 1.5,
-              color: 'var(--text-secondary)',
-            }}>
-              Nobody at {job.companyName} has offered to refer yet, so applying
-              yourself is the faster route today.
-            </p>
-          )}
+          <p style={{
+            margin: '0 0 14px', fontSize: '0.8rem', lineHeight: 1.5,
+            color: 'var(--text-secondary)',
+          }}>
+            {hasReferrers
+              ? `${job.helperCount} ${job.helperCount === 1 ? 'member' : 'members'} at ${job.companyName} ${job.helperCount === 1 ? 'has' : 'have'} offered to refer. They see your name when you ask.`
+              : `Nobody at ${job.companyName} has offered to refer yet, so applying yourself is the faster route today.`}
+          </p>
 
           {job.applied && (
             <div style={{

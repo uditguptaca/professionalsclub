@@ -1,5 +1,6 @@
 import 'server-only';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { cache } from 'react';
 import { auth } from '@/lib/auth/server';
 import { withUser, withElevated, one } from '@/server/db';
@@ -26,6 +27,16 @@ export type Session = { userId: string; email: string; name: string | null };
  */
 export const getSession = cache(async (): Promise<Session | null> => {
   try {
+    // No session-token cookie means this request cannot be signed in, however
+    // many times the auth service is asked. The root layout resolves the
+    // session on every route, so before this an anonymous visit to /about
+    // paid an upstream call, a 150 ms sleep and a second call to learn that.
+    // The name check matches the proxy's (src/proxy.ts).
+    const hasSessionCookie = (await cookies())
+      .getAll()
+      .some((c) => c.name.endsWith('session_token') && Boolean(c.value));
+    if (!hasSessionCookie) return null;
+
     let data = (await auth.getSession()).data;
     // One retry before giving up. A transient upstream failure (a rate limit,
     // a slow hop, a dropped connection) used to read as "signed out", which
@@ -33,7 +44,8 @@ export const getSession = cache(async (): Promise<Session | null> => {
     // to volunteers as an empty moderation queue, and to a shop owner as a
     // failed coupon scan with a customer waiting. Most of those recover on the
     // second ask, and the cost of asking is one round trip on a path that
-    // would otherwise have ejected the person.
+    // would otherwise have ejected the person. Only worth it when a cookie
+    // says this browser believes it is signed in - see above.
     if (!data?.user?.id) {
       await new Promise((r) => setTimeout(r, 150));
       data = (await auth.getSession()).data;

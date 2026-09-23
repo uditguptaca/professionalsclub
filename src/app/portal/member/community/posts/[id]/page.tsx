@@ -3,10 +3,12 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import type { CommunityPost } from '@/types';
-import { fetchPost } from '@/app/actions/community';
 import { PostCard } from '@/components/portal/community';
 import PortalLoading from '@/components/portal/PortalLoading';
 import { AlertCircle, UsersRound } from 'lucide-react';
+import * as communityActions from '@/app/actions/community';
+import { guardActions } from '@/lib/actions-client';
+const { fetchPost } = guardActions(communityActions);
 
 /**
  * One post, at its own address.

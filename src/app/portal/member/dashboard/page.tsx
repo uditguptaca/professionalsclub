@@ -2,17 +2,21 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/app-context';
-import { fetchHomeFeed, updateMyCity } from '@/app/actions/portal';
-import { followMember, unfollowMember } from '@/app/actions/chat';
 import type { HomeFeed } from '@/server/repos/home';
 import { COMMUNITY_CITIES, cityInfo } from '@/lib/cities';
 import NotificationBell from '@/components/portal/NotificationBell';
+import ContentImage from '@/components/shared/ContentImage';
 import { readCache, writeCache, CACHE_KEYS } from '@/lib/swr-cache';
 import {
   MapPin, ChevronDown, Calendar, Users, ArrowRight, Briefcase, ShieldCheck,
   FileText, Send, Bookmark, Mail, Store, Check, Loader2, UsersRound, X,
   UserPlus,
 } from 'lucide-react';
+import * as portalActions from '@/app/actions/portal';
+import * as chatActions from '@/app/actions/chat';
+import { guardActions } from '@/lib/actions-client';
+const { fetchHomeFeed, updateMyCity } = guardActions(portalActions);
+const { followMember, unfollowMember } = guardActions(chatActions);
 
 /**
  * The member home: a city feed, not a menu.
@@ -278,8 +282,9 @@ export default function MemberHomePage() {
               </div>
               <div className="hf-events">
                 {feed.events.map((e) => (
-                  <a key={e.id} href={e.rsvpUrl ?? '/portal/member/events'} className="hf-event card"
-                     target={e.rsvpUrl ? '_blank' : undefined} rel={e.rsvpUrl ? 'noopener noreferrer' : undefined}>
+                  /* The event's own page, like the Events tab: the RSVP, the
+                     venue and the price live there, not on an external form. */
+                  <Link key={e.id} href={`/portal/member/events/${e.id}`} className="hf-event card">
                     <span className="hf-event-media">
                       {e.image
                         ? <img src={e.image} alt="" aria-hidden="true" loading="lazy" decoding="async" />
@@ -289,9 +294,9 @@ export default function MemberHomePage() {
                     <span className="hf-event-body">
                       <strong>{e.title}</strong>
                       <small><Calendar size={12} aria-hidden="true" /> {monthDay(e.date)}{e.time ? ` · ${e.time}` : ''}</small>
-                      <small><Users size={12} aria-hidden="true" /> {e.attendees} attending{e.location ? ` · ${e.location}` : ''}</small>
+                      <small><Users size={12} aria-hidden="true" /> {e.attendees + e.going} going{e.location ? ` · ${e.location}` : ''}</small>
                     </span>
-                  </a>
+                  </Link>
                 ))}
               </div>
             </section>
@@ -368,7 +373,7 @@ export default function MemberHomePage() {
                       </small>
                       {c.helperCount > 0 && (
                         <span className="ref-helpers"><ShieldCheck size={12} aria-hidden="true" />
-                          {c.helperCount === 1 ? '1 member can help' : `${c.helperCount} members can help`}
+                          {c.helperCount === 1 ? '1 member can refer you' : `${c.helperCount} members can refer you`}
                         </span>
                       )}
                     </span>
@@ -383,15 +388,15 @@ export default function MemberHomePage() {
           {feed.businesses.length > 0 && (
             <section className="hf-section">
               <div className="hf-section-head">
-                <h2>Member offers {city.known ? `in ${city.name}` : ''}</h2>
-                <Link href="/portal/member/businesses">Directory <ArrowRight size={14} aria-hidden="true" /></Link>
+                <h2><Link href="/portal/member/offers" style={{ color: 'inherit', textDecoration: 'none' }}>Member offers {city.known ? `in ${city.name}` : ''}</Link></h2>
+                <Link href="/portal/member/offers">All offers <ArrowRight size={14} aria-hidden="true" /></Link>
               </div>
               <div className="hf-rail">
                 {feed.businesses.map((b) => (
                   <Link key={b.id} href="/portal/member/businesses" className="hf-biz card">
                     <span className="hf-group-badge hf-biz-badge" aria-hidden="true">
                       {/^(https?:\/\/|\/)/.test(b.logo ?? '')
-                        ? <img src={b.logo as string} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 'inherit', background: '#fff' }} />
+                        ? <ContentImage src={b.logo as string} alt="" width={42} height={42} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 'inherit', background: '#fff' }} />
                         : (b.logo || b.name.charAt(0))}
                     </span>
                     <strong>{b.name}</strong>

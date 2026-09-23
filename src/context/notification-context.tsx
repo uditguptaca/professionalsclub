@@ -1,15 +1,14 @@
 'use client';
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  notificationCountsAction,
-  markNotificationReadAction,
-  markAllNotificationsReadAction,
-} from '@/app/actions/notifications';
-import { registerPushDeviceAction } from '@/app/actions/push';
 import { startPush, isNativePush } from '@/lib/push';
 import { onIdle } from '@/lib/swr-cache';
 import type { NotificationCounts } from '@/server/repos/notifications';
+import * as notificationsActions from '@/app/actions/notifications';
+import * as pushActions from '@/app/actions/push';
+import { guardActions } from '@/lib/actions-client';
+const { notificationCountsAction, markNotificationReadAction, markAllNotificationsReadAction } = guardActions(notificationsActions);
+const { registerPushDeviceAction } = guardActions(pushActions);
 
 /**
  * Unread counts, polled once for the whole portal.

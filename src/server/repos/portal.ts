@@ -3,12 +3,15 @@ import { withUser, withUserRead, one, type Db } from '@/server/db';
 import { isOurUpload, assertHttpUrl } from '@/server/media';
 import { toDomain, toDomainAll } from '@/server/case';
 import { insertRow, updateRow, selectList } from '@/server/query';
+import { MemberFacingError } from '@/server/errors';
 import { CONTENT_TABLES, type ContentEntity } from '@/server/repos/content';
-import type {
-  HelpRequest, VolunteerApplication, CaseAssignment, AdminMessage, AuditLogEntry,
-  Member, HelpDeskStats, RequestStatus, VolunteerStatus, Business,
-  BusinessContactRequest, BusinessStatus, EBook, VideoWorkshop, ContentTemplate,
-  CommunityEvent, TeamMember, NewsArticle, DonationCampaign, JobPosting,
+import {
+  SUPPORT_CATEGORIES,
+  type HelpRequest, type VolunteerApplication, type CaseAssignment, type AdminMessage,
+  type AuditLogEntry, type Member, type HelpDeskStats, type RequestStatus,
+  type VolunteerStatus, type Business, type BusinessContactRequest, type BusinessStatus,
+  type EBook, type VideoWorkshop, type ContentTemplate, type CommunityEvent,
+  type TeamMember, type NewsArticle, type DonationCampaign, type JobPosting,
 } from '@/types';
 
 /**
@@ -295,6 +298,77 @@ export async function setVolunteerStatus(
   });
 }
 
+// ========== MY VOLUNTEERING (0059) ==========
+
+export interface VolunteeringPatch {
+  expertiseAreas?: string[];
+  maxCasesPerMonth?: number;
+  /** Left out: keep. null: resume now. An ISO date: pause until then. */
+  pausedUntil?: string | null;
+  /** 'withdraw' marks the application inactive; 'reapply' re-opens a withdrawn one. */
+  status?: 'withdraw' | 'reapply';
+}
+
+/** Longest a pause can be set for in one go; pausing again later is fine. */
+const MAX_PAUSE_DAYS = 366;
+
+/**
+ * A volunteer's own controls. Runs on the caller's own row under the 0059
+ * own-row policy; guard_volunteer_application_fields() pins admin_notes,
+ * reviewed_* and every status move except withdraw / re-apply, so nothing
+ * this function could be handed turns into a self-approval.
+ */
+export async function updateMyVolunteering(
+  userId: string,
+  patch: VolunteeringPatch
+): Promise<VolunteerApplication> {
+  const known = SUPPORT_CATEGORIES as readonly string[];
+  const areas = Array.isArray(patch.expertiseAreas)
+    ? patch.expertiseAreas.filter((a): a is string => typeof a === 'string' && known.includes(a))
+    : null;
+  if (areas !== null && areas.length === 0) {
+    throw new MemberFacingError('Keep at least one area, or stop volunteering instead.');
+  }
+
+  const cap = typeof patch.maxCasesPerMonth === 'number' && Number.isFinite(patch.maxCasesPerMonth)
+    ? Math.min(100, Math.max(1, Math.round(patch.maxCasesPerMonth)))
+    : null;
+
+  const setPause = patch.pausedUntil !== undefined;
+  let pausedUntil: string | null = null;
+  if (patch.pausedUntil) {
+    const d = new Date(patch.pausedUntil);
+    if (!Number.isFinite(d.getTime())) throw new MemberFacingError('Pick a date to pause until.');
+    if (d.getTime() <= Date.now()) throw new MemberFacingError('Pick a date after today.');
+    if (d.getTime() > Date.now() + MAX_PAUSE_DAYS * 86_400_000) {
+      throw new MemberFacingError('Pause for a year at most. You can pause again later.');
+    }
+    pausedUntil = d.toISOString();
+  }
+
+  const status =
+    patch.status === 'withdraw' ? 'inactive'
+    : patch.status === 'reapply' ? 'new_application'
+    : null;
+
+  return withUser(userId, async (db) => {
+    const rows = await db`
+      update public.volunteer_applications
+         set expertise_areas     = coalesce(${areas}::text[], expertise_areas),
+             max_cases_per_month = coalesce(${cap}::int, max_cases_per_month),
+             paused_until        = case when ${setPause}::boolean
+                                        then ${pausedUntil}::timestamptz
+                                        else paused_until end,
+             status              = coalesce(${status}::text, status)
+       where member_id = ${userId}::uuid
+      returning *
+    `;
+    const row = await one(rows);
+    if (!row) throw new MemberFacingError('You have not applied to volunteer yet.');
+    return toDomain<VolunteerApplication>(row);
+  });
+}
+
 // ========== ASSIGNMENTS ==========
 
 /**
@@ -313,6 +387,18 @@ export async function createAssignment(
   input: Record<string, unknown>
 ): Promise<{ assignment: CaseAssignment; request: HelpRequest }> {
   return withUser(adminId, async (db) => {
+    // Approved and taking cases. The picker hides paused volunteers too, but
+    // every caller routes through here, so here is where it holds (0059).
+    const available = await db`
+      select 1 from public.volunteer_applications v
+       where v.member_id = ${input.volunteerMemberId}::uuid
+         and v.status = 'approved'
+         and (v.paused_until is null or v.paused_until <= now())
+    `;
+    if (available.length === 0) {
+      throw new MemberFacingError('That volunteer is not taking cases right now: they paused or stopped volunteering.');
+    }
+
     const rows = await db`
       insert into public.case_assignments (
         request_id, request_title, volunteer_member_id, volunteer_name,

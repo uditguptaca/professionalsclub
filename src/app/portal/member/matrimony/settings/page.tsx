@@ -3,13 +3,15 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/app-context';
-import { getMyMatrimony, saveMatrimonyProfile, deleteMyMatrimonyProfile } from '@/app/actions/matrimony';
 import type { MatrimonyProfile } from '@/types/matrimony';
 import {
   ArrowLeft, Eye, EyeOff, Trash2, Check, AlertCircle, Save, ChevronRight, Heart,
 } from 'lucide-react';
 import PortalLoading from '@/components/portal/PortalLoading';
 import { useConfirm } from '@/components/portal/confirm';
+import * as matrimonyActions from '@/app/actions/matrimony';
+import { guardActions } from '@/lib/actions-client';
+const { getMyMatrimony, saveMatrimonyProfile, deleteMyMatrimonyProfile } = guardActions(matrimonyActions);
 
 const PHOTO_OPTIONS: { value: 'all' | 'blurred' | 'on_request'; label: string; desc: string }[] = [
   { value: 'all',        label: 'Visible to approved members', desc: 'Anyone browsing matrimony can see your photos.' },

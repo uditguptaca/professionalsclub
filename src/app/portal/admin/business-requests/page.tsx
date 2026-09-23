@@ -1,10 +1,12 @@
 'use client';
 import React, { useState } from 'react';
 import { usePortal } from '@/context/portal-context';
-import { updateBusinessRequestStatus } from '@/app/actions/portal';
-import type { ActionResult } from '@/app/actions/portal';
 import type { BusinessContactRequest, BusinessContactRequestStatus } from '@/types';
 import { Inbox, Clock, CheckCircle, User, Building2, ArrowRight } from 'lucide-react';
+import * as portalActions from '@/app/actions/portal';
+import type { ActionResult } from '@/app/actions/portal';
+import { guardActions } from '@/lib/actions-client';
+const { updateBusinessRequestStatus } = guardActions(portalActions);
 
 /** The four values business_contact_requests.status accepts. */
 const STATUSES: BusinessContactRequestStatus[] = ['pending', 'in_progress', 'completed', 'closed'];

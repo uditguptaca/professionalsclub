@@ -8,14 +8,9 @@ import { ConfirmProvider } from '@/components/portal/confirm';
 import { NotificationProvider, useNotifications } from '@/context/notification-context';
 import NotificationBell from '@/components/portal/NotificationBell';
 import { stopPush, registeredToken, isNativePush } from '@/lib/push';
-import { unregisterPushDeviceAction } from '@/app/actions/push';
 import { forgetMe } from '@/app/actions/auth';
 import { readCache, writeCache, onIdle, dropCache, CACHE_KEYS } from '@/lib/swr-cache';
-import { fetchHomeFeed } from '@/app/actions/portal';
-import { fetchCommunityStart } from '@/app/actions/community';
-import { fetchJobsBoard } from '@/app/actions/referrals';
-import { chatStart } from '@/app/actions/chat';
-import { notificationsStartAction } from '@/app/actions/notifications';
+import { useDismissOnBack } from '@/lib/use-dismiss-on-back';
 import type { UserRole } from '@/types';
 import {
   Home, HelpCircle, HandHeart, FileText, ClipboardList, MessageSquare,
@@ -24,6 +19,19 @@ import {
   UsersRound, Newspaper, Heart, Briefcase, X, LayoutGrid, ChevronRight, Megaphone, Mail, Send, MessageCircle,
   Bell, Ticket, KeyRound, CalendarCheck,
 } from 'lucide-react';
+import * as pushActions from '@/app/actions/push';
+import * as portalActions from '@/app/actions/portal';
+import * as communityActions from '@/app/actions/community';
+import * as referralsActions from '@/app/actions/referrals';
+import * as chatActions from '@/app/actions/chat';
+import * as notificationsActions from '@/app/actions/notifications';
+import { guardActions } from '@/lib/actions-client';
+const { unregisterPushDeviceAction } = guardActions(pushActions);
+const { fetchHomeFeed } = guardActions(portalActions);
+const { fetchCommunityStart } = guardActions(communityActions);
+const { fetchJobsBoard } = guardActions(referralsActions);
+const { chatStart } = guardActions(chatActions);
+const { notificationsStartAction } = guardActions(notificationsActions);
 
 /**
  * Portal chrome. Two form factors from one component:
@@ -219,9 +227,11 @@ function PortalChrome({
     setSigningOut(false);
   };
 
-  // The sheet closes on navigation and on Escape, locks scroll while open, and
-  // moves focus in so a keyboard or screen-reader user lands inside the dialog.
+  // The sheet closes on navigation, on Escape and on the phone's Back button,
+  // locks scroll while open, and moves focus in so a keyboard or screen-reader
+  // user lands inside the dialog.
   React.useEffect(() => setSheetOpen(false), [pathname]);
+  useDismissOnBack(sheetOpen, () => setSheetOpen(false));
   React.useEffect(() => {
     if (!sheetOpen) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSheetOpen(false); };
@@ -258,7 +268,7 @@ function PortalChrome({
     { label: 'Become a Volunteer', href: '/portal/member/volunteer', icon: HandHeart },
     { label: 'My Requests', href: '/portal/member/my-requests', icon: FileText },
     { label: 'My Volunteer Status', href: '/portal/member/my-volunteer', icon: ClipboardList },
-    { label: 'Admin Messages', href: '/portal/member/messages', icon: MessageSquare },
+    { label: 'Club messages', href: '/portal/member/messages', icon: MessageSquare },
     { label: 'Business Directory', href: '/portal/member/businesses', icon: Building2 },
     { label: 'Member Offers', href: '/portal/member/offers', icon: Ticket },
     { label: 'My Business', href: '/portal/member/business', icon: Building2 },
@@ -319,7 +329,9 @@ function PortalChrome({
           // below "My Business" for members who have no business.
           { title: 'Help desk', links: pick(memberLinks, ['/request-help', '/my-requests', '/messages']) },
           { title: 'Activity', links: pick(memberLinks, ['/notifications']) },
-          { title: 'Career & connections', links: pick(memberLinks, ['/referrals', '/businesses', '/business', '/matrimony']) },
+          // '/offers' was missing here, so on a phone - the only device most
+          // members use - a whole module and the businesses in it were unreachable.
+          { title: 'Career & connections', links: pick(memberLinks, ['/referrals', '/businesses', '/offers', '/business', '/matrimony']) },
           { title: 'Volunteering', links: pick(memberLinks, ['/volunteer', '/my-volunteer']) },
         ];
 
@@ -492,7 +504,7 @@ function PortalChrome({
               {badge > 0 && (
                 <span className="tabbar-dot" aria-label={`${badge} unread`}>{badge > 9 ? '9+' : badge}</span>
               )}
-              <span>{tab.label.replace('Dashboard', 'Home').replace('Overview', 'Home').replace('My Requests', 'Requests').replace('Request Help', 'Get Help').replace('Message Center', 'Messages').replace('Admin Messages', 'Messages')}</span>
+              <span>{tab.label.replace('Dashboard', 'Home').replace('Overview', 'Home').replace('My Requests', 'Requests').replace('Request Help', 'Get Help').replace('Message Center', 'Messages')}</span>
             </Link>
           );
         })}

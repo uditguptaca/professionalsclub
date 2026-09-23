@@ -1,12 +1,12 @@
 'use client';
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import {
-  listFollowRequests, acceptFollowRequest, declineFollowRequest, unfollowMember,
-} from '@/app/actions/chat';
 import type { ChatPerson } from '@/server/repos/chat';
 import PortalLoading from '@/components/portal/PortalLoading';
 import { AlertCircle, Check, Clock, UserRoundCheck, X } from 'lucide-react';
+import * as chatActions from '@/app/actions/chat';
+import { guardActions } from '@/lib/actions-client';
+const { listFollowRequests, acceptFollowRequest, declineFollowRequest, unfollowMember } = guardActions(chatActions);
 
 /**
  * Follow requests: who wants in, and whose door you are waiting at.

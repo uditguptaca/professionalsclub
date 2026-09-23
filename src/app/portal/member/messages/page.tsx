@@ -89,9 +89,9 @@ export default function MemberMessagesPage() {
   return (
     <div className="pp2">
       <header style={{ marginBottom: '1.3rem' }}>
-        <h1 style={{ fontSize: '1.45rem', fontWeight: 800, margin: 0 }}>Messages</h1>
+        <h1 style={{ fontSize: '1.45rem', fontWeight: 800, margin: 0 }}>Club messages</h1>
         <p style={{ margin: '0.3rem 0 0', fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
-          Everything the admin team has sent you, grouped by case.
+          Replies from the club on your help requests, grouped by case. Open one to answer.
         </p>
       </header>
 
@@ -99,7 +99,7 @@ export default function MemberMessagesPage() {
         <div className="card" style={{ padding: '2.25rem 1.25rem', textAlign: 'center' }}>
           <Mail size={28} aria-hidden="true" style={{ opacity: 0.35 }} />
           <p style={{ margin: '0.7rem 0 1rem', color: 'var(--text-secondary)' }}>
-            No messages yet. Admin writes here as soon as one of your requests moves.
+            No messages yet. The club writes here as soon as one of your requests moves.
           </p>
           <Link href="/portal/member/my-requests" className="btn btn-outline">
             See your requests

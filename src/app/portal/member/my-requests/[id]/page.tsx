@@ -3,13 +3,16 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { usePortal } from '@/context/portal-context';
 import { useApp } from '@/context/app-context';
-import { sendMessage } from '@/app/actions/portal';
 import PortalLoading from '@/components/portal/PortalLoading';
+import { FIRST_REPLY_PROMISE, categoryLabel } from '@/lib/help-desk';
 import {
   ArrowLeft, Clock, CheckCircle, Send, Tag, AlertCircle, CalendarClock,
   Paperclip, ChevronRight, FileText,
 } from 'lucide-react';
 import Link from 'next/link';
+import * as portalActions from '@/app/actions/portal';
+import { guardActions } from '@/lib/actions-client';
+const { sendMessage } = guardActions(portalActions);
 
 /**
  * One case, read top to bottom: what you asked, where it stands, then the
@@ -35,7 +38,7 @@ const DONE = ['resolved', 'closed', 'completed'];
 export default function RequestDetailPage() {
   const params = useParams();
   const requestId = params.id as string;
-  const { helpRequests, messages, markMessageRead, refresh, loading } = usePortal();
+  const { helpRequests, messages, markMessageRead, refresh, settled } = usePortal();
   const { currentUserId } = useApp();
   const [replyText, setReplyText] = useState('');
   const [sending, setSending] = useState(false);
@@ -56,7 +59,7 @@ export default function RequestDetailPage() {
 
   if (!request) {
     // The page renders from the portal snapshot, which arrives after mount.
-    if (loading) return <PortalLoading label="Loading your request" />;
+    if (!settled) return <PortalLoading label="Loading your request" />;
     return (
       <div className="pp2" style={{ textAlign: 'center', padding: '3.5rem 1rem' }}>
         <FileText size={28} style={{ opacity: 0.35 }} aria-hidden="true" />
@@ -111,6 +114,9 @@ export default function RequestDetailPage() {
 
   const tone = statusTone(request.status);
   const closed = ['resolved', 'closed', 'rejected', 'archived'].includes(request.status);
+  // The two statuses that literally ask the member for something.
+  const yourTurn = ['need_more_info', 'waiting_for_member'].includes(request.status);
+  const canSend = !sending && replyText.trim().length > 0;
 
   /** One read-only meta row. */
   const metaRow = (icon: React.ReactNode, label: string, value: string) => (
@@ -166,7 +172,7 @@ export default function RequestDetailPage() {
               </p>
             </div>
 
-            {metaRow(<Tag size={17} />, 'Category', request.category)}
+            {metaRow(<Tag size={17} />, 'Category', categoryLabel(request.category))}
             {metaRow(<AlertCircle size={17} />, 'Urgency', `${sentence(request.urgency)} priority`)}
             {metaRow(
               <CalendarClock size={17} />,
@@ -234,14 +240,14 @@ export default function RequestDetailPage() {
 
         {/* ---- Thread ---- */}
         <section className="pp-group">
-          <h2>Messages</h2>
+          <h2>Club messages</h2>
           <p className="pp-group-sub">
-            Everything stays inside the club — an admin answers here, never outside the platform.
+            You and the club, inside the app. An admin answers here, and you can answer back below.
           </p>
           <div className="pp-group-card" style={{ padding: '1.1rem' }}>
             {caseMessages.length === 0 ? (
               <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-muted)' }}>
-                No messages yet. An admin will write here when there is an update.
+                No messages yet. {FIRST_REPLY_PROMISE}
               </p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -283,44 +289,61 @@ export default function RequestDetailPage() {
               </div>
             )}
 
-            {/* Reply composer — hidden once the case is closed, as before. */}
-            {!closed && (
-              <div style={{
-                marginTop: caseMessages.length === 0 ? 14 : 16,
-                paddingTop: 14, borderTop: '1px solid rgba(27,67,50,0.08)',
+            {/* The member's side of the thread. A textarea, not a one-line
+                input with Enter-to-send: "we need more from you" is answered
+                in sentences, on a phone, and a stray Enter must not post half
+                of one. Writes a messages row as sender_role 'member'; the
+                routing guard pins the recipient to the club. */}
+            {closed ? (
+              <p style={{
+                margin: '14px 0 0', paddingTop: 14, borderTop: '1px solid rgba(27,67,50,0.08)',
+                fontSize: '0.84rem', lineHeight: 1.5, color: 'var(--text-muted)',
               }}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-                  <div className="pp-field" style={{ flex: 1, minWidth: 0 }}>
-                    <input
-                      id="rd-reply"
-                      aria-label="Write a reply to the admin"
-                      placeholder="Write a reply…"
-                      value={replyText}
-                      onChange={e => setReplyText(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') void handleReply(); }}
-                      disabled={sending}
-                    />
-                  </div>
+                This case is closed, so replies are off. If you need more,{' '}
+                <Link href="/portal/member/request-help" style={{ color: 'var(--text-accent)', fontWeight: 700 }}>
+                  start a new request
+                </Link>.
+              </p>
+            ) : (
+              <form
+                onSubmit={e => { e.preventDefault(); void handleReply(); }}
+                style={{
+                  marginTop: caseMessages.length === 0 ? 14 : 16,
+                  paddingTop: 14, borderTop: '1px solid rgba(27,67,50,0.08)',
+                }}
+              >
+                <div className="pp-field">
+                  <label htmlFor="rd-reply" style={{ fontWeight: 750 }}>
+                    {yourTurn ? 'The club asked you for more. Reply here' : 'Reply to the club'}
+                  </label>
+                  <textarea
+                    id="rd-reply"
+                    rows={3}
+                    placeholder={yourTurn ? 'Answer what the club asked, in as much detail as you can.' : 'Add anything the club should know about this request.'}
+                    value={replyText}
+                    onChange={e => setReplyText(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) void handleReply(); }}
+                    disabled={sending}
+                    maxLength={5000}
+                  />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
                   <button
-                    type="button"
-                    aria-label="Send reply"
-                    onClick={handleReply}
-                    disabled={sending || !replyText.trim()}
-                    style={{
-                      display: 'grid', placeItems: 'center', flexShrink: 0,
-                      width: 48, height: 48, border: 0, borderRadius: '50%',
-                      background: 'var(--primary-700)', color: '#fff',
-                      cursor: sending || !replyText.trim() ? 'default' : 'pointer',
-                      opacity: sending || !replyText.trim() ? 0.5 : 1,
-                    }}
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={!canSend}
+                    style={{ minHeight: 44, gap: 7 }}
                   >
-                    <Send size={17} aria-hidden="true" />
+                    <Send size={15} aria-hidden="true" /> {sending ? 'Sending…' : 'Send to the club'}
                   </button>
+                  <span style={{ fontSize: '0.76rem', lineHeight: 1.45, color: 'var(--text-muted)' }}>
+                    An admin reads it. {FIRST_REPLY_PROMISE}
+                  </span>
                 </div>
                 {replyError && (
                   <p role="alert" className="community-error" style={{ marginTop: 10 }}>{replyError}</p>
                 )}
-              </div>
+              </form>
             )}
           </div>
         </section>
