@@ -87,3 +87,7 @@ AuthKey_*.p8
 
 # Credentials sheet generated from TEST-ACCOUNTS.md - never commit
 TEST-ACCOUNTS.pdf
+
+# Release artefacts: signed bundles, APKs and store screenshots.
+# Built on demand; the keystore that signs them is gitignored too.
+dist/
