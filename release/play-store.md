@@ -10,14 +10,14 @@ wording in the Play Console — policies change and this file will not.
 
 | Artifact | Path | Notes |
 |---|---|---|
-| **App Bundle (upload this)** | `dist/professionals-club-1.1-release.aab` | 4.12 MB. Play requires an `.aab`, not an `.apk`. |
-| APK (sideload / testing only) | `dist/professionals-club-1.1-release.apk` | 4.38 MB. Do not upload to Play. |
+| **App Bundle (upload this)** | `dist/professionals-club-1.1-code3.aab` | 3.93 MB. Play requires an `.aab`, not an `.apk`. |
+| APK (sideload / testing only) | `dist/professionals-club-1.1-code3.apk` | 4.17 MB. Do not upload to Play. |
 | Screenshots | `dist/play/screenshots/*.png` | Six 1080x1920 captures of the real app. **Review before uploading — see §6.** |
 
 | Field | Value |
 |---|---|
-| Package name | `ca.professionalsclub.app` (permanent once published) |
-| Version | 1.1, versionCode 2 |
+| Package name | `com.professionals.club` (the id the Play listing is locked to; permanent) |
+| Version | 1.1, versionCode 3 |
 | Min / target SDK | 24 (Android 7.0) / 36 |
 | Signed with | `android/keystore/upload-keystore.jks`, `CN=Professionals Club` |
 | Signature verified | yes (`apksigner verify` passes) |
@@ -250,7 +250,7 @@ Questions: support@professionalsclub.ca
    - Privacy policy — the URL in §5.
 3. **Store listing** — copy from §7, upload icon, feature graphic, screenshots.
 4. **Testing → Internal testing → Create new release.** Upload
-   `professionals-club-1.1-release.aab`. Enrol in Play App Signing when offered.
+   `professionals-club-1.1-code3.aab`. Enrol in Play App Signing when offered.
 5. Add yourself as an internal tester, install from the opt-in link, and check
    sign-in, push and the coupon scanner on a real device.
 6. Read the **pre-launch report** — it runs the app on physical devices and
@@ -269,6 +269,12 @@ account.
   `10.0.2.2` in `allowNavigation`. The release build now fails if it does.
 - Bump `versionCode` in `android/app/build.gradle` every upload. Play rejects a
   duplicate.
+- The store id (`applicationId` in `android/app/build.gradle`) is
+  `com.professionals.club`. The Java `namespace` and the iOS bundle id stay
+  `ca.professionalsclub.app`; that is fine and must not be "tidied". Both
+  packages are registered in the Firebase project, and `google-services.json`
+  carries both clients, so push keeps working. Never change `applicationId`
+  again: Play treats a new id as a different app.
 - The web app updates without a store release, because the shell loads the
   hosted site. You only need a new bundle when native code, permissions, the
   server URL or the version changes.

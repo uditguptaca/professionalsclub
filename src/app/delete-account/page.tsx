@@ -30,7 +30,7 @@ export default function DeleteAccountPage() {
             Delete your account
           </h1>
           <p className="figure" style={{ marginBottom: '2.5rem' }}>
-            Professionals Club &middot; ca.professionalsclub.app
+            Professionals Club &middot; com.professionals.club
           </p>
 
           <section style={{ marginBottom: '2.25rem' }}>

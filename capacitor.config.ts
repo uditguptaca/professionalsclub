@@ -24,6 +24,9 @@ const SERVER_URL =
   process.env.CAP_SERVER_URL ?? 'https://professionalsclub.vercel.app/portal/member/dashboard';
 
 const config: CapacitorConfig = {
+  // iOS bundle id. Android's store id is com.professionals.club, set as
+  // applicationId in android/app/build.gradle because the Play listing is
+  // locked to it; cap sync never rewrites that, so the two can differ.
   appId: 'ca.professionalsclub.app',
   appName: 'Professionals Club',
   webDir: 'mobile/www',

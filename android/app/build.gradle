@@ -13,10 +13,14 @@ android {
     namespace = "ca.professionalsclub.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "ca.professionalsclub.app"
+        // What Play knows the app as. The Play Console listing is locked to
+        // com.professionals.club, so that is the id the store sees; the Java
+        // namespace above and the iOS bundle id stay ca.professionalsclub.app.
+        // Both packages are registered in the Firebase project, so push works.
+        applicationId "com.professionals.club"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
+        versionCode 3
         versionName "1.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
